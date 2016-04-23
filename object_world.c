@@ -26,6 +26,10 @@ struct object_world object_world = {
         .vertex_list = NULL,
         .vertex_count = 0,
         .color_list = NULL,
+        .transform = {
+                .object = (struct object *)&object_world,
+                .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 2.0f)
+        },
         .rigid_body = NULL,
         .colliders = NULL,
         .on_init = on_init,

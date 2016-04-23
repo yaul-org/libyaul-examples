@@ -80,6 +80,12 @@ on_update(void)
 {
         cons_buffer("Hello from blue\n");
 
+        OBJECT(&object_blue, transform).position.x =
+            fix16_add(OBJECT(&object_blue, transform).position.x, F16(1.25f));
+
+        OBJECT(&object_blue, transform).position.y =
+            fix16_add(OBJECT(&object_blue, transform).position.y, F16(1.0f));
+
         switch (_state) {
         case BLUE_STATE_WAITING:
                 break;

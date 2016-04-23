@@ -107,7 +107,6 @@ objects_draw(void)
 static void
 objects_project(void)
 {
-        /* Set the view matrix */
         const struct object **objects;
         objects = objects_list();
 
@@ -116,13 +115,14 @@ objects_project(void)
                 const struct object *object;
                 object = objects[object_idx];
 
+                /* Adjust the (inverse) view matrix */
                 if (object->id == OBJECT_ID_CAMERA) {
                         fix16_matrix3_t matrix_view;
                         fix16_matrix3_identity(&matrix_view);
 
-                        matrix_view.frow[0][2] = OBJECT_COMPONENT(object, transform).position.x;
-                        matrix_view.frow[1][2] = OBJECT_COMPONENT(object, transform).position.y;
-                        matrix_view.frow[2][2] = OBJECT_COMPONENT(object, transform).position.z;
+                        matrix_view.frow[0][2] = -OBJECT_COMPONENT(object, transform).position.x;
+                        matrix_view.frow[1][2] = -OBJECT_COMPONENT(object, transform).position.y;
+                        matrix_view.frow[2][2] = -OBJECT_COMPONENT(object, transform).position.z;
 
                         matrix_stack_mode(MATRIX_STACK_MODE_MODEL_VIEW);
                         matrix_stack_load(&matrix_view);
@@ -195,28 +195,13 @@ object_project(const struct object *object)
                 fix16_matrix3_t *matrix_model_view;
                 matrix_stack_mode(MATRIX_STACK_MODE_MODEL_VIEW);
 
-                cons_buffer("Before translation:\n");
-                matrix_model_view = matrix_stack_top(
-                        MATRIX_STACK_MODE_MODEL_VIEW)->ms_matrix;
-                fix16_matrix3_str(matrix_model_view,
-                    text_buffer,
-                    7);
-                cons_buffer(text_buffer);
-                cons_buffer("\n");
-
                 matrix_stack_translate(
                         OBJECT_COMPONENT(object, transform).position.x,
-                        OBJECT_COMPONENT(object, transform).position.x,
+                        OBJECT_COMPONENT(object, transform).position.y,
                         OBJECT_COMPONENT(object, transform).position.z);
 
-                cons_buffer("After translation:\n");
                 matrix_model_view = matrix_stack_top(
-                        MATRIX_STACK_MODE_MODEL_VIEW)->ms_matrix;
-                fix16_matrix3_str(matrix_model_view,
-                    text_buffer,
-                    7);
-                cons_buffer(text_buffer);
-                cons_buffer("\n");
+                    MATRIX_STACK_MODE_MODEL_VIEW)->ms_matrix;
 
                 uint32_t i;
 
@@ -251,21 +236,16 @@ object_project(const struct object *object)
 
                         screen_coord->x = fix16_to_int(vertex_mv[i].x);
                         screen_coord->y = fix16_to_int(vertex_mv[i].y);
-
-                        /* screen_coord->x = 0; */
-                        /* screen_coord->y = 0; */
                 }
 
                 int16_t width;
                 width = screen_coords[3].x - screen_coords[0].x;
                 int16_t height;
                 height = screen_coords[1].y - screen_coords[0].y;
-                /* width = 64; */
-                /* height = 64; */
 
                 struct vdp1_cmdt_local_coord local_coord;
                 local_coord.lc_coord.x = (width / 2) + screen_coords[0].x;
-                local_coord.lc_coord.y = 224 - ((height / 2) + screen_coords[0].y);
+                local_coord.lc_coord.y = SCREEN_HEIGHT - ((height / 2) + screen_coords[0].y);
 
                 struct vdp1_cmdt_polygon polygon;
                 polygon.cp_mode.raw = 0x0000;

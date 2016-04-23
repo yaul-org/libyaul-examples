@@ -59,6 +59,10 @@ static void
 on_update(void)
 {
         cons_buffer("Hello from camera\n");
+
+        OBJECT(&object_camera, transform).position.x =
+            fix16_add(OBJECT(&object_camera, transform).position.x, F16(1.0f));
+
         switch (_state) {
         case CAMERA_STATE_WAITING:
                 break;
