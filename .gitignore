@@ -1,0 +1,10 @@
+IP.BIN
+IP.BIN.map
+*.asm
+*.bin
+*.d
+*.elf
+*.iso
+*.map
+*.o
+*.sym
