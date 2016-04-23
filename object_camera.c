@@ -18,6 +18,11 @@ static const char *_camera_state2str[] __unused = {
 static void on_init(void);
 static void on_update(void);
 
+static struct camera _camera = {
+        .width = 320,
+        .height = 224
+};
+
 struct object_camera object_camera = {
         .active = true,
         .id = OBJECT_ID_CAMERA,
@@ -29,6 +34,7 @@ struct object_camera object_camera = {
                 .object = (struct object *)&object_camera,
                 .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 0.0f)
         },
+        .camera = &_camera,
         .rigid_body = NULL,
         .colliders = NULL,
         .on_init = on_init,
@@ -39,10 +45,6 @@ struct object_camera object_camera = {
         .on_trigger = NULL,
         .functions = {
         },
-        .data = {
-                .width = 320,
-                .height = 224
-        }
 };
 
 static uint32_t _state;

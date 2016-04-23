@@ -52,6 +52,7 @@ struct object_blue object_blue = {
                 .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 1.0f)
         },
         .color_list = &_color_list[0],
+        .camera = NULL,
         .rigid_body = &_rigid_body,
         .colliders = &_collider,
         .on_init = on_init,
@@ -64,7 +65,6 @@ struct object_blue object_blue = {
         },
 };
 
-/* static struct vdp1_cmdt_polygon _polygon; */
 static uint32_t _state;
 static uint32_t _last_state;
 

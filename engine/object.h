@@ -36,6 +36,7 @@
     uint16_t *color_list;                                                      \
     /* Components */                                                           \
     struct transform transform;                                                \
+    struct camera *camera;                                                     \
     struct collider *colliders;                                                \
     struct rigid_body *rigid_body;                                             \
     /* Events */                                                               \

@@ -12,9 +12,6 @@
 
 #include "../engine.h"
 
-#define SCREEN_WIDTH    320
-#define SCREEN_HEIGHT   224
-
 struct smpc_peripheral_digital digital_pad;
 
 uint32_t tick = 0;
@@ -27,7 +24,7 @@ static void objects_update(void) __unused;
 static void objects_draw(void) __unused;
 static void objects_project(void) __unused;
 
-static void object_project(const struct object *);
+static void object_project(const struct camera *, const struct object *);
 
 static void hardware_init(void);
 static void vblank_in_handler(irq_mux_handle_t *);
@@ -107,16 +104,22 @@ objects_draw(void)
 static void
 objects_project(void)
 {
+        const struct camera *camera;
+        camera = NULL;
+
         const struct object **objects;
         objects = objects_list();
 
+        /* Look for the camera component in the objects list and adjust
+         * the (inverse) view matrix */
         uint32_t object_idx;
         for (object_idx = 0; objects[object_idx] != NULL; object_idx++) {
                 const struct object *object;
                 object = objects[object_idx];
 
-                /* Adjust the (inverse) view matrix */
-                if (object->id == OBJECT_ID_CAMERA) {
+                if (object->camera != NULL) {
+                        camera = (const struct camera *)object->camera;
+
                         fix16_matrix3_t matrix_view;
                         fix16_matrix3_identity(&matrix_view);
 
@@ -129,21 +132,22 @@ objects_project(void)
                         break;
                 }
         }
+        assert((camera != NULL) && "No camera found");
 
         vdp1_cmdt_list_begin(0); {
                 struct vdp1_cmdt_system_clip_coord system_clip;
-                system_clip.scc_coord.x = SCREEN_WIDTH - 1;
-                system_clip.scc_coord.y = SCREEN_HEIGHT - 1;
+                system_clip.scc_coord.x = camera->width - 1;
+                system_clip.scc_coord.y = camera->height - 1;
 
                 static struct vdp1_cmdt_user_clip_coord user_clip;
                 user_clip.ucc_coords[0].x = 0;
                 user_clip.ucc_coords[0].y = 0;
-                user_clip.ucc_coords[1].x = SCREEN_WIDTH - 1;
-                user_clip.ucc_coords[1].y = SCREEN_HEIGHT - 1;
+                user_clip.ucc_coords[1].x = camera->width - 1;
+                user_clip.ucc_coords[1].y = camera->height - 1;
 
                 struct vdp1_cmdt_local_coord local;
                 local.lc_coord.x = 0;
-                local.lc_coord.y = SCREEN_HEIGHT - 1;
+                local.lc_coord.y = camera->width - 1;
 
                 vdp1_cmdt_system_clip_coord_set(&system_clip);
                 vdp1_cmdt_user_clip_coord_set(&user_clip);
@@ -169,7 +173,7 @@ objects_project(void)
                                     (transform_z == z_value);
 
                                 if (project) {
-                                        object_project(object);
+                                        object_project(camera, object);
                                 }
                         }
                 }
@@ -179,7 +183,7 @@ objects_project(void)
 }
 
 static void
-object_project(const struct object *object)
+object_project(const struct camera *camera, const struct object *object)
 {
         /* The camera should not be projected */
         if (object->id == OBJECT_ID_CAMERA) {
@@ -245,7 +249,7 @@ object_project(const struct object *object)
 
                 struct vdp1_cmdt_local_coord local_coord;
                 local_coord.lc_coord.x = (width / 2) + screen_coords[0].x;
-                local_coord.lc_coord.y = SCREEN_HEIGHT - ((height / 2) + screen_coords[0].y);
+                local_coord.lc_coord.y = camera->height - ((height / 2) + screen_coords[0].y);
 
                 struct vdp1_cmdt_polygon polygon;
                 polygon.cp_mode.raw = 0x0000;
