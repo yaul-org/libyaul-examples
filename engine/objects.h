@@ -13,7 +13,7 @@
 
 #include "object.h"
 
-#define OBJECTS_MAX     16
+#define OBJECTS_MAX 512
 
 extern void objects_init(void);
 extern void objects_object_add(struct object *);

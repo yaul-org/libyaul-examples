@@ -25,9 +25,6 @@
 #include "engine/scene.h"
 #include "engine/transform.h"
 
-#define Z_MIN   0
-#define Z_MAX   15
-
 extern void engine_init(void);
 extern void engine_loop(void);
 

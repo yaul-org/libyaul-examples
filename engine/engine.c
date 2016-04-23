@@ -12,6 +12,9 @@
 
 #include "../engine.h"
 
+#define Z_MIN   0
+#define Z_MAX   15
+
 struct smpc_peripheral_digital digital_pad;
 
 uint32_t tick = 0;
