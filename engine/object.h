@@ -18,6 +18,8 @@
 #include "transform.h"
 #include "rigid_body.h"
 
+#define COMPONENT_LIST_MAX      8
+
 #define OBJECT_DECLARATIONS                                                    \
     bool active;                                                               \
     uint32_t id;                                                               \
@@ -39,7 +41,7 @@
     struct camera *camera;                                                     \
     struct collider *colliders;                                                \
     struct rigid_body *rigid_body;                                             \
-    struct component *component_list;                                          \
+    struct component *component_list[COMPONENT_LIST_MAX];                      \
     uint32_t component_count;                                                  \
     /* Events */                                                               \
     void (*on_init)(void);                                                     \

@@ -19,7 +19,8 @@ static void on_init(void);
 static void on_update(void);
 
 static struct camera _camera = {
-        .object = (struct object *)&object_camera,
+        .active = true,
+        .object = (const struct object *)&object_camera,
         .width = 320,
         .height = 224
 };

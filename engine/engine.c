@@ -85,7 +85,7 @@ objects_update(void)
                      component_idx < OBJECT(object, component_count);
                      component_idx++) {
                         struct component *component;
-                        component = &OBJECT(object, component_list)[component_idx];
+                        component = OBJECT(object, component_list)[component_idx];
                         COMPONENT_CALL_EVENT(component, update);
                 }
         }
@@ -117,7 +117,7 @@ objects_draw(void)
                      component_idx < OBJECT(object, component_count);
                      component_idx++) {
                         struct component *component;
-                        component = &OBJECT(object, component_list)[component_idx];
+                        component = OBJECT(object, component_list)[component_idx];
                         COMPONENT_CALL_EVENT(component, draw);
                 }
         }

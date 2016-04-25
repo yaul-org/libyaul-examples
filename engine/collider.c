@@ -14,12 +14,11 @@
 #include "collider.h"
 
 void
-collider_init(struct collider *collider, uint32_t id, uint16_t width,
+collider_init(struct collider *collider, uint32_t id __unused, uint16_t width,
     uint16_t height, bool trigger, bool fixed)
 {
         assert(collider != NULL);
 
-        collider->id = id;
         collider->trigger = trigger;
         collider->fixed = fixed;
         collider->aabb.center.x = width / 2;

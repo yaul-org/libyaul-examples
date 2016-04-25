@@ -27,6 +27,11 @@ static void on_draw(void);
 static void on_collision(struct object *, const struct collider_info *);
 static void on_trigger(struct object *);
 
+static void component_jetpack_on_init(void);
+static void component_jetpack_on_update(void);
+static bool component_jetpack_fncn_blasting(void);
+static void component_jetpack_fncn_blast_off(void);
+
 static fix16_vector3_t _vertex_list[4] = {
         FIX16_VECTOR3_INITIALIZER( 0.0f,  0.0f, 1.0f),
         FIX16_VECTOR3_INITIALIZER( 0.0f, 64.0f, 1.0f),
@@ -38,8 +43,33 @@ static uint16_t _color_list[1] = {
         COLOR_RGB888_TO_RGB555(127, 127, 127)
 };
 
-static struct collider _collider;
-static struct rigid_body _rigid_body;
+static struct collider _collider = {
+        .active = true,
+        .object = (const struct object *)&object_blue
+};
+
+static struct rigid_body _rigid_body = {
+        .active = true,
+        .object = (const struct object *)&object_blue
+};
+
+static struct component_jetpack {
+        COMPONENT_DECLARATIONS
+
+        struct {
+                bool (*blasting)(void);
+                void (*blast_off)(void);
+        } functions;
+} component_jetpack = {
+        .active = true,
+        .object = (const struct object *)&object_blue,
+        .on_init = component_jetpack_on_init,
+        .on_update = component_jetpack_on_update,
+        .functions = {
+                .blasting = component_jetpack_fncn_blasting,
+                .blast_off = component_jetpack_fncn_blast_off
+        }
+};
 
 struct object_blue object_blue = {
         .active = true,
@@ -55,6 +85,10 @@ struct object_blue object_blue = {
         .camera = NULL,
         .rigid_body = &_rigid_body,
         .colliders = &_collider,
+        .component_list = {
+                (struct component *)&component_jetpack
+        },
+        .component_count = 1,
         .on_init = on_init,
         .on_update = on_update,
         .on_draw = on_draw,
@@ -116,9 +150,32 @@ on_trigger(struct object *other __unused)
 {
 }
 
+static void
+component_jetpack_on_init(void)
+{
+}
+
+static void
+component_jetpack_on_update(void)
+{
+        cons_buffer("Hello from component jetpack\n");
+}
+
+static bool
+component_jetpack_fncn_blasting(void)
+{
+        return false;
+}
+
+static void
+component_jetpack_fncn_blast_off(void)
+{
+}
+
 static void __unused
 m_update_input(void)
 {
+
         if (digital_pad.connected == 1) {
                 if (digital_pad.pressed.button.a ||
                     digital_pad.pressed.button.c) {

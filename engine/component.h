@@ -15,8 +15,7 @@ struct object;
 
 #define COMPONENT_DECLARATIONS                                                 \
     bool active;                                                               \
-    uint32_t id;                                                               \
-    struct object *object;                                                     \
+    const struct object *object;                                               \
     /* Events */                                                               \
     void (*on_init)(void);                                                     \
     void (*on_update)(void);                                                   \
