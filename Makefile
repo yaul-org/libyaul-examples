@@ -8,11 +8,13 @@ SH_PROGRAM:= blue
 SH_OBJECTS:= \
 	root.romdisk.o \
 	blue.o \
-	engine/engine.o \
 	engine/collider.o \
+	engine/engine.o \
 	engine/fs.o \
 	engine/matrix_stack.o \
+	engine/object.o \
 	engine/objects.o \
+	engine/particle.o \
 	engine/physics.o \
 	engine/rigid_body.o \
 	engine/scene.o \

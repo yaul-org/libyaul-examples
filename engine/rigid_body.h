@@ -28,7 +28,7 @@ struct rigid_body {
         /* An extra force for gravity */
         fix16_vector2_t forces[RIGID_BODY_FORCES_MAX];
         uint32_t forces_cnt;
-};
+} __aligned(64);
 
 void rigid_body_init(struct rigid_body *, bool);
 void rigid_body_forces_add(struct rigid_body *, const fix16_vector2_t *);

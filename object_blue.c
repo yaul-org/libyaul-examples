@@ -27,6 +27,11 @@ static void on_draw(void);
 static void on_collision(struct object *, const struct collider_info *);
 static void on_trigger(struct object *);
 
+#define COMPONENT_JETPACK_STATE_PARTICLE_WAITING        0
+#define COMPONENT_JETPACK_STATE_PARTICLE_INIT           1
+#define COMPONENT_JETPACK_STATE_PARTICLE_BLAST_OFF      2
+#define COMPONENT_JETPACK_STATE_PARTICLE_DESTROY        3
+
 static void component_jetpack_on_init(void);
 static void component_jetpack_on_update(void);
 static bool component_jetpack_fncn_blasting(void);
@@ -57,17 +62,35 @@ static struct component_jetpack {
         COMPONENT_DECLARATIONS
 
         struct {
-                bool (*blasting)(void);
-                void (*blast_off)(void);
+                uint32_t m_state;
+                uint32_t m_last_state;
+
+                struct object_particle *m_object_particle_list[32];
+                uint32_t m_object_particle_count;
+        } data;
+
+        struct {
+                bool (*m_blasting)(void);
+                void (*m_blast_off)(void);
+                void (*m_explode)(void);
         } functions;
-} component_jetpack = {
+} _component_jetpack = {
         .active = true,
         .object = (const struct object *)&object_blue,
         .on_init = component_jetpack_on_init,
         .on_update = component_jetpack_on_update,
+        .data = {
+                .m_state = COMPONENT_JETPACK_STATE_PARTICLE_WAITING,
+                .m_last_state = COMPONENT_JETPACK_STATE_PARTICLE_WAITING,
+                .m_object_particle_list = {
+                        NULL
+                },
+                .m_object_particle_count = 0,
+        },
         .functions = {
-                .blasting = component_jetpack_fncn_blasting,
-                .blast_off = component_jetpack_fncn_blast_off
+                .m_blasting = component_jetpack_fncn_blasting,
+                .m_blast_off = component_jetpack_fncn_blast_off,
+                .m_explode = NULL
         }
 };
 
@@ -86,7 +109,7 @@ struct object_blue object_blue = {
         .rigid_body = &_rigid_body,
         .colliders = &_collider,
         .component_list = {
-                (struct component *)&component_jetpack
+                (struct component *)&_component_jetpack
         },
         .component_count = 1,
         .on_init = on_init,
@@ -107,6 +130,8 @@ on_init(void)
 {
         _state = BLUE_STATE_WAITING;
         _last_state = _state;
+
+        object_component_init((const struct object *)&object_blue);
 }
 
 static void
@@ -153,12 +178,80 @@ on_trigger(struct object *other __unused)
 static void
 component_jetpack_on_init(void)
 {
+        struct object_particle **object_particle_list;
+        object_particle_list = COMPONENT_PUBLIC_DATA(&_component_jetpack,
+            object_particle_list);
+
+        uint32_t object_particle_count;
+        object_particle_count = sizeof(COMPONENT_PUBLIC_DATA(
+                    &_component_jetpack, object_particle_list)) / sizeof(struct object *);
+
+        COMPONENT_PUBLIC_DATA(&_component_jetpack, object_particle_count) =
+            object_particle_count;
+
+        uint32_t object_idx;
+        for (object_idx = 0; object_idx < object_particle_count; object_idx++) {
+                struct object_particle *object_particle;
+                object_particle = particle_alloc();
+
+                object_particle_list[object_idx] = object_particle;
+        }
+
+        COMPONENT_PUBLIC_DATA(&_component_jetpack, state) =
+            COMPONENT_JETPACK_STATE_PARTICLE_WAITING;
+        COMPONENT_PUBLIC_DATA(&_component_jetpack, last_state) =
+            COMPONENT_JETPACK_STATE_PARTICLE_WAITING;
 }
 
 static void
 component_jetpack_on_update(void)
 {
         cons_buffer("Hello from component jetpack\n");
+
+        uint32_t object_idx;
+        object_idx = 0;
+
+        uint32_t object_particle_count;
+        object_particle_count = COMPONENT_PUBLIC_DATA(&_component_jetpack,
+            object_particle_count);
+        struct object_particle **object_particle_list;
+        object_particle_list = COMPONENT_PUBLIC_DATA(&_component_jetpack,
+            object_particle_list);
+
+        uint32_t *state;
+        state = &COMPONENT_PUBLIC_DATA(&_component_jetpack, state);
+
+        switch (*state) {
+        case COMPONENT_JETPACK_STATE_PARTICLE_WAITING:
+                *state = COMPONENT_JETPACK_STATE_PARTICLE_INIT;
+                break;
+        case COMPONENT_JETPACK_STATE_PARTICLE_INIT:
+                for (object_idx = 0; object_idx < object_particle_count;
+                     object_idx++) {
+                        struct object_particle *object_particle;
+                        object_particle = object_particle_list[object_idx];
+
+                        OBJECT(object_particle, active) = true;
+                        OBJECT(object_particle, id) = OBJECT_ID_PARTICLE_BEGIN + object_idx;
+
+                        objects_object_add((struct object *)object_particle);
+                }
+
+                *state = COMPONENT_JETPACK_STATE_PARTICLE_BLAST_OFF;
+                break;
+        case COMPONENT_JETPACK_STATE_PARTICLE_BLAST_OFF:
+                for (object_idx = 0; object_idx < object_particle_count;
+                     object_idx++) {
+                        struct object_particle *object_particle;
+                        object_particle = object_particle_list[object_idx];
+
+                        OBJECT(object_particle, transform).position.x =
+                            fix16_add(OBJECT(object_particle, transform).position.x, F16(1.0f));
+                }
+                break;
+        case COMPONENT_JETPACK_STATE_PARTICLE_DESTROY:
+                break;
+        }
 }
 
 static bool

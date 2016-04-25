@@ -10,8 +10,6 @@
 
 #include "blue.h"
 
-#define OBJECT_ID_CAMERA 0
-
 struct object_camera {
         OBJECT_DECLARATIONS
 

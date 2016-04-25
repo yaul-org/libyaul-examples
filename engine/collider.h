@@ -17,7 +17,7 @@ struct collider {
         bool trigger;
         bool fixed;
         struct aabb aabb;
-};
+} __aligned(32);
 
 struct collider_info {
         int16_t overlap;

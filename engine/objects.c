@@ -85,6 +85,7 @@ objects_object_add(struct object *object)
         TAILQ_INSERT_TAIL(&_object_ptrs_pool, object_ptr, op_entries);
 
         _cached_objects_dirty = true;
+        _cached_sorted_objects_dirty = true;
 }
 
 void
@@ -106,6 +107,7 @@ objects_object_remove(struct object *object)
                         TAILQ_REMOVE(&_object_ptrs_pool, object_ptr, op_entries);
 
                         _cached_objects_dirty = true;
+                        _cached_sorted_objects_dirty = true;
                         return;
                 }
         }

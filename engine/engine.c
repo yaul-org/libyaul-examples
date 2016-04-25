@@ -40,6 +40,7 @@ engine_init(void)
         fs_init();
         objects_init();
         scene_init();
+        particle_init();
         matrix_stack_init();
 }
 
@@ -79,15 +80,8 @@ objects_update(void)
 
                 OBJECT_CALL_EVENT(object, update);
 
-                /* Call its components */
-                uint32_t component_idx;
-                for (component_idx = 0;
-                     component_idx < OBJECT(object, component_count);
-                     component_idx++) {
-                        struct component *component;
-                        component = OBJECT(object, component_list)[component_idx];
-                        COMPONENT_CALL_EVENT(component, update);
-                }
+                /* Call the object's components */
+                object_component_update(object);
         }
 }
 
@@ -112,14 +106,7 @@ objects_draw(void)
                 OBJECT_CALL_EVENT(object, draw);
 
                 /* Call the object's components */
-                uint32_t component_idx;
-                for (component_idx = 0;
-                     component_idx < OBJECT(object, component_count);
-                     component_idx++) {
-                        struct component *component;
-                        component = OBJECT(object, component_list)[component_idx];
-                        COMPONENT_CALL_EVENT(component, draw);
-                }
+                object_component_draw(object);
         }
 }
 

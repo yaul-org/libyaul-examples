@@ -18,11 +18,11 @@
 #include "transform.h"
 #include "rigid_body.h"
 
-#define COMPONENT_LIST_MAX      8
+#define COMPONENT_LIST_MAX 8
 
 #define OBJECT_DECLARATIONS                                                    \
     bool active;                                                               \
-    uint32_t id;                                                               \
+    int32_t id;                                                                \
     /* Enable rendering or not */                                              \
     bool visible;                                                              \
     /* Vertex list is clockwise:                                               \
@@ -60,13 +60,13 @@
 } while (false)
 
 #define OBJECT(x, member)                                                      \
-        ((x)->CC_CONCAT(,member))
+        ((x)->CC_CONCAT(, member))
 
 #define OBJECT_COMPONENT(x, component)                                         \
-        ((x)->CC_CONCAT(,component))
+        ((x)->CC_CONCAT(, component))
 
 #define OBJECT_PUBLIC_DATA(x, member)                                          \
-        ((x)->data.CC_CONCAT(m_,member))
+        ((x)->data.CC_CONCAT(m_, member))
 
 #define OBJECT_CALL_PUBLIC_MEMBER(x, name, args...)                            \
         ((x))->functions.CC_CONCAT(m_, name)((struct object *)(x), ##args)
@@ -74,5 +74,9 @@
 struct object {
         OBJECT_DECLARATIONS
 } __may_alias;
+
+extern void object_component_init(const struct object *);
+extern void object_component_update(const struct object *);
+extern void object_component_draw(const struct object *);
 
 #endif /* !ENGINE_OBJECT_H */

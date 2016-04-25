@@ -21,6 +21,7 @@
 #include "engine/matrix_stack.h"
 #include "engine/object.h"
 #include "engine/objects.h"
+#include "engine/particle.h"
 #include "engine/physics.h"
 #include "engine/rigid_body.h"
 #include "engine/scene.h"

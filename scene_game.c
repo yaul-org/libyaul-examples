@@ -11,12 +11,13 @@
 #include "object_world.h"
 #include "object_blue.h"
 
-static struct {
-} _scene_game __unused;
-
 void
 scene_game_init(struct scene_ctx *scene_ctx __unused)
 {
+        OBJECT_CALL_EVENT(&object_camera, init);
+        OBJECT_CALL_EVENT(&object_world, init);
+        OBJECT_CALL_EVENT(&object_blue, init);
+
         objects_object_add((struct object *)&object_camera);
         objects_object_add((struct object *)&object_world);
         objects_object_add((struct object *)&object_blue);

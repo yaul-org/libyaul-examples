@@ -57,6 +57,8 @@ on_init(void)
 {
         _state = CAMERA_STATE_WAITING;
         _last_state = _state;
+
+        object_component_init((const struct object *)&object_camera);
 }
 
 static void
@@ -64,8 +66,8 @@ on_update(void)
 {
         cons_buffer("Hello from camera\n");
 
-        OBJECT(&object_camera, transform).position.x =
-            fix16_add(OBJECT(&object_camera, transform).position.x, F16(1.0f));
+        /* OBJECT(&object_camera, transform).position.x = */
+        /*     fix16_add(OBJECT(&object_camera, transform).position.x, F16(1.0f)); */
 
         switch (_state) {
         case CAMERA_STATE_WAITING:

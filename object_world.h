@@ -10,8 +10,6 @@
 
 #include "blue.h"
 
-#define OBJECT_ID_WORLD 1
-
 struct object_world {
         OBJECT_DECLARATIONS
 

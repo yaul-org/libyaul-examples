@@ -31,13 +31,13 @@ struct object;
 } while (false)
 
 #define COMPONENT(x, member)                                                   \
-        ((x)->CC_CONCAT(,member))
+        ((x)->CC_CONCAT(, member))
 
 #define COMPONENT_COMPONENT(x, component)                                      \
-        ((x)->CC_CONCAT(,component))
+        ((x)->CC_CONCAT(, component))
 
 #define COMPONENT_PUBLIC_DATA(x, member)                                       \
-        ((x)->data.CC_CONCAT(m_,member))
+        ((x)->data.CC_CONCAT(m_, member))
 
 #define COMPONENT_CALL_PUBLIC_MEMBER(x, name, args...)                         \
         ((x))->functions.CC_CONCAT(m_, name)((struct component *)(x), ##args)
