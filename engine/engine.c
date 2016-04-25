@@ -12,9 +12,6 @@
 
 #include "../engine.h"
 
-#define Z_MIN   0
-#define Z_MAX   15
-
 struct smpc_peripheral_digital digital_pad;
 
 uint32_t tick = 0;
@@ -81,6 +78,16 @@ objects_update(void)
                 object = objects[object_idx];
 
                 OBJECT_CALL_EVENT(object, update);
+
+                /* Call its components */
+                uint32_t component_idx;
+                for (component_idx = 0;
+                     component_idx < OBJECT(object, component_count);
+                     component_idx++) {
+                        struct component *component;
+                        component = &OBJECT(object, component_list)[component_idx];
+                        COMPONENT_CALL_EVENT(component, update);
+                }
         }
 }
 
@@ -98,8 +105,20 @@ objects_draw(void)
                 bool visible;
                 visible = OBJECT_COMPONENT(object, visible);
 
-                if (visible) {
-                        OBJECT_CALL_EVENT(object, draw);
+                if (!visible) {
+                        continue;
+                }
+
+                OBJECT_CALL_EVENT(object, draw);
+
+                /* Call the object's components */
+                uint32_t component_idx;
+                for (component_idx = 0;
+                     component_idx < OBJECT(object, component_count);
+                     component_idx++) {
+                        struct component *component;
+                        component = &OBJECT(object, component_list)[component_idx];
+                        COMPONENT_CALL_EVENT(component, draw);
                 }
         }
 }
@@ -132,9 +151,6 @@ objects_project(void)
         matrix_stack_mode(MATRIX_STACK_MODE_MODEL_VIEW);
         matrix_stack_load(&matrix_view);
 
-        const struct object **objects;
-        objects = objects_list();
-
         vdp1_cmdt_list_begin(0); {
                 struct vdp1_cmdt_system_clip_coord system_clip;
                 system_clip.scc_coord.x = camera->width - 1;
@@ -156,26 +172,15 @@ objects_project(void)
 
                 /* Draw in reversed order. Here we can take a shortcut and sort
                  * before projecting. */
+                const struct object **objects;
+                objects = objects_sorted_list();
 
-                int32_t z_value;
-                for (z_value = Z_MAX; z_value > 0; z_value--) {
-                        uint32_t object_idx;
-                        for (object_idx = 0; objects[object_idx] != NULL; object_idx++) {
-                                const struct object *object;
-                                object = objects[object_idx];
+                uint32_t object_idx;
+                for (object_idx = 0; objects[object_idx] != NULL; object_idx++) {
+                        const struct object *object;
+                        object = objects[object_idx];
 
-                                int32_t transform_z;
-                                transform_z = fix16_to_int(OBJECT_COMPONENT(
-                                            object, transform).position.z);
-
-                                bool project;
-                                project = OBJECT_COMPONENT(object, visible) &&
-                                    (transform_z == z_value);
-
-                                if (project) {
-                                        object_project(object);
-                                }
-                        }
+                        object_project(object);
                 }
 
                 vdp1_cmdt_end();

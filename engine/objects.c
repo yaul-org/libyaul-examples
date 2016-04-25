@@ -27,6 +27,8 @@ struct object_ptrs _object_ptrs_pool;
 /* Cached list of objects allocated */
 static bool _cached_objects_dirty = true;
 static struct object *_cached_objects[OBJECTS_MAX];
+static bool _cached_sorted_objects_dirty = true;
+static struct object *_cached_sorted_objects[OBJECTS_MAX];
 /* Cached list of objects last searched using objects_component_find() */
 static struct object *_cached_objects_component[OBJECTS_MAX];
 /* Cached pointer to camera component */
@@ -136,6 +138,46 @@ objects_list(void)
         _cached_objects_dirty = false;
 
         return (const struct object **)&_cached_objects[0];
+}
+
+const struct object **
+objects_sorted_list(void)
+{
+        assert(_initialized);
+
+        if (!_cached_sorted_objects_dirty) {
+                goto return_list;
+        }
+
+        uint32_t object_idx;
+        object_idx = 0;
+
+        int32_t z_value;
+        for (z_value = OBJECTS_Z_MAX; z_value > 0; z_value--) {
+                struct object_ptr *object_ptr;
+                object_ptr = NULL;
+
+                TAILQ_FOREACH (object_ptr, &_object_ptrs_pool, op_entries) {
+                        struct object *object;
+                        object = object_ptr->op_object;
+
+                        int32_t transform_z;
+                        transform_z = fix16_to_int(OBJECT_COMPONENT(
+                                    object, transform).position.z);
+
+                        if (transform_z == z_value) {
+                                _cached_sorted_objects[object_idx] = object;
+                                object_idx++;
+                        }
+                }
+        }
+
+        _cached_sorted_objects[object_idx] = NULL;
+
+        _cached_sorted_objects_dirty = false;
+
+return_list:
+        return (const struct object **)&_cached_sorted_objects[0];
 }
 
 void
