@@ -11,10 +11,10 @@
 #include <inttypes.h>
 #include <math.h>
 
-struct object;
+#include "component.h"
 
 struct camera {
-        struct object *object;
+        COMPONENT_DECLARATIONS
 
         uint16_t width;
         uint16_t height;

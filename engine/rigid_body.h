@@ -11,10 +11,12 @@
 #include <inttypes.h>
 #include <math.h>
 
-struct object;
+#include "component.h"
+
+#define RIGID_BODY_FORCES_MAX 4
 
 struct rigid_body {
-        struct object *object;
+        COMPONENT_DECLARATIONS
 
         bool kinematic;
 
@@ -23,7 +25,6 @@ struct rigid_body {
         fix16_vector2_t velocity;
         fix16_vector2_t acceleration;
 
-#define RIGID_BODY_FORCES_MAX    4
         /* An extra force for gravity */
         fix16_vector2_t forces[RIGID_BODY_FORCES_MAX];
         uint32_t forces_cnt;

@@ -22,7 +22,15 @@ TAILQ_HEAD(object_ptrs, object_ptr);
 
 static bool _initialized = false;
 struct object_ptrs _object_ptrs_pool;
-static struct object *_objects[OBJECTS_MAX];
+
+/* Caching */
+/* Cached list of objects allocated */
+static bool _cached_objects_dirty = true;
+static struct object *_cached_objects[OBJECTS_MAX];
+/* Cached list of objects last searched using objects_component_find() */
+static struct object *_cached_objects_component[OBJECTS_MAX];
+/* Cached pointer to camera component */
+static const struct camera *_cached_camera = NULL;
 
 MEMB(object_ptr_pool, struct object_ptr, OBJECTS_MAX,
     sizeof(struct object_ptr));
@@ -40,7 +48,7 @@ objects_init(void)
 
         uint32_t object_idx;
         for (object_idx = 0; object_idx < OBJECTS_MAX; object_idx++) {
-                _objects[object_idx] = NULL;
+                _cached_objects[object_idx] = NULL;
         }
 
         _initialized = true;
@@ -62,12 +70,19 @@ objects_object_add(struct object *object)
                 assert(cur_object->id != object->id);
         }
 
+        /* Caching */
+        if (object->camera != NULL) {
+                _cached_camera = object->camera;
+        }
+
         object_ptr = (struct object_ptr *)memb_alloc(&object_ptr_pool);
         assert(object_ptr != NULL);
 
         object_ptr->op_object = object;
 
         TAILQ_INSERT_TAIL(&_object_ptrs_pool, object_ptr, op_entries);
+
+        _cached_objects_dirty = true;
 }
 
 void
@@ -87,6 +102,8 @@ objects_object_remove(struct object *object)
                         assert(error_code == 0);
 
                         TAILQ_REMOVE(&_object_ptrs_pool, object_ptr, op_entries);
+
+                        _cached_objects_dirty = true;
                         return;
                 }
         }
@@ -99,32 +116,37 @@ objects_list(void)
 {
         assert(_initialized);
 
-        if (TAILQ_EMPTY(&_object_ptrs_pool)) {
-                _objects[0] = NULL;
+        if (_cached_objects_dirty) {
+                uint32_t object_idx;
+                object_idx = 0;
+
+                struct object_ptr *object_ptr;
+                object_ptr = NULL;
+                TAILQ_FOREACH (object_ptr, &_object_ptrs_pool, op_entries) {
+                        struct object *object;
+                        object = object_ptr->op_object;
+
+                        _cached_objects[object_idx] = object;
+                        object_idx++;
+                }
+
+                _cached_objects[object_idx] = NULL;
         }
 
-        uint32_t object_idx;
-        object_idx = 0;
+        _cached_objects_dirty = false;
 
-        struct object_ptr *object_ptr;
-        object_ptr = NULL;
-        TAILQ_FOREACH (object_ptr, &_object_ptrs_pool, op_entries) {
-                struct object *object;
-                object = object_ptr->op_object;
-
-                _objects[object_idx] = object;
-                object_idx++;
-        }
-
-        _objects[object_idx] = NULL;
-
-        return (const struct object **)&_objects[0];
+        return (const struct object **)&_cached_objects[0];
 }
 
 void
 objects_clear(void)
 {
         assert(_initialized);
+
+        /* Clear cached */
+        _cached_camera = NULL;
+        _cached_objects[0] = NULL;
+        _cached_objects_component[0] = NULL;
 
         while (!(TAILQ_EMPTY(&_object_ptrs_pool))) {
                 struct object_ptr *object_ptr;
@@ -137,3 +159,41 @@ objects_clear(void)
                 TAILQ_REMOVE(&_object_ptrs_pool, object_ptr, op_entries);
         }
 }
+
+const struct camera *
+objects_component_camera_find(void)
+{
+        return _cached_camera;
+}
+
+#if 0
+const struct object **
+objects_component_find(uint32_t component_offset)
+{
+        assert(_initialized);
+        assert(object != NULL);
+
+        uint32_t component_idx;
+        component_idx = 0;
+
+        _cached_objects_component[0] = NULL;
+
+        struct object_ptr *object_ptr;
+        object_ptr = NULL;
+        TAILQ_FOREACH (object_ptr, &_object_ptrs_pool, op_entries) {
+                struct object *object;
+                object = object_ptr->op_object;
+
+                if (object->component_count == 0) {
+                        continue;
+                }
+
+                if (object->component_list[offset].active) {
+                        _cached_objects_component[component_idx] =
+                            (const struct object *)object;
+                }
+        }
+
+        return (const struct object **)&_cached_objects_component[0];
+}
+#endif

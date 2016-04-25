@@ -11,10 +11,10 @@
 #include <inttypes.h>
 #include <math.h>
 
-struct object;
+#include "component.h"
 
 struct transform {
-        struct object *object;
+        COMPONENT_DECLARATIONS
 
         fix16_vector3_t position;
         const int16_vector2_t screen[4]; /* Do not modify directly */

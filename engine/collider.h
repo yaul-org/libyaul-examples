@@ -8,14 +8,12 @@
 #ifndef ENGINE_COLLIDER_H
 #define ENGINE_COLLIDER_H
 
+#include "component.h"
 #include "aabb.h"
 
-struct object;
-
 struct collider {
-        struct object *object;
+        COMPONENT_DECLARATIONS
 
-        uint32_t id;
         bool trigger;
         bool fixed;
         struct aabb aabb;

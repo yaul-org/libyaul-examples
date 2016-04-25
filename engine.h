@@ -16,6 +16,7 @@
 #include "engine/bounding_box.h"
 #include "engine/camera.h"
 #include "engine/collider.h"
+#include "engine/component.h"
 #include "engine/fs.h"
 #include "engine/matrix_stack.h"
 #include "engine/object.h"

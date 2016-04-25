@@ -27,7 +27,7 @@ static void objects_update(void) __unused;
 static void objects_draw(void) __unused;
 static void objects_project(void) __unused;
 
-static void object_project(const struct camera *, const struct object *);
+static void object_project(const struct object *);
 
 static void hardware_init(void);
 static void vblank_in_handler(irq_mux_handle_t *);
@@ -107,35 +107,33 @@ objects_draw(void)
 static void
 objects_project(void)
 {
+        /* Look for the camera component in the objects list and adjust the
+         * (inverse) view matrix */
         const struct camera *camera;
-        camera = NULL;
+
+        camera = objects_component_camera_find();
+        assert((camera != NULL) && "No camera found");
+
+        fix16_matrix3_t matrix_view;
+        fix16_matrix3_identity(&matrix_view);
+
+        /* Manipulating the camera in world space amounts to
+         * applying the inverse of transformations:
+         *
+         *     [R|t] = [R^T | -(R^T)t]
+         *
+         * Because all the affine transformations excluding
+         * translations are prohibited, R=I, the inverse view
+         * matrix is [I|-t]. */
+        matrix_view.frow[0][2] = -OBJECT_COMPONENT(camera->object, transform).position.x;
+        matrix_view.frow[1][2] = -OBJECT_COMPONENT(camera->object, transform).position.y;
+        matrix_view.frow[2][2] = -OBJECT_COMPONENT(camera->object, transform).position.z;
+
+        matrix_stack_mode(MATRIX_STACK_MODE_MODEL_VIEW);
+        matrix_stack_load(&matrix_view);
 
         const struct object **objects;
         objects = objects_list();
-
-        /* Look for the camera component in the objects list and adjust
-         * the (inverse) view matrix */
-        uint32_t object_idx;
-        for (object_idx = 0; objects[object_idx] != NULL; object_idx++) {
-                const struct object *object;
-                object = objects[object_idx];
-
-                if (object->camera != NULL) {
-                        camera = (const struct camera *)object->camera;
-
-                        fix16_matrix3_t matrix_view;
-                        fix16_matrix3_identity(&matrix_view);
-
-                        matrix_view.frow[0][2] = -OBJECT_COMPONENT(object, transform).position.x;
-                        matrix_view.frow[1][2] = -OBJECT_COMPONENT(object, transform).position.y;
-                        matrix_view.frow[2][2] = -OBJECT_COMPONENT(object, transform).position.z;
-
-                        matrix_stack_mode(MATRIX_STACK_MODE_MODEL_VIEW);
-                        matrix_stack_load(&matrix_view);
-                        break;
-                }
-        }
-        assert((camera != NULL) && "No camera found");
 
         vdp1_cmdt_list_begin(0); {
                 struct vdp1_cmdt_system_clip_coord system_clip;
@@ -156,10 +154,8 @@ objects_project(void)
                 vdp1_cmdt_user_clip_coord_set(&user_clip);
                 vdp1_cmdt_local_coord_set(&local);
 
-                /* Draw in reversed order. Here we can take a shortcut
-                 * and sort while projecting. */
-                const struct object **objects;
-                objects = objects_list();
+                /* Draw in reversed order. Here we can take a shortcut and sort
+                 * before projecting. */
 
                 int32_t z_value;
                 for (z_value = Z_MAX; z_value > 0; z_value--) {
@@ -169,14 +165,15 @@ objects_project(void)
                                 object = objects[object_idx];
 
                                 int32_t transform_z;
-                                transform_z = fix16_to_int(OBJECT_COMPONENT(object, transform).position.z);
+                                transform_z = fix16_to_int(OBJECT_COMPONENT(
+                                            object, transform).position.z);
 
                                 bool project;
                                 project = OBJECT_COMPONENT(object, visible) &&
                                     (transform_z == z_value);
 
                                 if (project) {
-                                        object_project(camera, object);
+                                        object_project(object);
                                 }
                         }
                 }
@@ -186,15 +183,20 @@ objects_project(void)
 }
 
 static void
-object_project(const struct camera *camera, const struct object *object)
+object_project(const struct object *object)
 {
+        const struct camera *camera;
+        camera = objects_component_camera_find();
+        assert((camera != NULL) && "No camera found");
+
         /* The camera should not be projected */
-        if (object->id == OBJECT_ID_CAMERA) {
+        if (camera->object == object) {
                 return;
         }
 
         /* Only objects with a vertex list should be projected */
-        if (OBJECT_COMPONENT(object, vertex_list) == NULL) {
+        if ((OBJECT_COMPONENT(object, vertex_list) == NULL) ||
+            (OBJECT_COMPONENT(object, vertex_count) != 4)) {
                 return;
         }
 
@@ -222,7 +224,6 @@ object_project(const struct camera *camera, const struct object *object)
                 for (i = 0; i < vertex_count; i++) {
                         const fix16_vector3_t *vertex;
                         vertex = &OBJECT_COMPONENT(object, vertex_list)[i];
-                        assert(vertex != NULL);
 
                         fix16_vector3_matrix3_multiply(matrix_model_view,
                             vertex, &vertex_mv[i]);

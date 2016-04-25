@@ -11,12 +11,12 @@
 #include <math.h>
 #include <inttypes.h>
 
+#include "component.h"
+
+#include "camera.h"
 #include "collider.h"
 #include "transform.h"
 #include "rigid_body.h"
-
-/* Reserved object IDs */
-#define OBJECT_ID_CAMERA        0
 
 #define OBJECT_DECLARATIONS                                                    \
     bool active;                                                               \
@@ -34,11 +34,13 @@
     /* Color list is one color per 4 vertices, dependent on                    \
      * vertex_count */                                                         \
     uint16_t *color_list;                                                      \
-    /* Components */                                                           \
+    /* Builtin Components */                                                   \
     struct transform transform;                                                \
     struct camera *camera;                                                     \
     struct collider *colliders;                                                \
     struct rigid_body *rigid_body;                                             \
+    struct component *component_list;                                          \
+    uint32_t component_count;                                                  \
     /* Events */                                                               \
     void (*on_init)(void);                                                     \
     void (*on_update)(void);                                                   \
