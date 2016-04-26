@@ -22,12 +22,12 @@ static const char *_particle_state2str[] __unused = {
 
 MEMB(_object_particle_pool, struct object_particle, PARTICLE_COUNT_MAX,
     sizeof(struct object_particle));
-MEMB(_collider_pool, struct object_particle, PARTICLE_COUNT_MAX,
+MEMB(_collider_pool, struct collider, PARTICLE_COUNT_MAX,
     sizeof(struct collider));
-MEMB(_rigid_body_pool, struct object_particle, PARTICLE_COUNT_MAX,
+MEMB(_rigid_body_pool, struct rigid_body, PARTICLE_COUNT_MAX,
     sizeof(struct rigid_body));
-MEMB(_color_list_pool, struct object_particle, PARTICLE_COUNT_MAX,
-    sizeof(struct rigid_body));
+MEMB(_color_list_pool, color_rgb_t, PARTICLE_COUNT_MAX,
+    sizeof(color_rgb_t));
 
 static void object_particle_on_init(void);
 static void object_particle_on_update(void);
@@ -94,11 +94,13 @@ particle_alloc(void)
         COMPONENT(rigid_body, active) = true;
         COMPONENT(rigid_body, object) = (const struct object *)object_particle;
 
-        uint16_t *color_list;
-        color_list = (uint16_t *)memb_alloc(&_color_list_pool);
+        color_rgb_t *color_list;
+        color_list = (color_rgb_t *)memb_alloc(&_color_list_pool);
         assert(color_list != NULL);
 
-        color_list[0] = COLOR_RGB888_TO_RGB555(255, 0, 0);
+        color_list[0].r = 31;
+        color_list[0].g = 0;
+        color_list[0].b = 0;
 
         OBJECT(object_particle, active) = false;
         OBJECT(object_particle, id) = -1;
@@ -124,6 +126,14 @@ particle_alloc(void)
         OBJECT(object_particle, on_collision) = NULL;
         OBJECT(object_particle, on_trigger) = NULL;
 
+        OBJECT_PUBLIC_DATA(object_particle, ttl) = 255;
+        OBJECT_PUBLIC_DATA(object_particle, color_from).r = 31;
+        OBJECT_PUBLIC_DATA(object_particle, color_from).g = 31;
+        OBJECT_PUBLIC_DATA(object_particle, color_from).b = 31;
+        OBJECT_PUBLIC_DATA(object_particle, color_to).r = 31;
+        OBJECT_PUBLIC_DATA(object_particle, color_to).g = 31;
+        OBJECT_PUBLIC_DATA(object_particle, color_to).b = 31;
+
         return object_particle;
 }
 
@@ -145,7 +155,7 @@ particle_free(struct object_particle *object_particle)
         COMPONENT(collider, active) = false;
         memb_free(&_collider_pool, collider);
 
-        uint16_t *color_list;
+        color_rgb_t *color_list;
         color_list = OBJECT(object_particle, color_list);
         assert(color_list != NULL);
         memb_free(&_color_list_pool, color_list);

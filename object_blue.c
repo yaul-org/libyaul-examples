@@ -44,8 +44,8 @@ static fix16_vector3_t _vertex_list[4] = {
         FIX16_VECTOR3_INITIALIZER(64.0f,  0.0f, 1.0f)
 };
 
-static uint16_t _color_list[1] = {
-        COLOR_RGB888_TO_RGB555(127, 127, 127)
+static color_rgb_t _color_list[1] = {
+        {{15, 15, 15}}
 };
 
 static struct collider _collider = {
@@ -194,6 +194,17 @@ component_jetpack_on_init(void)
                 struct object_particle *object_particle;
                 object_particle = particle_alloc();
 
+                OBJECT(object_particle, active) = false;
+                OBJECT_PUBLIC_DATA(object_particle, ttl) = 255;
+                OBJECT_PUBLIC_DATA(object_particle, color_from).r = 31;
+                OBJECT_PUBLIC_DATA(object_particle, color_from).g = 31;
+                OBJECT_PUBLIC_DATA(object_particle, color_from).b = 31;
+                OBJECT_PUBLIC_DATA(object_particle, color_to).r = 31;
+                OBJECT_PUBLIC_DATA(object_particle, color_to).g = 31;
+                OBJECT_PUBLIC_DATA(object_particle, color_to).b = 31;
+
+                OBJECT_CALL_EVENT(object_particle, init);
+
                 object_particle_list[object_idx] = object_particle;
         }
 
@@ -242,11 +253,8 @@ component_jetpack_on_update(void)
         case COMPONENT_JETPACK_STATE_PARTICLE_BLAST_OFF:
                 for (object_idx = 0; object_idx < object_particle_count;
                      object_idx++) {
-                        struct object_particle *object_particle;
+                        struct object_particle *object_particle __unused;
                         object_particle = object_particle_list[object_idx];
-
-                        OBJECT(object_particle, transform).position.x =
-                            fix16_add(OBJECT(object_particle, transform).position.x, F16(1.0f));
                 }
                 break;
         case COMPONENT_JETPACK_STATE_PARTICLE_DESTROY:

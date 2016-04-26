@@ -19,8 +19,10 @@ struct object_particle {
         struct {
         } functions;
 
-        const struct {
-                int16_t ttl;
+        struct {
+                int16_t m_ttl;
+                color_rgb_t m_color_from;
+                color_rgb_t m_color_to;
         } data;
 } __aligned(128);
 

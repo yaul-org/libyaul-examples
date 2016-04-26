@@ -251,7 +251,7 @@ object_project(const struct object *object)
                 polygon.cp_mode.raw = 0x0000;
                 polygon.cp_mode.transparent_pixel = true;
                 polygon.cp_mode.end_code = true;
-                polygon.cp_color = COLOR_RGB_DATA | OBJECT_COMPONENT(object, color_list)[0];
+                polygon.cp_color = COLOR_RGB_DATA | OBJECT_COMPONENT(object, color_list)[0].raw;
                 polygon.cp_grad = 0x00000000;
                 polygon.cp_vertex.a.x = (width / 2) - 1;
                 polygon.cp_vertex.a.y = -(height / 2);
