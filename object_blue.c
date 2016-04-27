@@ -21,11 +21,12 @@ static const char *_blue_state2str[] __unused = {
         "BLUE_STATE_DEAD"
 };
 
-static void on_init(void);
-static void on_update(void);
-static void on_draw(void);
-static void on_collision(struct object *, const struct collider_info *);
-static void on_trigger(struct object *);
+static void on_init(struct object *);
+static void on_update(struct object *);
+static void on_draw(struct object *);
+static void on_collision(struct object *, const struct object *,
+    const struct collider_info *);
+static void on_trigger(struct object *, const struct object *);
 
 #define COMPONENT_JETPACK_STATE_PARTICLE_WAITING        0
 #define COMPONENT_JETPACK_STATE_PARTICLE_INIT           1
@@ -126,17 +127,21 @@ static uint32_t _state;
 static uint32_t _last_state;
 
 static void
-on_init(void)
+on_init(struct object *this __unused)
 {
         _state = BLUE_STATE_WAITING;
         _last_state = _state;
 
         object_component_init((const struct object *)&object_blue);
+
+        THIS(object_blue, initialized) = true;
 }
 
 static void
-on_update(void)
+on_update(struct object *this)
 {
+        assert(THIS(object_blue, initialized));
+
         cons_buffer("Hello from blue\n");
 
         OBJECT(&object_blue, transform).position.x =
@@ -160,19 +165,23 @@ on_update(void)
 }
 
 static void
-on_draw(void)
+on_draw(struct object *this __unused)
 {
+        assert(THIS(object_blue, initialized));
 }
 
 static void
-on_collision(struct object *other __unused,
+on_collision(struct object *this,
+    const struct object *other __unused,
     const struct collider_info *info __unused)
 {
+        assert(THIS(object_blue, initialized));
 }
 
 static void
-on_trigger(struct object *other __unused)
+on_trigger(struct object *this, const struct object *other __unused)
 {
+        assert(THIS(object_blue, initialized));
 }
 
 static void

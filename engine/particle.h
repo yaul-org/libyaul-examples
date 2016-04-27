@@ -23,6 +23,7 @@ struct object_particle {
                 int16_t m_ttl;
                 color_rgb_t m_color_from;
                 color_rgb_t m_color_to;
+                fix16_vector2_t m_delta;
         } data;
 } __aligned(128);
 

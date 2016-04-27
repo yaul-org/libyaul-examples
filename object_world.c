@@ -15,9 +15,9 @@ static const char *_world_state2str[] __unused = {
         "WORLD_STATE_WAITING"
 };
 
-static void on_init(void);
-static void on_update(void);
-static void on_draw(void);
+static void on_init(struct object *);
+static void on_update(struct object *);
+static void on_draw(struct object *);
 
 struct object_world object_world = {
         .active = true,
@@ -33,6 +33,7 @@ struct object_world object_world = {
         .camera = NULL,
         .rigid_body = NULL,
         .colliders = NULL,
+        .initialized = false,
         .on_init = on_init,
         .on_update = on_update,
         .on_draw = on_draw,
@@ -47,17 +48,21 @@ static uint32_t _state;
 static uint32_t _last_state;
 
 static void
-on_init(void)
+on_init(struct object *this __unused)
 {
         _state = WORLD_STATE_WAITING;
         _last_state = _state;
 
         object_component_init((const struct object *)&object_world);
+
+        THIS(object_world, initialized) = true;
 }
 
 static void
-on_update(void)
+on_update(struct object *this __unused)
 {
+        assert(THIS(object_world, initialized));
+
         cons_buffer("Hello from world\n");
 
         switch (_state) {
@@ -69,6 +74,7 @@ on_update(void)
 }
 
 static void
-on_draw(void)
+on_draw(struct object *this __unused)
 {
+        assert(THIS(object_world, initialized));
 }

@@ -15,8 +15,8 @@ static const char *_camera_state2str[] __unused = {
         "CAMERA_STATE_WAITING"
 };
 
-static void on_init(void);
-static void on_update(void);
+static void on_init(struct object *);
+static void on_update(struct object *);
 
 static struct camera _camera = {
         .active = true,
@@ -53,17 +53,21 @@ static uint32_t _state;
 static uint32_t _last_state;
 
 static void
-on_init(void)
+on_init(struct object *this __unused)
 {
         _state = CAMERA_STATE_WAITING;
         _last_state = _state;
 
         object_component_init((const struct object *)&object_camera);
+
+        THIS(object_camera, initialized) = true;
 }
 
 static void
-on_update(void)
+on_update(struct object *this __unused)
 {
+        assert(THIS(object_camera, initialized));
+
         cons_buffer("Hello from camera\n");
 
         /* OBJECT(&object_camera, transform).position.x = */

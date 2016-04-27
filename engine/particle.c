@@ -29,9 +29,9 @@ MEMB(_rigid_body_pool, struct rigid_body, PARTICLE_COUNT_MAX,
 MEMB(_color_list_pool, color_rgb_t, PARTICLE_COUNT_MAX,
     sizeof(color_rgb_t));
 
-static void object_particle_on_init(void);
-static void object_particle_on_update(void);
-static void object_particle_on_draw(void);
+static void object_particle_on_init(struct object *);
+static void object_particle_on_update(struct object *);
+static void object_particle_on_draw(struct object *);
 
 static bool _initialized;
 
@@ -41,9 +41,6 @@ static fix16_vector3_t _vertex_list[4] = {
         FIX16_VECTOR3_INITIALIZER(4.0f, 4.0f, 1.0f),
         FIX16_VECTOR3_INITIALIZER(4.0f, 0.0f, 1.0f)
 };
-
-static uint32_t _state;
-static uint32_t _last_state;
 
 void
 particle_init(void)
@@ -119,6 +116,7 @@ particle_alloc(void)
         }
 
         OBJECT(object_particle, component_count) = 0;
+        OBJECT(object_particle, initialized) = false;
         OBJECT(object_particle, on_init) = object_particle_on_init;
         OBJECT(object_particle, on_update) = object_particle_on_update;
         OBJECT(object_particle, on_draw) = object_particle_on_draw;
@@ -126,13 +124,20 @@ particle_alloc(void)
         OBJECT(object_particle, on_collision) = NULL;
         OBJECT(object_particle, on_trigger) = NULL;
 
+        /* Public data */
         OBJECT_PUBLIC_DATA(object_particle, ttl) = 255;
+
         OBJECT_PUBLIC_DATA(object_particle, color_from).r = 31;
         OBJECT_PUBLIC_DATA(object_particle, color_from).g = 31;
         OBJECT_PUBLIC_DATA(object_particle, color_from).b = 31;
+
         OBJECT_PUBLIC_DATA(object_particle, color_to).r = 31;
         OBJECT_PUBLIC_DATA(object_particle, color_to).g = 31;
         OBJECT_PUBLIC_DATA(object_particle, color_to).b = 31;
+        OBJECT_PUBLIC_DATA(object_particle, color_to).b = 31;
+
+        OBJECT_PUBLIC_DATA(object_particle, delta).x = F16(0.0f);
+        OBJECT_PUBLIC_DATA(object_particle, delta).y = F16(0.0f);
 
         return object_particle;
 }
@@ -166,18 +171,22 @@ particle_free(struct object_particle *object_particle)
 }
 
 static void
-object_particle_on_init(void)
+object_particle_on_init(struct object *this __unused)
 {
-        _state = PARTICLE_STATE_WAITING;
-        _last_state = _state;
+        THIS(object_particle, initialized) = true;
+
+        /* Compute table of color HSV values */
+        /* Compute table of HSV to RGB mapping */
 }
 
 static void
-object_particle_on_update(void)
+object_particle_on_update(struct object *this __unused)
 {
+        assert(THIS(object_particle, initialized));
 }
 
 static void
-object_particle_on_draw(void)
+object_particle_on_draw(struct object *this __unused)
 {
+        assert(THIS(object_particle, initialized));
 }

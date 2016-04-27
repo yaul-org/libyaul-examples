@@ -43,18 +43,22 @@
     struct rigid_body *rigid_body;                                             \
     struct component *component_list[COMPONENT_LIST_MAX];                      \
     uint32_t component_count;                                                  \
+    /* If it's been initialized or not (call to "init" event) */               \
+    bool initialized;                                                          \
     /* Events */                                                               \
-    void (*on_init)(void);                                                     \
-    void (*on_update)(void);                                                   \
-    void (*on_draw)(void);                                                     \
-    void (*on_destroy)(void);                                                  \
-    void (*on_collision)(struct object *, const struct collider_info *);       \
-    void (*on_trigger)(struct object *);
+    void (*on_init)(struct object *);                                          \
+    void (*on_update)(struct object *);                                        \
+    void (*on_draw)(struct object *);                                          \
+    void (*on_destroy)(struct object *);                                       \
+    void (*on_collision)(struct object *, const struct object *,               \
+        const struct collider_info *);                                         \
+    void (*on_trigger)(struct object *, const struct object *);
 
 #define OBJECT_CALL_EVENT(x, name, args...) do {                               \
         if (((struct object *)(x))->CC_CONCAT(on_, name) != NULL) {            \
             if (((struct object *)(x))->active) {                              \
-                    ((struct object *)(x))->CC_CONCAT(on_, name)(##args);      \
+                    ((struct object *)(x))->CC_CONCAT(on_, name)(              \
+                            (struct object *)(x), ##args);                     \
             }                                                                  \
         }                                                                      \
 } while (false)
@@ -70,6 +74,25 @@
 
 #define OBJECT_CALL_PUBLIC_MEMBER(x, name, args...)                            \
         ((x))->functions.CC_CONCAT(m_, name)((struct object *)(x), ##args)
+
+#define THIS(type, member)                                                     \
+        (((struct type *)this)->CC_CONCAT(, member))
+
+#define THIS_COMPONENT(type, component)                                        \
+        (((struct type *)this)->CC_CONCAT(, component))
+
+#define THIS_PUBLIC_DATA(type, member)                                         \
+        (((struct type *)this)->data.CC_CONCAT(m_, member))
+
+#define THIS_PRIVATE_DATA(type, member)                                        \
+        (((struct type *)this)->private_data.CC_CONCAT(m_, member))
+
+#define THIS_CALL_PUBLIC_MEMBER(type, name, args...)                           \
+        ((struct type *)this)->functions.CC_CONCAT(m_, name)(this, ##args)
+
+#define THIS_CALL_PRIVATE_MEMBER(type, name, args...)                          \
+        ((struct type *)this)->private_functions.CC_CONCAT(m_, name)(this,     \
+            ##args)
 
 struct object {
         OBJECT_DECLARATIONS
