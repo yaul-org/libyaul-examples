@@ -14,20 +14,21 @@
 
 #define OBJECTS_DEPTH_MAX 3
 
-struct object_ptr;
+struct object_tree_node;
 
-TAILQ_HEAD(object_ptrs, object_ptr);
+TAILQ_HEAD(object_tree, object_tree_node);
 
-struct object_ptr {
-        const struct object *op_object;
-        struct object_ptrs op_children;
+struct object_tree_node {
         uint32_t op_depth;
+        const struct object *op_object;
+        const struct transform *op_transform;
+        struct object_tree op_children;
 
-        TAILQ_ENTRY(object_ptr) op_entries;
-} __aligned(256);
+        TAILQ_ENTRY(object_tree_node) op_entries;
+} __aligned(32);
 
 static bool _initialized = false;
-struct object_ptrs _object_ptrs;
+struct object_tree _object_tree;
 
 /* Caching */
 /* Cached list of objects allocated */
@@ -43,15 +44,18 @@ static struct object *_cached_objects_component[OBJECTS_MAX];
 /* Cached pointer to camera component */
 static const struct camera *_cached_camera = NULL;
 
-MEMB(_object_ptr_pool, struct object_ptr, OBJECTS_MAX,
-    sizeof(struct object_ptr));
+MEMB(_object_tree_node_pool, struct object_tree_node, OBJECTS_MAX,
+    sizeof(struct object_tree_node));
 
-static struct object_ptr *traverse_object_ptr_find(struct object_ptr *,
+MEMB(_transform_pool, struct transform, OBJECTS_MAX,
+    sizeof(struct transform));
+
+static struct object_tree_node *traverse_object_tree_node_find(struct object_tree_node *,
     const struct object *);
-static uint32_t traverse_object_ptr_populate(struct object_ptr *,
+static uint32_t traverse_object_tree_node_populate(struct object_tree_node *,
     struct objects *);
-static void traverse_object_ptr_remove(struct object_ptr *,
-    struct object_ptrs *);
+static void traverse_object_tree_node_remove(struct object_tree_node *,
+    struct object_tree *);
 
 /*
  * Initialize objects system.
@@ -63,9 +67,10 @@ objects_init(void)
                 return;
         }
 
-        TAILQ_INIT(&_object_ptrs);
+        TAILQ_INIT(&_object_tree);
 
-        memb_init(&_object_ptr_pool);
+        memb_init(&_object_tree_node_pool);
+        memb_init(&_transform_pool);
 
         uint32_t object_idx;
         for (object_idx = 0; object_idx < OBJECTS_MAX; object_idx++) {
@@ -82,11 +87,11 @@ objects_object_add(const struct object *object)
         assert(_initialized);
         assert(object != NULL);
 
-        struct object_ptr *iter_object_ptr;
-        iter_object_ptr = NULL;
-        TAILQ_FOREACH (iter_object_ptr, &_object_ptrs, op_entries) {
+        struct object_tree_node *iter_object_tree_node;
+        iter_object_tree_node = NULL;
+        TAILQ_FOREACH (iter_object_tree_node, &_object_tree, op_entries) {
                 const struct object *cur_object;
-                cur_object = iter_object_ptr->op_object;
+                cur_object = iter_object_tree_node->op_object;
 
                 /* No duplicate objects can be added */
                 assert(cur_object->id != object->id);
@@ -97,15 +102,16 @@ objects_object_add(const struct object *object)
                 _cached_camera = object->camera;
         }
 
-        struct object_ptr *object_ptr;
-        object_ptr = (struct object_ptr *)memb_alloc(&_object_ptr_pool);
-        assert(object_ptr != NULL);
+        struct object_tree_node *object_tree_node;
+        object_tree_node = (struct object_tree_node *)memb_alloc(&_object_tree_node_pool);
+        assert(object_tree_node != NULL);
 
-        object_ptr->op_object = object;
-        TAILQ_INIT(&object_ptr->op_children);
-        object_ptr->op_depth = 1;
+        object_tree_node->op_object = object;
+        object_tree_node->op_transform = NULL;
+        TAILQ_INIT(&object_tree_node->op_children);
+        object_tree_node->op_depth = 1;
 
-        TAILQ_INSERT_TAIL(&_object_ptrs, object_ptr, op_entries);
+        TAILQ_INSERT_TAIL(&_object_tree, object_tree_node, op_entries);
 
         _cached_objects_dirty = true;
         _cached_sorted_objects_dirty = true;
@@ -126,43 +132,43 @@ objects_object_child_add(const struct object *object,
         assert(object != NULL);
         assert(child_object != NULL);
 
-        struct object_ptr *object_ptr;
-        object_ptr = NULL;
+        struct object_tree_node *object_tree_node;
+        object_tree_node = NULL;
 
-        struct object_ptr *iter_object_ptr;
+        struct object_tree_node *iter_object_tree_node;
 
         /* Look for the corresponding object */
-        TAILQ_FOREACH (iter_object_ptr, &_object_ptrs, op_entries) {
+        TAILQ_FOREACH (iter_object_tree_node, &_object_tree, op_entries) {
                 const struct object *cur_object;
-                cur_object = iter_object_ptr->op_object;
+                cur_object = iter_object_tree_node->op_object;
 
                 if (cur_object == object) {
-                        object_ptr = iter_object_ptr;
+                        object_tree_node = iter_object_tree_node;
                         break;
                 }
         }
-        assert(object_ptr != NULL);
+        assert(object_tree_node != NULL);
 
         /* Check for duplicates in object's children */
-        TAILQ_FOREACH (iter_object_ptr, &object_ptr->op_children, op_entries) {
+        TAILQ_FOREACH (iter_object_tree_node, &object_tree_node->op_children, op_entries) {
                 const struct object *cur_object;
-                cur_object = iter_object_ptr->op_object;
+                cur_object = iter_object_tree_node->op_object;
 
                 /* No duplicate objects can be added */
                 assert(cur_object->id != object->id);
         }
 
         /* Allocate child object */
-        struct object_ptr *child_object_ptr;
-        child_object_ptr = (struct object_ptr *)memb_alloc(&_object_ptr_pool);
-        assert(child_object_ptr != NULL);
+        struct object_tree_node *child_object_tree_node;
+        child_object_tree_node = (struct object_tree_node *)memb_alloc(&_object_tree_node_pool);
+        assert(child_object_tree_node != NULL);
 
         /* Assert we don't have a "tall" tree */
-        assert((object_ptr->op_depth + 1) <= OBJECTS_DEPTH_MAX);
+        assert((object_tree_node->op_depth + 1) <= OBJECTS_DEPTH_MAX);
 
-        child_object_ptr->op_object = child_object;
-        child_object_ptr->op_depth = object_ptr->op_depth + 1;
-        TAILQ_INSERT_TAIL(&object_ptr->op_children, child_object_ptr,
+        child_object_tree_node->op_object = child_object;
+        child_object_tree_node->op_depth = object_tree_node->op_depth + 1;
+        TAILQ_INSERT_TAIL(&object_tree_node->op_children, child_object_tree_node,
             op_entries);
 
         _cached_objects_dirty = true;
@@ -178,13 +184,13 @@ objects_object_remove(const struct object *object)
         assert(_initialized);
         assert(object != NULL);
 
-        while (!(TAILQ_EMPTY(&_object_ptrs))) {
-                struct object_ptr *object_ptr;
-                object_ptr = TAILQ_FIRST(&_object_ptrs);
+        while (!(TAILQ_EMPTY(&_object_tree))) {
+                struct object_tree_node *object_tree_node;
+                object_tree_node = TAILQ_FIRST(&_object_tree);
 
-                if (object_ptr->op_object == object) {
+                if (object_tree_node->op_object == object) {
                         /* Clear children */
-                        traverse_object_ptr_remove(object_ptr, &_object_ptrs);
+                        traverse_object_tree_node_remove(object_tree_node, &_object_tree);
 
                         _cached_objects_dirty = true;
                         _cached_sorted_objects_dirty = true;
@@ -207,20 +213,20 @@ objects_object_child_remove(const struct object *object,
         assert(child_object != NULL);
 
         /* Search for object */
-        while (!(TAILQ_EMPTY(&_object_ptrs))) {
-                struct object_ptr *object_ptr;
-                object_ptr = TAILQ_FIRST(&_object_ptrs);
+        while (!(TAILQ_EMPTY(&_object_tree))) {
+                struct object_tree_node *object_tree_node;
+                object_tree_node = TAILQ_FIRST(&_object_tree);
 
-                if (object_ptr->op_object == object) {
+                if (object_tree_node->op_object == object) {
                         /* Search for child object */
-                        struct object_ptr *child_object_ptr;
-                        child_object_ptr = traverse_object_ptr_find(object_ptr,
+                        struct object_tree_node *child_object_tree_node;
+                        child_object_tree_node = traverse_object_tree_node_find(object_tree_node,
                             child_object);
-                        assert(child_object_ptr != NULL);
+                        assert(child_object_tree_node != NULL);
 
                         /* Remove sub-tree */
-                        traverse_object_ptr_remove(child_object_ptr,
-                            &object_ptr->op_children);
+                        traverse_object_tree_node_remove(child_object_tree_node,
+                            &object_tree_node->op_children);
 
                         _cached_objects_dirty = true;
                         _cached_sorted_objects_dirty = true;
@@ -243,13 +249,13 @@ objects_list(void)
                 _cached_objects[0].parent = NULL;
                 _cached_objects[0].object = NULL;
 
-                struct object_ptr *iter_object_ptr;
-                TAILQ_FOREACH (iter_object_ptr, &_object_ptrs, op_entries) {
+                struct object_tree_node *iter_object_tree_node;
+                TAILQ_FOREACH (iter_object_tree_node, &_object_tree, op_entries) {
                         /* Make sure we don't buffer overflow */
                         assert((object_idx + 1) < OBJECTS_MAX);
 
-                        object_idx += traverse_object_ptr_populate(
-                                iter_object_ptr, &_cached_objects[object_idx]);
+                        object_idx += traverse_object_tree_node_populate(
+                                iter_object_tree_node, &_cached_objects[object_idx]);
                         _cached_objects[object_idx + 1].parent = NULL;
                         _cached_objects[object_idx + 1].object = NULL;
                 }
@@ -321,11 +327,11 @@ objects_clear(void)
         _cached_sorted_objects[0].object = NULL;
         _cached_objects_component[0] = NULL;
 
-        while (!(TAILQ_EMPTY(&_object_ptrs))) {
-                struct object_ptr *object_ptr;
-                object_ptr = TAILQ_FIRST(&_object_ptrs);
+        while (!(TAILQ_EMPTY(&_object_tree))) {
+                struct object_tree_node *object_tree_node;
+                object_tree_node = TAILQ_FIRST(&_object_tree);
 
-                traverse_object_ptr_remove(object_ptr, &_object_ptrs);
+                traverse_object_tree_node_remove(object_tree_node, &_object_tree);
         }
 }
 
@@ -343,73 +349,75 @@ objects_component_camera_find(void)
  *
  *   - Object is not found
  */
-static struct object_ptr *
-traverse_object_ptr_find(struct object_ptr *object_ptr,
+static struct object_tree_node *
+traverse_object_tree_node_find(struct object_tree_node *object_tree_node,
     const struct object *object)
 {
         static uint32_t depth = 1;
 
-        assert(object_ptr != NULL);
+        assert(object_tree_node != NULL);
         assert(object != NULL);
         assert(depth <= OBJECTS_DEPTH_MAX);
 
         /* Visit */
-        if (object_ptr->op_object == object) {
-                return object_ptr;
+        if (object_tree_node->op_object == object) {
+                return object_tree_node;
         }
 
-        if ((TAILQ_EMPTY(&object_ptr->op_children))) {
+        if ((TAILQ_EMPTY(&object_tree_node->op_children))) {
                 return NULL;
         }
 
         depth++;
 
-        struct object_ptr *child_object_ptr;
-        child_object_ptr = NULL;
+        struct object_tree_node *child_object_tree_node;
+        child_object_tree_node = NULL;
 
-        struct object_ptr *iter_object_ptr;
-        TAILQ_FOREACH (iter_object_ptr, &object_ptr->op_children, op_entries) {
-                if ((child_object_ptr = traverse_object_ptr_find(
-                                iter_object_ptr, object)) != NULL) {
+        struct object_tree_node *iter_object_tree_node;
+        TAILQ_FOREACH (iter_object_tree_node, &object_tree_node->op_children,
+            op_entries) {
+                if ((child_object_tree_node = traverse_object_tree_node_find(
+                                iter_object_tree_node, object)) != NULL) {
                         break;
                 }
         }
 
         depth--;
 
-        return child_object_ptr;
+        return child_object_tree_node;
 }
 
 /*
  * Remove object and its children from the tree.
  */
 static void
-traverse_object_ptr_remove(struct object_ptr *object_ptr,
-    struct object_ptrs *object_ptrs)
+traverse_object_tree_node_remove(struct object_tree_node *object_tree_node,
+    struct object_tree *object_tree)
 {
         static uint32_t depth = 1;
 
-        assert(object_ptrs != NULL);
-        assert(object_ptr != NULL);
+        assert(object_tree != NULL);
+        assert(object_tree_node != NULL);
         assert(depth <= OBJECTS_DEPTH_MAX);
 
         /* Visit */
-        TAILQ_REMOVE(object_ptrs, object_ptr, op_entries);
+        TAILQ_REMOVE(object_tree, object_tree_node, op_entries);
 
         int error_code;
-        error_code = memb_free(&_object_ptr_pool, object_ptr);
+        error_code = memb_free(&_object_tree_node_pool, object_tree_node);
         assert(error_code == 0);
 
-        if ((TAILQ_EMPTY(&object_ptr->op_children))) {
+        if ((TAILQ_EMPTY(&object_tree_node->op_children))) {
                 return;
         }
 
         depth++;
 
-        struct object_ptr *iter_object_ptr;
-        TAILQ_FOREACH (iter_object_ptr, &object_ptr->op_children, op_entries) {
-                traverse_object_ptr_remove(iter_object_ptr,
-                    &object_ptr->op_children);
+        struct object_tree_node *iter_object_tree_node;
+        TAILQ_FOREACH (iter_object_tree_node, &object_tree_node->op_children,
+            op_entries) {
+                traverse_object_tree_node_remove(iter_object_tree_node,
+                    &object_tree_node->op_children);
         }
 
         depth--;
@@ -422,32 +430,40 @@ traverse_object_ptr_remove(struct object_ptr *object_ptr,
  * returned.
  */
 static uint32_t
-traverse_object_ptr_populate(struct object_ptr *object_ptr,
+traverse_object_tree_node_populate(struct object_tree_node *object_tree_node,
     struct objects *objects)
 {
         static uint32_t depth = 1;
+        static const struct object *parent = NULL;
 
-        assert(object_ptr != NULL);
+        assert(object_tree_node != NULL);
         assert(objects != NULL);
         assert(depth <= OBJECTS_DEPTH_MAX);
 
-        /* Visit */
-        objects[0].parent = NULL;
-        objects[0].object = object_ptr->op_object;
+        if (depth == 1) {
+                parent = NULL;
+        }
 
-        if ((TAILQ_EMPTY(&object_ptr->op_children))) {
+        /* Visit */
+        objects[0].parent = parent;
+        objects[0].object = object_tree_node->op_object;
+
+        if ((TAILQ_EMPTY(&object_tree_node->op_children))) {
                 return 1;
         }
+
+        parent = object_tree_node->op_object;
 
         depth++;
 
         uint32_t object_idx;
         object_idx = 0;
 
-        struct object_ptr *iter_object_ptr;
-        TAILQ_FOREACH (iter_object_ptr, &object_ptr->op_children, op_entries) {
-                object_idx += traverse_object_ptr_populate(iter_object_ptr,
-                    &objects[object_idx + 1]);
+        struct object_tree_node *iter_object_tree_node;
+        TAILQ_FOREACH (iter_object_tree_node, &object_tree_node->op_children,
+            op_entries) {
+                object_idx += traverse_object_tree_node_populate(
+                        iter_object_tree_node, &objects[object_idx + 1]);
         }
 
         depth--;

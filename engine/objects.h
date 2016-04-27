@@ -21,6 +21,7 @@
 struct objects {
         const struct object *parent;
         const struct object *object;
+        const struct transform *transform;
 };
 
 extern void objects_init(void);

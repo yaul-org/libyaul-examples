@@ -17,7 +17,6 @@ struct transform {
         COMPONENT_DECLARATIONS
 
         fix16_vector3_t position;
-        const int16_vector2_t screen[4]; /* Do not modify directly */
-} transform;
+} __aligned(32);
 
 #endif /* !ENGINE_TRANSFORM_H */
