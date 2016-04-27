@@ -13,144 +13,151 @@
 
 #define STATES_MAX 16
 
-struct state;
+struct scene;
 
-TAILQ_HEAD(states, state);
+TAILQ_HEAD(scenes, scene);
 
-struct state {
+struct scene {
         struct scene_ctx scene_ctx;
 
-        const char *state_name;
+        const char *scene_name;
 
-        uint32_t state_id;
+        uint32_t scene_id;
 
-        void (*state_init)(struct scene_ctx *);
-        void (*state_update)(struct scene_ctx *);
-        void (*state_draw)(struct scene_ctx *);
-        void (*state_exit)(struct scene_ctx *);
+        void (*scene_init)(struct scene_ctx *);
+        void (*scene_update)(struct scene_ctx *);
+        void (*scene_draw)(struct scene_ctx *);
+        void (*scene_exit)(struct scene_ctx *);
 
-        TAILQ_ENTRY(state) entries;
+        TAILQ_ENTRY(scene) entries;
 };
 
-static struct {
-        bool initialized;
-
-        struct states states;
-
-        struct state *prev_state;
-        struct state *cur_state;
-} _state;
+static bool _initialized = false;
+static struct scenes _scenes;
+static struct scene *_prev_scene = NULL;
+static struct scene *_cur_scene = NULL;
 
 void
 scene_init(void)
 {
-        if (_state.initialized) {
+        if (_initialized) {
                 return;
         }
 
-        TAILQ_INIT(&_state.states);
+        TAILQ_INIT(&_scenes);
 
-        _state.prev_state = NULL;
-        _state.cur_state = NULL;
+        _prev_scene = NULL;
+        _cur_scene = NULL;
 
-        _state.initialized = true;
+        _initialized = true;
 }
 
 void
-scene_add(const char *state_name, uint32_t state_id,
-    void (*state_init)(struct scene_ctx *),
-    void (*state_update)(struct scene_ctx *),
-    void (*state_draw)(struct scene_ctx *),
-    void (*state_exit)(struct scene_ctx *),
+scene_add(const char *scene_name, uint32_t scene_id,
+    void (*scene_init)(struct scene_ctx *),
+    void (*scene_update)(struct scene_ctx *),
+    void (*scene_draw)(struct scene_ctx *),
+    void (*scene_exit)(struct scene_ctx *),
     void *data)
 {
-        assert(_state.initialized);
+        assert(_initialized);
 
-        struct state *state;
-        state = (struct state *)malloc(sizeof(struct state));
-        assert(state != NULL);
+        struct scene *scene;
+        scene = (struct scene *)malloc(sizeof(struct scene));
+        assert(scene != NULL);
 
-        state->state_name = state_name;
-        state->state_id = state_id;
-        state->state_init = state_init;
-        state->state_update = state_update;
-        state->state_draw = state_draw;
-        state->state_exit = state_exit;
+        scene->scene_name = scene_name;
+        scene->scene_id = scene_id;
+        scene->scene_init = scene_init;
+        scene->scene_update = scene_update;
+        scene->scene_draw = scene_draw;
+        scene->scene_exit = scene_exit;
 
-        /* Initialize state context */
-        state->scene_ctx.sc_frames = 0;
-        state->scene_ctx.sc_data = data;
+        /* Initialize scene context */
+        scene->scene_ctx.sc_frames = 0;
+        scene->scene_ctx.sc_data = data;
 
-        TAILQ_INSERT_TAIL(&_state.states, state, entries);
+        TAILQ_INSERT_TAIL(&_scenes, scene, entries);
 }
 
 void
-scene_transition(uint32_t state_id)
+scene_transition(uint32_t scene_id)
 {
-        assert(_state.initialized);
+        assert(_initialized);
 
-        _state.prev_state = _state.cur_state;
+        _prev_scene = _cur_scene;
 
-        struct state *prev_state;
-        prev_state = _state.prev_state;
-        if (prev_state != NULL) {
-                if (prev_state->state_exit != NULL) {
-                        prev_state->state_exit(&prev_state->scene_ctx);
+        struct scene *prev_scene;
+        prev_scene = _prev_scene;
+        if (prev_scene != NULL) {
+                if (prev_scene->scene_exit != NULL) {
+                        prev_scene->scene_exit(&prev_scene->scene_ctx);
                 }
 
-                prev_state->scene_ctx.sc_frames = 0;
+                prev_scene->scene_ctx.sc_frames = 0;
         }
 
-        /* Check if transitioning state is valid */
-        struct state *state;
+        /* Check if transitioning scene is valid */
+        struct scene *scene;
 
-        bool state_found;
-        state_found = false;
-        TAILQ_FOREACH (state, &_state.states, entries) {
-                if (state->state_id == state_id) {
-                        state_found = true;
+        bool scene_found;
+        scene_found = false;
+        TAILQ_FOREACH (scene, &_scenes, entries) {
+                if (scene->scene_id == scene_id) {
+                        scene_found = true;
                         break;
                 }
         }
-        assert(state_found);
-        _state.cur_state = state;
+        assert(scene_found);
+        _cur_scene = scene;
 
-        struct state *cur_state;
-        cur_state = _state.cur_state;
+        struct scene *cur_scene;
+        cur_scene = _cur_scene;
 
-        if (cur_state->state_init != NULL) {
-                cur_state->state_init(&cur_state->scene_ctx);
+        if (cur_scene->scene_init != NULL) {
+                cur_scene->scene_init(&cur_scene->scene_ctx);
         }
+}
+
+uint32_t
+scene_current(void)
+{
+        assert(_initialized);
+
+        struct scene *scene;
+        scene = _cur_scene;
+
+        return scene->scene_id;
 }
 
 void
 scene_handler_update(void)
 {
-        assert(_state.initialized);
+        assert(_initialized);
 
-        struct state *state;
-        state = _state.cur_state;
+        struct scene *scene;
+        scene = _cur_scene;
 
-        state->scene_ctx.sc_frames++;
+        scene->scene_ctx.sc_frames++;
 
-        if (state->state_update != NULL) {
-                state->state_update(&state->scene_ctx);
+        if (scene->scene_update != NULL) {
+                scene->scene_update(&scene->scene_ctx);
         }
 }
 
 void
 scene_handler_draw(void)
 {
-        assert(_state.initialized);
+        assert(_initialized);
 
-        struct state *state;
-        state = _state.cur_state;
+        struct scene *scene;
+        scene = _cur_scene;
 
-        if (state->scene_ctx.sc_frames == 0) {
+        if (scene->scene_ctx.sc_frames == 0) {
                 return;
         }
 
-        if (state->state_draw != NULL) {
-                state->state_draw(&state->scene_ctx);
+        if (scene->scene_draw != NULL) {
+                scene->scene_draw(&scene->scene_ctx);
         }
 }

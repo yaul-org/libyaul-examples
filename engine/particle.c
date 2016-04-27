@@ -139,9 +139,6 @@ particle_alloc(void)
         OBJECT_PUBLIC_DATA(object_particle, delta).x = F16(0.0f);
         OBJECT_PUBLIC_DATA(object_particle, delta).y = F16(0.0f);
 
-        fix16_vector3_dup(&OBJECT_PRIVATE_DATA(object_particle, orig_position),
-            &COMPONENT(transform, position));
-
         return object_particle;
 }
 

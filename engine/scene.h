@@ -33,13 +33,13 @@ struct scene_ctx {
         void *sc_data;
 };
 
-void scene_init(void);
-void scene_transition(uint32_t);
-void scene_handler_update(void);
-void scene_handler_draw(void);
-
-void scene_add(const char *, uint32_t, void (*)(struct scene_ctx *),
+extern uint32_t scene_current(void);
+extern void scene_add(const char *, uint32_t, void (*)(struct scene_ctx *),
     void (*)(struct scene_ctx *), void (*)(struct scene_ctx *),
     void (*)(struct scene_ctx *), void *);
+extern void scene_handler_draw(void);
+extern void scene_handler_update(void);
+extern void scene_init(void);
+extern void scene_transition(uint32_t);
 
 #endif /* !SCENE_H */
