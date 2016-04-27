@@ -204,15 +204,19 @@ component_jetpack_on_init(void)
                 object_particle = particle_alloc();
 
                 OBJECT(object_particle, active) = false;
-                OBJECT_PUBLIC_DATA(object_particle, ttl) = 255;
+                OBJECT(object_particle, id) = OBJECT_ID_PARTICLE_BEGIN + object_idx;
+
+                OBJECT_PUBLIC_DATA(object_particle, ttl) = 5;
                 OBJECT_PUBLIC_DATA(object_particle, color_from).r = 31;
                 OBJECT_PUBLIC_DATA(object_particle, color_from).g = 31;
                 OBJECT_PUBLIC_DATA(object_particle, color_from).b = 31;
                 OBJECT_PUBLIC_DATA(object_particle, color_to).r = 31;
                 OBJECT_PUBLIC_DATA(object_particle, color_to).g = 31;
                 OBJECT_PUBLIC_DATA(object_particle, color_to).b = 31;
+                OBJECT_PUBLIC_DATA(object_particle, delta).x = F16(0.0f);
+                OBJECT_PUBLIC_DATA(object_particle, delta).y = F16(0.0f);
 
-                OBJECT_CALL_EVENT(object_particle, init);
+                OBJECT_INIT(object_particle);
 
                 object_particle_list[object_idx] = object_particle;
         }
@@ -252,7 +256,6 @@ component_jetpack_on_update(void)
                         object_particle = object_particle_list[object_idx];
 
                         OBJECT(object_particle, active) = true;
-                        OBJECT(object_particle, id) = OBJECT_ID_PARTICLE_BEGIN + object_idx;
 
                         objects_object_add((struct object *)object_particle);
                 }

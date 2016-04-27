@@ -96,8 +96,8 @@ particle_alloc(void)
         assert(color_list != NULL);
 
         color_list[0].r = 31;
-        color_list[0].g = 0;
-        color_list[0].b = 0;
+        color_list[0].g = 31;
+        color_list[0].b = 31;
 
         OBJECT(object_particle, active) = false;
         OBJECT(object_particle, id) = -1;
@@ -125,7 +125,7 @@ particle_alloc(void)
         OBJECT(object_particle, on_trigger) = NULL;
 
         /* Public data */
-        OBJECT_PUBLIC_DATA(object_particle, ttl) = 255;
+        OBJECT_PUBLIC_DATA(object_particle, ttl) = 0;
 
         OBJECT_PUBLIC_DATA(object_particle, color_from).r = 31;
         OBJECT_PUBLIC_DATA(object_particle, color_from).g = 31;
@@ -138,6 +138,9 @@ particle_alloc(void)
 
         OBJECT_PUBLIC_DATA(object_particle, delta).x = F16(0.0f);
         OBJECT_PUBLIC_DATA(object_particle, delta).y = F16(0.0f);
+
+        fix16_vector3_dup(&OBJECT_PRIVATE_DATA(object_particle, orig_position),
+            &COMPONENT(transform, position));
 
         return object_particle;
 }
@@ -166,7 +169,7 @@ particle_free(struct object_particle *object_particle)
         memb_free(&_color_list_pool, color_list);
 
         assert(object_particle != NULL);
-        OBJECT(object_particle, active) = true;
+        OBJECT(object_particle, active) = false;
         memb_free(&_object_particle_pool, object_particle);
 }
 
@@ -183,6 +186,16 @@ static void
 object_particle_on_update(struct object *this __unused)
 {
         assert(THIS(object_particle, initialized));
+
+        if (THIS_PUBLIC_DATA(object_particle, ttl) == 0) {
+                return;
+        }
+
+        THIS_PUBLIC_DATA(object_particle, ttl)--;
+
+        fix16_vector2_add((fix16_vector2_t *)&THIS(object_particle, transform).position,
+            &THIS_PUBLIC_DATA(object_particle, delta),
+            (fix16_vector2_t *)&THIS(object_particle, transform).position);
 }
 
 static void

@@ -14,9 +14,9 @@
 void
 scene_game_init(struct scene_ctx *scene_ctx __unused)
 {
-        OBJECT_CALL_EVENT(&object_camera, init);
-        OBJECT_CALL_EVENT(&object_world, init);
-        OBJECT_CALL_EVENT(&object_blue, init);
+        OBJECT_INIT(&object_camera);
+        OBJECT_INIT(&object_world);
+        OBJECT_INIT(&object_blue);
 
         objects_object_add((struct object *)&object_camera);
         objects_object_add((struct object *)&object_world);

@@ -21,8 +21,9 @@
 #define COMPONENT_LIST_MAX 8
 
 #define OBJECT_DECLARATIONS                                                    \
-    bool active;                                                               \
+bool active;                                                                   \
     int32_t id;                                                                \
+    struct object *parent;                                                     \
     /* Enable rendering or not */                                              \
     bool visible;                                                              \
     /* Vertex list is clockwise:                                               \
@@ -54,14 +55,25 @@
         const struct collider_info *);                                         \
     void (*on_trigger)(struct object *, const struct object *);
 
-#define OBJECT_CALL_EVENT(x, name, args...) do {                               \
+#define OBJECT_EVENT(x, name, args...) do {                                    \
         if (((struct object *)(x))->CC_CONCAT(on_, name) != NULL) {            \
-            if (((struct object *)(x))->active) {                              \
-                    ((struct object *)(x))->CC_CONCAT(on_, name)(              \
-                            (struct object *)(x), ##args);                     \
-            }                                                                  \
+                if (((struct object *)(x))->active) {                          \
+                        ((struct object *)(x))->CC_CONCAT(on_, name)(          \
+                                (struct object *)(x), ##args);                 \
+                }                                                              \
         }                                                                      \
 } while (false)
+
+#define OBJECT_INIT(x, args...) do {                                           \
+        assert(((struct object *)(x))->on_init != NULL);                       \
+        ((struct object *)(x))->on_init((struct object *)(x), ##args);         \
+} while (false)
+
+#define OBJECT_UPDATE(x)                OBJECT_EVENT(x, update)
+#define OBJECT_DRAW(x)                  OBJECT_EVENT(x, draw)
+#define OBJECT_DESTROY(x)               OBJECT_EVENT(x, destroy)
+#define OBJECT_COLLISION(x, args...)    OBJECT_EVENT(x, collision, ##args)
+#define OBJECT_TRIGGER(x, args...)      OBJECT_EVENT(x, trigger, ##args)
 
 #define OBJECT(x, member)                                                      \
         ((x)->CC_CONCAT(, member))

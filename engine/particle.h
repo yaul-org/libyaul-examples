@@ -25,6 +25,10 @@ struct object_particle {
                 color_rgb_t m_color_to;
                 fix16_vector2_t m_delta;
         } data;
+
+        struct {
+                fix16_vector3_t m_orig_pos;
+        } private_data;
 } __aligned(128);
 
 extern void particle_init(void);

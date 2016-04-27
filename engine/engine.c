@@ -78,7 +78,7 @@ objects_update(void)
                 const struct object *object;
                 object = objects[object_idx];
 
-                OBJECT_CALL_EVENT(object, update);
+                OBJECT_UPDATE(object);
 
                 /* Call the object's components */
                 object_component_update(object);
@@ -103,7 +103,7 @@ objects_draw(void)
                         continue;
                 }
 
-                OBJECT_CALL_EVENT(object, draw);
+                OBJECT_DRAW(object);
 
                 /* Call the object's components */
                 object_component_draw(object);
@@ -177,6 +177,12 @@ objects_project(void)
 static void
 object_project(const struct object *object)
 {
+        assert(object != NULL);
+
+        if (!OBJECT(object, active)) {
+                return;
+        }
+
         const struct camera *camera;
         camera = objects_component_camera_find();
         assert((camera != NULL) && "No camera found");
