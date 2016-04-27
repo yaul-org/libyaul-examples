@@ -34,6 +34,8 @@ extern uint32_t tick;
 extern uint32_t start_scanline;
 extern uint32_t end_scanline;
 
+extern char text_buffer[];
+
 extern struct smpc_peripheral_digital digital_pad;
 
 #endif /* !ENGINE_H */

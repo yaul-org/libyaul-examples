@@ -235,6 +235,9 @@ component_jetpack_on_update(void)
         uint32_t object_idx;
         object_idx = 0;
 
+        const struct object *object;
+        object = COMPONENT(&_component_jetpack, object);
+
         uint32_t object_particle_count;
         object_particle_count = COMPONENT_PUBLIC_DATA(&_component_jetpack,
             object_particle_count);
@@ -257,7 +260,8 @@ component_jetpack_on_update(void)
 
                         OBJECT(object_particle, active) = true;
 
-                        objects_object_add((struct object *)object_particle);
+                        objects_object_child_add(object,
+                            (struct object *)object_particle);
                 }
 
                 *state = COMPONENT_JETPACK_STATE_PARTICLE_BLAST_OFF;

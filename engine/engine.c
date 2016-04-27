@@ -70,13 +70,13 @@ engine_loop(void)
 static void
 objects_update(void)
 {
-        const struct object **objects;
+        const struct objects *objects;
         objects = objects_list();
 
         uint32_t object_idx;
-        for (object_idx = 0; objects[object_idx] != NULL; object_idx++) {
+        for (object_idx = 0; objects[object_idx].object != NULL; object_idx++) {
                 const struct object *object;
-                object = objects[object_idx];
+                object = objects[object_idx].object;
 
                 OBJECT_UPDATE(object);
 
@@ -88,13 +88,13 @@ objects_update(void)
 static void
 objects_draw(void)
 {
-        const struct object **objects;
+        const struct objects *objects;
         objects = objects_list();
 
         uint32_t object_idx;
-        for (object_idx = 0; objects[object_idx] != NULL; object_idx++) {
+        for (object_idx = 0; objects[object_idx].object != NULL; object_idx++) {
                 const struct object *object;
-                object = objects[object_idx];
+                object = objects[object_idx].object;
 
                 bool visible;
                 visible = OBJECT_COMPONENT(object, visible);
@@ -159,13 +159,14 @@ objects_project(void)
 
                 /* Draw in reversed order. Here we can take a shortcut and sort
                  * before projecting. */
-                const struct object **objects;
+                const struct objects *objects;
                 objects = objects_sorted_list();
 
                 uint32_t object_idx;
-                for (object_idx = 0; objects[object_idx] != NULL; object_idx++) {
+                for (object_idx = 0; objects[object_idx].object != NULL;
+                     object_idx++) {
                         const struct object *object;
-                        object = objects[object_idx];
+                        object = objects[object_idx].object;
 
                         object_project(object);
                 }

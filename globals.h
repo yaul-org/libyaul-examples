@@ -14,6 +14,4 @@
 
 extern struct smpc_peripheral_digital digital_pad;
 
-extern char text[];
-
 #endif /* !GLOBALS_H */

@@ -6,5 +6,3 @@
  */
 
 #include "globals.h"
-
-char text[1024];
