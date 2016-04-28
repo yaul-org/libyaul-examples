@@ -7,7 +7,6 @@ include $(INSTALL_ROOT)/share/pre.common.mk
 SH_PROGRAM:= blue
 SH_OBJECTS:= \
 	root.romdisk.o \
-	blue.o \
 	engine/collider.o \
 	engine/engine.o \
 	engine/fs.o \
@@ -18,6 +17,7 @@ SH_OBJECTS:= \
 	engine/physics.o \
 	engine/rigid_body.o \
 	engine/scene.o \
+	blue.o \
 	globals.o \
 	scene_splash.o \
 	scene_title.o \

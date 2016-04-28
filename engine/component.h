@@ -9,6 +9,7 @@
 #define ENGINE_COMPONENT_H
 
 #include <math.h>
+#include <stdbool.h>
 #include <inttypes.h>
 
 struct object;

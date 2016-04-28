@@ -15,12 +15,13 @@
 
 #define OBJECTS_MAX     256
 
-#define OBJECTS_Z_MIN   0
-#define OBJECTS_Z_MAX   15
+#define OBJECTS_Z_MIN           0
+#define OBJECTS_Z_MAX           15
+#define OBJECTS_Z_MAX_LEVELS    (OBJECTS_Z_MAX + 1)
 
 struct objects {
-        const struct object *parent;
         const struct object *object;
+        const fix16_vector3_t *position;
 };
 
 extern void objects_init(void);

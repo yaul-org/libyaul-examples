@@ -54,8 +54,8 @@ bool active;                                                                   \
                                                                                \
     /* If it's been initialized or not (call to "init" event) */               \
     bool initialized;                                                          \
-    /* Context used by objects system. */                                      \
-    void *context;
+    /* Context used by objects system */                                       \
+    const void *context;
 
 #define OBJECT_EVENT(x, name, args...) do {                                    \
         if (((struct object *)(x))->CC_CONCAT(on_, name) != NULL) {            \
