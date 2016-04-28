@@ -14,21 +14,21 @@
 
 #define OBJECTS_DEPTH_MAX 3
 
-struct object_tree_node;
+struct object_context;
 
-TAILQ_HEAD(object_tree, object_tree_node);
+TAILQ_HEAD(object_contexts, object_context);
 
-struct object_tree_node {
-        uint32_t op_depth;
-        const struct object *op_object;
-        const struct transform *op_transform;
-        struct object_tree op_children;
+struct object_context {
+        uint32_t oc_depth;
+        struct object *oc_parent;
+        struct object *oc_object;
+        struct object_contexts oc_children;
 
-        TAILQ_ENTRY(object_tree_node) op_entries;
+        TAILQ_ENTRY(object_context) oc_entries;
 } __aligned(32);
 
 static bool _initialized = false;
-struct object_tree _object_tree;
+struct object_context _root_context;
 
 /* Caching */
 /* Cached list of objects allocated */
@@ -44,18 +44,15 @@ static struct object *_cached_objects_component[OBJECTS_MAX];
 /* Cached pointer to camera component */
 static const struct camera *_cached_camera = NULL;
 
-MEMB(_object_tree_node_pool, struct object_tree_node, OBJECTS_MAX,
-    sizeof(struct object_tree_node));
+MEMB(_object_context_pool, struct object_context, OBJECTS_MAX,
+    sizeof(struct object_context));
 
-MEMB(_transform_pool, struct transform, OBJECTS_MAX,
-    sizeof(struct transform));
-
-static struct object_tree_node *traverse_object_tree_node_find(struct object_tree_node *,
-    const struct object *);
-static uint32_t traverse_object_tree_node_populate(struct object_tree_node *,
+static void traverse_object_context_add(struct object_context *,
+    struct object *);
+static void traverse_object_context_remove(struct object_context *,
+    struct object *);
+static uint32_t traverse_object_context_populate(struct object_context *,
     struct objects *);
-static void traverse_object_tree_node_remove(struct object_tree_node *,
-    struct object_tree *);
 
 /*
  * Initialize objects system.
@@ -63,113 +60,92 @@ static void traverse_object_tree_node_remove(struct object_tree_node *,
 void
 objects_init(void)
 {
+        static struct object root = {
+                .id = 0,
+                .visible = false,
+                .vertex_list = NULL,
+                .vertex_count = 0,
+                .color_list = NULL,
+                .transform = {
+                        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 0.0f)
+                },
+                .camera = NULL,
+                .colliders = NULL,
+                .rigid_body = NULL,
+                .component_list = {
+                        NULL
+                },
+                .component_count = 0,
+                .on_init = NULL,
+                .on_update = NULL,
+                .on_draw = NULL,
+                .on_destroy = NULL,
+                .on_collision = NULL,
+                .on_trigger = NULL,
+                .initialized = true,
+                .context = &_root_context
+        };
+
         if (_initialized) {
                 return;
         }
 
-        TAILQ_INIT(&_object_tree);
+        /* Initialize root context */
+        _root_context.oc_depth = 1;
+        _root_context.oc_parent = NULL;
+        _root_context.oc_object = &root;
+        TAILQ_INIT(&_root_context.oc_children);
 
-        memb_init(&_object_tree_node_pool);
-        memb_init(&_transform_pool);
+        memb_init(&_object_context_pool);
 
         uint32_t object_idx;
         for (object_idx = 0; object_idx < OBJECTS_MAX; object_idx++) {
                 _cached_objects[object_idx].parent = NULL;
                 _cached_objects[object_idx].object = NULL;
+
+                _cached_sorted_objects[object_idx].parent = NULL;
+                _cached_sorted_objects[object_idx].object = NULL;
         }
 
         _initialized = true;
 }
 
+/*
+ * Add child object to root object.
+ */
 void
-objects_object_add(const struct object *object)
+objects_object_add(struct object *child_object)
 {
         assert(_initialized);
-        assert(object != NULL);
-
-        struct object_tree_node *iter_object_tree_node;
-        iter_object_tree_node = NULL;
-        TAILQ_FOREACH (iter_object_tree_node, &_object_tree, op_entries) {
-                const struct object *cur_object;
-                cur_object = iter_object_tree_node->op_object;
-
-                /* No duplicate objects can be added */
-                assert(cur_object->id != object->id);
-        }
+        assert(child_object != NULL);
 
         /* Caching */
-        if (object->camera != NULL) {
-                _cached_camera = object->camera;
+        if (child_object->camera != NULL) {
+                _cached_camera = child_object->camera;
         }
 
-        struct object_tree_node *object_tree_node;
-        object_tree_node = (struct object_tree_node *)memb_alloc(&_object_tree_node_pool);
-        assert(object_tree_node != NULL);
-
-        object_tree_node->op_object = object;
-        object_tree_node->op_transform = NULL;
-        TAILQ_INIT(&object_tree_node->op_children);
-        object_tree_node->op_depth = 1;
-
-        TAILQ_INSERT_TAIL(&_object_tree, object_tree_node, op_entries);
+        traverse_object_context_add(&_root_context, child_object);
 
         _cached_objects_dirty = true;
         _cached_sorted_objects_dirty = true;
 }
 
 /*
- * Add child object to object.
+ * Add child object to parent object.
  *
  * Note that there is no check that a back, forward, or cross edges (a
  * cycle) is introduced when adding a child object. When traversing the
  * tree, an infinite loop will occur should a cycle be present.
  */
 void
-objects_object_child_add(const struct object *object,
-    const struct object *child_object)
+objects_object_child_add(struct object *object, struct object *child_object)
 {
         assert(_initialized);
         assert(object != NULL);
         assert(child_object != NULL);
+        assert(object->context != NULL);
 
-        struct object_tree_node *object_tree_node;
-        object_tree_node = NULL;
-
-        struct object_tree_node *iter_object_tree_node;
-
-        /* Look for the corresponding object */
-        TAILQ_FOREACH (iter_object_tree_node, &_object_tree, op_entries) {
-                const struct object *cur_object;
-                cur_object = iter_object_tree_node->op_object;
-
-                if (cur_object == object) {
-                        object_tree_node = iter_object_tree_node;
-                        break;
-                }
-        }
-        assert(object_tree_node != NULL);
-
-        /* Check for duplicates in object's children */
-        TAILQ_FOREACH (iter_object_tree_node, &object_tree_node->op_children, op_entries) {
-                const struct object *cur_object;
-                cur_object = iter_object_tree_node->op_object;
-
-                /* No duplicate objects can be added */
-                assert(cur_object->id != object->id);
-        }
-
-        /* Allocate child object */
-        struct object_tree_node *child_object_tree_node;
-        child_object_tree_node = (struct object_tree_node *)memb_alloc(&_object_tree_node_pool);
-        assert(child_object_tree_node != NULL);
-
-        /* Assert we don't have a "tall" tree */
-        assert((object_tree_node->op_depth + 1) <= OBJECTS_DEPTH_MAX);
-
-        child_object_tree_node->op_object = child_object;
-        child_object_tree_node->op_depth = object_tree_node->op_depth + 1;
-        TAILQ_INSERT_TAIL(&object_tree_node->op_children, child_object_tree_node,
-            op_entries);
+        traverse_object_context_add(object->context, child_object);
 
         _cached_objects_dirty = true;
         _cached_sorted_objects_dirty = true;
@@ -179,62 +155,55 @@ objects_object_child_add(const struct object *object,
  * Remove object and its children.
  */
 void
-objects_object_remove(const struct object *object)
+objects_object_remove(struct object *child_object)
 {
         assert(_initialized);
-        assert(object != NULL);
+        assert(child_object != NULL);
+        assert(child_object->context != NULL);
 
-        while (!(TAILQ_EMPTY(&_object_tree))) {
-                struct object_tree_node *object_tree_node;
-                object_tree_node = TAILQ_FIRST(&_object_tree);
+        struct object_context *child_ctx;
+        child_ctx = child_object->context;
 
-                if (object_tree_node->op_object == object) {
-                        /* Clear children */
-                        traverse_object_tree_node_remove(object_tree_node, &_object_tree);
+        struct object *parent;
+        parent = child_ctx->oc_parent;
 
-                        _cached_objects_dirty = true;
-                        _cached_sorted_objects_dirty = true;
-                        return;
-                }
-        }
+        struct object_context *parent_ctx;
+        parent_ctx = parent->context;
 
-        assert(false && "Object not found");
+        traverse_object_context_remove(parent_ctx, child_object);
+
+        _cached_objects_dirty = true;
+        _cached_sorted_objects_dirty = true;
 }
 
-/*
- * Remove child object and its children.
- */
 void
-objects_object_child_remove(const struct object *object,
-    const struct object *child_object)
+objects_clear(void)
 {
         assert(_initialized);
-        assert(object != NULL);
-        assert(child_object != NULL);
 
-        /* Search for object */
-        while (!(TAILQ_EMPTY(&_object_tree))) {
-                struct object_tree_node *object_tree_node;
-                object_tree_node = TAILQ_FIRST(&_object_tree);
+        /* Clear cached */
+        _cached_camera = NULL;
 
-                if (object_tree_node->op_object == object) {
-                        /* Search for child object */
-                        struct object_tree_node *child_object_tree_node;
-                        child_object_tree_node = traverse_object_tree_node_find(object_tree_node,
-                            child_object);
-                        assert(child_object_tree_node != NULL);
+        _cached_objects[0].parent = NULL;
+        _cached_objects[0].object = NULL;
 
-                        /* Remove sub-tree */
-                        traverse_object_tree_node_remove(child_object_tree_node,
-                            &object_tree_node->op_children);
+        _cached_sorted_objects[0].parent = NULL;
+        _cached_sorted_objects[0].object = NULL;
 
-                        _cached_objects_dirty = true;
-                        _cached_sorted_objects_dirty = true;
-                        return;
-                }
+        _cached_objects_component[0] = NULL;
+
+        struct object_context *itr_child_object_context;
+        TAILQ_FOREACH (itr_child_object_context, &_root_context.oc_children,
+            oc_entries) {
+                struct object *itr_child_object;
+                itr_child_object = itr_child_object_context->oc_object;
+
+                traverse_object_context_remove(&_root_context,
+                    itr_child_object);
         }
 
-        assert(false && "Object not found");
+        _cached_objects_dirty = true;
+        _cached_sorted_objects_dirty = true;
 }
 
 const struct objects *
@@ -243,22 +212,12 @@ objects_list(void)
         assert(_initialized);
 
         if (_cached_objects_dirty) {
-                uint32_t object_idx;
-                object_idx = 0;
+                uint32_t object_count;
+                object_count = traverse_object_context_populate(&_root_context,
+                    _cached_objects);
 
-                _cached_objects[0].parent = NULL;
-                _cached_objects[0].object = NULL;
-
-                struct object_tree_node *iter_object_tree_node;
-                TAILQ_FOREACH (iter_object_tree_node, &_object_tree, op_entries) {
-                        /* Make sure we don't buffer overflow */
-                        assert((object_idx + 1) < OBJECTS_MAX);
-
-                        object_idx += traverse_object_tree_node_populate(
-                                iter_object_tree_node, &_cached_objects[object_idx]);
-                        _cached_objects[object_idx + 1].parent = NULL;
-                        _cached_objects[object_idx + 1].object = NULL;
-                }
+                _cached_objects[object_count].parent = NULL;
+                _cached_objects[object_count].object = NULL;
         }
 
         _cached_objects_dirty = false;
@@ -314,113 +273,83 @@ return_list:
         return (const struct objects *)&_cached_sorted_objects[0];
 }
 
-void
-objects_clear(void)
-{
-        assert(_initialized);
-
-        /* Clear cached */
-        _cached_camera = NULL;
-        _cached_objects[0].parent = NULL;
-        _cached_objects[0].object = NULL;
-        _cached_sorted_objects[0].parent = NULL;
-        _cached_sorted_objects[0].object = NULL;
-        _cached_objects_component[0] = NULL;
-
-        while (!(TAILQ_EMPTY(&_object_tree))) {
-                struct object_tree_node *object_tree_node;
-                object_tree_node = TAILQ_FIRST(&_object_tree);
-
-                traverse_object_tree_node_remove(object_tree_node, &_object_tree);
-        }
-}
-
 const struct camera *
 objects_component_camera_find(void)
 {
         return _cached_camera;
 }
 
-/*
- * Find object in tree.
- *
- * If successful, the object is returned. Otherwise, NULL is returned
- * for the following cases:
- *
- *   - Object is not found
- */
-static struct object_tree_node *
-traverse_object_tree_node_find(struct object_tree_node *object_tree_node,
-    const struct object *object)
+static void
+traverse_object_context_add(struct object_context *parent_ctx,
+    struct object *child_object)
 {
-        static uint32_t depth = 1;
+        assert(child_object != NULL);
+        assert(parent_ctx != NULL);
+        assert(child_object->context == NULL);
 
-        assert(object_tree_node != NULL);
-        assert(object != NULL);
-        assert(depth <= OBJECTS_DEPTH_MAX);
+        struct object *parent;
+        parent = parent_ctx->oc_object;
 
-        /* Visit */
-        if (object_tree_node->op_object == object) {
-                return object_tree_node;
-        }
+        /* Allocate child object */
+        struct object_context *child_object_ctx;
+        child_object_ctx = (struct object_context *)memb_alloc(
+                &_object_context_pool);
+        assert(child_object_ctx != NULL);
 
-        if ((TAILQ_EMPTY(&object_tree_node->op_children))) {
-                return NULL;
-        }
+        assert((child_object_ctx->oc_depth + 1) <= OBJECTS_DEPTH_MAX);
 
-        depth++;
+        child_object_ctx->oc_depth = parent_ctx->oc_depth + 1;
+        child_object_ctx->oc_parent = parent;
+        child_object_ctx->oc_object = child_object;
+        TAILQ_INIT(&child_object_ctx->oc_children);
 
-        struct object_tree_node *child_object_tree_node;
-        child_object_tree_node = NULL;
+        TAILQ_INSERT_TAIL(&parent_ctx->oc_children, child_object_ctx,
+            oc_entries);
 
-        struct object_tree_node *iter_object_tree_node;
-        TAILQ_FOREACH (iter_object_tree_node, &object_tree_node->op_children,
-            op_entries) {
-                if ((child_object_tree_node = traverse_object_tree_node_find(
-                                iter_object_tree_node, object)) != NULL) {
-                        break;
-                }
-        }
-
-        depth--;
-
-        return child_object_tree_node;
+        /* Connect context to child object */
+        child_object->context = child_object_ctx;
 }
 
 /*
  * Remove object and its children from the tree.
  */
 static void
-traverse_object_tree_node_remove(struct object_tree_node *object_tree_node,
-    struct object_tree *object_tree)
+traverse_object_context_remove(struct object_context *parent_ctx,
+    struct object *remove)
 {
         static uint32_t depth = 1;
 
-        assert(object_tree != NULL);
-        assert(object_tree_node != NULL);
+        assert(parent_ctx != NULL);
+        assert(remove != NULL);
+
         assert(depth <= OBJECTS_DEPTH_MAX);
 
-        /* Visit */
-        TAILQ_REMOVE(object_tree, object_tree_node, op_entries);
+        struct object_context *remove_ctx;
+        remove_ctx = remove->context;
 
-        int error_code;
-        error_code = memb_free(&_object_tree_node_pool, object_tree_node);
-        assert(error_code == 0);
+        /* Remove context from object */
+        remove->context = NULL;
+        TAILQ_REMOVE(&parent_ctx->oc_children, remove_ctx, oc_entries);
 
-        if ((TAILQ_EMPTY(&object_tree_node->op_children))) {
-                return;
+        if ((TAILQ_EMPTY(&remove_ctx->oc_children))) {
+                goto exit;
         }
 
         depth++;
 
-        struct object_tree_node *iter_object_tree_node;
-        TAILQ_FOREACH (iter_object_tree_node, &object_tree_node->op_children,
-            op_entries) {
-                traverse_object_tree_node_remove(iter_object_tree_node,
-                    &object_tree_node->op_children);
+        struct object_context *itr_child_object_ctx;
+        TAILQ_FOREACH (itr_child_object_ctx, &remove_ctx->oc_children,
+            oc_entries) {
+                struct object *itr_object;
+                itr_object = itr_child_object_ctx->oc_object;
+                traverse_object_context_remove(remove_ctx, itr_object);
         }
 
         depth--;
+
+exit:
+        /* Free context */
+        assert((memb_free(&_object_context_pool, remove_ctx)) == 0);
 }
 
 /*
@@ -429,41 +358,33 @@ traverse_object_tree_node_remove(struct object_tree_node *object_tree_node,
  * The number of objects inserted in the array of pointers to objects is
  * returned.
  */
-static uint32_t
-traverse_object_tree_node_populate(struct object_tree_node *object_tree_node,
+static uint32_t __unused
+traverse_object_context_populate(struct object_context *object_ctx,
     struct objects *objects)
 {
         static uint32_t depth = 1;
-        static const struct object *parent = NULL;
 
-        assert(object_tree_node != NULL);
+        assert(object_ctx != NULL);
         assert(objects != NULL);
         assert(depth <= OBJECTS_DEPTH_MAX);
 
-        if (depth == 1) {
-                parent = NULL;
-        }
-
         /* Visit */
-        objects[0].parent = parent;
-        objects[0].object = object_tree_node->op_object;
+        objects[0].parent = object_ctx->oc_parent;
+        objects[0].object = object_ctx->oc_object;
 
-        if ((TAILQ_EMPTY(&object_tree_node->op_children))) {
+        if ((TAILQ_EMPTY(&object_ctx->oc_children))) {
                 return 1;
         }
-
-        parent = object_tree_node->op_object;
 
         depth++;
 
         uint32_t object_idx;
         object_idx = 0;
 
-        struct object_tree_node *iter_object_tree_node;
-        TAILQ_FOREACH (iter_object_tree_node, &object_tree_node->op_children,
-            op_entries) {
-                object_idx += traverse_object_tree_node_populate(
-                        iter_object_tree_node, &objects[object_idx + 1]);
+        struct object_context *itr_object_ctx;
+        TAILQ_FOREACH (itr_object_ctx, &object_ctx->oc_children, oc_entries) {
+                object_idx += traverse_object_context_populate(
+                        itr_object_ctx, &objects[object_idx + 1]);
         }
 
         depth--;

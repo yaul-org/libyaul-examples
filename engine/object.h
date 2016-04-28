@@ -23,7 +23,6 @@
 #define OBJECT_DECLARATIONS                                                    \
 bool active;                                                                   \
     int32_t id;                                                                \
-    struct object *parent;                                                     \
     /* Enable rendering or not */                                              \
     bool visible;                                                              \
     /* Vertex list is clockwise:                                               \
@@ -44,8 +43,6 @@ bool active;                                                                   \
     struct rigid_body *rigid_body;                                             \
     struct component *component_list[COMPONENT_LIST_MAX];                      \
     uint32_t component_count;                                                  \
-    /* If it's been initialized or not (call to "init" event) */               \
-    bool initialized;                                                          \
     /* Events */                                                               \
     void (*on_init)(struct object *);                                          \
     void (*on_update)(struct object *);                                        \
@@ -53,7 +50,12 @@ bool active;                                                                   \
     void (*on_destroy)(struct object *);                                       \
     void (*on_collision)(struct object *, const struct object *,               \
         const struct collider_info *);                                         \
-    void (*on_trigger)(struct object *, const struct object *);
+    void (*on_trigger)(struct object *, const struct object *);                \
+                                                                               \
+    /* If it's been initialized or not (call to "init" event) */               \
+    bool initialized;                                                          \
+    /* Context used by objects system. */                                      \
+    void *context;
 
 #define OBJECT_EVENT(x, name, args...) do {                                    \
         if (((struct object *)(x))->CC_CONCAT(on_, name) != NULL) {            \

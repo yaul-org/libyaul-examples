@@ -21,19 +21,15 @@
 struct objects {
         const struct object *parent;
         const struct object *object;
-        const struct transform *transform;
 };
 
 extern void objects_init(void);
-extern void objects_object_add(const struct object *);
-extern void objects_object_remove(const struct object *);
-extern void objects_object_child_add(const struct object *,
-    const struct object *);
-extern void objects_object_child_remove(const struct object *,
-    const struct object *);
-extern const struct camera *objects_component_camera_find(void);
+extern void objects_object_add(struct object *);
+extern void objects_object_child_add(struct object *, struct object *);
+extern void objects_object_remove(struct object *);
+extern void objects_clear(void);
 extern const struct objects *objects_list(void);
 extern const struct objects *objects_sorted_list(void);
-extern void objects_clear(void);
+extern const struct camera *objects_component_camera_find(void);
 
 #endif /* !ENGINE_OBJECTS_H */

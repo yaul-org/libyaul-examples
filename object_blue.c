@@ -204,7 +204,8 @@ component_jetpack_on_init(void)
                 object_particle = particle_alloc();
 
                 OBJECT(object_particle, active) = false;
-                OBJECT(object_particle, id) = OBJECT_ID_PARTICLE_BEGIN + object_idx;
+                OBJECT(object_particle, id) =
+                    OBJECT_ID_PARTICLE_BEGIN + object_idx;
 
                 OBJECT_PUBLIC_DATA(object_particle, ttl) = 5;
                 OBJECT_PUBLIC_DATA(object_particle, color_from).r = 31;
@@ -260,7 +261,7 @@ component_jetpack_on_update(void)
 
                         OBJECT(object_particle, active) = true;
 
-                        objects_object_child_add(object,
+                        objects_object_child_add((struct object *)object,
                             (struct object *)object_particle);
                 }
 
