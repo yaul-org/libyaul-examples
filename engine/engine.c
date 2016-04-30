@@ -70,7 +70,7 @@ engine_loop(void)
 static void
 objects_update(void)
 {
-        const struct objects *objects;
+        const struct object_z *objects;
         objects = objects_list();
 
         uint32_t object_idx;
@@ -88,7 +88,7 @@ objects_update(void)
 static void
 objects_draw(void)
 {
-        const struct objects *objects;
+        const struct object_z *objects;
         objects = objects_list();
 
         uint32_t object_idx;
@@ -157,18 +157,23 @@ objects_project(void)
                 vdp1_cmdt_user_clip_coord_set(&user_clip);
                 vdp1_cmdt_local_coord_set(&local);
 
-                /* Draw in reversed order. Here we can take a shortcut and sort
-                 * before projecting. */
+                /* Draw in reversed order. Here we can take a shortcut
+                 * and sort before projecting. */
                 const struct objects *objects;
                 objects = objects_sorted_list();
 
-                uint32_t object_idx;
-                for (object_idx = 0; objects[object_idx].object != NULL;
-                     object_idx++) {
-                        const struct object *object;
-                        object = objects[object_idx].object;
+                int32_t z_bucket;
+                for (z_bucket = OBJECTS_Z_MAX; z_bucket >= 0; z_bucket--) {
+                        struct object_z_entry *itr_oze;
+                        STAILQ_FOREACH (itr_oze, &objects->buckets[z_bucket], entries) {
+                                const struct object_z *object_z;
+                                object_z = itr_oze->object_z;
 
-                        object_project(object);
+                                const struct object *object;
+                                object = object_z->object;
+
+                                object_project(object);
+                        }
                 }
 
                 vdp1_cmdt_end();
@@ -209,7 +214,7 @@ object_project(const struct object *object)
                         OBJECT_COMPONENT(object, transform).position.z);
 
                 matrix_model_view = matrix_stack_top(
-                    MATRIX_STACK_MODE_MODEL_VIEW)->ms_matrix;
+                        MATRIX_STACK_MODE_MODEL_VIEW)->ms_matrix;
 
                 uint32_t i;
 

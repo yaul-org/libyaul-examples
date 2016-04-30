@@ -20,13 +20,19 @@ struct object_context;
 TAILQ_HEAD(object_contexts, object_context);
 
 struct object_context {
+        /* Depth in objects tree */
         uint32_t oc_depth;
+        /* Immediate parent */
         struct object *oc_parent;
         struct object *oc_object;
-        fix16_vector3_t oc_position;
+        /* Calculated absolute position of the object in world space */
+        fix16_vector3_t oc_abs_position;
         struct object_contexts oc_children;
 
-        TAILQ_ENTRY(object_context) oc_entries;
+        /* Tree management */
+        TAILQ_ENTRY(object_context) oc_tq_entries;
+        /* For non-recursive traversal */
+        SLIST_ENTRY(object_context) oc_sl_entries;
 } __aligned(32);
 
 static bool _initialized = false;
@@ -35,13 +41,9 @@ struct object_context _root_ctx;
 /* Caching */
 /* Cached list of objects allocated */
 static bool _cached_objects_dirty = true;
-static struct objects _cached_objects[OBJECTS_MAX];
-
-static bool _cached_sorted_objects_dirty = true;
-static struct objects _cached_sorted_objects[OBJECTS_MAX];
-
-/* Cached list of objects last searched using objects_component_find() */
-static struct object *_cached_objects_component[OBJECTS_MAX];
+static struct objects _cached_objects;
+static struct object_z _cached_object_z[OBJECTS_MAX];
+static struct object_z_entry _cached_object_z_entry[OBJECTS_MAX];
 
 /* Cached pointer to camera component */
 static const struct camera *_cached_camera = NULL;
@@ -95,16 +97,10 @@ objects_init(void)
         _root_ctx.oc_depth = 1;
         _root_ctx.oc_parent = NULL;
         _root_ctx.oc_object = &root;
-        fix16_vector3_zero(&_root_ctx.oc_position);
+        fix16_vector3_zero(&_root_ctx.oc_abs_position);
         TAILQ_INIT(&_root_ctx.oc_children);
 
         memb_init(&_object_context_pool);
-
-        uint32_t object_idx;
-        for (object_idx = 0; object_idx < OBJECTS_MAX; object_idx++) {
-                _cached_objects[object_idx].object = NULL;
-                _cached_sorted_objects[object_idx].object = NULL;
-        }
 
         _initialized = true;
 }
@@ -126,7 +122,6 @@ objects_object_add(struct object *child)
         traverse_object_context_add(&_root_ctx, child);
 
         _cached_objects_dirty = true;
-        _cached_sorted_objects_dirty = true;
 }
 
 /*
@@ -148,7 +143,6 @@ objects_object_child_add(struct object *object, struct object *child)
             child);
 
         _cached_objects_dirty = true;
-        _cached_sorted_objects_dirty = true;
 }
 
 /*
@@ -173,7 +167,6 @@ objects_object_remove(struct object *child)
         traverse_object_context_remove(parent_ctx, child);
 
         _cached_objects_dirty = true;
-        _cached_sorted_objects_dirty = true;
 }
 
 void
@@ -182,47 +175,40 @@ objects_clear(void)
         assert(_initialized);
 
         /* Clear cached */
-        _cached_camera = NULL;
+        {
+                _cached_camera = NULL;
 
-        _cached_objects[0].object = NULL;
-        _cached_sorted_objects[0].object = NULL;
+                _cached_object_z[0].object = NULL;
 
-        _cached_objects_component[0] = NULL;
+                /* Empty each bucket */
+                uint32_t bucket_idx;
+                for (bucket_idx = 0; bucket_idx < OBJECTS_Z_MAX_BUCKETS;
+                     bucket_idx++) {
+                        STAILQ_INIT(&_cached_objects.buckets[bucket_idx]);
+                }
+        }
 
-        struct object_context *itr_child_context;
-        TAILQ_FOREACH (itr_child_context, &_root_ctx.oc_children,
-            oc_entries) {
+        while (!(TAILQ_EMPTY(&_root_ctx.oc_children))) {
+                struct object_context *itr_ctx;
+                itr_ctx = TAILQ_FIRST(&_root_ctx.oc_children);
+
                 struct object *itr_child;
-                itr_child = itr_child_context->oc_object;
+                itr_child = itr_ctx->oc_object;
 
-                traverse_object_context_remove(&_root_ctx,
-                    itr_child);
+                objects_object_remove(itr_child);
         }
 
         _cached_objects_dirty = true;
-        _cached_sorted_objects_dirty = true;
 }
 
-const struct objects *
+const struct object_z *
 objects_list(void)
 {
         assert(_initialized);
 
         traverse_object_context_update(&_root_ctx);
 
-        if (_cached_objects_dirty) {
-                goto return_list;
-        }
-
-        /* uint32_t object_count; */
-        /* object_count = traverse_object_context_populate(&_root_ctx, */
-        /*     _cached_objects); */
-        /* _cached_objects[object_count].object = NULL; */
-
-        _cached_objects_dirty = false;
-
-return_list:
-        return (const struct objects *)&_cached_objects[0];
+        return (const struct object_z *)&_cached_object_z[0];
 }
 
 const struct objects *
@@ -232,14 +218,7 @@ objects_sorted_list(void)
 
         traverse_object_context_update(&_root_ctx);
 
-        if (!_cached_sorted_objects_dirty) {
-                goto return_list;
-        }
-
-        _cached_sorted_objects_dirty = false;
-
-return_list:
-        return (const struct objects *)&_cached_sorted_objects[0];
+        return (const struct objects *)&_cached_objects;
 }
 
 const struct camera *
@@ -270,10 +249,10 @@ traverse_object_context_add(struct object_context *parent_ctx,
         child_ctx->oc_depth = parent_ctx->oc_depth + 1;
         child_ctx->oc_parent = parent;
         child_ctx->oc_object = child;
+        fix16_vector3_zero(&child_ctx->oc_abs_position);
         TAILQ_INIT(&child_ctx->oc_children);
 
-        TAILQ_INSERT_TAIL(&parent_ctx->oc_children, child_ctx,
-            oc_entries);
+        TAILQ_INSERT_TAIL(&parent_ctx->oc_children, child_ctx, oc_tq_entries);
 
         /* Connect context to child object */
         child->context = child_ctx;
@@ -294,13 +273,15 @@ traverse_object_context_remove(struct object_context *parent_ctx,
 
         /* Remove context from object */
         remove->context = NULL;
-        TAILQ_REMOVE(&parent_ctx->oc_children, remove_ctx, oc_entries);
+        TAILQ_REMOVE(&parent_ctx->oc_children, remove_ctx, oc_tq_entries);
 
-        struct object_context *itr_child_ctx;
-        TAILQ_FOREACH (itr_child_ctx, &remove_ctx->oc_children,
-            oc_entries) {
+        while (!(TAILQ_EMPTY(&remove_ctx->oc_children))) {
+                struct object_context *itr_ctx;
+                itr_ctx = TAILQ_FIRST(&remove_ctx->oc_children);
+
                 struct object *itr_object;
-                itr_object = itr_child_ctx->oc_object;
+                itr_object = itr_ctx->oc_object;
+
                 traverse_object_context_remove(remove_ctx, itr_object);
         }
 
@@ -308,26 +289,83 @@ traverse_object_context_remove(struct object_context *parent_ctx,
         assert((memb_free(&_object_context_pool, remove_ctx)) == 0);
 }
 
+/*
+ *
+ */
 static void
 traverse_object_context_update(struct object_context *object_ctx)
 {
         assert(object_ctx != NULL);
 
-        struct object *parent;
-        parent = object_ctx->oc_parent;
-
-        struct object_context *parent_ctx;
-        if (parent != NULL) {
-                parent_ctx = (struct object_context *)parent->context;
-
-                /* Update the relative position */
-                fix16_vector3_add(&object_ctx->oc_position,
-                    &parent_ctx->oc_position,
-                    &object_ctx->oc_position);
+        /* Empty each bucket */
+        uint32_t bucket_idx;
+        for (bucket_idx = 0; bucket_idx < OBJECTS_Z_MAX_BUCKETS; bucket_idx++) {
+                STAILQ_INIT(&_cached_objects.buckets[bucket_idx]);
         }
 
-        struct object_context *itr_child_ctx;
-        TAILQ_FOREACH (itr_child_ctx, &object_ctx->oc_children, oc_entries) {
-                traverse_object_context_update(itr_child_ctx);
+        uint32_t obj_z_idx;
+        obj_z_idx = 0;
+
+        _cached_object_z[obj_z_idx].object = NULL;
+
+        uint32_t objs_z_idx;
+        objs_z_idx = 0;
+
+        SLIST_HEAD(stack, object_context) stack = SLIST_HEAD_INITIALIZER(stack);
+
+        SLIST_INIT(&stack);
+
+        SLIST_INSERT_HEAD(&stack, object_ctx, oc_sl_entries);
+        while (!(SLIST_EMPTY(&stack))) {
+                struct object_context *top_object_ctx;
+                top_object_ctx = SLIST_FIRST(&stack);
+
+                SLIST_REMOVE_HEAD(&stack, oc_sl_entries);
+
+                const struct object *parent;
+                parent = top_object_ctx->oc_parent;
+                if (parent != NULL) {
+                        const struct object_context *parent_ctx;
+                        parent_ctx = (struct object_context *)parent->context;
+
+                        struct object *object;
+                        object = top_object_ctx->oc_object;
+                        struct transform *transform;
+                        transform = &OBJECT(object, transform);
+
+                        /* Calculate the absolute position */
+                        fix16_vector3_add(&top_object_ctx->oc_abs_position,
+                            &parent_ctx->oc_abs_position,
+                            &COMPONENT(transform, position));
+
+                        /* Insert object into its corresponding Z "bucket" */
+                        uint32_t z_position;
+                        z_position = (uint32_t)fix16_to_int(
+                                top_object_ctx->oc_abs_position.z);
+
+                        struct object_z *object_z;
+                        object_z = &_cached_object_z[obj_z_idx];
+                        obj_z_idx++;
+
+                        object_z->object = object;
+                        object_z->abs_position = &parent_ctx->oc_abs_position;
+
+                        struct object_z_entry *object_z_entry;
+                        object_z_entry = &_cached_object_z_entry[objs_z_idx];
+                        objs_z_idx++;
+
+                        object_z_entry->object_z = object_z;
+
+                        STAILQ_INSERT_TAIL(&_cached_objects.buckets[z_position],
+                            object_z_entry, entries);
+                }
+
+                struct object_context *itr_child_ctx;
+                TAILQ_FOREACH_REVERSE (itr_child_ctx,
+                    &top_object_ctx->oc_children,
+                    object_contexts,
+                    oc_tq_entries) {
+                        SLIST_INSERT_HEAD(&stack, itr_child_ctx, oc_sl_entries);
+                }
         }
 }

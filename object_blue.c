@@ -66,7 +66,7 @@ static struct component_jetpack {
                 uint32_t m_state;
                 uint32_t m_last_state;
 
-                struct object_particle *m_object_particle_list[32];
+                struct object_particle *m_object_particle_list[4];
                 uint32_t m_object_particle_count;
         } data;
 
