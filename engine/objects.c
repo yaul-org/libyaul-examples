@@ -286,12 +286,8 @@ static void
 traverse_object_context_remove(struct object_context *parent_ctx,
     struct object *remove)
 {
-        static uint32_t depth = 1;
-
         assert(parent_ctx != NULL);
         assert(remove != NULL);
-
-        assert(depth <= OBJECTS_DEPTH_MAX);
 
         struct object_context *remove_ctx;
         remove_ctx = (struct object_context *)remove->context;
@@ -299,12 +295,6 @@ traverse_object_context_remove(struct object_context *parent_ctx,
         /* Remove context from object */
         remove->context = NULL;
         TAILQ_REMOVE(&parent_ctx->oc_children, remove_ctx, oc_entries);
-
-        if ((TAILQ_EMPTY(&remove_ctx->oc_children))) {
-                goto exit;
-        }
-
-        depth++;
 
         struct object_context *itr_child_ctx;
         TAILQ_FOREACH (itr_child_ctx, &remove_ctx->oc_children,
@@ -314,9 +304,6 @@ traverse_object_context_remove(struct object_context *parent_ctx,
                 traverse_object_context_remove(remove_ctx, itr_object);
         }
 
-        depth--;
-
-exit:
         /* Free context */
         assert((memb_free(&_object_context_pool, remove_ctx)) == 0);
 }
@@ -324,10 +311,7 @@ exit:
 static void
 traverse_object_context_update(struct object_context *object_ctx)
 {
-        static uint32_t depth = 1;
-
         assert(object_ctx != NULL);
-        assert(depth <= OBJECTS_DEPTH_MAX);
 
         struct object *parent;
         parent = object_ctx->oc_parent;
@@ -342,16 +326,8 @@ traverse_object_context_update(struct object_context *object_ctx)
                     &object_ctx->oc_position);
         }
 
-        if ((TAILQ_EMPTY(&object_ctx->oc_children))) {
-                return;
-        }
-
-        depth++;
-
         struct object_context *itr_child_ctx;
         TAILQ_FOREACH (itr_child_ctx, &object_ctx->oc_children, oc_entries) {
                 traverse_object_context_update(itr_child_ctx);
         }
-
-        depth--;
 }
