@@ -15,6 +15,8 @@
 
 #define OBJECTS_DEPTH_MAX 3
 
+extern uint32_t tick;
+
 struct object_context;
 
 TAILQ_HEAD(object_contexts, object_context);
@@ -36,7 +38,10 @@ struct object_context {
 } __aligned(32);
 
 static bool _initialized = false;
-struct object_context _root_ctx;
+/* Last tick when objects data was requested via objects_list() or
+ * objects_sorted_list() */
+static uint32_t _last_tick = 0;
+static struct object_context _root_ctx;
 
 /* Caching */
 /* Cached list of objects allocated */
@@ -194,12 +199,27 @@ objects_clear(void)
         _cached_objects_dirty = true;
 }
 
+/*
+ *
+ */
 const struct object_z *
 objects_list(void)
 {
         assert(_initialized);
 
+        bool new_frame;
+        new_frame = (tick - _last_tick) != 0;
+
+        if (!new_frame && !_cached_objects_dirty) {
+                goto return_list;
+        }
+
         traverse_object_context_update(&_root_ctx);
+
+        _cached_objects_dirty = false;
+
+return_list:
+        _last_tick = tick;
 
         return (const struct object_z *)&_cached_object_z[0];
 }
@@ -209,7 +229,19 @@ objects_sorted_list(void)
 {
         assert(_initialized);
 
+        bool new_frame;
+        new_frame = (tick - _last_tick) != 0;
+
+        if (!new_frame && !_cached_objects_dirty) {
+                goto return_list;
+        }
+
         traverse_object_context_update(&_root_ctx);
+
+        _cached_objects_dirty = false;
+
+return_list:
+        _last_tick = tick;
 
         return (const struct objects *)&_cached_objects;
 }
