@@ -26,8 +26,8 @@ MEMB(_collider_pool, struct collider, PARTICLE_COUNT_MAX,
     sizeof(struct collider));
 MEMB(_rigid_body_pool, struct rigid_body, PARTICLE_COUNT_MAX,
     sizeof(struct rigid_body));
-MEMB(_color_list_pool, color_rgb_t, PARTICLE_COUNT_MAX,
-    sizeof(color_rgb_t));
+MEMB(_color_list_pool, color_rgb555_t, PARTICLE_COUNT_MAX,
+    sizeof(color_rgb555_t));
 
 static void object_particle_on_init(struct object *);
 static void object_particle_on_update(struct object *);
@@ -91,8 +91,8 @@ particle_alloc(void)
         COMPONENT(rigid_body, active) = true;
         COMPONENT(rigid_body, object) = (const struct object *)object_particle;
 
-        color_rgb_t *color_list;
-        color_list = (color_rgb_t *)memb_alloc(&_color_list_pool);
+        color_rgb555_t *color_list;
+        color_list = (color_rgb555_t *)memb_alloc(&_color_list_pool);
         assert(color_list != NULL);
 
         color_list[0].r = 31;
@@ -161,7 +161,7 @@ particle_free(struct object_particle *object_particle)
         COMPONENT(collider, active) = false;
         memb_free(&_collider_pool, collider);
 
-        color_rgb_t *color_list;
+        color_rgb555_t *color_list;
         color_list = OBJECT(object_particle, color_list);
         assert(color_list != NULL);
         memb_free(&_color_list_pool, color_list);

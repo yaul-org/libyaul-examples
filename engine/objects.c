@@ -67,6 +67,7 @@ static void traverse_object_context_update(struct object_context *);
 void
 objects_init(void)
 {
+        /* "Null" object */
         static struct object root = {
                 .id = OBJECT_ID_RESERVED_0,
                 .visible = false,
@@ -200,7 +201,8 @@ objects_clear(void)
 }
 
 /*
- *
+ * Return an array of objects in pre-order traversal from the objects
+ * tree.
  */
 const struct object_z *
 objects_list(void)

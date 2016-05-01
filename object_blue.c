@@ -45,7 +45,7 @@ static fix16_vector3_t _vertex_list[4] = {
         FIX16_VECTOR3_INITIALIZER(64.0f,  0.0f, 1.0f)
 };
 
-static color_rgb_t _color_list[1] = {
+static color_rgb555_t _color_list[1] = {
         {{15, 15, 31}}
 };
 

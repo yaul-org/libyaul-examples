@@ -21,8 +21,8 @@ struct object_particle {
 
         struct {
                 int16_t m_ttl;
-                color_rgb_t m_color_from;
-                color_rgb_t m_color_to;
+                color_rgb555_t m_color_from;
+                color_rgb555_t m_color_to;
                 fix16_vector2_t m_delta;
         } data;
 

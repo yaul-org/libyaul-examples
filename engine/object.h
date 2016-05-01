@@ -52,7 +52,7 @@ bool active;                                                                   \
     uint32_t vertex_count;                                                     \
     /* Color list is one color per 4 vertices, dependent on                    \
      * vertex_count */                                                         \
-    color_rgb_t *color_list;                                                   \
+    color_rgb555_t *color_list;                                                \
     /* Builtin Components */                                                   \
     struct transform transform;                                                \
     struct camera *camera;                                                     \
