@@ -37,6 +37,7 @@ struct object_z {
 };
 
 extern void objects_init(void);
+extern bool objects_object_added(const struct object *);
 extern void objects_object_add(struct object *);
 extern void objects_object_child_add(struct object *, struct object *);
 extern void objects_object_remove(struct object *);

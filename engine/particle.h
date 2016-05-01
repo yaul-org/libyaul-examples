@@ -15,7 +15,7 @@
 #define PARTICLE_COUNT_MAX      128
 
 #define PARTICLE_TTL_MIN        0
-#define PARTICLE_TTL_MAX        31
+#define PARTICLE_TTL_MAX        63
 #define PARTICLE_TTL_LENGTH     (PARTICLE_TTL_MAX + 1)
 
 struct object_particle;
@@ -24,8 +24,18 @@ struct particle {
         COMPONENT_DECLARATIONS
 
         bool looping;
+        /* Maximum number of particles allocated */
         uint32_t max_count;
+        /* Number of particles emitted per frame */
         uint32_t emmission_count;
+        /* Direction where the particles are emmitted */
+        fix16_t dir_angle;
+        fix16_t radius;
+        /* Emmission angle  [1.360] */
+        fix16_t angle;
+        /* Amount of variance in each component (percentange) [0..1] */
+        fix16_t variance;
+        /* TTL for all particles (each particle has its own TTL) */
         int16_t ttl;
         color_rgb888_t color_from;
         color_rgb888_t color_to;

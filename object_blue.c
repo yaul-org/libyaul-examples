@@ -57,14 +57,14 @@ static struct particle _component_particle = {
         .on_draw = NULL,
         .on_destroy = NULL,
         .looping = true,
-        .max_count = 1,
-        .emmission_count = 1,
+        .max_count = 32,
+        .emmission_count = 32,
         .ttl = PARTICLE_TTL_MAX,
         .color_from = {
-                COLOR_RGB888_INITIALIZER(255,   0, 255)
+                COLOR_RGB888_INITIALIZER(255,   0,   0)
         },
         .color_to = {
-                COLOR_RGB888_INITIALIZER(255, 255,   0)
+                COLOR_RGB888_INITIALIZER(  0, 255,   0)
         }
 };
 

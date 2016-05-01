@@ -111,6 +111,24 @@ objects_init(void)
 }
 
 /*
+ * Determine if the object is already present in the objects tree.
+ */
+bool
+objects_object_added(const struct object *object)
+{
+        assert(object != NULL);
+
+        struct object_context *object_ctx;
+        object_ctx = (struct object_context *)object->context;
+
+        if (object_ctx == NULL) {
+                return false;
+        }
+
+        return object_ctx->oc_object == object;
+}
+
+/*
  * Add child object to root object.
  */
 void

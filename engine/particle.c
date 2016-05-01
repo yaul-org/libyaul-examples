@@ -44,8 +44,8 @@ component_particle_init(struct component *this)
 {
         assert((COMPONENT_THIS(particle, ttl) > PARTICLE_TTL_MIN) &&
                (COMPONENT_THIS(particle, ttl) <= PARTICLE_TTL_MAX));
-
         assert(COMPONENT_THIS(particle, max_count) <= PARTICLE_COUNT_MAX);
+        assert(COMPONENT_THIS(particle, emmission_count) <= COMPONENT_THIS(particle, max_count));
 
         particles_init();
 
@@ -81,34 +81,50 @@ component_particle_init(struct component *this)
 }
 
 void
-component_particle_update(struct component *this __unused)
+component_particle_update(struct component *this)
 {
         const struct object *object;
         object = COMPONENT_THIS(particle, object);
 
+        bool looping;
+        looping = COMPONENT_THIS(particle, looping);
+
+        uint32_t emmission_count;
+        emmission_count = COMPONENT_THIS(particle, emmission_count);
+
         struct object_particle **object_particle_list;
         object_particle_list = &COMPONENT_THIS_PRIVATE_DATA(particle,
             object_particle_list)[0];
-        uint32_t object_particle_count;
-        object_particle_count = COMPONENT_THIS_PRIVATE_DATA(particle,
-            object_particle_count);
 
         uint32_t object_idx;
-        assert(object_particle_count == 1);
-        for (object_idx = 0; object_idx < object_particle_count; object_idx++) {
+        for (object_idx = 0; object_idx < emmission_count; object_idx++) {
                 struct object_particle *object_particle;
                 object_particle = object_particle_list[object_idx];
+
+                /* Remove "dead" particles from the objects tree iff
+                 * looping in allowed */
+                if (looping &&
+                    (OBJECT_PRIVATE_DATA(object_particle, ttl) == 0)) {
+                        objects_object_remove((struct object *)object_particle);
+                }
+
+                if (objects_object_added((const struct object *)object_particle)) {
+                        continue;
+                }
+
+                OBJECT(object_particle, active) = true;
 
                 struct transform *transform;
                 transform = &OBJECT_COMPONENT(object_particle, transform);
 
                 COMPONENT(transform, position).z = F16(-1.0f);
 
-                OBJECT(object_particle, active) = true;
-                objects_object_child_add((struct object *)object,
-                        (struct object *)object_particle);
+                /* Reset TTL */
+                OBJECT_PRIVATE_DATA(object_particle, ttl) =
+                    COMPONENT_THIS(particle, ttl);
 
-                objects_object_remove((struct object *)object_particle);
+                objects_object_child_add((struct object *)object,
+                    (struct object *)object_particle);
         }
 }
 
@@ -256,8 +272,6 @@ particles_particle_free(struct object_particle *object_particle)
 static void
 object_particle_on_init(struct object *this)
 {
-        THIS(object_particle, initialized) = true;
-
         /* We want a particle that's alive (TTL > 0) */
         assert((THIS_PRIVATE_DATA(object_particle, ttl) > PARTICLE_TTL_MIN) &&
                (THIS_PRIVATE_DATA(object_particle, ttl) <= PARTICLE_TTL_MAX));
@@ -303,12 +317,6 @@ object_particle_on_init(struct object *this)
 static void
 object_particle_on_update(struct object *this)
 {
-        assert(THIS(object_particle, initialized));
-        cons_buffer("object particle\n");
-        if (THIS_PRIVATE_DATA(object_particle, ttl) == 0) {
-                return;
-        }
-
         color_rgb555_t *rgb555_table;
         rgb555_table = &THIS_PRIVATE_DATA(object_particle, rgb555_table)[0];
 
@@ -327,7 +335,7 @@ object_particle_on_update(struct object *this)
         }
 
         struct transform *transform;
-        transform = &THIS(object_particle, transform);
+        transform = &THIS_COMPONENT(object_particle, transform);
 
         fix16_vector2_add((fix16_vector2_t *)&COMPONENT(transform, position),
             (fix16_vector2_t *)&COMPONENT(transform, position),
@@ -335,7 +343,6 @@ object_particle_on_update(struct object *this)
 }
 
 static void
-object_particle_on_draw(struct object *this)
+object_particle_on_draw(struct object *this __unused)
 {
-        assert(THIS(object_particle, initialized));
 }
