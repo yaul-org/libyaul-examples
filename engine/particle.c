@@ -126,19 +126,26 @@ particle_alloc(void)
         OBJECT(object_particle, on_trigger) = NULL;
 
         /* Public data */
-        OBJECT_PUBLIC_DATA(object_particle, ttl) = 0;
+        OBJECT_PUBLIC_DATA(object_particle, ttl) = PARTICLE_TTL_MAX;
 
-        OBJECT_PUBLIC_DATA(object_particle, color_from).r = 31;
-        OBJECT_PUBLIC_DATA(object_particle, color_from).g = 31;
-        OBJECT_PUBLIC_DATA(object_particle, color_from).b = 31;
+        OBJECT_PUBLIC_DATA(object_particle, color_from).r = 255;
+        OBJECT_PUBLIC_DATA(object_particle, color_from).g = 255;
+        OBJECT_PUBLIC_DATA(object_particle, color_from).b = 255;
 
-        OBJECT_PUBLIC_DATA(object_particle, color_to).r = 31;
-        OBJECT_PUBLIC_DATA(object_particle, color_to).g = 31;
-        OBJECT_PUBLIC_DATA(object_particle, color_to).b = 31;
-        OBJECT_PUBLIC_DATA(object_particle, color_to).b = 31;
+        OBJECT_PUBLIC_DATA(object_particle, color_to).r = 255;
+        OBJECT_PUBLIC_DATA(object_particle, color_to).g = 255;
+        OBJECT_PUBLIC_DATA(object_particle, color_to).b = 255;
 
         OBJECT_PUBLIC_DATA(object_particle, delta).x = F16(0.0f);
         OBJECT_PUBLIC_DATA(object_particle, delta).y = F16(0.0f);
+
+        color_rgb555_t *rgb555_table;
+        rgb555_table = &OBJECT_PRIVATE_DATA(object_particle, rgb555_table)[0];
+
+        uint32_t range;
+        for (range = 0; range < PARTICLE_TTL_MAX; range++) {
+                rgb555_table[range].raw = 0x0000;
+        }
 
         return object_particle;
 }
@@ -172,16 +179,54 @@ particle_free(struct object_particle *object_particle)
 }
 
 static void
-object_particle_on_init(struct object *this __unused)
+object_particle_on_init(struct object *this)
 {
         THIS(object_particle, initialized) = true;
 
+        /* We want a particle that's alive (TTL > 0) */
+        assert((THIS_PUBLIC_DATA(object_particle, ttl) > PARTICLE_TTL_MIN) &&
+               (THIS_PUBLIC_DATA(object_particle, ttl) <= PARTICLE_TTL_MAX));
+
         /* Compute table of color HSV values */
-        /* Compute table of HSV to RGB mapping */
+        color_fix16_hsv_t hsv_from;
+        color_rgb888_hsv_convert(
+                &THIS_PUBLIC_DATA(object_particle, color_from), &hsv_from);
+
+        color_fix16_hsv_t hsv_to;
+        color_rgb888_hsv_convert(&THIS_PUBLIC_DATA(object_particle, color_to),
+            &hsv_to);
+
+        color_rgb555_t *rgb555_table;
+        rgb555_table = &THIS_PRIVATE_DATA(object_particle, rgb555_table)[0];
+
+        int16_t ttl;
+        ttl = THIS_PUBLIC_DATA(object_particle, ttl);
+
+        int16_t step;
+        step = 256 / PARTICLE_TTL_LENGTH; /* Linear interpolation: [0..255] */
+        /* Because our TTL goes from [PARTICLE_TTL_MAX..0], we want to
+         * have the table reversed. Otherwise, we'll go from "color to"
+         * to "color from". */
+        int16_t range;
+        for (range = 0; range <= ttl; range++) {
+                color_fix16_hsv_t hsv;
+                color_hsv_lerp8(&hsv_from, &hsv_to, range * step, &hsv);
+
+                /* Compute table of HSV to RGB mapping */
+                color_hsv_rgb555_convert(&hsv,
+                    &rgb555_table[(PARTICLE_TTL_LENGTH - 1) - range]);
+        }
+
+        /* Set to the current TTL color */
+        color_rgb555_t *color_list;
+        color_list = THIS(object_particle, color_list);
+        color_list[0].r = rgb555_table[ttl].r;
+        color_list[0].g = rgb555_table[ttl].g;
+        color_list[0].b = rgb555_table[ttl].b;
 }
 
 static void
-object_particle_on_update(struct object *this __unused)
+object_particle_on_update(struct object *this)
 {
         assert(THIS(object_particle, initialized));
 
@@ -189,7 +234,22 @@ object_particle_on_update(struct object *this __unused)
                 return;
         }
 
-        THIS_PUBLIC_DATA(object_particle, ttl)--;
+        color_rgb555_t *rgb555_table;
+        rgb555_table = &THIS_PRIVATE_DATA(object_particle, rgb555_table)[0];
+
+        int16_t ttl;
+        ttl = THIS_PUBLIC_DATA(object_particle, ttl);
+
+        /* Set color to primitive */
+        color_rgb555_t *color_list;
+        color_list = THIS(object_particle, color_list);
+        color_list[0].r = rgb555_table[ttl].r;
+        color_list[0].g = rgb555_table[ttl].g;
+        color_list[0].b = rgb555_table[ttl].b;
+
+        if ((THIS_PUBLIC_DATA(object_particle, ttl) - 1) >= 0) {
+                THIS_PUBLIC_DATA(object_particle, ttl)--;
+        }
 
         fix16_vector2_add((fix16_vector2_t *)&THIS(object_particle, transform).position,
             &THIS_PUBLIC_DATA(object_particle, delta),
@@ -197,7 +257,7 @@ object_particle_on_update(struct object *this __unused)
 }
 
 static void
-object_particle_on_draw(struct object *this __unused)
+object_particle_on_draw(struct object *this)
 {
         assert(THIS(object_particle, initialized));
 }

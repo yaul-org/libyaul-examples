@@ -66,7 +66,7 @@ static struct component_jetpack {
                 uint32_t m_state;
                 uint32_t m_last_state;
 
-                struct object_particle *m_object_particle_list[4];
+                struct object_particle *m_object_particle_list[32];
                 uint32_t m_object_particle_count;
         } data;
 
@@ -213,13 +213,13 @@ component_jetpack_on_init(void)
 
                 COMPONENT(transform, position).z = F16(-1.0f);
 
-                OBJECT_PUBLIC_DATA(object_particle, ttl) = 5;
-                OBJECT_PUBLIC_DATA(object_particle, color_from).r = 31;
-                OBJECT_PUBLIC_DATA(object_particle, color_from).g = 31;
-                OBJECT_PUBLIC_DATA(object_particle, color_from).b = 31;
-                OBJECT_PUBLIC_DATA(object_particle, color_to).r = 31;
-                OBJECT_PUBLIC_DATA(object_particle, color_to).g = 31;
-                OBJECT_PUBLIC_DATA(object_particle, color_to).b = 31;
+                OBJECT_PUBLIC_DATA(object_particle, ttl) = PARTICLE_TTL_MAX;
+                OBJECT_PUBLIC_DATA(object_particle, color_from).r = 255;
+                OBJECT_PUBLIC_DATA(object_particle, color_from).g = 0;
+                OBJECT_PUBLIC_DATA(object_particle, color_from).b = 0;
+                OBJECT_PUBLIC_DATA(object_particle, color_to).r = 0;
+                OBJECT_PUBLIC_DATA(object_particle, color_to).g = 255;
+                OBJECT_PUBLIC_DATA(object_particle, color_to).b = 0;
                 OBJECT_PUBLIC_DATA(object_particle, delta).x = F16(0.0f);
                 OBJECT_PUBLIC_DATA(object_particle, delta).y = F16(0.0f);
 

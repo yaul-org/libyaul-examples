@@ -103,6 +103,9 @@ bool active;                                                                   \
 #define OBJECT_PUBLIC_DATA(x, member)                                          \
         ((x)->data.CC_CONCAT(m_, member))
 
+#define OBJECT_PRIVATE_DATA(x, member)                                         \
+        ((x)->private_data.CC_CONCAT(m_, member))
+
 #define OBJECT_CALL_PUBLIC_MEMBER(x, name, args...)                            \
         ((x))->functions.CC_CONCAT(m_, name)((struct object *)(x), ##args)
 
