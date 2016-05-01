@@ -217,6 +217,8 @@ objects_sorted_list(void)
 const struct camera *
 objects_component_camera_find(void)
 {
+        assert(_initialized);
+
         return _cached_camera;
 }
 
@@ -233,8 +235,7 @@ traverse_object_context_add(struct object_context *parent_ctx,
 
         /* Allocate child object */
         struct object_context *child_ctx;
-        child_ctx = (struct object_context *)memb_alloc(
-                &_object_context_pool);
+        child_ctx = (struct object_context *)memb_alloc(&_object_context_pool);
         assert(child_ctx != NULL);
 
         assert((child_ctx->oc_depth + 1) <= OBJECTS_DEPTH_MAX);
@@ -258,6 +259,7 @@ static void
 traverse_object_context_remove(struct object_context *remove_ctx)
 {
         assert(remove_ctx != NULL);
+        assert(remove_ctx->oc_object->context = remove_ctx);
 
         SLIST_HEAD(stack, object_context) stack = SLIST_HEAD_INITIALIZER(stack);
 
@@ -300,7 +302,8 @@ traverse_object_context_remove(struct object_context *remove_ctx)
 }
 
 /*
- *
+ * Traverse objects tree to update each object's absolute position and
+ * populate the Z buckets.
  */
 static void
 traverse_object_context_update(struct object_context *object_ctx)
@@ -376,10 +379,10 @@ traverse_object_context_update(struct object_context *object_ctx)
                             object_z_entry, entries);
                 }
 
+                struct object_contexts *children;
+                children = &top_object_ctx->oc_children;
                 struct object_context *itr_child_ctx;
-                TAILQ_FOREACH_REVERSE (itr_child_ctx,
-                    &top_object_ctx->oc_children,
-                    object_contexts,
+                TAILQ_FOREACH_REVERSE (itr_child_ctx, children, object_contexts,
                     oc_tq_entries) {
                         SLIST_INSERT_HEAD(&stack, itr_child_ctx, oc_sl_entries);
                 }
