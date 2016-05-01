@@ -20,11 +20,11 @@ uint32_t end_scanline = 0;
 
 char text_buffer[1024];
 
-static void objects_update(void) __unused;
-static void objects_draw(void) __unused;
-static void objects_project(void) __unused;
+static void objects_update(void);
+static void objects_draw(void);
+static void objects_project(void);
 
-static void object_project(const struct object *);
+static void object_project(const struct object *, const fix16_vector3_t *);
 
 static void hardware_init(void);
 static void vblank_in_handler(irq_mux_handle_t *);
@@ -120,17 +120,19 @@ objects_project(void)
         camera = objects_component_camera_find();
         assert((camera != NULL) && "No camera found");
 
-        fix16_matrix3_t matrix_view;
-        fix16_matrix3_identity(&matrix_view);
-
         /* Manipulating the camera in world space amounts to
          * applying the inverse of transformations:
          *
          *     [R|t] = [R^T | -(R^T)t]
          *
-         * Because all the affine transformations excluding
-         * translations are prohibited, R=I, the inverse view
-         * matrix is [I|-t]. */
+         * All affine transformations excluding translations are
+         * prohibited, thus R=I.
+         *
+         * Inverse view matrix is then:
+         *
+         *     [I|-t]. */
+        fix16_matrix3_t matrix_view;
+        fix16_matrix3_identity(&matrix_view);
         matrix_view.frow[0][2] = -OBJECT_COMPONENT(camera->object, transform).position.x;
         matrix_view.frow[1][2] = -OBJECT_COMPONENT(camera->object, transform).position.y;
         matrix_view.frow[2][2] = -OBJECT_COMPONENT(camera->object, transform).position.z;
@@ -165,14 +167,17 @@ objects_project(void)
                 int32_t z_bucket;
                 for (z_bucket = OBJECTS_Z_MAX; z_bucket >= 0; z_bucket--) {
                         struct object_z_entry *itr_oze;
-                        STAILQ_FOREACH (itr_oze, &objects->buckets[z_bucket], entries) {
+                        STAILQ_FOREACH (itr_oze, &objects->buckets[z_bucket],
+                            entries) {
                                 const struct object_z *object_z;
                                 object_z = itr_oze->object_z;
 
                                 const struct object *object;
                                 object = object_z->object;
+                                const fix16_vector3_t *position;
+                                position = object_z->position;
 
-                                object_project(object);
+                                object_project(object, position);
                         }
                 }
 
@@ -181,7 +186,7 @@ objects_project(void)
 }
 
 static void
-object_project(const struct object *object)
+object_project(const struct object *object, const fix16_vector3_t *position)
 {
         assert(object != NULL);
 
@@ -199,19 +204,15 @@ object_project(const struct object *object)
         }
 
         /* Only objects with a vertex list should be projected */
-        if ((OBJECT_COMPONENT(object, vertex_list) == NULL) ||
-            (OBJECT_COMPONENT(object, vertex_count) != 4)) {
+        if ((OBJECT(object, vertex_list) == NULL) ||
+            (OBJECT(object, vertex_count) != 4)) {
                 return;
         }
 
         matrix_stack_push(); {
                 fix16_matrix3_t *matrix_model_view;
                 matrix_stack_mode(MATRIX_STACK_MODE_MODEL_VIEW);
-
-                matrix_stack_translate(
-                        OBJECT_COMPONENT(object, transform).position.x,
-                        OBJECT_COMPONENT(object, transform).position.y,
-                        OBJECT_COMPONENT(object, transform).position.z);
+                matrix_stack_translate(position->x, position->y, position->z);
 
                 matrix_model_view = matrix_stack_top(
                         MATRIX_STACK_MODE_MODEL_VIEW)->ms_matrix;

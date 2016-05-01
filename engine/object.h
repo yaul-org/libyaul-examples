@@ -18,7 +18,24 @@
 #include "transform.h"
 #include "rigid_body.h"
 
-#define COMPONENT_LIST_MAX 8
+#define OBJECT_COMPONENT_LIST_MAX       8
+
+#define OBJECT_ID_RESERVED_0            0x8000
+#define OBJECT_ID_RESERVED_1            0x8001
+#define OBJECT_ID_RESERVED_2            0x8002
+#define OBJECT_ID_RESERVED_3            0x8003
+#define OBJECT_ID_RESERVED_4            0x8004
+#define OBJECT_ID_RESERVED_5            0x8005
+#define OBJECT_ID_RESERVED_6            0x8006
+#define OBJECT_ID_RESERVED_7            0x8007
+#define OBJECT_ID_RESERVED_8            0x8008
+#define OBJECT_ID_RESERVED_9            0x8009
+#define OBJECT_ID_RESERVED_10           0x800A
+#define OBJECT_ID_RESERVED_11           0x800B
+#define OBJECT_ID_RESERVED_12           0x800C
+#define OBJECT_ID_RESERVED_13           0x800D
+#define OBJECT_ID_RESERVED_14           0x800E
+#define OBJECT_ID_RESERVED_15           0x800F
 
 #define OBJECT_DECLARATIONS                                                    \
 bool active;                                                                   \
@@ -41,7 +58,7 @@ bool active;                                                                   \
     struct camera *camera;                                                     \
     struct collider *colliders;                                                \
     struct rigid_body *rigid_body;                                             \
-    struct component *component_list[COMPONENT_LIST_MAX];                      \
+    struct component *component_list[OBJECT_COMPONENT_LIST_MAX];               \
     uint32_t component_count;                                                  \
     /* Events */                                                               \
     void (*on_init)(struct object *);                                          \

@@ -33,7 +33,7 @@ struct object_z_entry {
 
 struct object_z {
         const struct object *object;
-        const fix16_vector3_t *abs_position;
+        const fix16_vector3_t *position;
 };
 
 extern void objects_init(void);

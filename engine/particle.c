@@ -111,7 +111,8 @@ particle_alloc(void)
         OBJECT(object_particle, colliders) = collider;
 
         uint32_t component_idx;
-        for (component_idx = 0; component_idx < COMPONENT_LIST_MAX; component_idx++) {
+        for (component_idx = 0; component_idx < OBJECT_COMPONENT_LIST_MAX;
+             component_idx++) {
                 OBJECT(object_particle, component_list)[component_idx] = NULL;
         }
 

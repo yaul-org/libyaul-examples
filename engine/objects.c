@@ -26,7 +26,7 @@ struct object_context {
         struct object *oc_parent;
         struct object *oc_object;
         /* Calculated absolute position of the object in world space */
-        fix16_vector3_t oc_abs_position;
+        fix16_vector3_t oc_position;
         struct object_contexts oc_children;
 
         /* Tree management */
@@ -64,7 +64,7 @@ void
 objects_init(void)
 {
         static struct object root = {
-                .id = 0,
+                .id = OBJECT_ID_RESERVED_0,
                 .visible = false,
                 .vertex_list = NULL,
                 .vertex_count = 0,
@@ -97,7 +97,7 @@ objects_init(void)
         _root_ctx.oc_depth = 1;
         _root_ctx.oc_parent = NULL;
         _root_ctx.oc_object = &root;
-        fix16_vector3_zero(&_root_ctx.oc_abs_position);
+        fix16_vector3_zero(&_root_ctx.oc_position);
         TAILQ_INIT(&_root_ctx.oc_children);
 
         memb_init(&_object_context_pool);
@@ -249,7 +249,7 @@ traverse_object_context_add(struct object_context *parent_ctx,
         child_ctx->oc_depth = parent_ctx->oc_depth + 1;
         child_ctx->oc_parent = parent;
         child_ctx->oc_object = child;
-        fix16_vector3_zero(&child_ctx->oc_abs_position);
+        fix16_vector3_zero(&child_ctx->oc_position);
         TAILQ_INIT(&child_ctx->oc_children);
 
         TAILQ_INSERT_TAIL(&parent_ctx->oc_children, child_ctx, oc_tq_entries);
@@ -296,6 +296,7 @@ static void
 traverse_object_context_update(struct object_context *object_ctx)
 {
         assert(object_ctx != NULL);
+        assert(object_ctx->oc_object->context = object_ctx);
 
         /* Empty each bucket */
         uint32_t bucket_idx;
@@ -330,25 +331,30 @@ traverse_object_context_update(struct object_context *object_ctx)
 
                         struct object *object;
                         object = top_object_ctx->oc_object;
+
+                        /* Ensure that the context is connected to the
+                         * right object */
+                        assert(top_object_ctx == object->context);
+
                         struct transform *transform;
-                        transform = &OBJECT(object, transform);
+                        transform = &OBJECT_COMPONENT(object, transform);
 
                         /* Calculate the absolute position */
-                        fix16_vector3_add(&top_object_ctx->oc_abs_position,
-                            &parent_ctx->oc_abs_position,
-                            &COMPONENT(transform, position));
+                        fix16_vector3_add(&COMPONENT(transform, position),
+                            &parent_ctx->oc_position,
+                            &top_object_ctx->oc_position);
 
                         /* Insert object into its corresponding Z "bucket" */
                         uint32_t z_position;
                         z_position = (uint32_t)fix16_to_int(
-                                top_object_ctx->oc_abs_position.z);
+                                top_object_ctx->oc_position.z);
 
                         struct object_z *object_z;
                         object_z = &_cached_object_z[obj_z_idx];
                         obj_z_idx++;
 
                         object_z->object = object;
-                        object_z->abs_position = &parent_ctx->oc_abs_position;
+                        object_z->position = &top_object_ctx->oc_position;
 
                         struct object_z_entry *object_z_entry;
                         object_z_entry = &_cached_object_z_entry[objs_z_idx];

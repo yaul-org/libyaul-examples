@@ -46,7 +46,7 @@ static fix16_vector3_t _vertex_list[4] = {
 };
 
 static color_rgb_t _color_list[1] = {
-        {{15, 15, 15}}
+        {{15, 15, 31}}
 };
 
 static struct collider _collider = {
@@ -102,8 +102,9 @@ struct object_blue object_blue = {
         .vertex_list = &_vertex_list[0],
         .vertex_count = 4,
         .transform = {
+                .active = true,
                 .object = (struct object *)&object_blue,
-                .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 1.0f)
+                .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 2.0f)
         },
         .color_list = &_color_list[0],
         .camera = NULL,
@@ -127,7 +128,7 @@ static uint32_t _state;
 static uint32_t _last_state;
 
 static void
-on_init(struct object *this __unused)
+on_init(struct object *this)
 {
         _state = BLUE_STATE_WAITING;
         _last_state = _state;
@@ -165,7 +166,7 @@ on_update(struct object *this)
 }
 
 static void
-on_draw(struct object *this __unused)
+on_draw(struct object *this)
 {
         assert(THIS(object_blue, initialized));
 }
@@ -206,6 +207,11 @@ component_jetpack_on_init(void)
                 OBJECT(object_particle, active) = false;
                 OBJECT(object_particle, id) =
                     OBJECT_ID_PARTICLE_BEGIN + object_idx;
+
+                struct transform *transform;
+                transform = &OBJECT(object_particle, transform);
+
+                COMPONENT(transform, position).z = F16(-1.0f);
 
                 OBJECT_PUBLIC_DATA(object_particle, ttl) = 5;
                 OBJECT_PUBLIC_DATA(object_particle, color_from).r = 31;
