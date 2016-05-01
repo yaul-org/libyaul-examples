@@ -53,8 +53,7 @@ MEMB(_object_context_pool, struct object_context, OBJECTS_MAX,
 
 static void traverse_object_context_add(struct object_context *,
     struct object *);
-static void traverse_object_context_remove(struct object_context *,
-    struct object *);
+static void traverse_object_context_remove(struct object_context *);
 static void traverse_object_context_update(struct object_context *);
 
 /*
@@ -158,13 +157,7 @@ objects_object_remove(struct object *child)
         struct object_context *child_ctx;
         child_ctx = (struct object_context *)child->context;
 
-        struct object *parent;
-        parent = child_ctx->oc_parent;
-
-        struct object_context *parent_ctx;
-        parent_ctx = (struct object_context *)parent->context;
-
-        traverse_object_context_remove(parent_ctx, child);
+        traverse_object_context_remove(child_ctx);
 
         _cached_objects_dirty = true;
 }
@@ -262,31 +255,48 @@ traverse_object_context_add(struct object_context *parent_ctx,
  * Remove object and its children from the tree.
  */
 static void
-traverse_object_context_remove(struct object_context *parent_ctx,
-    struct object *remove)
+traverse_object_context_remove(struct object_context *remove_ctx)
 {
-        assert(parent_ctx != NULL);
-        assert(remove != NULL);
+        assert(remove_ctx != NULL);
 
-        struct object_context *remove_ctx;
-        remove_ctx = (struct object_context *)remove->context;
+        SLIST_HEAD(stack, object_context) stack = SLIST_HEAD_INITIALIZER(stack);
 
-        /* Remove context from object */
-        remove->context = NULL;
-        TAILQ_REMOVE(&parent_ctx->oc_children, remove_ctx, oc_tq_entries);
+        SLIST_INIT(&stack);
 
-        while (!(TAILQ_EMPTY(&remove_ctx->oc_children))) {
-                struct object_context *itr_ctx;
-                itr_ctx = TAILQ_FIRST(&remove_ctx->oc_children);
+        SLIST_INSERT_HEAD(&stack, remove_ctx, oc_sl_entries);
+        while (!(SLIST_EMPTY(&stack))) {
+                struct object_context *top_remove_ctx;
+                top_remove_ctx = SLIST_FIRST(&stack);
 
-                struct object *itr_object;
-                itr_object = itr_ctx->oc_object;
+                SLIST_REMOVE_HEAD(&stack, oc_sl_entries);
 
-                traverse_object_context_remove(remove_ctx, itr_object);
+                /* Remove context from object */
+                const struct object *parent;
+                parent = top_remove_ctx->oc_parent;
+                /* The root node is not to be removed */
+                if (parent != NULL) {
+                        struct object_context *parent_ctx;
+                        parent_ctx = (struct object_context *)parent->context;
+
+                        struct object *top_remove;
+                        top_remove = top_remove_ctx->oc_object;
+                        /* Disconnect context from object */
+                        top_remove->context = NULL;
+                        TAILQ_REMOVE(&parent_ctx->oc_children, top_remove_ctx,
+                            oc_tq_entries);
+                        /* Free context */
+                        assert((memb_free(&_object_context_pool,
+                                    top_remove_ctx)) == 0);
+                }
+
+                while (!(TAILQ_EMPTY(&top_remove_ctx->oc_children))) {
+                        struct object_context *itr_child_ctx;
+                        itr_child_ctx =
+                            TAILQ_FIRST(&top_remove_ctx->oc_children);
+
+                        SLIST_INSERT_HEAD(&stack, itr_child_ctx, oc_sl_entries);
+                }
         }
-
-        /* Free context */
-        assert((memb_free(&_object_context_pool, remove_ctx)) == 0);
 }
 
 /*
@@ -327,7 +337,7 @@ traverse_object_context_update(struct object_context *object_ctx)
                 parent = top_object_ctx->oc_parent;
                 if (parent != NULL) {
                         const struct object_context *parent_ctx;
-                        parent_ctx = (struct object_context *)parent->context;
+                        parent_ctx = parent->context;
 
                         struct object *object;
                         object = top_object_ctx->oc_object;
