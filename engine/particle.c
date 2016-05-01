@@ -11,14 +11,11 @@
 #include <stdio.h>
 
 #include "particle.h"
+#include "objects.h"
 
-#define PARTICLE_COUNT_MAX 128
-
-#define PARTICLE_STATE_WAITING  0
-
-static const char *_particle_state2str[] __unused = {
-        "PARTICLE_STATE_WAITING"
-};
+static void particles_init(void);
+static struct object_particle *particles_particle_alloc(void);
+static void particles_particle_free(struct object_particle *) __unused;
 
 MEMB(_object_particle_pool, struct object_particle, PARTICLE_COUNT_MAX,
     sizeof(struct object_particle));
@@ -43,7 +40,80 @@ static fix16_vector3_t _vertex_list[4] = {
 };
 
 void
-particle_init(void)
+component_particle_init(struct component *this)
+{
+        assert((COMPONENT_THIS(particle, ttl) > PARTICLE_TTL_MIN) &&
+               (COMPONENT_THIS(particle, ttl) <= PARTICLE_TTL_MAX));
+
+        assert(COMPONENT_THIS(particle, max_count) <= PARTICLE_COUNT_MAX);
+
+        particles_init();
+
+        struct object_particle **object_particle_list;
+        object_particle_list = &COMPONENT_THIS_PRIVATE_DATA(particle,
+            object_particle_list)[0];
+        uint32_t object_particle_count;
+        object_particle_count = COMPONENT_THIS(particle, max_count);
+
+        COMPONENT_THIS_PRIVATE_DATA(particle, object_particle_count) =
+            object_particle_count;
+
+        uint32_t object_idx;
+        for (object_idx = 0; object_idx < object_particle_count; object_idx++) {
+                struct object_particle *object_particle;
+                object_particle = particles_particle_alloc();
+
+                OBJECT(object_particle, active) = false;
+
+                OBJECT_PRIVATE_DATA(object_particle, ttl) =
+                    COMPONENT_THIS(particle, ttl);
+                OBJECT_PRIVATE_DATA(object_particle, color_from).raw =
+                    COMPONENT_THIS(particle, color_from).raw;
+                OBJECT_PRIVATE_DATA(object_particle, color_to).raw =
+                    COMPONENT_THIS(particle, color_to).raw;
+                OBJECT_PRIVATE_DATA(object_particle, delta).x = F16(0.0f);
+                OBJECT_PRIVATE_DATA(object_particle, delta).y = F16(0.0f);
+
+                OBJECT_INIT(object_particle);
+
+                object_particle_list[object_idx] = object_particle;
+        }
+}
+
+void
+component_particle_update(struct component *this __unused)
+{
+        const struct object *object;
+        object = COMPONENT_THIS(particle, object);
+
+        struct object_particle **object_particle_list;
+        object_particle_list = &COMPONENT_THIS_PRIVATE_DATA(particle,
+            object_particle_list)[0];
+        uint32_t object_particle_count;
+        object_particle_count = COMPONENT_THIS_PRIVATE_DATA(particle,
+            object_particle_count);
+
+        uint32_t object_idx;
+        assert(object_particle_count == 1);
+        for (object_idx = 0; object_idx < object_particle_count; object_idx++) {
+                struct object_particle *object_particle;
+                object_particle = object_particle_list[object_idx];
+
+                struct transform *transform;
+                transform = &OBJECT_COMPONENT(object_particle, transform);
+
+                COMPONENT(transform, position).z = F16(-1.0f);
+
+                OBJECT(object_particle, active) = true;
+                objects_object_child_add((struct object *)object,
+                        (struct object *)object_particle);
+
+                objects_object_remove((struct object *)object_particle);
+        }
+}
+
+static void
+particles_init(void)
 {
         if (_initialized) {
                 return;
@@ -57,9 +127,11 @@ particle_init(void)
         _initialized = true;
 }
 
-struct object_particle *
-particle_alloc(void)
+static struct object_particle *
+particles_particle_alloc(void)
 {
+        static uint32_t id_offset = 0;
+
         assert(_initialized);
 
         struct object_particle *object_particle;
@@ -68,7 +140,7 @@ particle_alloc(void)
         assert(object_particle != NULL);
 
         struct transform *transform;
-        transform = &OBJECT(object_particle, transform);
+        transform = &OBJECT_COMPONENT(object_particle, transform);
 
         COMPONENT(transform, object) = (const struct object *)object_particle;
         COMPONENT(transform, position).x = F16(0.0f);
@@ -100,7 +172,8 @@ particle_alloc(void)
         color_list[0].b = 31;
 
         OBJECT(object_particle, active) = false;
-        OBJECT(object_particle, id) = -1;
+        OBJECT(object_particle, id) = OBJECT_ID_RESERVED_BEGIN + id_offset;
+        id_offset++;
         OBJECT(object_particle, visible) = true;
         OBJECT(object_particle, vertex_list) = &_vertex_list[0];
         OBJECT(object_particle, vertex_count) = 4;
@@ -117,7 +190,6 @@ particle_alloc(void)
         }
 
         OBJECT(object_particle, component_count) = 0;
-        OBJECT(object_particle, initialized) = false;
         OBJECT(object_particle, on_init) = object_particle_on_init;
         OBJECT(object_particle, on_update) = object_particle_on_update;
         OBJECT(object_particle, on_draw) = object_particle_on_draw;
@@ -125,19 +197,22 @@ particle_alloc(void)
         OBJECT(object_particle, on_collision) = NULL;
         OBJECT(object_particle, on_trigger) = NULL;
 
+        OBJECT(object_particle, initialized) = false;
+        OBJECT(object_particle, context) = NULL;
+
         /* Public data */
-        OBJECT_PUBLIC_DATA(object_particle, ttl) = PARTICLE_TTL_MAX;
+        OBJECT_PRIVATE_DATA(object_particle, ttl) = PARTICLE_TTL_MAX;
 
-        OBJECT_PUBLIC_DATA(object_particle, color_from).r = 255;
-        OBJECT_PUBLIC_DATA(object_particle, color_from).g = 255;
-        OBJECT_PUBLIC_DATA(object_particle, color_from).b = 255;
+        OBJECT_PRIVATE_DATA(object_particle, color_from).r = 255;
+        OBJECT_PRIVATE_DATA(object_particle, color_from).g = 255;
+        OBJECT_PRIVATE_DATA(object_particle, color_from).b = 255;
 
-        OBJECT_PUBLIC_DATA(object_particle, color_to).r = 255;
-        OBJECT_PUBLIC_DATA(object_particle, color_to).g = 255;
-        OBJECT_PUBLIC_DATA(object_particle, color_to).b = 255;
+        OBJECT_PRIVATE_DATA(object_particle, color_to).r = 255;
+        OBJECT_PRIVATE_DATA(object_particle, color_to).g = 255;
+        OBJECT_PRIVATE_DATA(object_particle, color_to).b = 255;
 
-        OBJECT_PUBLIC_DATA(object_particle, delta).x = F16(0.0f);
-        OBJECT_PUBLIC_DATA(object_particle, delta).y = F16(0.0f);
+        OBJECT_PRIVATE_DATA(object_particle, delta).x = F16(0.0f);
+        OBJECT_PRIVATE_DATA(object_particle, delta).y = F16(0.0f);
 
         color_rgb555_t *rgb555_table;
         rgb555_table = &OBJECT_PRIVATE_DATA(object_particle, rgb555_table)[0];
@@ -150,8 +225,8 @@ particle_alloc(void)
         return object_particle;
 }
 
-void
-particle_free(struct object_particle *object_particle)
+static void
+particles_particle_free(struct object_particle *object_particle)
 {
         assert(_initialized);
         assert(object_particle != NULL);
@@ -184,23 +259,23 @@ object_particle_on_init(struct object *this)
         THIS(object_particle, initialized) = true;
 
         /* We want a particle that's alive (TTL > 0) */
-        assert((THIS_PUBLIC_DATA(object_particle, ttl) > PARTICLE_TTL_MIN) &&
-               (THIS_PUBLIC_DATA(object_particle, ttl) <= PARTICLE_TTL_MAX));
+        assert((THIS_PRIVATE_DATA(object_particle, ttl) > PARTICLE_TTL_MIN) &&
+               (THIS_PRIVATE_DATA(object_particle, ttl) <= PARTICLE_TTL_MAX));
 
-        /* Compute table of color HSV values */
+        /* Compute table of color HSV values (very slow) */
         color_fix16_hsv_t hsv_from;
         color_rgb888_hsv_convert(
-                &THIS_PUBLIC_DATA(object_particle, color_from), &hsv_from);
+                &THIS_PRIVATE_DATA(object_particle, color_from), &hsv_from);
 
         color_fix16_hsv_t hsv_to;
-        color_rgb888_hsv_convert(&THIS_PUBLIC_DATA(object_particle, color_to),
+        color_rgb888_hsv_convert(&THIS_PRIVATE_DATA(object_particle, color_to),
             &hsv_to);
 
         color_rgb555_t *rgb555_table;
         rgb555_table = &THIS_PRIVATE_DATA(object_particle, rgb555_table)[0];
 
         int16_t ttl;
-        ttl = THIS_PUBLIC_DATA(object_particle, ttl);
+        ttl = THIS_PRIVATE_DATA(object_particle, ttl);
 
         int16_t step;
         step = 256 / PARTICLE_TTL_LENGTH; /* Linear interpolation: [0..255] */
@@ -229,8 +304,8 @@ static void
 object_particle_on_update(struct object *this)
 {
         assert(THIS(object_particle, initialized));
-
-        if (THIS_PUBLIC_DATA(object_particle, ttl) == 0) {
+        cons_buffer("object particle\n");
+        if (THIS_PRIVATE_DATA(object_particle, ttl) == 0) {
                 return;
         }
 
@@ -238,7 +313,7 @@ object_particle_on_update(struct object *this)
         rgb555_table = &THIS_PRIVATE_DATA(object_particle, rgb555_table)[0];
 
         int16_t ttl;
-        ttl = THIS_PUBLIC_DATA(object_particle, ttl);
+        ttl = THIS_PRIVATE_DATA(object_particle, ttl);
 
         /* Set color to primitive */
         color_rgb555_t *color_list;
@@ -247,13 +322,16 @@ object_particle_on_update(struct object *this)
         color_list[0].g = rgb555_table[ttl].g;
         color_list[0].b = rgb555_table[ttl].b;
 
-        if ((THIS_PUBLIC_DATA(object_particle, ttl) - 1) >= 0) {
-                THIS_PUBLIC_DATA(object_particle, ttl)--;
+        if ((THIS_PRIVATE_DATA(object_particle, ttl) - 1) >= 0) {
+                THIS_PRIVATE_DATA(object_particle, ttl)--;
         }
 
-        fix16_vector2_add((fix16_vector2_t *)&THIS(object_particle, transform).position,
-            &THIS_PUBLIC_DATA(object_particle, delta),
-            (fix16_vector2_t *)&THIS(object_particle, transform).position);
+        struct transform *transform;
+        transform = &THIS(object_particle, transform);
+
+        fix16_vector2_add((fix16_vector2_t *)&COMPONENT(transform, position),
+            (fix16_vector2_t *)&COMPONENT(transform, position),
+            &THIS_PRIVATE_DATA(object_particle, delta));
 }
 
 static void

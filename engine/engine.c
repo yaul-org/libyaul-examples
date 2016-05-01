@@ -40,7 +40,6 @@ engine_init(void)
         fs_init();
         objects_init();
         scene_init();
-        particle_init();
         matrix_stack_init();
 }
 

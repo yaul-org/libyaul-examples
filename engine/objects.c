@@ -141,8 +141,9 @@ objects_object_child_add(struct object *object, struct object *child)
 {
         assert(_initialized);
         assert(object != NULL);
-        assert(child != NULL);
         assert(object->context != NULL);
+        assert(child != NULL);
+        assert(child->context == NULL);
 
         traverse_object_context_add((struct object_context *)object->context,
             child);
@@ -293,6 +294,7 @@ static void
 traverse_object_context_remove(struct object_context *remove_ctx)
 {
         assert(remove_ctx != NULL);
+        assert(remove_ctx->oc_object != NULL);
         assert(remove_ctx->oc_object->context = remove_ctx);
 
         SLIST_HEAD(stack, object_context) stack = SLIST_HEAD_INITIALIZER(stack);
@@ -318,8 +320,14 @@ traverse_object_context_remove(struct object_context *remove_ctx)
                         top_remove = top_remove_ctx->oc_object;
                         /* Disconnect context from object */
                         top_remove->context = NULL;
+
+                        top_remove_ctx->oc_depth = 0;
+                        top_remove_ctx->oc_parent = NULL;
+                        top_remove_ctx->oc_object = NULL;
+
                         TAILQ_REMOVE(&parent_ctx->oc_children, top_remove_ctx,
                             oc_tq_entries);
+
                         /* Free context */
                         assert((memb_free(&_object_context_pool,
                                     top_remove_ctx)) == 0);
@@ -392,9 +400,13 @@ traverse_object_context_update(struct object_context *object_ctx)
                             &top_object_ctx->oc_position);
 
                         /* Insert object into its corresponding Z "bucket" */
-                        uint32_t z_position;
-                        z_position = (uint32_t)fix16_to_int(
+                        int32_t z_position;
+                        z_position = (int32_t)fix16_to_int(
                                 top_object_ctx->oc_position.z);
+
+                        /* Make sure the Z position falls within the buckets */
+                        assert((z_position >= OBJECTS_Z_MIN) &&
+                               (z_position <= OBJECTS_Z_MAX));
 
                         struct object_z *object_z;
                         object_z = &_cached_object_z[obj_z_idx];

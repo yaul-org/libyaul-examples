@@ -23,7 +23,8 @@ object_component_init(const struct object *object)
              component_idx++) {
                 struct component *component;
                 component = OBJECT(object, component_list)[component_idx];
-                COMPONENT_CALL_EVENT(component, init);
+
+                COMPONENT_INIT(component);
         }
 }
 
@@ -38,7 +39,8 @@ object_component_update(const struct object *object)
              component_idx++) {
                 struct component *component;
                 component = OBJECT(object, component_list)[component_idx];
-                COMPONENT_CALL_EVENT(component, update);
+
+                COMPONENT_UPDATE(component);
         }
 }
 
@@ -53,6 +55,7 @@ object_component_draw(const struct object *object)
              component_idx++) {
                 struct component *component;
                 component = OBJECT(object, component_list)[component_idx];
-                COMPONENT_CALL_EVENT(component, draw);
+
+                COMPONENT_DRAW(component);
         }
 }

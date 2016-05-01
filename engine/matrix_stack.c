@@ -19,28 +19,25 @@ MEMB(matrix_stack_pool, struct matrix_stack, MATRIX_STACK_DEPTH,
 MEMB(matrix_stack_matrix_pool, fix16_matrix3_t, MATRIX_STACK_DEPTH,
     sizeof(fix16_matrix3_t));
 
-static struct {
-        bool initialized;
-        int32_t mode;
-
-        struct matrix_stacks matrix_stacks[MATRIX_STACK_MODES];
-} _state;
+static bool _initialized;
+static int32_t _mode;
+static struct matrix_stacks _matrix_stacks[MATRIX_STACK_MODES];
 
 void
 matrix_stack_init(void)
 {
-        if (_state.initialized) {
+        if (_initialized) {
                 return;
         }
 
-        SLIST_INIT(&_state.matrix_stacks[MATRIX_STACK_MODE_PROJECTION]);
-        SLIST_INIT(&_state.matrix_stacks[MATRIX_STACK_MODE_MODEL_VIEW]);
+        SLIST_INIT(&_matrix_stacks[MATRIX_STACK_MODE_PROJECTION]);
+        SLIST_INIT(&_matrix_stacks[MATRIX_STACK_MODE_MODEL_VIEW]);
 
         memb_init(&matrix_stack_pool);
         memb_init(&matrix_stack_matrix_pool);
 
-        _state.initialized = true;
-        _state.mode = MATRIX_STACK_MODE_INVALID;
+        _initialized = true;
+        _mode = MATRIX_STACK_MODE_INVALID;
 
         matrix_stack_mode(MATRIX_STACK_MODE_PROJECTION);
         matrix_stack_push();
@@ -54,25 +51,25 @@ matrix_stack_init(void)
 void
 matrix_stack_mode(int32_t mode)
 {
-        assert(_state.initialized);
+        assert(_initialized);
         assert((mode == MATRIX_STACK_MODE_PROJECTION) ||
                (mode == MATRIX_STACK_MODE_MODEL_VIEW));
 
-        _state.mode = mode;
+        _mode = mode;
 }
 
 void
 matrix_stack_push(void)
 {
         /* Make sure the correct state is set */
-        assert(_state.initialized);
-        assert(_state.mode != MATRIX_STACK_MODE_INVALID);
+        assert(_initialized);
+        assert(_mode != MATRIX_STACK_MODE_INVALID);
 
         struct matrix_stack *ms;
         ms = (struct matrix_stack *)memb_alloc(&matrix_stack_pool);
 
         struct matrix_stack *top_ms;
-        top_ms = matrix_stack_top(_state.mode);
+        top_ms = matrix_stack_top(_mode);
 
         ms->ms_matrix = (fix16_matrix3_t *)memb_alloc(
                 &matrix_stack_matrix_pool);
@@ -83,7 +80,7 @@ matrix_stack_push(void)
                     sizeof(fix16_matrix3_t));
         }
 
-        SLIST_INSERT_HEAD(&_state.matrix_stacks[_state.mode], ms,
+        SLIST_INSERT_HEAD(&_matrix_stacks[_mode], ms,
             ms_entries);
 }
 
@@ -91,11 +88,11 @@ void
 matrix_stack_pop(void)
 {
         /* Make sure the correct state is set */
-        assert(_state.initialized);
-        assert(_state.mode != MATRIX_STACK_MODE_INVALID);
+        assert(_initialized);
+        assert(_mode != MATRIX_STACK_MODE_INVALID);
 
         struct matrix_stack *top_ms;
-        top_ms = matrix_stack_top(_state.mode);
+        top_ms = matrix_stack_top(_mode);
         assert(top_ms != NULL);
 
         int error_code;
@@ -103,33 +100,33 @@ matrix_stack_pop(void)
         assert(error_code == 0);
         error_code = memb_free(&matrix_stack_pool, top_ms);
         assert(error_code == 0);
-        SLIST_REMOVE_HEAD(&_state.matrix_stacks[_state.mode],
+        SLIST_REMOVE_HEAD(&_matrix_stacks[_mode],
             ms_entries);
 
         /* Make sure we didn't pop off the last matrix in the stack */
-        assert(!(SLIST_EMPTY(&_state.matrix_stacks[_state.mode])));
+        assert(!(SLIST_EMPTY(&_matrix_stacks[_mode])));
 }
 
 struct matrix_stack *
 matrix_stack_top(int32_t mode)
 {
         /* Make sure the correct state is set */
-        assert(_state.initialized);
+        assert(_initialized);
         assert((mode == MATRIX_STACK_MODE_PROJECTION) ||
                (mode == MATRIX_STACK_MODE_MODEL_VIEW));
 
-        return SLIST_FIRST(&_state.matrix_stacks[mode]);
+        return SLIST_FIRST(&_matrix_stacks[mode]);
 }
 
 void
 matrix_stack_load(fix16_matrix3_t *matrix)
 {
         /* Make sure the correct state is set */
-        assert(_state.initialized);
-        assert(_state.mode != MATRIX_STACK_MODE_INVALID);
+        assert(_initialized);
+        assert(_mode != MATRIX_STACK_MODE_INVALID);
 
         struct matrix_stack *top_ms;
-        top_ms = matrix_stack_top(_state.mode);
+        top_ms = matrix_stack_top(_mode);
         assert(top_ms != NULL);
 
         memcpy(top_ms->ms_matrix, matrix, sizeof(fix16_matrix3_t));
@@ -139,11 +136,11 @@ void
 matrix_stack_identity_load(void)
 {
         /* Make sure the correct state is set */
-        assert(_state.initialized);
-        assert(_state.mode != MATRIX_STACK_MODE_INVALID);
+        assert(_initialized);
+        assert(_mode != MATRIX_STACK_MODE_INVALID);
 
         struct matrix_stack *top_ms;
-        top_ms = matrix_stack_top(_state.mode);
+        top_ms = matrix_stack_top(_mode);
         assert(top_ms != NULL);
 
         fix16_matrix3_identity(top_ms->ms_matrix);
@@ -153,11 +150,11 @@ void
 matrix_stack_translate(fix16_t x, fix16_t y, fix16_t z)
 {
         /* Make sure the correct state is set */
-        assert(_state.initialized);
-        assert(_state.mode != MATRIX_STACK_MODE_INVALID);
+        assert(_initialized);
+        assert(_mode != MATRIX_STACK_MODE_INVALID);
 
         struct matrix_stack *top_ms;
-        top_ms = matrix_stack_top(_state.mode);
+        top_ms = matrix_stack_top(_mode);
         assert(top_ms != NULL);
 
         fix16_matrix3_t transform;

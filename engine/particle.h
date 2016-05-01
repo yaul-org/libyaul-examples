@@ -12,31 +12,52 @@
 
 #include "object.h"
 
+#define PARTICLE_COUNT_MAX      128
+
 #define PARTICLE_TTL_MIN        0
 #define PARTICLE_TTL_MAX        31
 #define PARTICLE_TTL_LENGTH     (PARTICLE_TTL_MAX + 1)
+
+struct object_particle;
+
+struct particle {
+        COMPONENT_DECLARATIONS
+
+        bool looping;
+        uint32_t max_count;
+        uint32_t emmission_count;
+        int16_t ttl;
+        color_rgb888_t color_from;
+        color_rgb888_t color_to;
+
+        /* Private data */
+        struct {
+                uint32_t m_state;
+                uint32_t m_last_state;
+
+                struct object_particle *m_object_particle_list[PARTICLE_COUNT_MAX];
+                uint32_t m_object_particle_count;
+        } private_data;
+};
 
 struct object_particle {
         OBJECT_DECLARATIONS
 
         /* Public data */
         struct {
-        } functions;
+        } data;
 
+        /* Private data */
         struct {
                 int16_t m_ttl;
                 color_rgb888_t m_color_from;
                 color_rgb888_t m_color_to;
                 fix16_vector2_t m_delta;
-        } data;
-
-        struct {
                 color_rgb555_t m_rgb555_table[PARTICLE_TTL_LENGTH];
         } private_data;
 } __aligned (256);
 
-extern void particle_init(void);
-extern struct object_particle *particle_alloc(void);
-extern void particle_free(struct object_particle *);
+extern void component_particle_init(struct component *);
+extern void component_particle_update(struct component *);
 
 #endif /* !ENGINE_PARTICLE_H */

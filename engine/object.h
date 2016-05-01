@@ -37,6 +37,9 @@
 #define OBJECT_ID_RESERVED_14           0x800E
 #define OBJECT_ID_RESERVED_15           0x800F
 
+#define OBJECT_ID_RESERVED_BEGIN        0x8000
+#define OBJECT_ID_RESERVED_END          0xFFFF
+
 #define OBJECT_DECLARATIONS                                                    \
 bool active;                                                                   \
     int32_t id;                                                                \
@@ -76,7 +79,10 @@ bool active;                                                                   \
 
 #define OBJECT_EVENT(x, name, args...) do {                                    \
         if (((struct object *)(x))->CC_CONCAT(on_, name) != NULL) {            \
-                if (((struct object *)(x))->active) {                          \
+                if (OBJECT(((struct object *)(x)), active)) {                  \
+                        /* We must have the object initialized before          \
+                         * calling any other event */                          \
+                        assert(OBJECT(((struct object *)(x)), initialized));   \
                         ((struct object *)(x))->CC_CONCAT(on_, name)(          \
                                 (struct object *)(x), ##args);                 \
                 }                                                              \
@@ -86,6 +92,8 @@ bool active;                                                                   \
 #define OBJECT_INIT(x, args...) do {                                           \
         assert(((struct object *)(x))->on_init != NULL);                       \
         ((struct object *)(x))->on_init((struct object *)(x), ##args);         \
+        /* Mark object Initialized */                                          \
+        OBJECT(((struct object *)(x)), initialized) = true;                    \
 } while (false)
 
 #define OBJECT_UPDATE(x)                OBJECT_EVENT(x, update)

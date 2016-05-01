@@ -27,13 +27,17 @@ struct object_world object_world = {
         .vertex_count = 0,
         .color_list = NULL,
         .transform = {
+                .active = true,
                 .object = (struct object *)&object_world,
                 .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 3.0f)
         },
         .camera = NULL,
         .rigid_body = NULL,
         .colliders = NULL,
-        .initialized = false,
+        .component_list = {
+                NULL
+        },
+        .component_count = 0,
         .on_init = on_init,
         .on_update = on_update,
         .on_draw = on_draw,
@@ -54,15 +58,11 @@ on_init(struct object *this __unused)
         _last_state = _state;
 
         object_component_init((const struct object *)&object_world);
-
-        THIS(object_world, initialized) = true;
 }
 
 static void
 on_update(struct object *this __unused)
 {
-        assert(THIS(object_world, initialized));
-
         cons_buffer("Hello from world\n");
 
         switch (_state) {
@@ -76,5 +76,4 @@ on_update(struct object *this __unused)
 static void
 on_draw(struct object *this __unused)
 {
-        assert(THIS(object_world, initialized));
 }

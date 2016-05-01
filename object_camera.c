@@ -59,15 +59,11 @@ on_init(struct object *this __unused)
         _last_state = _state;
 
         object_component_init((const struct object *)&object_camera);
-
-        THIS(object_camera, initialized) = true;
 }
 
 static void
 on_update(struct object *this __unused)
 {
-        assert(THIS(object_camera, initialized));
-
         cons_buffer("Hello from camera\n");
 
         /* OBJECT(&object_camera, transform).position.x = */
