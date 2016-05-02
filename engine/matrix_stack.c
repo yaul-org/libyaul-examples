@@ -14,9 +14,9 @@
 
 SLIST_HEAD(matrix_stacks, matrix_stack);
 
-MEMB(matrix_stack_pool, struct matrix_stack, MATRIX_STACK_DEPTH,
+MEMB(_matrix_stack_pool, struct matrix_stack, MATRIX_STACK_DEPTH,
     sizeof(struct matrix_stack));
-MEMB(matrix_stack_matrix_pool, fix16_matrix3_t, MATRIX_STACK_DEPTH,
+MEMB(_matrix_stack_matrix_pool, fix16_matrix3_t, MATRIX_STACK_DEPTH,
     sizeof(fix16_matrix3_t));
 
 static bool _initialized;
@@ -33,8 +33,8 @@ matrix_stack_init(void)
         SLIST_INIT(&_matrix_stacks[MATRIX_STACK_MODE_PROJECTION]);
         SLIST_INIT(&_matrix_stacks[MATRIX_STACK_MODE_MODEL_VIEW]);
 
-        memb_init(&matrix_stack_pool);
-        memb_init(&matrix_stack_matrix_pool);
+        memb_init(&_matrix_stack_pool);
+        memb_init(&_matrix_stack_matrix_pool);
 
         _initialized = true;
         _mode = MATRIX_STACK_MODE_INVALID;
@@ -66,13 +66,13 @@ matrix_stack_push(void)
         assert(_mode != MATRIX_STACK_MODE_INVALID);
 
         struct matrix_stack *ms;
-        ms = (struct matrix_stack *)memb_alloc(&matrix_stack_pool);
+        ms = (struct matrix_stack *)memb_alloc(&_matrix_stack_pool);
 
         struct matrix_stack *top_ms;
         top_ms = matrix_stack_top(_mode);
 
         ms->ms_matrix = (fix16_matrix3_t *)memb_alloc(
-                &matrix_stack_matrix_pool);
+                &_matrix_stack_matrix_pool);
         assert(ms->ms_matrix != NULL);
 
         if (top_ms != NULL) {
@@ -80,8 +80,7 @@ matrix_stack_push(void)
                     sizeof(fix16_matrix3_t));
         }
 
-        SLIST_INSERT_HEAD(&_matrix_stacks[_mode], ms,
-            ms_entries);
+        SLIST_INSERT_HEAD(&_matrix_stacks[_mode], ms, ms_entries);
 }
 
 void
@@ -96,12 +95,11 @@ matrix_stack_pop(void)
         assert(top_ms != NULL);
 
         int error_code;
-        error_code = memb_free(&matrix_stack_matrix_pool, top_ms->ms_matrix);
+        error_code = memb_free(&_matrix_stack_matrix_pool, top_ms->ms_matrix);
         assert(error_code == 0);
-        error_code = memb_free(&matrix_stack_pool, top_ms);
+        error_code = memb_free(&_matrix_stack_pool, top_ms);
         assert(error_code == 0);
-        SLIST_REMOVE_HEAD(&_matrix_stacks[_mode],
-            ms_entries);
+        SLIST_REMOVE_HEAD(&_matrix_stacks[_mode], ms_entries);
 
         /* Make sure we didn't pop off the last matrix in the stack */
         assert(!(SLIST_EMPTY(&_matrix_stacks[_mode])));
