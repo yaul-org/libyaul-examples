@@ -291,19 +291,24 @@ object_particle_on_init(struct object *this)
         int16_t ttl;
         ttl = THIS_PRIVATE_DATA(object_particle, ttl);
 
-        int16_t step;
-        step = 256 / PARTICLE_TTL_LENGTH; /* Linear interpolation: [0..255] */
+        fix16_t step;
+        step = F16(1.0f / (float)PARTICLE_TTL_LENGTH);
         /* Because our TTL goes from [PARTICLE_TTL_MAX..0], we want to
          * have the table reversed. Otherwise, we'll go from "color to"
          * to "color from". */
+        fix16_t t;
+        t = F16(0.0f);
+
         int16_t range;
-        for (range = 0; range <= ttl; range++) {
+        for (range = 0; range <= PARTICLE_TTL_LENGTH; range++) {
                 color_fix16_hsv_t hsv;
-                color_fix16_hsv_lerp(&hsv_from, &hsv_to, range * step, &hsv);
+                color_fix16_hsv_lerp(&hsv_from, &hsv_to, t, &hsv);
 
                 /* Compute table of HSV to RGB mapping */
                 color_fix16_hsv_rgb555_convert(&hsv,
                     &rgb555_table[(PARTICLE_TTL_LENGTH - 1) - range]);
+
+                t = fix16_add(t, step);
         }
 
         /* Set to the current TTL color */
