@@ -278,12 +278,12 @@ object_particle_on_init(struct object *this)
 
         /* Compute table of color HSV values (very slow) */
         color_fix16_hsv_t hsv_from;
-        color_rgb888_hsv_convert(
+        color_rgb888_fix16_hsv_convert(
                 &THIS_PRIVATE_DATA(object_particle, color_from), &hsv_from);
 
         color_fix16_hsv_t hsv_to;
-        color_rgb888_hsv_convert(&THIS_PRIVATE_DATA(object_particle, color_to),
-            &hsv_to);
+        color_rgb888_fix16_hsv_convert(&THIS_PRIVATE_DATA(object_particle,
+                color_to), &hsv_to);
 
         color_rgb555_t *rgb555_table;
         rgb555_table = &THIS_PRIVATE_DATA(object_particle, rgb555_table)[0];
@@ -299,10 +299,10 @@ object_particle_on_init(struct object *this)
         int16_t range;
         for (range = 0; range <= ttl; range++) {
                 color_fix16_hsv_t hsv;
-                color_hsv_lerp8(&hsv_from, &hsv_to, range * step, &hsv);
+                color_fix16_hsv_lerp(&hsv_from, &hsv_to, range * step, &hsv);
 
                 /* Compute table of HSV to RGB mapping */
-                color_hsv_rgb555_convert(&hsv,
+                color_fix16_hsv_rgb555_convert(&hsv,
                     &rgb555_table[(PARTICLE_TTL_LENGTH - 1) - range]);
         }
 
