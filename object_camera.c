@@ -57,8 +57,6 @@ on_init(struct object *this __unused)
 {
         _state = CAMERA_STATE_WAITING;
         _last_state = _state;
-
-        object_component_init((const struct object *)&object_camera);
 }
 
 static void

@@ -52,7 +52,7 @@ static struct collider _collider = {
 
 static struct rigid_body _rigid_body = {
         .active = true,
-        .object = (const struct object *)&object_blue
+        .object = (const struct object *)&object_blue,
         .on_init = &component_collider_init,
         .on_update = NULL,
         .on_draw = NULL,
@@ -96,8 +96,6 @@ on_init(struct object *this __unused)
 {
         _state = BLUE_STATE_WAITING;
         _last_state = _state;
-
-        object_component_init((const struct object *)&object_blue);
 }
 
 static void

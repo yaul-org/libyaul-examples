@@ -92,6 +92,8 @@ bool active;                                                                   \
 #define OBJECT_INIT(x, args...) do {                                           \
         assert(((struct object *)(x))->on_init != NULL);                       \
         ((struct object *)(x))->on_init((struct object *)(x), ##args);         \
+        /* Initialize components */                                            \
+        object_component_init((const struct object *)(x));                     \
         /* Mark object Initialized */                                          \
         OBJECT(((struct object *)(x)), initialized) = true;                    \
 } while (false)

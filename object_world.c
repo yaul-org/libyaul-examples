@@ -56,8 +56,6 @@ on_init(struct object *this __unused)
 {
         _state = WORLD_STATE_WAITING;
         _last_state = _state;
-
-        object_component_init((const struct object *)&object_world);
 }
 
 static void
