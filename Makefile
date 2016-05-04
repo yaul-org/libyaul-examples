@@ -13,7 +13,6 @@ SH_OBJECTS:= \
 	engine/matrix_stack.o \
 	engine/object.o \
 	engine/objects.o \
-	engine/particle.o \
 	engine/physics.o \
 	engine/rigid_body.o \
 	engine/scene.o \

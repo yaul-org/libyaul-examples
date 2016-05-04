@@ -30,13 +30,15 @@ static void on_trigger(struct object *, const struct object *);
 
 static fix16_vector3_t _vertex_list[4] = {
         FIX16_VECTOR3_INITIALIZER( 0.0f,  0.0f, 1.0f),
-        FIX16_VECTOR3_INITIALIZER( 0.0f, 64.0f, 1.0f),
-        FIX16_VECTOR3_INITIALIZER(64.0f, 64.0f, 1.0f),
-        FIX16_VECTOR3_INITIALIZER(64.0f,  0.0f, 1.0f)
+        FIX16_VECTOR3_INITIALIZER( 0.0f, 16.0f, 1.0f),
+        FIX16_VECTOR3_INITIALIZER( 8.0f, 16.0f, 1.0f),
+        FIX16_VECTOR3_INITIALIZER( 8.0f,  0.0f, 1.0f)
 };
 
 static color_rgb555_t _color_list[1] = {
-        {{15, 0, 0}}
+        {
+                COLOR_RGB555_INITIALIZER(0, 0, 15)
+        }
 };
 
 static struct collider _collider = {
@@ -47,25 +49,6 @@ static struct collider _collider = {
 static struct rigid_body _rigid_body = {
         .active = true,
         .object = (const struct object *)&object_blue
-};
-
-static struct particle _component_particle = {
-        .active = true,
-        .object = (const struct object *)&object_blue,
-        .on_init = component_particle_init,
-        .on_update = component_particle_update,
-        .on_draw = NULL,
-        .on_destroy = NULL,
-        .looping = true,
-        .max_count = 32,
-        .emmission_count = 32,
-        .ttl = PARTICLE_TTL_MAX,
-        .color_from = {
-                COLOR_RGB888_INITIALIZER(255,   0,   0)
-        },
-        .color_to = {
-                COLOR_RGB888_INITIALIZER(  0, 255,   0)
-        }
 };
 
 struct object_blue object_blue = {
@@ -84,9 +67,9 @@ struct object_blue object_blue = {
         .rigid_body = &_rigid_body,
         .colliders = &_collider,
         .component_list = {
-                (struct component *)&_component_particle
+                NULL
         },
-        .component_count = 1,
+        .component_count = 0,
         .on_init = on_init,
         .on_update = on_update,
         .on_draw = on_draw,
