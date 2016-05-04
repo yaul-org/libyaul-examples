@@ -6,62 +6,64 @@
  */
 
 #include <assert.h>
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include "rigid_body.h"
 
+static void forces_add(struct rigid_body *, const fix16_vector2_t *);
+static void forces_clear(struct rigid_body *);
+static void forces_sum(struct rigid_body *, fix16_vector2_t *);
+
 void
-rigid_body_init(struct rigid_body *rigid_body, bool kinematic)
+component_rigid_body_init(struct component *this)
 {
-        assert(rigid_body != NULL);
+        C_THIS_FUNCTION(rigid_body, forces_add) = forces_add;
+        C_THIS_FUNCTION(rigid_body, forces_clear) = forces_clear;
+        C_THIS_FUNCTION(rigid_body, forces_sum) = forces_sum;
 
-        rigid_body->kinematic = kinematic;
+        C_THIS_P_DATA(rigid_body, mass) = F16(1.0f);
 
-        rigid_body->mass = F16(1.0f);
-        fix16_vector2_zero(&rigid_body->displacement);
-        fix16_vector2_zero(&rigid_body->velocity);
-        fix16_vector2_zero(&rigid_body->acceleration);
+        fix16_vector2_zero(&C_THIS_P_DATA(rigid_body, displacement));
+        fix16_vector2_zero(&C_THIS_P_DATA(rigid_body, velocity));
+        fix16_vector2_zero(&C_THIS_P_DATA(rigid_body, acceleration));
 
-        memset(&rigid_body->forces[0], 0x00, sizeof(rigid_body->forces));
-        rigid_body->forces_cnt = 0;
+        memset(&C_THIS_P_DATA(rigid_body, forces), 0x00,
+            RIGID_BODY_FORCES_MAX * sizeof(fix16_vector2_t));
+        C_THIS_P_DATA(rigid_body, forces_cnt) = 0;
 }
 
-void
-rigid_body_forces_add(struct rigid_body *rigid_body,
-    const fix16_vector2_t *force)
+static void
+forces_add(struct rigid_body *this, const fix16_vector2_t *add_force)
 {
-        assert(rigid_body != NULL);
-        assert(rigid_body->forces_cnt < RIGID_BODY_FORCES_MAX);
+        uint32_t forces_cnt;
+        forces_cnt = C_THIS_P_DATA(rigid_body, forces_cnt);
 
-        memcpy(&rigid_body->forces[rigid_body->forces_cnt], force,
-            sizeof(fix16_vector2_t));
+        assert(forces_cnt < RIGID_BODY_FORCES_MAX);
 
-        rigid_body->forces_cnt++;
+        fix16_vector2_dup(add_force,
+            &C_THIS_P_DATA(rigid_body, forces)[forces_cnt]);
+
+        C_THIS_P_DATA(rigid_body, forces_cnt)++;
 }
 
-void
-rigid_body_forces_clear(struct rigid_body *rigid_body)
+static void
+forces_clear(struct rigid_body *this)
 {
-        assert(rigid_body != NULL);
-
-        rigid_body->forces_cnt = 0;
+        C_THIS_P_DATA(rigid_body, forces_cnt) = 0;
 }
 
-void
-rigid_body_forces_sum(struct rigid_body *rigid_body, fix16_vector2_t *result)
+static void
+forces_sum(struct rigid_body *this, fix16_vector2_t *result)
 {
-        assert(rigid_body != NULL);
+        fix16_vector2_zero(result);
 
-        result->x = 0;
-        result->y = 0;
+        uint32_t forces_cnt;
+        forces_cnt = C_THIS_P_DATA(rigid_body, forces_cnt);
 
         uint32_t force_idx;
-        for (force_idx = 0; force_idx < rigid_body->forces_cnt; force_idx++) {
+        for (force_idx = 0; force_idx < forces_cnt; force_idx++) {
                 fix16_vector2_t *force;
-                force = &rigid_body->forces[force_idx];
+                force = &C_THIS_P_DATA(rigid_body, forces)[force_idx];
+
                 fix16_vector2_add(result, force, result);
         }
 }

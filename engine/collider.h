@@ -14,16 +14,22 @@
 struct collider {
         COMPONENT_DECLARATIONS
 
+        int16_t width;
+        int16_t height;
+
         bool trigger;
         bool fixed;
-        struct aabb aabb;
-} __aligned(32);
+
+        struct {
+                struct aabb m_aabb;
+        } private_data;
+} __aligned (32);
 
 struct collider_info {
         int16_t overlap;
         int16_vector2_t direction;
 };
 
-void collider_init(struct collider *, uint32_t, uint16_t, uint16_t, bool, bool);
+extern void component_collider_init(struct component *);
 
 #endif /* !ENGINE_COLLIDER_H */

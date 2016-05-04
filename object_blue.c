@@ -43,12 +43,20 @@ static color_rgb555_t _color_list[1] = {
 
 static struct collider _collider = {
         .active = true,
-        .object = (const struct object *)&object_blue
+        .object = (const struct object *)&object_blue,
+        .on_init = &component_collider_init,
+        .on_update = NULL,
+        .on_draw = NULL,
+        .on_destroy = NULL
 };
 
 static struct rigid_body _rigid_body = {
         .active = true,
         .object = (const struct object *)&object_blue
+        .on_init = &component_collider_init,
+        .on_update = NULL,
+        .on_draw = NULL,
+        .on_destroy = NULL
 };
 
 struct object_blue object_blue = {

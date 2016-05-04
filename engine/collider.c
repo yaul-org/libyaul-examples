@@ -14,19 +14,23 @@
 #include "collider.h"
 
 void
-collider_init(struct collider *collider, uint32_t id __unused, uint16_t width,
-    uint16_t height, bool trigger, bool fixed)
+component_collider_init(struct component *this)
 {
-        assert(collider != NULL);
+        int16_t width;
+        width = C_THIS(collider, width);
 
-        collider->trigger = trigger;
-        collider->fixed = fixed;
-        collider->aabb.center.x = width / 2;
-        collider->aabb.center.y = height / 2;
-        collider->aabb.min.x = 0;
-        collider->aabb.min.y = 0;
-        collider->aabb.max.x = width - 1;
-        collider->aabb.max.y = height - 1;
-        collider->aabb.half.x = width / 2;
-        collider->aabb.half.y = height / 2;
+        int16_t height;
+        height = C_THIS(collider, height);
+
+        struct aabb *aabb;
+        aabb = &C_THIS_P_DATA(collider, aabb);
+
+        aabb->center.x = width / 2;
+        aabb->center.y = height / 2;
+        aabb->min.x = 0;
+        aabb->min.y = 0;
+        aabb->max.x = width - 1;
+        aabb->max.y = height - 1;
+        aabb->half.x = width / 2;
+        aabb->half.y = height / 2;
 }

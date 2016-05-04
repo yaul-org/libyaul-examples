@@ -108,13 +108,13 @@ bool active;                                                                   \
 #define OBJECT_COMPONENT(x, component)                                         \
         ((x)->CC_CONCAT(, component))
 
-#define OBJECT_PUBLIC_DATA(x, member)                                          \
+#define OBJECT_DATA(x, member)                                                 \
         ((x)->data.CC_CONCAT(m_, member))
 
-#define OBJECT_PRIVATE_DATA(x, member)                                         \
+#define OBJECT_P_DATA(x, member)                                               \
         ((x)->private_data.CC_CONCAT(m_, member))
 
-#define OBJECT_CALL_PUBLIC_MEMBER(x, name, args...)                            \
+#define OBJECT_CALL_FUNCTION(x, name, args...)                                 \
         ((x))->functions.CC_CONCAT(m_, name)((struct object *)(x), ##args)
 
 #define THIS(type, member)                                                     \
@@ -123,16 +123,16 @@ bool active;                                                                   \
 #define THIS_COMPONENT(type, component)                                        \
         (((struct type *)this)->CC_CONCAT(, component))
 
-#define THIS_PUBLIC_DATA(type, member)                                         \
+#define THIS_DATA(type, member)                                                \
         (((struct type *)this)->data.CC_CONCAT(m_, member))
 
-#define THIS_PRIVATE_DATA(type, member)                                        \
+#define THIS_P_DATA(type, member)                                              \
         (((struct type *)this)->private_data.CC_CONCAT(m_, member))
 
-#define THIS_CALL_PUBLIC_MEMBER(type, name, args...)                           \
+#define THIS_CALL_FUNCTION(type, name, args...)                                \
         ((struct type *)this)->functions.CC_CONCAT(m_, name)(this, ##args)
 
-#define THIS_CALL_PRIVATE_MEMBER(type, name, args...)                          \
+#define THIS_CALL_P_FUNCTION(type, name, args...)                              \
         ((struct type *)this)->private_functions.CC_CONCAT(m_, name)(this,     \
             ##args)
 

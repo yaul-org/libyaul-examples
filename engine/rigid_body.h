@@ -8,6 +8,8 @@
 #ifndef ENGINE_RIGID_BODY_H
 #define ENGINE_RIGID_BODY_H
 
+#include <yaul.h>
+
 #include <inttypes.h>
 #include <math.h>
 
@@ -20,19 +22,24 @@ struct rigid_body {
 
         bool kinematic;
 
-        fix16_t mass;
-        fix16_vector2_t displacement;
-        fix16_vector2_t velocity;
-        fix16_vector2_t acceleration;
+        struct {
+                void (*m_forces_add)(struct rigid_body *,
+                    const fix16_vector2_t *);
+                void (*m_forces_clear)(struct rigid_body *);
+                void (*m_forces_sum)(struct rigid_body *, fix16_vector2_t *);
+        } functions;
 
-        /* An extra force for gravity */
-        fix16_vector2_t forces[RIGID_BODY_FORCES_MAX];
-        uint32_t forces_cnt;
-} __aligned(64);
+        struct {
+                fix16_vector2_t m_displacement;
+                fix16_vector2_t m_velocity;
+                fix16_vector2_t m_acceleration;
+                fix16_t m_mass;
+                /* An extra force for gravity */
+                fix16_vector2_t m_forces[RIGID_BODY_FORCES_MAX];
+                uint32_t m_forces_cnt;
+        } private_data;
+} __aligned (64);
 
-void rigid_body_init(struct rigid_body *, bool);
-void rigid_body_forces_add(struct rigid_body *, const fix16_vector2_t *);
-void rigid_body_forces_clear(struct rigid_body *);
-void rigid_body_forces_sum(struct rigid_body *, fix16_vector2_t *);
+extern void component_rigid_body_init(struct component *);
 
 #endif /* !ENGINE_RIGID_BODY_H */

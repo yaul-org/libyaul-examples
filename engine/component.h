@@ -52,23 +52,27 @@ struct object;
 #define COMPONENT(x, member)                                                   \
         ((x)->CC_CONCAT(, member))
 
-#define COMPONENT_COMPONENT(x, component)                                      \
-        ((x)->CC_CONCAT(, component))
-
-#define COMPONENT_PUBLIC_DATA(x, member)                                       \
+#define COMPONENT_DATA(x, member)                                              \
         ((x)->data.CC_CONCAT(m_, member))
 
-#define COMPONENT_CALL_PUBLIC_MEMBER(x, name, args...)                         \
-        ((x))->functions.CC_CONCAT(m_, name)((struct component *)(x), ##args)
+#define COMPONENT_FUNCTION_CALL(x, name, args...) do {                         \
+        assert(((struct component *)(x)) != NULL);                             \
+        assert(COMPONENT(((struct component *)(x)), initialized));             \
+        assert(((x))->functions.CC_CONCAT(m_, name) != NULL);                  \
+        ((x))->functions.CC_CONCAT(m_, name)((struct component *)(x), ##args)  \
+} while (0)
 
-#define COMPONENT_THIS(type, member)                                           \
+#define C_THIS(type, member)                                                   \
         (((struct type *)this)->CC_CONCAT(, member))
 
-#define COMPONENT_THIS_PUBLIC_DATA(type, member)                               \
+#define C_THIS_DATA(type, member)                                              \
         (((struct type *)this)->data.CC_CONCAT(m_, member))
 
-#define COMPONENT_THIS_PRIVATE_DATA(type, member)                              \
+#define C_THIS_P_DATA(type, member)                                            \
         (((struct type *)this)->private_data.CC_CONCAT(m_, member))
+
+#define C_THIS_FUNCTION(type, member)                                          \
+        (((struct type *)this)->functions.CC_CONCAT(m_, member))
 
 struct component {
         COMPONENT_DECLARATIONS
