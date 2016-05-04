@@ -7,6 +7,7 @@ include $(INSTALL_ROOT)/share/pre.common.mk
 SH_PROGRAM:= blue
 SH_OBJECTS:= \
 	root.romdisk.o \
+	engine/camera.o \
 	engine/collider.o \
 	engine/engine.o \
 	engine/fs.o \

@@ -11,12 +11,7 @@
 #include <math.h>
 #include <inttypes.h>
 
-#include "component.h"
-
-#include "camera.h"
-#include "collider.h"
 #include "transform.h"
-#include "rigid_body.h"
 
 #define OBJECT_COMPONENT_LIST_MAX       8
 
@@ -39,6 +34,12 @@
 
 #define OBJECT_ID_RESERVED_BEGIN        0x8000
 #define OBJECT_ID_RESERVED_END          0xFFFF
+
+struct camera;
+struct rigid_body;
+struct component;
+
+struct collider_info;
 
 #define OBJECT_DECLARATIONS                                                    \
 bool active;                                                                   \
@@ -92,6 +93,15 @@ bool active;                                                                   \
 #define OBJECT_INIT(x, args...) do {                                           \
         assert(((struct object *)(x))->on_init != NULL);                       \
         ((struct object *)(x))->on_init((struct object *)(x), ##args);         \
+        if (((const struct object *)(x))->camera != NULL) {                    \
+                COMPONENT_INIT(((const struct object *)(x))->camera);          \
+        }                                                                      \
+        if (((const struct object *)(x))->colliders != NULL) {                 \
+                COMPONENT_INIT(((const struct object *)(x))->colliders);       \
+        }                                                                      \
+        if (((const struct object *)(x))->rigid_body != NULL) {                \
+                COMPONENT_INIT(((const struct object *)(x))->rigid_body);      \
+        }                                                                      \
         /* Initialize components */                                            \
         object_component_init((const struct object *)(x));                     \
         /* Mark object Initialized */                                          \

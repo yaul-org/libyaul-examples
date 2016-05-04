@@ -22,7 +22,8 @@ static struct camera _camera = {
         .active = true,
         .object = (const struct object *)&object_camera,
         .width = 320,
-        .height = 224
+        .height = 224,
+        .on_init = component_camera_init
 };
 
 struct object_camera object_camera = {

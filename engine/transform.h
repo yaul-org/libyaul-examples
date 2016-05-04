@@ -17,6 +17,6 @@ struct transform {
         COMPONENT_DECLARATIONS
 
         fix16_vector3_t position;
-} __aligned(32);
+} __aligned (32);
 
 #endif /* !ENGINE_TRANSFORM_H */
