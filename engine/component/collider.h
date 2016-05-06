@@ -39,6 +39,6 @@ struct collider_info {
         int16_vector2_t direction;
 };
 
-extern void component_collider_init(struct component *);
+extern void component_collider_on_init(struct component *);
 
 #endif /* !ENGINE_COLLIDER_H */

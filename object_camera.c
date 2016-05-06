@@ -9,69 +9,29 @@
 
 #include "object_camera.h"
 
-#define CAMERA_STATE_WAITING              0
-
-static const char *_camera_state2str[] __unused = {
-        "CAMERA_STATE_WAITING"
+static struct transform _transform = {
+        .active = true,
+        .id = COMPONENT_ID_TRANSFORM,
+        .object = (struct object *)&object_camera,
+        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 2.0f)
 };
-
-static void on_init(struct object *);
-static void on_update(struct object *);
 
 static struct camera _camera = {
         .active = true,
+        .id = COMPONENT_ID_CAMERA,
         .object = (const struct object *)&object_camera,
         .width = 320,
         .height = 224,
-        .on_init = component_camera_init
+        .on_init = component_camera_on_init,
+        .on_update = component_camera_on_update
 };
 
 struct object_camera object_camera = {
         .active = true,
         .id = OBJECT_ID_CAMERA,
-        .visible = true,
-        .vertex_list = NULL,
-        .vertex_count = 0,
-        .color_list = NULL,
-        .transform = {
-                .object = (struct object *)&object_camera,
-                .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 0.0f)
+        .component_list = {
+                (struct component *)&_transform,
+                (struct component *)&_camera
         },
-        .camera = &_camera,
-        .rigid_body = NULL,
-        .colliders = NULL,
-        .on_init = on_init,
-        .on_update = on_update,
-        .on_draw = NULL,
-        .on_destroy = NULL,
-        .on_collision = NULL,
-        .on_trigger = NULL,
-        .functions = {
-        },
+        .component_count = 2
 };
-
-static uint32_t _state;
-static uint32_t _last_state;
-
-static void
-on_init(struct object *this __unused)
-{
-        _state = CAMERA_STATE_WAITING;
-        _last_state = _state;
-}
-
-static void
-on_update(struct object *this __unused)
-{
-        cons_buffer("Hello from camera\n");
-
-        /* OBJECT(&object_camera, transform).position.x = */
-        /*     fix16_add(OBJECT(&object_camera, transform).position.x, F16(1.0f)); */
-
-        switch (_state) {
-        case CAMERA_STATE_WAITING:
-                break;
-        default:
-                assert(false && "Invalid state");
-        }
-}

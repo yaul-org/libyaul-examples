@@ -37,6 +37,8 @@ struct object_z {
 };
 
 extern void objects_init(void);
+extern void objects_object_register(struct object *);
+extern void objects_object_unregister(struct object *);
 extern bool objects_object_added(const struct object *);
 extern void objects_object_add(struct object *);
 extern void objects_object_child_add(struct object *, struct object *);
@@ -44,6 +46,8 @@ extern void objects_object_remove(struct object *);
 extern void objects_clear(void);
 extern const struct object_z *objects_list(void);
 extern const struct objects *objects_sorted_list(void);
-extern const struct camera *objects_component_camera_find(void);
+extern const struct component *objects_component_find(int32_t);
+extern const struct component *objects_object_component_find(
+        const struct object *, int32_t);
 
 #endif /* !ENGINE_OBJECTS_H */

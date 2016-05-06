@@ -1,0 +1,5 @@
+ - Implement emmit direction (angle, range, speed, etc.)
+ - "Clipping" (set visible, related to particles' TTL)
+ - Camera/world position
+ - Collider refactor (update to component infrastructure)
+ - Rigid body refactor (update to component infrastructure)

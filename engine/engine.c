@@ -77,10 +77,7 @@ objects_update(void)
                 const struct object *object;
                 object = objects[object_idx].object;
 
-                OBJECT_UPDATE(object);
-
-                /* Call the object's components */
-                object_component_update(object);
+                object_update(object);
         }
 }
 
@@ -95,17 +92,7 @@ objects_draw(void)
                 const struct object *object;
                 object = objects[object_idx].object;
 
-                bool visible;
-                visible = OBJECT_COMPONENT(object, visible);
-
-                if (!visible) {
-                        continue;
-                }
-
-                OBJECT_DRAW(object);
-
-                /* Call the object's components */
-                object_component_draw(object);
+                object_draw(object);
         }
 }
 
@@ -116,7 +103,7 @@ objects_project(void)
          * (inverse) view matrix */
         const struct camera *camera;
 
-        camera = objects_component_camera_find();
+        camera = (const struct camera *)objects_component_find(COMPONENT_ID_CAMERA);
         assert((camera != NULL) && "No camera found");
 
         /* Manipulating the camera in world space amounts to
@@ -132,9 +119,14 @@ objects_project(void)
          *     [I|-t]. */
         fix16_matrix3_t matrix_view;
         fix16_matrix3_identity(&matrix_view);
-        matrix_view.frow[0][2] = -OBJECT_COMPONENT(camera->object, transform).position.x;
-        matrix_view.frow[1][2] = -OBJECT_COMPONENT(camera->object, transform).position.y;
-        matrix_view.frow[2][2] = -OBJECT_COMPONENT(camera->object, transform).position.z;
+
+        struct transform *camera_transform;
+        camera_transform = (struct transform *)OBJECT_COMPONENT(camera->object,
+            COMPONENT_ID_TRANSFORM);
+
+        matrix_view.frow[0][2] = -camera_transform->position.x;
+        matrix_view.frow[1][2] = -camera_transform->position.y;
+        matrix_view.frow[2][2] = -camera_transform->position.z;
 
         matrix_stack_mode(MATRIX_STACK_MODE_MODEL_VIEW);
         matrix_stack_load(&matrix_view);
@@ -187,14 +179,23 @@ objects_project(void)
 static void
 object_project(const struct object *object, const fix16_vector3_t *position)
 {
+        static const fix16_vector3_t vertices[4] = {
+                FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 1.0f),
+                FIX16_VECTOR3_INITIALIZER(0.0f, 1.0f, 1.0f),
+                FIX16_VECTOR3_INITIALIZER(1.0f, 1.0f, 1.0f),
+                FIX16_VECTOR3_INITIALIZER(1.0f, 0.0f, 1.0f)
+        };
+
         assert(object != NULL);
 
+        /* Only active objects */
         if (!OBJECT(object, active)) {
                 return;
         }
 
         const struct camera *camera;
-        camera = objects_component_camera_find();
+        camera = (const struct camera *)objects_object_component_find(object,
+            COMPONENT_ID_CAMERA);
         assert((camera != NULL) && "No camera found");
 
         /* The camera should not be projected */
@@ -202,11 +203,20 @@ object_project(const struct object *object, const fix16_vector3_t *position)
                 return;
         }
 
-        /* Only objects with a vertex list should be projected */
-        if ((OBJECT(object, vertex_list) == NULL) ||
-            (OBJECT(object, vertex_count) != 4)) {
+        /* Only objects with an active sprite component should be projected */
+        const struct sprite *sprite;
+        sprite = (const struct sprite *)objects_object_component_find(object,
+            COMPONENT_ID_SPRITE);
+        if ((sprite == NULL) || !COMPONENT(sprite, active)) {
                 return;
         }
+        const struct material *material;
+        material = &COMPONENT(sprite, material);
+
+        const struct transform *transform;
+        transform = (const struct transform *)objects_object_component_find(
+                object, COMPONENT_ID_TRANSFORM);
+        assert(transform != NULL);
 
         matrix_stack_push(); {
                 fix16_matrix3_t *matrix_model_view;
@@ -218,19 +228,22 @@ object_project(const struct object *object, const fix16_vector3_t *position)
 
                 uint32_t i;
 
+                int32_t sprite_width;
+                sprite_width = COMPONENT(sprite, width);
+
+                int32_t sprite_height;
+                sprite_height = COMPONENT(sprite, height);
+
                 /* Transform from object, world, view to clip space */
-
-                /* For now, we'll only support 1 polygon */
-                uint32_t vertex_count;
-                vertex_count = OBJECT(object, vertex_count);
-
                 fix16_vector3_t vertex_mv[4];
-                for (i = 0; i < vertex_count; i++) {
-                        const fix16_vector3_t *vertex;
-                        vertex = &OBJECT_COMPONENT(object, vertex_list)[i];
+                for (i = 0; i < 4; i++) {
+                        fix16_vector3_t vertex;
+                        vertex.x = fix16_mul(vertices[i].x, F16(sprite_width));
+                        vertex.y = fix16_mul(vertices[i].y, F16(sprite_height));
+                        vertex.z = COMPONENT(transform, position).z;
 
                         fix16_vector3_matrix3_multiply(matrix_model_view,
-                            vertex, &vertex_mv[i]);
+                            &vertex, &vertex_mv[i]);
                 }
 
                 /* No need to project :) */
@@ -242,7 +255,7 @@ object_project(const struct object *object, const fix16_vector3_t *position)
 
                 /* From viewport space (NDC) to screen space */
                 int16_vector2_t screen_coords[4];
-                for (i = 0; i < vertex_count; i++) {
+                for (i = 0; i < 4; i++) {
                         int16_vector2_t *screen_coord;
                         screen_coord = &screen_coords[i];
 
@@ -263,7 +276,8 @@ object_project(const struct object *object, const fix16_vector3_t *position)
                 polygon.cp_mode.raw = 0x0000;
                 polygon.cp_mode.transparent_pixel = true;
                 polygon.cp_mode.end_code = true;
-                polygon.cp_color = COLOR_RGB_DATA | OBJECT_COMPONENT(object, color_list)[0].raw;
+                polygon.cp_mode.mesh = material->pseudo_trans;
+                polygon.cp_color = COLOR_RGB_DATA | material->solid_color.raw;
                 polygon.cp_grad = 0x00000000;
                 polygon.cp_vertex.a.x = (width / 2) - 1;
                 polygon.cp_vertex.a.y = -(height / 2);
@@ -326,7 +340,10 @@ vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
 static void
 vblank_out_handler(irq_mux_handle_t *irq_mux __unused)
 {
+        static uint64_t tick_cnt = 0;
+
         if ((vdp2_tvmd_vcount_get()) == 0) {
-                tick = (tick & 0xFFFFFFFF) + 1;
+                tick_cnt = (tick_cnt & 0xFFFFFFFF) + 1;
+                tick = (uint32_t)tick_cnt;
         }
 }

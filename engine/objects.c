@@ -23,7 +23,7 @@ TAILQ_HEAD(object_contexts, object_context);
 
 struct object_context {
         /* Depth in objects tree */
-        uint32_t oc_depth;
+        int32_t oc_depth;
         /* Immediate parent */
         struct object *oc_parent;
         struct object *oc_object;
@@ -51,7 +51,7 @@ static struct object_z _cached_object_z[OBJECTS_MAX];
 static struct object_z_entry _cached_object_z_entry[OBJECTS_MAX];
 
 /* Cached pointer to camera component */
-static const struct camera *_cached_camera = NULL;
+static const struct component *_cached_camera = NULL;
 
 MEMB(_object_context_pool, struct object_context, OBJECTS_MAX,
     sizeof(struct object_context));
@@ -67,31 +67,22 @@ static void traverse_object_context_update(struct object_context *);
 void
 objects_init(void)
 {
+        static struct transform transform = {
+                .active = true,
+                .id = COMPONENT_ID_TRANSFORM,
+                .object = NULL,
+                .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 0.0f)
+        };
+
         /* "Null" object */
         static struct object root = {
-                .id = OBJECT_ID_RESERVED_0,
-                .visible = false,
-                .vertex_list = NULL,
-                .vertex_count = 0,
-                .color_list = NULL,
-                .transform = {
-                        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 0.0f)
-                },
-                .camera = NULL,
-                .colliders = NULL,
-                .rigid_body = NULL,
+                .active = true,
+                .id = OBJECT_ID_RESERVED_BEGIN + 0x0000,
                 .component_list = {
-                        NULL
+                        (struct component *)&transform
                 },
-                .component_count = 0,
-                .on_init = NULL,
-                .on_update = NULL,
-                .on_draw = NULL,
+                .component_count = 1,
                 .on_destroy = NULL,
-                .on_collision = NULL,
-                .on_trigger = NULL,
-                .initialized = true,
-                .context = &_root_ctx
         };
 
         if (_initialized) {
@@ -110,6 +101,36 @@ objects_init(void)
         _initialized = true;
 }
 
+void
+objects_object_register(struct object *object)
+{
+        assert(object != NULL);
+        assert(object->context == NULL);
+
+        /* Initialize context */
+        struct object_context *object_ctx;
+        object_ctx = (struct object_context *)memb_alloc(&_object_context_pool);
+        assert(object_ctx != NULL);
+
+        object_ctx->oc_depth = -1;
+        object_ctx->oc_parent = NULL;
+        object_ctx->oc_object = object;
+
+        fix16_vector3_zero(&object_ctx->oc_position);
+
+        TAILQ_INIT(&object_ctx->oc_children);
+
+        /* Connect context to object object */
+        object->context = object_ctx;
+}
+
+void
+objects_object_unregister(struct object *object)
+{
+        assert(object != NULL);
+        assert(object->context != NULL);
+}
+
 /*
  * Determine if the object is already present in the objects tree.
  */
@@ -121,28 +142,21 @@ objects_object_added(const struct object *object)
         struct object_context *object_ctx;
         object_ctx = (struct object_context *)object->context;
 
-        if (object_ctx == NULL) {
-                return false;
-        }
-
-        return object_ctx->oc_object == object;
+        return (object_ctx != NULL) && (object_ctx->oc_object == object);
 }
 
 /*
  * Add child object to root object.
  */
 void
-objects_object_add(struct object *child)
+objects_object_add(struct object *object)
 {
         assert(_initialized);
-        assert(child != NULL);
+        assert(object != NULL);
+        /* Has the object been registered? */
+        assert(object->context != NULL);
 
-        /* Caching */
-        if (child->camera != NULL) {
-                _cached_camera = child->camera;
-        }
-
-        traverse_object_context_add(&_root_ctx, child);
+        traverse_object_context_add(&_root_ctx, object);
 
         _cached_objects_dirty = true;
 }
@@ -267,12 +281,72 @@ return_list:
         return (const struct objects *)&_cached_objects;
 }
 
-const struct camera *
-objects_component_camera_find(void)
+const struct component *
+objects_component_find(int32_t component_id)
 {
-        assert(_initialized);
+        assert((component_id >= 0) &&
+               (component_id < OBJECT_COMPONENT_LIST_MAX));
 
-        return _cached_camera;
+        /* Caching */
+        if ((component_id == COMPONENT_ID_CAMERA) && (_cached_camera != NULL)) {
+                return _cached_camera;
+        }
+
+        const struct object_z *objects;
+        objects = objects_list();
+
+        uint32_t object_idx;
+        for (object_idx = 0; objects[object_idx].object != NULL; object_idx++) {
+                const struct object *object;
+                object = objects[object_idx].object;
+
+                const struct component *component;
+                component = objects_object_component_find(object, component_id);
+                if (component != NULL) {
+                        return component;
+                }
+        }
+
+        return NULL;
+}
+
+const struct component *
+objects_object_component_find(const struct object *object, int32_t component_id)
+{
+        assert(object != NULL);
+        assert(object->context != NULL);
+        assert((component_id >= 0) &&
+               (component_id < OBJECT_COMPONENT_LIST_MAX));
+
+        /* Caching */
+        if (component_id == COMPONENT_ID_TRANSFORM) {
+                return OBJECT_COMPONENT(object, COMPONENT_ID_TRANSFORM);
+        }
+
+        if ((component_id == COMPONENT_ID_CAMERA) && (_cached_camera != NULL)) {
+                return _cached_camera;
+        }
+
+        uint32_t component_idx;
+        for (component_idx = 0;
+             component_idx < OBJECT(object, component_count);
+             component_idx++) {
+                struct component *component;
+                component = OBJECT_COMPONENT(object, component_idx);
+
+                if (COMPONENT(component, id) == component_id) {
+                        assert(COMPONENT(component, initialized));
+
+                        /* Caching */
+                        if (component_id == COMPONENT_ID_CAMERA) {
+                                _cached_camera = component;
+                        }
+
+                        return component;
+                }
+        }
+
+        return NULL;
 }
 
 static void
@@ -281,7 +355,7 @@ traverse_object_context_add(struct object_context *parent_ctx,
 {
         assert(child != NULL);
         assert(parent_ctx != NULL);
-        assert(child->context == NULL);
+        assert(child->context != NULL);
 
         struct object *parent;
         parent = parent_ctx->oc_object;
@@ -410,7 +484,8 @@ traverse_object_context_update(struct object_context *object_ctx)
                         assert(top_object_ctx == object->context);
 
                         struct transform *transform;
-                        transform = &OBJECT_COMPONENT(object, transform);
+                        transform = (struct transform *)OBJECT_COMPONENT(object,
+                            COMPONENT_ID_TRANSFORM);
 
                         /* Calculate the absolute position */
                         fix16_vector3_add(&COMPONENT(transform, position),

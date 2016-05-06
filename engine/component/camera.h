@@ -22,6 +22,7 @@ struct camera {
         uint16_t height;
 } camera;
 
-extern void component_camera_init(struct component *);
+extern void component_camera_on_init(struct component *);
+extern void component_camera_on_update(struct component *);
 
 #endif /* !ENGINE_CAMERA_H */

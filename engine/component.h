@@ -14,40 +14,22 @@
 
 struct object;
 
+#define COMPONENT_ID_TRANSFORM  0
+#define COMPONENT_ID_CAMERA     1
+#define COMPONENT_ID_COLLIDER   2
+#define COMPONENT_ID_RIGID_BODY 3
+#define COMPONENT_ID_SPRITE     4
+
 #define COMPONENT_DECLARATIONS                                                 \
     bool active;                                                               \
+    bool initialized;                                                          \
+    int32_t id;                                                                \
     const struct object *object;                                               \
     /* Events */                                                               \
     void (*on_init)(struct component *);                                       \
     void (*on_update)(struct component *);                                     \
     void (*on_draw)(struct component *);                                       \
-    void (*on_destroy)(struct component *);                                    \
-                                                                               \
-    /* If it's been initialized or not (call to "init" event) */               \
-    bool initialized;
-
-#define COMPONENT_EVENT(x, name, args...) do {                                 \
-        if (((struct component *)(x))->CC_CONCAT(on_, name) != NULL) {         \
-                if (COMPONENT(((struct component *)(x)), active)) {            \
-                        /* We must have the component initialized before       \
-                         * calling any other event */                          \
-                        assert(COMPONENT(((struct component *)(x)), initialized)); \
-                        ((struct component *)(x))->CC_CONCAT(on_, name)(       \
-                                (struct component *)(x), ##args);              \
-                }                                                              \
-        }                                                                      \
-} while (false)
-
-#define COMPONENT_INIT(x, args...) do {                                        \
-        assert(((struct component *)(x))->on_init != NULL);                    \
-        ((struct component *)(x))->on_init((struct component *)(x), ##args);   \
-        /* Mark component Initialized */                                       \
-        COMPONENT(((struct component *)(x)), initialized) = true;              \
-} while (false)
-
-#define COMPONENT_UPDATE(x)     COMPONENT_EVENT(x, update)
-#define COMPONENT_DRAW(x)       COMPONENT_EVENT(x, draw)
-#define COMPONENT_DESTROY(x)    COMPONENT_EVENT(x, destroy)
+    void (*on_destroy)(struct component *);
 
 #define COMPONENT(x, member)                                                   \
         ((x)->CC_CONCAT(, member))
@@ -62,16 +44,16 @@ struct object;
         ((x))->functions.CC_CONCAT(m_, name)((struct component *)(x), ##args)  \
 } while (0)
 
-#define C_THIS(type, member)                                                   \
+#define THIS(type, member)                                                     \
         (((struct type *)this)->CC_CONCAT(, member))
 
-#define C_THIS_DATA(type, member)                                              \
+#define THIS_DATA(type, member)                                                \
         (((struct type *)this)->data.CC_CONCAT(m_, member))
 
-#define C_THIS_P_DATA(type, member)                                            \
+#define THIS_P_DATA(type, member)                                              \
         (((struct type *)this)->private_data.CC_CONCAT(m_, member))
 
-#define C_THIS_FUNCTION(type, member)                                          \
+#define THIS_FUNCTION(type, member)                                            \
         (((struct type *)this)->functions.CC_CONCAT(m_, member))
 
 struct component {
