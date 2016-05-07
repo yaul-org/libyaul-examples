@@ -72,6 +72,6 @@ for root, dirs, filenames in os.walk(os.path.join(os.getcwd(), "levels")):
                             output_fo.write(struct.pack("B", byte))
         except:
             print "FAILED"
-            raise SystemExit
+            sys.exit(1)
         print "OK"
     break

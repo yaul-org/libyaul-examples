@@ -10,7 +10,6 @@
 #include "transform.h"
 
 void
-component_transform_on_init(struct component *this)
+component_transform_on_init(struct component *this __unused)
 {
-        assert(this != NULL);
 }
