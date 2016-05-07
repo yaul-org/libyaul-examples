@@ -18,7 +18,10 @@
 
 #include "engine.h"
 
+/* Non-engine components */
 #include "component_coin_mgr.h"
+
+#include "blue_palette.h"
 
 #define SCENE_ID_SPLASH 0
 #define SCENE_ID_TITLE  1
@@ -35,7 +38,5 @@ struct blue_data {
 };
 
 extern struct blue_data blue_data;
-
-extern const color_rgb555_t blue_palette[];
 
 #endif /* !BLUE_H */

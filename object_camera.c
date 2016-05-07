@@ -30,8 +30,8 @@ struct object_camera object_camera = {
         .active = true,
         .id = OBJECT_ID_CAMERA,
         .component_list = {
-                (struct component *)&_transform,
-                (struct component *)&_camera
+                OBJECT_COMPONENT_INITIALIZER(transform, &_transform),
+                OBJECT_COMPONENT_INITIALIZER(camera, &_camera)
         },
         .component_count = 2
 };

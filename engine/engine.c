@@ -34,7 +34,7 @@ void
 engine_init(void)
 {
         hardware_init();
-        cons_init(CONS_DRIVER_VDP2, 44, 30);
+        cons_init(CONS_DRIVER_VDP2, 40, 30);
 
         /* Engine specific components */
         fs_init();

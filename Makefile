@@ -23,9 +23,10 @@ SH_OBJECTS:= \
 	scene_splash.o \
 	scene_title.o \
 	scene_game.o \
-	object_camera.o \
-	object_world.o \
 	object_blue.o \
+	object_camera.o \
+	object_coin.o \
+	object_world.o \
 	component_coin_mgr.o
 SH_CFLAGS+= -Iengine -Iengine/component
 SH_LIBRARIES:= tga

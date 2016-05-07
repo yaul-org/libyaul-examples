@@ -13,7 +13,7 @@ static struct transform _transform = {
         .active = true,
         .id = COMPONENT_ID_TRANSFORM,
         .object = (struct object *)&object_world,
-        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 15.0f)
+        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 14.0f)
 };
 
 static struct coin_mgr _coin_mgr = {
@@ -34,8 +34,8 @@ struct object_world object_world = {
         .active = true,
         .id = OBJECT_ID_WORLD,
         .component_list = {
-                (struct component *)&_transform,
-                (struct component *)&_coin_mgr
+                OBJECT_COMPONENT_INITIALIZER(transform, &_transform),
+                OBJECT_COMPONENT_INITIALIZER(coin_mgr, &_coin_mgr)
         },
         .component_count = 2
 };

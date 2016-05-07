@@ -13,6 +13,8 @@
 
 #include "objects.h"
 
+#include "transform.h"
+
 #define OBJECTS_DEPTH_MAX 3
 
 extern uint32_t tick;
@@ -22,8 +24,6 @@ struct object_context;
 TAILQ_HEAD(object_contexts, object_context);
 
 struct object_context {
-        /* Depth in objects tree */
-        int32_t oc_depth;
         /* Immediate parent */
         struct object *oc_parent;
         struct object *oc_object;
@@ -79,7 +79,7 @@ objects_init(void)
                 .active = true,
                 .id = OBJECT_ID_RESERVED_BEGIN + 0x0000,
                 .component_list = {
-                        (struct component *)&transform
+                        OBJECT_COMPONENT_INITIALIZER(transform, &transform)
                 },
                 .component_count = 1,
                 .on_destroy = NULL,
@@ -90,7 +90,6 @@ objects_init(void)
         }
 
         /* Initialize root context */
-        _root_ctx.oc_depth = 1;
         _root_ctx.oc_parent = NULL;
         _root_ctx.oc_object = &root;
         fix16_vector3_zero(&_root_ctx.oc_position);
@@ -101,6 +100,9 @@ objects_init(void)
         _initialized = true;
 }
 
+/*
+ *
+ */
 void
 objects_object_register(struct object *object)
 {
@@ -112,7 +114,6 @@ objects_object_register(struct object *object)
         object_ctx = (struct object_context *)memb_alloc(&_object_context_pool);
         assert(object_ctx != NULL);
 
-        object_ctx->oc_depth = -1;
         object_ctx->oc_parent = NULL;
         object_ctx->oc_object = object;
 
@@ -124,6 +125,9 @@ objects_object_register(struct object *object)
         object->context = object_ctx;
 }
 
+/*
+ *
+ */
 void
 objects_object_unregister(struct object *object)
 {
@@ -175,7 +179,7 @@ objects_object_child_add(struct object *object, struct object *child)
         assert(object != NULL);
         assert(object->context != NULL);
         assert(child != NULL);
-        assert(child->context == NULL);
+        assert(child->context != NULL);
 
         traverse_object_context_add((struct object_context *)object->context,
             child);
@@ -201,6 +205,9 @@ objects_object_remove(struct object *child)
         _cached_objects_dirty = true;
 }
 
+/*
+ *
+ */
 void
 objects_clear(void)
 {
@@ -259,6 +266,9 @@ return_list:
         return (const struct object_z *)&_cached_object_z[0];
 }
 
+/*
+ *
+ */
 const struct objects *
 objects_sorted_list(void)
 {
@@ -281,6 +291,9 @@ return_list:
         return (const struct objects *)&_cached_objects;
 }
 
+/*
+ *
+ */
 const struct component *
 objects_component_find(int32_t component_id)
 {
@@ -310,6 +323,9 @@ objects_component_find(int32_t component_id)
         return NULL;
 }
 
+/*
+ *
+ */
 const struct component *
 objects_object_component_find(const struct object *object, int32_t component_id)
 {
@@ -349,6 +365,9 @@ objects_object_component_find(const struct object *object, int32_t component_id)
         return NULL;
 }
 
+/*
+ *
+ */
 static void
 traverse_object_context_add(struct object_context *parent_ctx,
     struct object *child)
@@ -362,21 +381,13 @@ traverse_object_context_add(struct object_context *parent_ctx,
 
         /* Allocate child object */
         struct object_context *child_ctx;
-        child_ctx = (struct object_context *)memb_alloc(&_object_context_pool);
-        assert(child_ctx != NULL);
+        child_ctx = (struct object_context *)child->context;
 
-        assert((child_ctx->oc_depth + 1) <= OBJECTS_DEPTH_MAX);
-
-        child_ctx->oc_depth = parent_ctx->oc_depth + 1;
         child_ctx->oc_parent = parent;
         child_ctx->oc_object = child;
         fix16_vector3_zero(&child_ctx->oc_position);
-        TAILQ_INIT(&child_ctx->oc_children);
 
         TAILQ_INSERT_TAIL(&parent_ctx->oc_children, child_ctx, oc_tq_entries);
-
-        /* Connect context to child object */
-        child->context = child_ctx;
 }
 
 /*
@@ -413,7 +424,6 @@ traverse_object_context_remove(struct object_context *remove_ctx)
                         /* Disconnect context from object */
                         top_remove->context = NULL;
 
-                        top_remove_ctx->oc_depth = 0;
                         top_remove_ctx->oc_parent = NULL;
                         top_remove_ctx->oc_object = NULL;
 

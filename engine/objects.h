@@ -12,6 +12,7 @@
 #include <inttypes.h>
 
 #include "object.h"
+#include "component.h"
 
 #define OBJECTS_MAX     256
 

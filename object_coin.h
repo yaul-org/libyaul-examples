@@ -16,4 +16,6 @@ struct object_coin {
         int16_t value;
 } __aligned (64);
 
+extern const struct object_coin object_coin;
+
 #endif /* !OBJECT_COIN_H */
