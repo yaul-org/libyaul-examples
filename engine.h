@@ -8,18 +8,19 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
+#include <yaul.h>
+#include <tga.h>
+
+#include <assert.h>
 #include <inttypes.h>
 #include <math.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "engine/aabb.h"
 #include "engine/bounding_box.h"
-#include "engine/component.h"
-#include "engine/component/camera.h"
-#include "engine/component/collider.h"
-#include "engine/component/rigid_body.h"
-#include "engine/component/sprite.h"
-#include "engine/component/transform.h"
 #include "engine/fs.h"
 #include "engine/material.h"
 #include "engine/matrix_stack.h"
@@ -27,6 +28,12 @@
 #include "engine/objects.h"
 #include "engine/physics.h"
 #include "engine/scene.h"
+#include "engine/component.h"
+#include "engine/component/camera.h"
+#include "engine/component/collider.h"
+#include "engine/component/rigid_body.h"
+#include "engine/component/sprite.h"
+#include "engine/component/transform.h"
 
 extern void engine_init(void);
 extern void engine_loop(void);

@@ -8,12 +8,7 @@
 #ifndef ENGINE_RIGID_BODY_H
 #define ENGINE_RIGID_BODY_H
 
-#include <yaul.h>
-
-#include <inttypes.h>
-#include <math.h>
-
-#include "component.h"
+#include "../engine.h"
 
 #define RIGID_BODY_FORCES_MAX 4
 

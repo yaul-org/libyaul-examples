@@ -5,11 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "scene.h"
+#include "../engine.h"
 
 #define STATES_MAX 16
 

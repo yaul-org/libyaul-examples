@@ -5,16 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include <yaul.h>
-
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
-
-#include "objects.h"
-#include "object.h"
-
-#include "transform.h"
+#include "../engine.h"
 
 #define COMPONENT_EVENT(x, name, args...) do {                                 \
         if (((struct component *)(x))->CC_CONCAT(on_, name) != NULL) {         \

@@ -5,14 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include <yaul.h>
-
-#include <assert.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "physics.h"
+#include "../engine.h"
 
 #define OBJECT_POOL_MAX 32
 

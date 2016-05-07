@@ -8,11 +8,7 @@
 #ifndef ENGINE_COLLIDER_H
 #define ENGINE_COLLIDER_H
 
-#include <yaul.h>
-
-#include "object.h"
-#include "component.h"
-#include "aabb.h"
+#include "../engine.h"
 
 struct collider {
         COMPONENT_DECLARATIONS

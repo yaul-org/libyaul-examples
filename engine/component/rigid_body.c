@@ -5,9 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include <assert.h>
-
-#include "rigid_body.h"
+#include "../engine.h"
 
 static void forces_add(struct rigid_body *, const fix16_vector2_t *);
 static void forces_clear(struct rigid_body *);

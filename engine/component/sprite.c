@@ -5,9 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include <assert.h>
-
-#include "sprite.h"
+#include "../engine.h"
 
 void
 component_sprite_on_init(struct component *this __unused)

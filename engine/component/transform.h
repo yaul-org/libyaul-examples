@@ -8,12 +8,7 @@
 #ifndef ENGINE_TRANSFORM_H
 #define ENGINE_TRANSFORM_H
 
-#include <yaul.h>
-
-#include <inttypes.h>
-#include <math.h>
-
-#include "component.h"
+#include "../engine.h"
 
 struct transform {
         COMPONENT_DECLARATIONS

@@ -5,9 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include <assert.h>
-
-#include "transform.h"
+#include "../engine.h"
 
 void
 component_transform_on_init(struct component *this __unused)

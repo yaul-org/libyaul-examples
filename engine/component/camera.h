@@ -8,12 +8,7 @@
 #ifndef ENGINE_CAMERA_H
 #define ENGINE_CAMERA_H
 
-#include <yaul.h>
-
-#include <math.h>
-#include <inttypes.h>
-
-#include "component.h"
+#include "../engine.h"
 
 struct camera {
         COMPONENT_DECLARATIONS

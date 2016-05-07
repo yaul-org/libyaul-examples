@@ -8,13 +8,7 @@
 #ifndef ENGINE_SPRITE_H
 #define ENGINE_SPRITE_H
 
-#include <yaul.h>
-
-#include <inttypes.h>
-#include <math.h>
-
-#include "material.h"
-#include "component.h"
+#include "../engine.h"
 
 struct sprite {
         COMPONENT_DECLARATIONS

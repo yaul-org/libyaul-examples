@@ -5,15 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include <yaul.h>
-
-#include <math.h>
-#include <stdbool.h>
-#include <stdio.h>
-
-#include "objects.h"
-
-#include "transform.h"
+#include "../engine.h"
 
 #define OBJECTS_DEPTH_MAX 3
 

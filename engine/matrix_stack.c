@@ -5,12 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include <yaul.h>
-
-#include <stdbool.h>
-#include <stdio.h>
-
-#include "matrix_stack.h"
+#include "../engine.h"
 
 SLIST_HEAD(matrix_stacks, matrix_stack);
 

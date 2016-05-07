@@ -5,8 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include "collider.h"
-#include "objects.h"
+#include "../engine.h"
 
 void
 component_collider_on_init(struct component *this)

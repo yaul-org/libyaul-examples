@@ -5,12 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include <yaul.h>
-#include <tga.h>
-
-#include <assert.h>
-
-#include "fs.h"
+#include "../engine.h"
 
 extern uint8_t root_romdisk[];
 
