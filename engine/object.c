@@ -117,10 +117,13 @@ object_draw(const struct object *object)
  */
 void
 object_instantiate(const struct object *object, struct object *copy,
-    uint32_t object_size __unused)
+    uint32_t object_size)
 {
         assert(object != NULL);
         assert(copy != NULL);
+        /* The size of the object cannot be zero or less than the size
+         * of base object */
+        assert(((int32_t)object_size - (int32_t)sizeof(struct object)) >= 0);
 
         /* Clear base object */
         memset(copy, 0x00, sizeof(struct object));
