@@ -8,8 +8,7 @@
 #ifndef ENGINE_MATERIAL_H
 #define ENGINE_MATERIAL_H
 
-#include <math.h>
-#include <inttypes.h>
+#include "../engine.h"
 
 struct material {
         bool pseudo_trans;

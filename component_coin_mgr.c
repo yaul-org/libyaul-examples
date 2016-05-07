@@ -5,11 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include <assert.h>
-#include <stdbool.h>
-#include <stdio.h>
-
-#include "component_coin_mgr.h"
+#include "blue.h"
 
 #define COIN_COUNT_MAX 64
 

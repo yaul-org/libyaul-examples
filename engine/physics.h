@@ -8,12 +8,7 @@
 #ifndef ENGINE_PHYSICS_H
 #define ENGINE_PHYSICS_H
 
-#include <math.h>
-
-#include "aabb.h"
-#include "collider.h"
-#include "object.h"
-#include "rigid_body.h"
+#include "../engine.h"
 
 void physics_init(void);
 void physics_object_add(struct object *);

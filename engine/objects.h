@@ -8,11 +8,7 @@
 #ifndef ENGINE_OBJECTS_H
 #define ENGINE_OBJECTS_H
 
-#include <math.h>
-#include <inttypes.h>
-
-#include "object.h"
-#include "component.h"
+#include "../engine.h"
 
 #define OBJECTS_MAX     256
 

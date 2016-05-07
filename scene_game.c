@@ -7,10 +7,6 @@
 
 #include "blue.h"
 
-#include "object_camera.h"
-#include "object_world.h"
-#include "object_blue.h"
-
 void
 scene_game_init(struct scene_ctx *scene_ctx __unused)
 {

@@ -7,8 +7,6 @@
 
 #include "blue.h"
 
-#include "object_world.h"
-
 static struct transform _transform = {
         .active = true,
         .id = COMPONENT_ID_TRANSFORM,

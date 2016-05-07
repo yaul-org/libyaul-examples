@@ -8,9 +8,7 @@
 #ifndef ENGINE_COMPONENT_H
 #define ENGINE_COMPONENT_H
 
-#include <math.h>
-#include <stdbool.h>
-#include <inttypes.h>
+#include "../engine.h"
 
 struct object;
 

@@ -8,7 +8,7 @@
 #ifndef ENGINE_BOUNDING_BOX_H
 #define ENGINE_BOUNDING_BOX_H
 
-#include <math.h>
+#include "../engine.h"
 
 struct bounding_box {
         union {

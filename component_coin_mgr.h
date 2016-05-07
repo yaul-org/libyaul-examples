@@ -8,13 +8,7 @@
 #ifndef ENGINE_COIN_MGR_H
 #define ENGINE_COIN_MGR_H
 
-#include <yaul.h>
-
-#include <inttypes.h>
-#include <math.h>
-
-#include "object_coin.h"
-#include "component.h"
+#include "blue.h"
 
 struct coin_mgr {
         COMPONENT_DECLARATIONS

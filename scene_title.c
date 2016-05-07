@@ -7,13 +7,9 @@
 
 #include "blue.h"
 
-static struct {
-} scene_title;
-
 void
-scene_title_init(struct scene_ctx *scene_ctx)
+scene_title_init(struct scene_ctx *scene_ctx __unused)
 {
-        scene_ctx->sc_data = &scene_title;
 }
 
 void

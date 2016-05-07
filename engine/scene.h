@@ -8,10 +8,7 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include <assert.h>
-#include <inttypes.h>
-
-#include <sys/queue.h>
+#include "../engine.h"
 
 #define SCENE_ADD(scene_id, scene, data) do {                                  \
         extern void CC_CONCAT(scene_, CC_CONCAT(scene, _init))(struct scene_ctx *); \

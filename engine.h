@@ -19,16 +19,19 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/queue.h>
+
 #include "engine/aabb.h"
 #include "engine/bounding_box.h"
 #include "engine/fs.h"
-#include "engine/material.h"
 #include "engine/matrix_stack.h"
+#include "engine/scene.h"
+
+#include "engine/component.h"
+#include "engine/material.h"
 #include "engine/object.h"
 #include "engine/objects.h"
 #include "engine/physics.h"
-#include "engine/scene.h"
-#include "engine/component.h"
 #include "engine/component/camera.h"
 #include "engine/component/collider.h"
 #include "engine/component/rigid_body.h"

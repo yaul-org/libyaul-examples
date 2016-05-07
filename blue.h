@@ -18,10 +18,16 @@
 
 #include "engine.h"
 
+#include "blue_palette.h"
+
+/* Objects */
+#include "object_camera.h"
+#include "object_world.h"
+#include "object_blue.h"
+#include "object_coin.h"
+
 /* Non-engine components */
 #include "component_coin_mgr.h"
-
-#include "blue_palette.h"
 
 #define SCENE_ID_SPLASH 0
 #define SCENE_ID_TITLE  1
