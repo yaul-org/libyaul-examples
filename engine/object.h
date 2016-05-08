@@ -54,5 +54,7 @@ extern void object_update(const struct object *);
 extern void object_draw(const struct object *);
 extern void object_instantiate(const struct object *, struct object *,
     uint32_t);
+extern const struct component *object_component_find(const struct object *,
+    int32_t);
 
 #endif /* !ENGINE_OBJECT_H */

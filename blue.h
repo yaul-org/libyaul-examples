@@ -38,9 +38,18 @@
 #define OBJECT_ID_BLUE                  0x0003
 #define OBJECT_ID_COIN                  0x0004
 
-#define COMPONENT_ID_COIN_MGR           0x8000
+#define COMPONENT_ID_COIN_MGR           0x0001
 
 struct blue_data {
+};
+
+struct blue_world {
+        const char *name;
+        const char *map_filename;
+        const char *col_filename;
+        const char *obj_filename;
+        /* Each screen is (SCREEN_WIDTH/8) */
+        uint32_t screens;
 };
 
 extern struct blue_data blue_data;

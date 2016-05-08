@@ -104,8 +104,8 @@ component_coin_mgr_spawn(struct component *this __unused, fix16_t spawn_x,
         assert(object_coin != NULL);
 
         struct transform *transform;
-        transform = (struct transform *)OBJECT_COMPONENT(object_coin,
-            COMPONENT_ID_TRANSFORM);
+        transform = (struct transform *)object_component_find(
+                (struct object *)object_coin, COMPONENT_ID_TRANSFORM);
 
         COMPONENT(transform, position).x = spawn_x;
         COMPONENT(transform, position).y = spawn_y;

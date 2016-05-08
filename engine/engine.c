@@ -123,8 +123,8 @@ objects_project(void)
         fix16_matrix3_identity(&matrix_view);
 
         struct transform *camera_transform;
-        camera_transform = (struct transform *)OBJECT_COMPONENT(camera->object,
-            COMPONENT_ID_TRANSFORM);
+        camera_transform = (struct transform *)object_component_find(
+                camera->object, COMPONENT_ID_TRANSFORM);
 
         matrix_view.frow[0][2] = -camera_transform->position.x;
         matrix_view.frow[1][2] = -camera_transform->position.y;
@@ -196,8 +196,7 @@ object_project(const struct object *object, const fix16_vector3_t *position)
         }
 
         const struct camera *camera;
-        camera = (const struct camera *)objects_object_component_find(object,
-            COMPONENT_ID_CAMERA);
+        camera = (const struct camera *)objects_component_find(COMPONENT_ID_CAMERA);
         assert((camera != NULL) && "No camera found");
 
         /* The camera should not be projected */
@@ -207,7 +206,7 @@ object_project(const struct object *object, const fix16_vector3_t *position)
 
         /* Only objects with an active sprite component should be projected */
         const struct sprite *sprite;
-        sprite = (const struct sprite *)objects_object_component_find(object,
+        sprite = (const struct sprite *)object_component_find(object,
             COMPONENT_ID_SPRITE);
         if ((sprite == NULL) || !COMPONENT(sprite, active)) {
                 return;
@@ -216,7 +215,7 @@ object_project(const struct object *object, const fix16_vector3_t *position)
         material = &COMPONENT(sprite, material);
 
         const struct transform *transform;
-        transform = (const struct transform *)objects_object_component_find(
+        transform = (const struct transform *)object_component_find(
                 object, COMPONENT_ID_TRANSFORM);
         assert(transform != NULL);
 
@@ -306,7 +305,8 @@ hardware_init(void)
         vdp2_init();
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
             TVMD_VERT_224);
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(2, 0x01FFFE), 0x9C00);
+        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(2, 0x01FFFE),
+            COLOR_RGB555(0, 0, 7));
 
         vdp2_sprite_type_set(1);
         vdp2_sprite_type_priority_set(0, 7);

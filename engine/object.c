@@ -40,10 +40,14 @@ object_init(struct object *object)
         /* Register object (initialize its context) */
         objects_object_register(object);
 
-        /* Make sure first component is the transform */
+        /* Make sure we have at least one component (transform) */
         assert(OBJECT(object, component_count) >= 1);
-        assert((OBJECT_COMPONENT(object, COMPONENT_ID_TRANSFORM) != NULL) &&
-               (OBJECT_COMPONENT(object, COMPONENT_ID_TRANSFORM)->id == COMPONENT_ID_TRANSFORM));
+
+        /* Make sure first component is the transform */
+        const struct transform *transform __unused;
+        transform = (const struct transform *)OBJECT_COMPONENT(object, 0);
+        assert((transform != NULL) &&
+               (COMPONENT(transform, id) == COMPONENT_ID_TRANSFORM));
 
         uint32_t component_idx;
         for (component_idx = 1; /* Skip transform component */
@@ -166,4 +170,35 @@ object_instantiate(const struct object *object, struct object *copy,
         OBJECT(copy, on_destroy) = OBJECT(object, on_destroy);
 
         object_init(copy);
+}
+
+/*
+ *
+ */
+const struct component *
+object_component_find(const struct object *object, int32_t component_id)
+{
+        assert(object != NULL);
+        assert(component_id >= 1);
+
+        /* Caching */
+        if (component_id == COMPONENT_ID_TRANSFORM) {
+                return OBJECT_COMPONENT(object, 0);
+        }
+
+        uint32_t component_idx;
+        for (component_idx = 0;
+             component_idx < OBJECT(object, component_count);
+             component_idx++) {
+                struct component *component;
+                component = OBJECT_COMPONENT(object, component_idx);
+
+                if (COMPONENT(component, id) == component_id) {
+                        assert(COMPONENT(component, initialized));
+
+                        return component;
+                }
+        }
+
+        return NULL;
 }

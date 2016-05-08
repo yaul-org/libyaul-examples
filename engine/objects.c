@@ -289,8 +289,12 @@ return_list:
 const struct component *
 objects_component_find(int32_t component_id)
 {
-        assert((component_id >= 0) &&
-               (component_id < OBJECT_COMPONENT_LIST_MAX));
+        assert(component_id >= 1);
+
+        /* As a sanity check, don't search for transform. Why would it
+         * make any sense to search for a "random" transform
+         * component? */
+        assert(component_id != COMPONENT_ID_TRANSFORM);
 
         /* Caching */
         if ((component_id == COMPONENT_ID_CAMERA) && (_cached_camera != NULL)) {
@@ -306,50 +310,14 @@ objects_component_find(int32_t component_id)
                 object = objects[object_idx].object;
 
                 const struct component *component;
-                component = objects_object_component_find(object, component_id);
-                if (component != NULL) {
-                        return component;
+                component = object_component_find(object, component_id);
+
+                /* Caching */
+                if (component_id == COMPONENT_ID_CAMERA) {
+                        _cached_camera = component;
                 }
-        }
 
-        return NULL;
-}
-
-/*
- *
- */
-const struct component *
-objects_object_component_find(const struct object *object, int32_t component_id)
-{
-        assert(object != NULL);
-        assert(object->context != NULL);
-        assert((component_id >= 0) &&
-               (component_id < OBJECT_COMPONENT_LIST_MAX));
-
-        /* Caching */
-        if (component_id == COMPONENT_ID_TRANSFORM) {
-                return OBJECT_COMPONENT(object, COMPONENT_ID_TRANSFORM);
-        }
-
-        if ((component_id == COMPONENT_ID_CAMERA) && (_cached_camera != NULL)) {
-                return _cached_camera;
-        }
-
-        uint32_t component_idx;
-        for (component_idx = 0;
-             component_idx < OBJECT(object, component_count);
-             component_idx++) {
-                struct component *component;
-                component = OBJECT_COMPONENT(object, component_idx);
-
-                if (COMPONENT(component, id) == component_id) {
-                        assert(COMPONENT(component, initialized));
-
-                        /* Caching */
-                        if (component_id == COMPONENT_ID_CAMERA) {
-                                _cached_camera = component;
-                        }
-
+                if (component != NULL) {
                         return component;
                 }
         }
@@ -495,8 +463,8 @@ traverse_object_context_update(struct object_context *object_ctx)
                         assert(top_object_ctx == object->context);
 
                         struct transform *transform;
-                        transform = (struct transform *)OBJECT_COMPONENT(object,
-                            COMPONENT_ID_TRANSFORM);
+                        transform = (struct transform *)object_component_find(
+                                object, COMPONENT_ID_TRANSFORM);
                         assert(transform != NULL);
 
                         /* Calculate the absolute position */

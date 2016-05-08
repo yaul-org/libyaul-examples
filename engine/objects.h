@@ -44,7 +44,5 @@ extern void objects_clear(void);
 extern const struct object_z *objects_list(void);
 extern const struct objects *objects_sorted_list(void);
 extern const struct component *objects_component_find(int32_t);
-extern const struct component *objects_object_component_find(
-        const struct object *, int32_t);
 
 #endif /* !ENGINE_OBJECTS_H */
