@@ -5,7 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include "../engine.h"
+#include "engine.h"
 
 extern uint8_t root_romdisk[];
 

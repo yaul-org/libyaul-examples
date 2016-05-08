@@ -8,7 +8,7 @@
 #ifndef ENGINE_COMPONENT_H
 #define ENGINE_COMPONENT_H
 
-#include "../engine.h"
+#include "engine.h"
 
 struct object;
 

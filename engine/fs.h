@@ -8,7 +8,7 @@
 #ifndef ENGINE_FS_H
 #define ENGINE_FS_H
 
-#include "../engine.h"
+#include "engine.h"
 
 size_t fs_size(void *);
 void *fs_open(const char *);

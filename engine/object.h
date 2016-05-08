@@ -8,7 +8,7 @@
 #ifndef ENGINE_OBJECT_H
 #define ENGINE_OBJECT_H
 
-#include "../engine.h"
+#include "engine.h"
 
 #define OBJECT_COMPONENT_LIST_MAX       16
 

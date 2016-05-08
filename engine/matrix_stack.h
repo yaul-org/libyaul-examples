@@ -8,7 +8,7 @@
 #ifndef ENGINE_MATRIX_STACK_H
 #define ENGINE_MATRIX_STACK_H
 
-#include "../engine.h"
+#include "engine.h"
 
 #define MATRIX_STACK_MODEL_VIEW_DEPTH   3
 #define MATRIX_STACK_PROJECTION_DEPTH   1

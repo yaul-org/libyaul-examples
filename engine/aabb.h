@@ -8,7 +8,7 @@
 #ifndef ENGINE_AABB_H
 #define ENGINE_AABB_H
 
-#include "../engine.h"
+#include "engine.h"
 
 struct aabb {
         int16_vector2_t center;

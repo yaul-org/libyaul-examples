@@ -8,7 +8,7 @@
 #ifndef ENGINE_PHYSICS_H
 #define ENGINE_PHYSICS_H
 
-#include "../engine.h"
+#include "engine.h"
 
 void physics_init(void);
 void physics_object_add(struct object *);

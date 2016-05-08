@@ -33,7 +33,6 @@ SH_OBJECTS:= \
 	object/world.o \
 \
 	component/coin_mgr.o
-SH_CFLAGS+= -Iengine -Iengine/component
 SH_LIBRARIES:= tga
 
 ifeq ($(strip $(ASSERT)),1)

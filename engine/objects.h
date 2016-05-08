@@ -8,7 +8,7 @@
 #ifndef ENGINE_OBJECTS_H
 #define ENGINE_OBJECTS_H
 
-#include "../engine.h"
+#include "engine.h"
 
 #define OBJECTS_MAX     256
 

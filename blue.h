@@ -16,9 +16,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "engine.h"
+#include "engine/engine.h"
 
-#include "blue_palette.h"
+#include "palette.h"
 
 /* Objects */
 #include "object/camera.h"

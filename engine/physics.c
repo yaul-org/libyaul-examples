@@ -5,7 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include "../engine.h"
+#include "engine.h"
 
 #define OBJECT_POOL_MAX 32
 

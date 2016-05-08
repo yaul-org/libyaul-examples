@@ -27,22 +27,22 @@
 
 #include <sys/queue.h>
 
-#include "engine/aabb.h"
-#include "engine/bounding_box.h"
-#include "engine/fs.h"
-#include "engine/matrix_stack.h"
-#include "engine/scene.h"
+#include "aabb.h"
+#include "bounding_box.h"
+#include "fs.h"
+#include "matrix_stack.h"
+#include "scene.h"
 
-#include "engine/component.h"
-#include "engine/material.h"
-#include "engine/object.h"
-#include "engine/objects.h"
-#include "engine/physics.h"
-#include "engine/component/camera.h"
-#include "engine/component/collider.h"
-#include "engine/component/rigid_body.h"
-#include "engine/component/sprite.h"
-#include "engine/component/transform.h"
+#include "component.h"
+#include "material.h"
+#include "object.h"
+#include "objects.h"
+#include "physics.h"
+#include "component/camera.h"
+#include "component/collider.h"
+#include "component/rigid_body.h"
+#include "component/sprite.h"
+#include "component/transform.h"
 
 extern void engine_init(void);
 extern void engine_loop(void);

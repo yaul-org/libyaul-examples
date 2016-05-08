@@ -5,7 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include "../engine.h"
+#include "engine.h"
 
 #define COMPONENT_EVENT_CALL(x, name, args...) do {                            \
         if (COMPONENT_EVENT(((struct component *)(x)), name) != NULL) {        \

@@ -5,7 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include "../../engine.h"
+#include "../engine.h"
 
 void
 component_camera_on_init(struct component *this __unused)

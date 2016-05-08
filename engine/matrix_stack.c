@@ -5,7 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include "../engine.h"
+#include "engine.h"
 
 SLIST_HEAD(matrix_stacks, matrix_stack);
 

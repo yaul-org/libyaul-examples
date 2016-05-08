@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "../engine.h"
+#include "engine.h"
 
 struct smpc_peripheral_digital digital_pad;
 
