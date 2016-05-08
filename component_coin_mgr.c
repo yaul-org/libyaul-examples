@@ -67,6 +67,8 @@ component_coin_mgr_on_init(struct component *this)
                 COMPONENT(sprite, object) = (const struct object *)object_coin;
                 COMPONENT(sprite, width) = 8;
                 COMPONENT(sprite, height) = 8;
+                COMPONENT(sprite, material).pseudo_trans = false;
+                COMPONENT(sprite, material).solid_color = blue_palette[16];
                 COMPONENT(sprite, on_init) = &component_sprite_on_init;
                 COMPONENT(sprite, on_update) = &component_sprite_on_update;
                 COMPONENT(sprite, on_draw) = component_sprite_on_draw;
@@ -89,6 +91,7 @@ component_coin_mgr_on_init(struct component *this)
 void
 component_coin_mgr_on_update(struct component *this __unused)
 {
+        /* Free all coins no longer active or visible */
         uint32_t coin_idx;
         for (coin_idx = 0; coin_idx < COIN_COUNT_MAX; coin_idx++) {
                 struct object_coin *object_coin;
@@ -122,6 +125,13 @@ component_coin_mgr_on_draw(struct component *this __unused)
 void
 component_coin_mgr_on_destroy(struct component *this __unused)
 {
+        uint32_t coin_idx;
+        for (coin_idx = 0; coin_idx < COIN_COUNT_MAX; coin_idx++) {
+                struct object_coin *object_coin;
+                object_coin = &object_coins[coin_idx];
+
+                OBJECT(object_coin, active) = false;
+        }
 }
 
 void
