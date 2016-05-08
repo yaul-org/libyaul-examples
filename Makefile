@@ -7,6 +7,7 @@ include $(INSTALL_ROOT)/share/pre.common.mk
 SH_PROGRAM:= blue
 SH_OBJECTS:= \
 	root.romdisk.o \
+\
 	engine/component/camera.o \
 	engine/component/collider.o \
 	engine/component/rigid_body.o \
@@ -19,15 +20,19 @@ SH_OBJECTS:= \
 	engine/objects.o \
 	engine/physics.o \
 	engine/scene.o \
+\
 	blue.o \
-	scene_splash.o \
-	scene_title.o \
-	scene_game.o \
-	object_blue.o \
-	object_camera.o \
-	object_coin.o \
-	object_world.o \
-	component_coin_mgr.o
+\
+	scene/splash.o \
+	scene/title.o \
+	scene/game.o \
+\
+	object/blue.o \
+	object/camera.o \
+	object/coin.o \
+	object/world.o \
+\
+	component/coin_mgr.o
 SH_CFLAGS+= -Iengine -Iengine/component
 SH_LIBRARIES:= tga
 

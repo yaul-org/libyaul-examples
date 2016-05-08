@@ -8,7 +8,7 @@
 #ifndef OBJECT_CAMERA_H
 #define OBJECT_CAMERA_H
 
-#include "blue.h"
+#include "../blue.h"
 
 struct object_camera {
         OBJECT_DECLARATIONS

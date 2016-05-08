@@ -5,21 +5,21 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include "blue.h"
+#include "../blue.h"
 
 static struct transform _transform = {
         .active = true,
         .id = COMPONENT_ID_TRANSFORM,
-        .object = NULL,
-        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 1.0f)
+        .object = (struct object *)&object_blue,
+        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 7.0f)
 };
 
 static struct collider _collider = {
         .active = true,
         .id = COMPONENT_ID_COLLIDER,
-        .object = NULL,
+        .object = (const struct object *)&object_blue,
         .width = 8,
-        .height = 8,
+        .height = 16,
         .trigger = false,
         .fixed = false,
         .show = true,
@@ -29,15 +29,25 @@ static struct collider _collider = {
         .on_destroy = NULL
 };
 
+static struct rigid_body _rigid_body = {
+        .active = true,
+        .id = COMPONENT_ID_RIGID_BODY,
+        .object = (const struct object *)&object_blue,
+        .on_init = &component_collider_on_init,
+        .on_update = NULL,
+        .on_draw = NULL,
+        .on_destroy = NULL
+};
+
 static struct sprite _sprite = {
         .active = true,
         .id = COMPONENT_ID_SPRITE,
-        .object = NULL,
+        .object = (const struct object *)&object_blue,
         .width = 8,
-        .height = 8,
+        .height = 16,
         .material = {
                 .pseudo_trans = true,
-                .solid_color = BLUE_PALETTE_COLOR_16
+                .solid_color = COLOR_RGB555_INITIALIZER(0, 0, 31)
         },
         .on_init = &component_sprite_on_init,
         .on_update = &component_sprite_on_update,
@@ -45,14 +55,15 @@ static struct sprite _sprite = {
         .on_destroy = NULL
 };
 
-const struct object_coin object_coin = {
-        .active = false,
-        .id = OBJECT_ID_COIN,
-        .value = -100,
+struct object_blue object_blue = {
+        .active = true,
+        .id = OBJECT_ID_BLUE,
         .component_list = {
+                /* Must be the first component */
                 OBJECT_COMPONENT_INITIALIZER(transform, &_transform),
                 OBJECT_COMPONENT_INITIALIZER(sprite, &_sprite),
-                OBJECT_COMPONENT_INITIALIZER(collider, &_collider)
-         },
-        .component_count = 3
+                OBJECT_COMPONENT_INITIALIZER(collider, &_collider),
+                OBJECT_COMPONENT_INITIALIZER(rigid_body, &_rigid_body)
+        },
+        .component_count = 4
 };

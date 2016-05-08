@@ -8,7 +8,7 @@
 #ifndef OBJECT_WORLD_H
 #define OBJECT_WORLD_H
 
-#include "blue.h"
+#include "../blue.h"
 
 struct object_world {
         OBJECT_DECLARATIONS

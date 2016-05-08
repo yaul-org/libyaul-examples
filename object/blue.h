@@ -8,7 +8,7 @@
 #ifndef OBJECT_BLUE_H
 #define OBJECT_BLUE_H
 
-#include "blue.h"
+#include "../blue.h"
 
 struct object_blue {
         OBJECT_DECLARATIONS

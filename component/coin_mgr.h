@@ -8,7 +8,7 @@
 #ifndef ENGINE_COIN_MGR_H
 #define ENGINE_COIN_MGR_H
 
-#include "blue.h"
+#include "../blue.h"
 
 struct coin_mgr {
         COMPONENT_DECLARATIONS

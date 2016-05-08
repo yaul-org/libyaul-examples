@@ -5,7 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include "blue.h"
+#include "../blue.h"
 
 static struct transform _transform = {
         .active = true,

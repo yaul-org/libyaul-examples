@@ -5,7 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include "blue.h"
+#include "../blue.h"
 
 void
 scene_splash_init(struct scene_ctx *scene_ctx __unused)

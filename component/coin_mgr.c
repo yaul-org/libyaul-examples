@@ -5,7 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include "blue.h"
+#include "../blue.h"
 
 #define COIN_COUNT_MAX 64
 

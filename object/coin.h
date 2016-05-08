@@ -8,7 +8,7 @@
 #ifndef OBJECT_COIN_H
 #define OBJECT_COIN_H
 
-#include "blue.h"
+#include "../blue.h"
 
 struct object_coin {
         OBJECT_DECLARATIONS
