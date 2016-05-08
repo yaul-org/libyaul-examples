@@ -32,7 +32,7 @@ struct collider {
                         color_rgb555_t color_list[1];
                 } m_show;
         } private_data;
-} __aligned (32);
+} __aligned (128);
 
 struct collider_info {
         int16_t overlap;

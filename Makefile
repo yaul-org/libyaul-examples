@@ -20,13 +20,13 @@ SH_OBJECTS:= \
 	engine/physics.o \
 	engine/scene.o \
 	blue.o \
-	globals.o \
 	scene_splash.o \
 	scene_title.o \
 	scene_game.o \
 	object_camera.o \
 	object_world.o \
-	object_blue.o
+	object_blue.o \
+	component_coin_mgr.o
 SH_CFLAGS+= -Iengine -Iengine/component
 SH_LIBRARIES:= tga
 

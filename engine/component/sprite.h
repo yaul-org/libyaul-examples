@@ -23,12 +23,6 @@ struct sprite {
         uint32_t height;
 
         struct material material;
-
-        struct {
-        } functions;
-
-        struct {
-        } private_data;
 } __aligned (64);
 
 extern void component_sprite_on_init(struct component *);

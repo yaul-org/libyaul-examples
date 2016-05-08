@@ -16,12 +16,26 @@ static struct transform _transform = {
         .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 15.0f)
 };
 
+static struct coin_mgr _coin_mgr = {
+        .active = true,
+        .id = COMPONENT_ID_COIN_MGR,
+        .object = (struct object *)&object_world,
+        .on_init = &component_coin_mgr_on_init,
+        .on_update = &component_coin_mgr_on_update,
+        .on_draw = &component_coin_mgr_on_draw,
+        .on_destroy = &component_coin_mgr_on_destroy,
+        .coins = 64,
+        .functions = {
+                .m_spawn = &component_coin_mgr_spawn
+        }
+};
+
 struct object_world object_world = {
         .active = true,
         .id = OBJECT_ID_WORLD,
         .component_list = {
                 (struct component *)&_transform,
+                (struct component *)&_coin_mgr
         },
-        .component_count = 1
+        .component_count = 2
 };
-

@@ -18,7 +18,7 @@
 
 #include "engine.h"
 
-#include "globals.h"
+#include "component_coin_mgr.h"
 
 #define SCENE_ID_SPLASH 0
 #define SCENE_ID_TITLE  1
@@ -27,10 +27,15 @@
 #define OBJECT_ID_CAMERA                0x0001
 #define OBJECT_ID_WORLD                 0x0002
 #define OBJECT_ID_BLUE                  0x0003
-#define OBJECT_ID_PARTICLE_BEGIN        0x0004
-#define OBJECT_ID_PARTICLE_END          0x0025
+#define OBJECT_ID_COIN                  0x0004
+
+#define COMPONENT_ID_COIN_MGR           0x8000
 
 struct blue_data {
 };
+
+extern struct blue_data blue_data;
+
+extern const color_rgb555_t blue_palette[];
 
 #endif /* !BLUE_H */

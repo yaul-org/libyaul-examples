@@ -5,15 +5,15 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#ifndef OBJECT_BLUE_H
-#define OBJECT_BLUE_H
+#ifndef OBJECT_COIN_H
+#define OBJECT_COIN_H
 
 #include "blue.h"
 
-struct object_blue {
+struct object_coin {
         OBJECT_DECLARATIONS
-};
 
-extern struct object_blue object_blue;
+        int16_t value;
+} __aligned (64);
 
-#endif /* !OBJECT_BLUE_H */
+#endif /* !OBJECT_COIN_H */

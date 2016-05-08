@@ -13,7 +13,7 @@ static struct transform _transform = {
         .active = true,
         .id = COMPONENT_ID_TRANSFORM,
         .object = (struct object *)&object_blue,
-        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 2.0f)
+        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 14.0f)
 };
 
 static struct collider _collider = {
@@ -49,9 +49,7 @@ static struct sprite _sprite = {
         .height = 16,
         .material = {
                 .pseudo_trans = true,
-                .solid_color = {
-                        COLOR_RGB555_INITIALIZER(0, 0, 31)
-                }
+                .solid_color = COLOR_RGB555_INITIALIZER(0, 0, 31)
         },
         .on_init = &component_sprite_on_init,
         .on_update = &component_sprite_on_update,
@@ -69,5 +67,5 @@ struct object_blue object_blue = {
                 (struct component *)&_collider,
                 (struct component *)&_rigid_body
         },
-        .component_count = 3,
+        .component_count = 4
 };
