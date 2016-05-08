@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-up" width="16" height="14" tilewidth="16" tileheight="16" backgroundcolor="#55aaff" nextobjectid="30">
+ <properties>
+  <property name="Name" value="1-1 Blue"/>
+ </properties>
+ <tileset firstgid="1" name="World" tilewidth="16" tileheight="16">
+  <image source="../romdisk/WORLD.PNG" width="16" height="96"/>
+ </tileset>
+ <layer name="Level" width="16" height="14">
+  <data encoding="base64">
+   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAIAAAACAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAACAAAAAgAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAA=
+  </data>
+ </layer>
+ <objectgroup color="#ffff00" name="Objects">
+  <object id="1" name="Coin" type="Item" x="100" y="52" width="8" height="8">
+   <properties>
+    <property name="Value" value="100"/>
+   </properties>
+  </object>
+  <object id="4" name="Coin" type="Item" x="116" y="52" width="8" height="8">
+   <properties>
+    <property name="Value" value="100"/>
+   </properties>
+  </object>
+  <object id="5" name="Coin" type="Coi" x="100" y="68" width="8" height="8">
+   <properties>
+    <property name="Value" value="100"/>
+   </properties>
+  </object>
+  <object id="6" name="Coin" type="Item" x="116" y="68" width="8" height="8">
+   <properties>
+    <property name="Value" value="100"/>
+   </properties>
+  </object>
+  <object id="11" name="Coin" type="Item" x="132" y="52" width="8" height="8">
+   <properties>
+    <property name="Value" value="100"/>
+   </properties>
+  </object>
+  <object id="14" name="Coin" type="Item" x="132" y="68" width="8" height="8">
+   <properties>
+    <property name="Value" value="100"/>
+   </properties>
+  </object>
+  <object id="15" name="Blue" type="Player" x="36" y="88" width="8" height="16"/>
+  <object id="17" name="Coin" type="Item" x="100" y="84" width="8" height="8">
+   <properties>
+    <property name="Value" value="100"/>
+   </properties>
+  </object>
+  <object id="18" name="Coin" type="Coi" x="100" y="100" width="8" height="8">
+   <properties>
+    <property name="Value" value="100"/>
+   </properties>
+  </object>
+  <object id="19" name="Coin" type="Item" x="132" y="100" width="8" height="8">
+   <properties>
+    <property name="Value" value="100"/>
+   </properties>
+  </object>
+  <object id="20" name="Coin" type="Item" x="116" y="100" width="8" height="8">
+   <properties>
+    <property name="Value" value="100"/>
+   </properties>
+  </object>
+  <object id="21" name="Coin" type="Item" x="116" y="84" width="8" height="8">
+   <properties>
+    <property name="Value" value="100"/>
+   </properties>
+  </object>
+  <object id="22" name="Coin" type="Item" x="132" y="84" width="8" height="8">
+   <properties>
+    <property name="Value" value="100"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup color="#ff0000" name="Collision">
+  <object id="26" name="World" type="Collider" x="0" y="208">
+   <polyline points="0,0 64,0 64,-32 112,-32 112,0 160,0 160,-112 176,-112 176,0 256,0 256,16 0,16 0,0"/>
+  </object>
+  <object id="28" name="End" type="Trigger" x="240" y="0" width="16" height="204"/>
+ </objectgroup>
+</map>
