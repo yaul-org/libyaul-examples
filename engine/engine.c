@@ -61,7 +61,6 @@ engine_loop(void)
                         scene_handler_draw();
                         objects_draw();
                         cons_flush();
-                        vdp1_cmdt_list_commit();
                 }
         }
 }
@@ -94,6 +93,8 @@ objects_draw(void)
 
                 object_draw(object);
         }
+
+        vdp1_cmdt_list_commit();
 }
 
 static void
@@ -103,7 +104,8 @@ objects_project(void)
          * (inverse) view matrix */
         const struct camera *camera;
 
-        camera = (const struct camera *)objects_component_find(COMPONENT_ID_CAMERA);
+        camera = (const struct camera *)objects_component_find(
+                COMPONENT_ID_CAMERA);
         assert((camera != NULL) && "No camera found");
 
         /* Manipulating the camera in world space amounts to
@@ -270,7 +272,8 @@ object_project(const struct object *object, const fix16_vector3_t *position)
 
                 struct vdp1_cmdt_local_coord local_coord;
                 local_coord.lc_coord.x = (width / 2) + screen_coords[0].x;
-                local_coord.lc_coord.y = camera->height - ((height / 2) + screen_coords[0].y);
+                local_coord.lc_coord.y = camera->height - ((height / 2) +
+                    screen_coords[0].y);
 
                 struct vdp1_cmdt_polygon polygon;
                 polygon.cp_mode.raw = 0x0000;
