@@ -5,6 +5,14 @@
  </properties>
  <tileset firstgid="1" name="World" tilewidth="16" tileheight="16">
   <image source="../romdisk/WORLD.PNG" width="16" height="96"/>
+  <tile id="1">
+   <objectgroup draworder="index">
+    <object id="0" x="0" y="0" width="16" height="16"/>
+   </objectgroup>
+  </tile>
+  <tile id="2">
+   <objectgroup draworder="index"/>
+  </tile>
  </tileset>
  <layer name="Level" width="16" height="14">
   <data encoding="base64">
@@ -22,7 +30,7 @@
     <property name="Value" value="100"/>
    </properties>
   </object>
-  <object id="5" name="Coin" type="Coi" x="100" y="68" width="8" height="8">
+  <object id="5" name="Coin" type="Item" x="100" y="68" width="8" height="8">
    <properties>
     <property name="Value" value="100"/>
    </properties>
@@ -48,7 +56,7 @@
     <property name="Value" value="100"/>
    </properties>
   </object>
-  <object id="18" name="Coin" type="Coi" x="100" y="100" width="8" height="8">
+  <object id="18" name="Coin" type="Item" x="100" y="100" width="8" height="8">
    <properties>
     <property name="Value" value="100"/>
    </properties>
@@ -75,9 +83,6 @@
   </object>
  </objectgroup>
  <objectgroup color="#ff0000" name="Collision">
-  <object id="26" name="World" type="Collider" x="0" y="208">
-   <polyline points="0,0 64,0 64,-32 112,-32 112,0 160,0 160,-112 176,-112 176,0 256,0 256,16 0,16 0,0"/>
-  </object>
-  <object id="28" name="End" type="Trigger" x="240" y="0" width="16" height="204"/>
+  <object id="28" name="End" type="Trigger" x="240" y="0" width="16" height="224"/>
  </objectgroup>
 </map>

@@ -93,7 +93,10 @@ objects_init(void)
 }
 
 /*
+ * Register object.
  *
+ * Note, an object must be registered before it can be added to the
+ * objects tree.
  */
 void
 objects_object_register(struct object *object)
@@ -118,13 +121,27 @@ objects_object_register(struct object *object)
 }
 
 /*
- *
+ * Unregister object.
  */
 void
-objects_object_unregister(struct object *object __unused)
+objects_object_unregister(struct object *object)
 {
         assert(object != NULL);
         assert(object->context != NULL);
+
+        struct object_context *object_ctx;
+        object_ctx = (struct object_context *)object->context;
+
+        object_ctx->oc_parent = NULL;
+        object_ctx->oc_object = NULL;
+
+        /* Free context */
+        int error __unused;
+        error = memb_free(&_object_context_pool, object_ctx);
+        assert(error == 0);
+
+        /* Disconnect context from object */
+        object->context = NULL;
 }
 
 /*
@@ -360,6 +377,8 @@ traverse_object_context_remove(struct object_context *remove_ctx)
         assert(remove_ctx != NULL);
         assert(remove_ctx->oc_object != NULL);
         assert(remove_ctx->oc_object->context == remove_ctx);
+        /* The root node is not to be removed */
+        assert(remove_ctx != _root_ctx);
 
         SLIST_HEAD(stack, object_context) stack = SLIST_HEAD_INITIALIZER(stack);
 
@@ -370,33 +389,27 @@ traverse_object_context_remove(struct object_context *remove_ctx)
                 struct object_context *top_remove_ctx;
                 top_remove_ctx = SLIST_FIRST(&stack);
 
+                /* Pop */
                 SLIST_REMOVE_HEAD(&stack, oc_sl_entries);
 
-                /* Remove context from object */
+                struct object *top_remove;
+                top_remove = top_remove_ctx->oc_object;
+                assert(top_remove != NULL);
+
                 const struct object *parent;
                 parent = top_remove_ctx->oc_parent;
-                /* The root node is not to be removed */
-                if (parent != NULL) {
-                        struct object_context *parent_ctx;
-                        parent_ctx = (struct object_context *)parent->context;
+                assert(parent != NULL);
 
-                        struct object *top_remove;
-                        top_remove = top_remove_ctx->oc_object;
-                        /* Disconnect context from object */
-                        top_remove->context = NULL;
+                struct object_context *parent_ctx;
+                parent_ctx = (struct object_context *)parent->context;
+                assert(parent_ctx != NULL);
 
-                        top_remove_ctx->oc_parent = NULL;
-                        top_remove_ctx->oc_object = NULL;
+                /* Remove from objects tree */
+                TAILQ_REMOVE(&parent_ctx->oc_children, top_remove_ctx,
+                    oc_tq_entries);
 
-                        TAILQ_REMOVE(&parent_ctx->oc_children, top_remove_ctx,
-                            oc_tq_entries);
-
-                        /* Free context */
-                        int error __unused;
-                        error = memb_free(&_object_context_pool,
-                            top_remove_ctx);
-                        assert(error == 0);
-                }
+                /* Unregister */
+                objects_object_unregister(top_remove);
 
                 while (!(TAILQ_EMPTY(&top_remove_ctx->oc_children))) {
                         struct object_context *itr_child_ctx;

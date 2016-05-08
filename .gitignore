@@ -8,3 +8,5 @@ IP.BIN.map
 *.map
 *.o
 *.sym
+.#*
+/TODO
