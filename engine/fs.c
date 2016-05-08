@@ -47,9 +47,9 @@ fs_read(void *fh, void *dst, size_t len)
         assert(romdisk != NULL);
         assert(fh != NULL);
 
-        size_t read_len;
-
+        size_t read_len __unused;
         read_len = romdisk_read(fh, dst, len);
+
         assert(read_len == len);
 }
 
@@ -87,11 +87,11 @@ fs_texture_load(uint8_t type, const char *path, void *image_dst, void *cmap_dst)
         fs_close(file_handle);
 
         tga_t tga;
-        int32_t status;
+        int32_t status __unused;
         status = tga_read(&tga, ptr);
         assert(status == TGA_FILE_OK);
 
-        int32_t amount;
+        int32_t amount __unused;
         amount = -1;
 
         switch (type) {

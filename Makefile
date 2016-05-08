@@ -31,6 +31,10 @@ SH_OBJECTS:= \
 SH_CFLAGS+= -Iengine -Iengine/component
 SH_LIBRARIES:= tga
 
+ifeq ($(strip $(ASSERT)),1)
+  SH_CFLAGS+= -DHAVE_ASSERT
+endif
+
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
 IP_AREAS:= JTUBKAEL
@@ -51,7 +55,7 @@ ROMDISK_DEPS:= romdisk/*.TGA levels/*.json
 	    exit 1; \
 	fi
 	echo tiled --export-map "Json files (*.json)" $< $@
-	tools/tmx2map
+	-tools/tmx2map
 	echo $(RM) $@
 
 include $(INSTALL_ROOT)/share/post.common.mk

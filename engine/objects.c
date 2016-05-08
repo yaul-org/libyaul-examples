@@ -121,7 +121,7 @@ objects_object_register(struct object *object)
  *
  */
 void
-objects_object_unregister(struct object *object)
+objects_object_unregister(struct object *object __unused)
 {
         assert(object != NULL);
         assert(object->context != NULL);
@@ -390,7 +390,7 @@ traverse_object_context_remove(struct object_context *remove_ctx)
 {
         assert(remove_ctx != NULL);
         assert(remove_ctx->oc_object != NULL);
-        assert(remove_ctx->oc_object->context = remove_ctx);
+        assert(remove_ctx->oc_object->context == remove_ctx);
 
         SLIST_HEAD(stack, object_context) stack = SLIST_HEAD_INITIALIZER(stack);
 
@@ -445,7 +445,7 @@ static void
 traverse_object_context_update(struct object_context *object_ctx)
 {
         assert(object_ctx != NULL);
-        assert(object_ctx->oc_object->context = object_ctx);
+        assert(object_ctx->oc_object->context == object_ctx);
 
         /* Empty each bucket */
         uint32_t bucket_idx;

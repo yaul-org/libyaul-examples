@@ -96,8 +96,9 @@ scene_transition(uint32_t scene_id)
         /* Check if transitioning scene is valid */
         struct scene *scene;
 
-        bool scene_found;
+        bool scene_found __unused;
         scene_found = false;
+
         TAILQ_FOREACH (scene, &_scenes, entries) {
                 if (scene->scene_id == scene_id) {
                         scene_found = true;

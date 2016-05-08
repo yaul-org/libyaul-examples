@@ -89,7 +89,7 @@ matrix_stack_pop(void)
         top_ms = matrix_stack_top(_mode);
         assert(top_ms != NULL);
 
-        int error_code;
+        int error_code __unused;
         error_code = memb_free(&_matrix_stack_matrix_pool, top_ms->ms_matrix);
         assert(error_code == 0);
         error_code = memb_free(&_matrix_stack_pool, top_ms);

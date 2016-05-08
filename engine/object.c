@@ -51,9 +51,8 @@ object_init(struct object *object)
 }
 
 void
-object_destroy(struct object *object)
+object_destroy(struct object *object __unused)
 {
-        assert(object != NULL);
 }
 
 void

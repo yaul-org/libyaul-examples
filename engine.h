@@ -11,9 +11,15 @@
 #include <yaul.h>
 #include <tga.h>
 
+#ifdef HAVE_ASSERT
 #include <assert.h>
+#else
+#undef assert
+#define assert(...) do {                                                      \
+} while(0)
+#endif /* !HAVE_ASSERT */
+
 #include <inttypes.h>
-#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
