@@ -7,19 +7,30 @@
 
 #include "../engine.h"
 
-#define COMPONENT_EVENT(x, name, args...) do {                                 \
-        if (((struct component *)(x))->CC_CONCAT(on_, name) != NULL) {         \
+#define COMPONENT_EVENT_CALL(x, name, args...) do {                            \
+        if (COMPONENT_EVENT(((struct component *)(x)), name) != NULL) {        \
                 if (COMPONENT(((struct component *)(x)), active)) {            \
                         assert(COMPONENT((struct component *)(x), initialized)); \
-                        ((struct component *)(x))->CC_CONCAT(on_, name)(       \
-                                (struct component *)(x), ##args);              \
+                        COMPONENT_EVENT(x, name)((struct component *)(x),      \
+                            ##args);                                           \
                 }                                                              \
         }                                                                      \
 } while (false)
 
-#define COMPONENT_UPDATE(x)     COMPONENT_EVENT(x, update)
-#define COMPONENT_DRAW(x)       COMPONENT_EVENT(x, draw)
-#define COMPONENT_DESTROY(x)    COMPONENT_EVENT(x, destroy)
+#define COMPONENT_INIT(x) do {                                                 \
+        /* Must not already have been initialized */                           \
+        assert(!COMPONENT(((struct component *)(x)), initialized));            \
+        /* Init event must be present */                                       \
+        assert(COMPONENT_EVENT(((struct component *)(x)), init) != NULL);      \
+        if (COMPONENT(((struct component *)(x)), active)) {                    \
+                COMPONENT_EVENT(x, init)((struct component *)(x));             \
+                COMPONENT(((struct component *)(x)), initialized) = true;      \
+        }                                                                      \
+} while (false)
+
+#define COMPONENT_UPDATE(x)     COMPONENT_EVENT_CALL(x, update)
+#define COMPONENT_DRAW(x)       COMPONENT_EVENT_CALL(x, draw)
+#define COMPONENT_DESTROY(x)    COMPONENT_EVENT_CALL(x, destroy)
 
 void
 object_init(struct object *object)
@@ -30,23 +41,18 @@ object_init(struct object *object)
         objects_object_register(object);
 
         /* Make sure first component is the transform */
+        assert(OBJECT(object, component_count) >= 1);
         assert((OBJECT_COMPONENT(object, COMPONENT_ID_TRANSFORM) != NULL) &&
                (OBJECT_COMPONENT(object, COMPONENT_ID_TRANSFORM)->id == COMPONENT_ID_TRANSFORM));
 
         uint32_t component_idx;
-        for (component_idx = 1;
+        for (component_idx = 1; /* Skip transform component */
              component_idx < OBJECT(object, component_count);
              component_idx++) {
                 struct component *component;
                 component = OBJECT_COMPONENT(object, component_idx);
 
-                assert(!COMPONENT(component, initialized));
-
-                assert(component->on_init != NULL);
-                component->on_init(component);
-
-                /* Mark component Initialized */
-                COMPONENT(component, initialized) = true;
+                COMPONENT_INIT(component);
         }
 }
 

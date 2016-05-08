@@ -35,6 +35,9 @@ struct object;
 #define COMPONENT_DATA(x, member)                                              \
         ((x)->data.CC_CONCAT(m_, member))
 
+#define COMPONENT_EVENT(x, event)                                              \
+        ((x)->CC_CONCAT(on_, event))
+
 #define COMPONENT_FUNCTION_CALL(x, name, args...) do {                         \
         assert(((struct component *)(x)) != NULL);                             \
         assert(COMPONENT(((struct component *)(x)), initialized));             \

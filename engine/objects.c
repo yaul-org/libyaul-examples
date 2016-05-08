@@ -33,7 +33,7 @@ static bool _initialized = false;
 /* Last tick when objects data was requested via objects_list() or
  * objects_sorted_list() */
 static uint32_t _last_tick = 0;
-static struct object_context _root_ctx;
+static struct object_context *_root_ctx = NULL;
 
 /* Caching */
 /* Cached list of objects allocated */
@@ -81,13 +81,13 @@ objects_init(void)
                 return;
         }
 
-        /* Initialize root context */
-        _root_ctx.oc_parent = NULL;
-        _root_ctx.oc_object = &root;
-        fix16_vector3_zero(&_root_ctx.oc_position);
-        TAILQ_INIT(&_root_ctx.oc_children);
-
         memb_init(&_object_context_pool);
+
+        /* Register root object */
+        objects_object_register(&root);
+        /* Get the root context */
+        _root_ctx = (struct object_context *)root.context;
+        assert(_root_ctx != NULL);
 
         _initialized = true;
 }
@@ -152,7 +152,7 @@ objects_object_add(struct object *object)
         /* Has the object been registered? */
         assert(object->context != NULL);
 
-        traverse_object_context_add(&_root_ctx, object);
+        traverse_object_context_add(_root_ctx, object);
 
         _cached_objects_dirty = true;
 }
@@ -219,9 +219,9 @@ objects_clear(void)
                 }
         }
 
-        while (!(TAILQ_EMPTY(&_root_ctx.oc_children))) {
+        while (!(TAILQ_EMPTY(&_root_ctx->oc_children))) {
                 struct object_context *itr_ctx;
-                itr_ctx = TAILQ_FIRST(&_root_ctx.oc_children);
+                itr_ctx = TAILQ_FIRST(&_root_ctx->oc_children);
 
                 struct object *itr_child;
                 itr_child = itr_ctx->oc_object;
@@ -248,7 +248,7 @@ objects_list(void)
                 goto return_list;
         }
 
-        traverse_object_context_update(&_root_ctx);
+        traverse_object_context_update(_root_ctx);
 
         _cached_objects_dirty = false;
 
@@ -273,7 +273,7 @@ objects_sorted_list(void)
                 goto return_list;
         }
 
-        traverse_object_context_update(&_root_ctx);
+        traverse_object_context_update(_root_ctx);
 
         _cached_objects_dirty = false;
 
@@ -370,10 +370,16 @@ traverse_object_context_add(struct object_context *parent_ctx,
 
         struct object *parent;
         parent = parent_ctx->oc_object;
+        assert(parent != NULL);
 
-        /* Allocate child object */
         struct object_context *child_ctx;
         child_ctx = (struct object_context *)child->context;
+        assert(child_ctx != NULL);
+
+        sprintf(text_buffer, "TOCA: id:0x%04X,pid:0x%04X\n",
+            (int)child->id,
+            (int)parent->id);
+        cons_buffer(text_buffer);
 
         child_ctx->oc_parent = parent;
         child_ctx->oc_object = child;
@@ -423,8 +429,10 @@ traverse_object_context_remove(struct object_context *remove_ctx)
                             oc_tq_entries);
 
                         /* Free context */
-                        assert((memb_free(&_object_context_pool,
-                                    top_remove_ctx)) == 0);
+                        int error __unused;
+                        error = memb_free(&_object_context_pool,
+                            top_remove_ctx);
+                        assert(error == 0);
                 }
 
                 while (!(TAILQ_EMPTY(&top_remove_ctx->oc_children))) {
@@ -477,6 +485,7 @@ traverse_object_context_update(struct object_context *object_ctx)
                 if (parent != NULL) {
                         const struct object_context *parent_ctx;
                         parent_ctx = parent->context;
+                        assert(parent_ctx != NULL);
 
                         struct object *object;
                         object = top_object_ctx->oc_object;
@@ -488,6 +497,7 @@ traverse_object_context_update(struct object_context *object_ctx)
                         struct transform *transform;
                         transform = (struct transform *)OBJECT_COMPONENT(object,
                             COMPONENT_ID_TRANSFORM);
+                        assert(transform != NULL);
 
                         /* Calculate the absolute position */
                         fix16_vector3_add(&COMPONENT(transform, position),

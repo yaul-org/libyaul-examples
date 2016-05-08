@@ -38,6 +38,8 @@ component_coin_mgr_on_init(struct component *this)
 void
 component_coin_mgr_on_update(struct component *this __unused)
 {
+        cons_buffer("Hello from component coin_mgr\n");
+
         /* Free all coins no longer active or visible */
         uint32_t coin_idx;
         for (coin_idx = 0; coin_idx < COIN_COUNT_MAX; coin_idx++) {
