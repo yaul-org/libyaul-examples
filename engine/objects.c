@@ -344,11 +344,6 @@ traverse_object_context_add(struct object_context *parent_ctx,
         child_ctx = (struct object_context *)child->context;
         assert(child_ctx != NULL);
 
-        sprintf(text_buffer, "TOCA: id:0x%04X,pid:0x%04X\n",
-            (int)child->id,
-            (int)parent->id);
-        cons_buffer(text_buffer);
-
         child_ctx->oc_parent = parent;
         child_ctx->oc_object = child;
         fix16_vector3_zero(&child_ctx->oc_position);
