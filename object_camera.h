@@ -12,15 +12,6 @@
 
 struct object_camera {
         OBJECT_DECLARATIONS
-
-        /* Public data */
-        struct {
-        } functions;
-
-        const struct {
-                uint16_t width;
-                uint16_t height;
-        } data;
 };
 
 extern struct object_camera object_camera;

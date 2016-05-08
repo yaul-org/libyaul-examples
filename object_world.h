@@ -12,13 +12,6 @@
 
 struct object_world {
         OBJECT_DECLARATIONS
-
-        /* Public data */
-        struct {
-        } functions;
-
-        const struct {
-        } data;
 };
 
 extern struct object_world object_world;
