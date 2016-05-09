@@ -12,11 +12,11 @@
 
 struct object;
 
-#define COMPONENT_ID_TRANSFORM  0x8000
-#define COMPONENT_ID_CAMERA     0x8001
-#define COMPONENT_ID_COLLIDER   0x8002
-#define COMPONENT_ID_RIGID_BODY 0x8003
-#define COMPONENT_ID_SPRITE     0x8004
+#define COMPONENT_ID_TRANSFORM  0xC000
+#define COMPONENT_ID_CAMERA     0xC001
+#define COMPONENT_ID_COLLIDER   0xC002
+#define COMPONENT_ID_RIGID_BODY 0xC003
+#define COMPONENT_ID_SPRITE     0xC004
 
 #define COMPONENT_DECLARATIONS                                                 \
     bool active;                                                               \
