@@ -175,6 +175,61 @@ object_instantiate(const struct object *object, struct object *copy,
 /*
  *
  */
+void
+object_component_add(const struct object *object, struct component *component,
+        uint32_t component_size)
+{
+        assert(object != NULL);
+        assert(component != NULL);
+        assert(component_size >= sizeof(struct object));
+
+        assert(OBJECT(component_count) <= OBJECT_COMPONENT_LIST_MAX);
+
+        uint32_t component_idx;
+        for (component_idx = 0; component_idx < OBJECT(object, component_count);
+             component_idx++) {
+                if (OBJECT_COMPONENT(object, component_idx) != NULL) {
+                        continue;
+                }
+
+                OBJECT_COMPONENT(object, component_idx) = component;
+                OBJECT_COMPONENT_SIZE(object, component_idx) = component_size;
+                return;
+        }
+
+        assert(false && "Component list full");
+}
+
+/*
+ *
+ */
+void
+object_component_remove(const struct object *object,
+    const struct component *component)
+{
+        assert(object != NULL);
+        assert(component != NULL);
+
+        assert(OBJECT(component_count) > 0);
+
+        uint32_t component_idx;
+        for (component_idx = 0; component_idx < OBJECT(object, component_count);
+             component_idx++) {
+                if (OBJECT_COMPONENT(object, component_idx) != component) {
+                        continue;
+                }
+
+                OBJECT_COMPONENT(object, component_idx) = NULL;
+                OBJECT_COMPONENT_SIZE(object, component_idx) = 0;
+                return;
+        }
+
+        assert(false && "Component not found");
+}
+
+/*
+ *
+ */
 const struct component *
 object_component_find(const struct object *object, int32_t component_id)
 {

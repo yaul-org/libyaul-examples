@@ -56,5 +56,9 @@ extern void object_instantiate(const struct object *, struct object *,
     uint32_t);
 extern const struct component *object_component_find(const struct object *,
     int32_t);
+extern void object_component_add(const struct object *, struct component *,
+    uint32_t);
+extern void object_component_remove(const struct object *,
+    const struct component *);
 
 #endif /* !ENGINE_OBJECT_H */
