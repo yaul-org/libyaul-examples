@@ -20,21 +20,6 @@
 
 #include "palette.h"
 
-struct blue_world_header;
-struct blue_world_collider;
-struct blue_world_map;
-
-/* Objects */
-#include "object/camera.h"
-#include "object/world.h"
-#include "object/blue.h"
-#include "object/coin.h"
-
-/* Non-engine components */
-#include "component/coin_mgr.h"
-#include "component/world_mgr.h"
-#include "component/blue_mgr.h"
-
 #define SCENE_ID_SPLASH 0
 #define SCENE_ID_TITLE  1
 #define SCENE_ID_GAME   2
@@ -72,12 +57,25 @@ struct blue_world_collider {
         uint16_t height;
 } __packed;
 
-struct blue_world_map {
-        unsigned int coin:1;
-        unsigned int cell_no:7;
+struct blue_world_column {
+        struct {
+                unsigned int coin:1;
+                unsigned int cell_no:7;
+        } cell[14]; /* SCREEN_WIDTH / CELL_HEIGHT */
 } __packed;
 
 extern struct blue_data blue_data;
 extern const char *blue_worlds[];
+
+/* Objects */
+#include "object/camera.h"
+#include "object/world.h"
+#include "object/blue.h"
+#include "object/coin.h"
+
+/* Non-engine components */
+#include "component/coin_mgr.h"
+#include "component/world_mgr.h"
+#include "component/blue_mgr.h"
 
 #endif /* !BLUE_H */

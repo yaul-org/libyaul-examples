@@ -7,11 +7,21 @@
 
 #include "../blue.h"
 
+#define COLLIDERS_MAX 16
+
+MEMB(_collider_pool, struct collider, COLLIDERS_MAX, sizeof(struct collider));
+
+static uint32_t _singleton = 0;
+
 void
 component_world_mgr_on_init(struct component *this __unused)
 {
         assert((THIS(world_mgr, world) >= 0) &&
                (THIS(world_mgr, world) < BLUE_WORLDS));
+        /* Singleton component */
+        assert(_singleton == 0);
+
+        memb_init(&_collider_pool);
 
         THIS_P_DATA(world_mgr, coin_mgr) =
             (struct coin_mgr *)object_component_find(THIS(world_mgr, object),
@@ -30,6 +40,8 @@ component_world_mgr_on_init(struct component *this __unused)
             sizeof(struct blue_world_header));
 
         fs_close(THIS_P_DATA(world_mgr, fh));
+
+        _singleton++;
 }
 
 void

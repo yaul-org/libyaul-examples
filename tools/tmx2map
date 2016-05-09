@@ -216,15 +216,26 @@ def process(json_data):
                                         collider.cell_y,
                                         collider.width,
                                         collider.height))
-        for cell_y in range(map_height):
-            for cell_x in range(map_width):
+        print "  " + ("-" * map_height) + "+"
+        for cell_x in range(map_width):
+            sys.stdout.write("  ")
+            for cell_y in range(map_height):
                 cell_no = map[cell_x + (cell_y * map_width)]
                 byte = 0x00
                 byte |= max(0, cell_no) & BIT_CELL_MASK
                 for coin in coins:
                     if (coin.cell_x == cell_x) and (coin.cell_y == cell_y):
                         byte |= BIT_CELL_COIN
+                if cell_no == 0:
+                    if (blue_position.cell_x == cell_x) and (blue_position.cell_y == cell_y):
+                        sys.stdout.write("@")
+                    else:
+                            sys.stdout.write(" ")
+                else:
+                    sys.stdout.write(str(cell_no))
                 output_fp.write(struct.pack("B", byte))
+            print "|"
+        print "  " + ("-" * map_height) + "+"
 
 for json_filename in fetch_json_files():
     try:
