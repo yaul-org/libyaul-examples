@@ -28,12 +28,24 @@ static struct coin_mgr _coin_mgr = {
         }
 };
 
+static struct world_mgr _world_mgr = {
+        .active = true,
+        .id = COMPONENT_ID_WORLD_MGR,
+        .object = (struct object *)&object_world,
+        .on_init = &component_world_mgr_on_init,
+        .on_update = &component_world_mgr_on_update,
+        .on_draw = &component_world_mgr_on_draw,
+        .on_destroy = &component_world_mgr_on_destroy,
+        .world = 0
+};
+
 struct object_world object_world = {
         .active = true,
         .id = OBJECT_ID_WORLD,
         .component_list = {
                 OBJECT_COMPONENT_INITIALIZER(transform, &_transform),
-                OBJECT_COMPONENT_INITIALIZER(coin_mgr, &_coin_mgr)
+                OBJECT_COMPONENT_INITIALIZER(coin_mgr, &_coin_mgr),
+                OBJECT_COMPONENT_INITIALIZER(world_mgr, &_world_mgr)
         },
-        .component_count = 2
+        .component_count = 3
 };

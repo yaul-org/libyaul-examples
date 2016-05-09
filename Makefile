@@ -32,7 +32,8 @@ SH_OBJECTS:= \
 	object/coin.o \
 	object/world.o \
 \
-	component/coin_mgr.o
+	component/coin_mgr.o \
+	component/world_mgr.o
 SH_LIBRARIES:= tga
 
 ifeq ($(strip $(ASSERT)),1)
@@ -58,8 +59,8 @@ ROMDISK_DEPS:= romdisk/*.TGA worlds/*.json
 	    printf -- "Tiled Map Editor (tiled) is required (http://www.mapeditor.org/)\n" >&2; \
 	    exit 1; \
 	fi
-	echo tiled --export-map "Json files (*.json)" $< $@
-	-tools/tmx2map
-	echo $(RM) $@
+	tiled --export-map "Json files (*.json)" $< $@
+	tools/tmx2map
+	$(RM) $@
 
 include $(INSTALL_ROOT)/share/post.common.mk

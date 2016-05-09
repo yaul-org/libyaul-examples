@@ -9,13 +9,8 @@
 
 struct blue_data blue_data;
 
-#define BLUE_WORLD_INITIALIZER(prefix)                                        \
-        {                                                                      \
-                .map_filename = CC_STRINGIFY(CC_CONCAT(/WORLDS/, CC_CONCAT(prefix,.MAP)))
-        }
-
-const struct blue_world blue_worlds[] = {
-        BLUE_WORLD_INITIALIZER(11)
+const char *blue_worlds[] = {
+        "/WORLDS/1_1.MAP"
 };
 
 void

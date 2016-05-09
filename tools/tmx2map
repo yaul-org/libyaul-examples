@@ -90,7 +90,8 @@ def process(json_data):
     camera_speed = float(properties['camera_speed'])
     start_delay = int(properties['start_delay'])
     # Null-pad world name
-    world_name = str(properties['world_name']) + "".join(len(properties['world_name']) * ['\00'])
+    world_name = str(properties['world_name'])
+    fmt_world_name = str(properties['world_name']) + "".join((16 - len(properties['world_name'])) * ['\00'])
     assert((len(world_name) > 0) and (len(world_name) <= 16))
     file_name = properties['file_name']
     world_layer = None
@@ -226,5 +227,7 @@ for json_filename in fetch_json_files():
             json_data = json.load(file_object)
             process(json_data)
     except:
+        print (">" * 80)
         raise
+        print ("<" * 80)
         sys.exit(1)
