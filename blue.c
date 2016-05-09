@@ -9,17 +9,13 @@
 
 struct blue_data blue_data;
 
-#define BLUE_WORLD_INITIALIZER(_name, _prefix, _screens)                       \
+#define BLUE_WORLD_INITIALIZER(prefix)                                        \
         {                                                                      \
-                .name = CC_STRINGIFY(_name),                                   \
-                .map_filename = CC_STRINGIFY(CC_CONCAT(/WORLDS/, CC_CONCAT(_prefix,.MAP))), \
-                .col_filename = CC_STRINGIFY(CC_CONCAT(/WORLDS/, CC_CONCAT(_prefix,.MAP))), \
-                .obj_filename = CC_STRINGIFY(CC_CONCAT(/WORLDS/, CC_CONCAT(_prefix,.MAP))), \
-                .screens = _screens                                            \
+                .map_filename = CC_STRINGIFY(CC_CONCAT(/WORLDS/, CC_CONCAT(prefix,.MAP)))
         }
 
 const struct blue_world blue_worlds[] = {
-        BLUE_WORLD_INITIALIZER("1-1 Blue", 11, 1)
+        BLUE_WORLD_INITIALIZER(11)
 };
 
 void

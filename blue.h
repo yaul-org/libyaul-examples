@@ -44,14 +44,28 @@ struct blue_data {
 };
 
 struct blue_world {
-        const char *name;
         const char *map_filename;
-        const char *col_filename;
-        const char *obj_filename;
-        /* Each screen is (SCREEN_WIDTH/8) */
-        uint32_t screens;
 };
 
+struct blue_world_format {
+        const char *name;
+        uint16_t width;
+        uint16_t height
+        color_rgb555_t bg_color;
+        fix16_t camera_speed;
+        uint16_t start_delay;
+        fix16_vector2_t blue_position;
+        uint16_t collider_count;
+        struct {
+                uint16_t type;
+                fix16_vector2_t position;
+                int16_vector2_t cell_position;
+                uint16_t width;
+                uint16_t height;
+        } __packed *collders;
+} __packed;
+
 extern struct blue_data blue_data;
+extern const struct blue_world blue_worlds[];
 
 #endif /* !BLUE_H */
