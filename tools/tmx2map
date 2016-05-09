@@ -39,9 +39,9 @@ BIT_CELL_6 = 0x06
 BIT_CELL_7 = 0x07
 BIT_CELL_COIN = 0x80
 
-Coin = namedtuple('Coin', 'value x y cell_x cell_y')
+Coin = namedtuple('Coin', 'id value x y cell_x cell_y')
 Blue = namedtuple('Blue', 'x y cell_x cell_y')
-Collider = namedtuple('Collider', 'type type_value x y cell_x cell_y width height')
+Collider = namedtuple('Collider', 'id type type_value x y cell_x cell_y width height')
 
 def fix16_t(value):
     """
@@ -107,7 +107,7 @@ def process(json_data):
             collision_layer = layer
     assert(world_layer and objects_layer and collision_layer)
     # Objects
-    coins = []
+    unsorted_coins = []
     blue_position = None
     for map_object in objects_layer['objects']:
         if not map_object['visible']:
@@ -117,19 +117,13 @@ def process(json_data):
                    (map_object['height'] == COIN_CELL_HEIGHT))
             assert((((map_object['x'] - (COIN_CELL_WIDTH / 2)) % CELL_WIDTH) == 0) and
                    (((map_object['y'] - (COIN_CELL_HEIGHT / 2)) % CELL_HEIGHT) == 0))
-            coin = Coin(value = int(map_object['properties']['value']),
+            coin = Coin(id = map_object['id'],
+                        value = int(map_object['properties']['value']),
                         x = map_object['x'],
                         y = SCREEN_HEIGHT - (map_object['y'] + COIN_CELL_HEIGHT),
                         cell_x = ((map_object['x'] - (COIN_CELL_WIDTH / 2)) / CELL_WIDTH),
                         cell_y = (((SCREEN_HEIGHT - map_object['y']) - (COIN_CELL_HEIGHT / 2)) / CELL_HEIGHT) )
-            print ("  [1;33mCoin[m\t\t#%2i @ (%3i,%3i) cell: [%3i,%3i] value: %3i points"
-                   % (map_object['id'],
-                      coin.x,
-                      coin.y,
-                      coin.cell_x,
-                      coin.cell_y,
-                      coin.value))
-            coins.append(coin)
+            unsorted_coins.append(coin)
         elif (map_object['name'] == 'Blue') and (map_object['type'] == 'Player'):
             assert((((map_object['x'] - (BLUE_CELL_WIDTH / 2)) % CELL_WIDTH) == 0) and
                    ((map_object['y'] % CELL_HEIGHT) == 0))
@@ -144,8 +138,17 @@ def process(json_data):
                       blue_position.cell_x,
                       blue_position.cell_y))
     assert(blue_position)
+    coins = sorted(unsorted_coins, key = lambda coin: coin.x)
+    for coin in coins:
+        print ("  [1;33mCoin[m\t\t#%2i @ (%3i,%3i) cell: [%3i,%3i] value: %3i points"
+               % (coin.id,
+                  coin.x,
+                  coin.y,
+                  coin.cell_x,
+                  coin.cell_y,
+                  coin.value))
     # Collision
-    colliders = []
+    unsorted_colliders = []
     for map_object in collision_layer['objects']:
         if not map_object['visible']:
             continue
@@ -155,7 +158,8 @@ def process(json_data):
             assert(((map_object['width'] % CELL_WIDTH) == 0) and
                    ((map_object['height'] % CELL_HEIGHT) == 0))
             type_value = COLLIDER_TYPE_VALUES[map_object['type']]
-            collider = Collider(type = map_object['type'],
+            collider = Collider(id = map_object['id'],
+                                type = map_object['type'],
                                 type_value = type_value,
                                 x = map_object['x'],
                                 y = (SCREEN_HEIGHT - (map_object['y'] + map_object['height'])),
@@ -163,16 +167,18 @@ def process(json_data):
                                 cell_y = ((SCREEN_HEIGHT - (map_object['y'] + map_object['height'])) / CELL_HEIGHT),
                                 width = map_object['width'],
                                 height = map_object['height'])
-            print ("  %s\t#%2i @ (%3i,%3i) cell: [%3i,%3i] W/H: (%3i,%3i)"
-                   % (collider.type,
-                      map_object['id'],
-                      collider.x,
-                      collider.y,
-                      collider.cell_x,
-                      collider.cell_y,
-                      collider.width,
-                      collider.height))
-            colliders.append(collider)
+            unsorted_colliders.append(collider)
+    colliders = sorted(unsorted_colliders, key = lambda collider: collider.x)
+    for collider in colliders:
+        print ("  %s\t#%2i @ (%3i,%3i) cell: [%3i,%3i] W/H: (%3i,%3i)"
+               % (collider.type,
+                  collider.id,
+                  collider.x,
+                  collider.y,
+                  collider.cell_x,
+                  collider.cell_y,
+                  collider.width,
+                  collider.height))
     # World
     try:
         os.mkdir(os.path.join(PWD, "romdisk", "WORLDS"))
