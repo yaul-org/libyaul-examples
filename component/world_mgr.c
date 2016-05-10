@@ -35,13 +35,12 @@ struct world_column {
                 unsigned int trigger:1;
                 unsigned int collider:1;
                 unsigned int coin:1;
-                unsigned int cell_no:3;
+                unsigned int number:3;
         } __packed cell[14]; /* SCREEN_WIDTH / CELL_HEIGHT */
 } __packed;
 
 MEMB(_collider_pool, struct collider, COLLIDERS_MAX, sizeof(struct collider));
 
-static uint32_t _singleton = 0;
 static struct coin_mgr *_coin_mgr;
 static void *_map_fh;
 static struct world_header _map_header;
@@ -53,8 +52,6 @@ component_world_mgr_on_init(struct component *this __unused)
 {
         assert((THIS(world_mgr, world) >= 0) &&
                (THIS(world_mgr, world) < BLUE_WORLDS));
-        /* Singleton component */
-        assert(_singleton == 0);
 
         memb_init(&_collider_pool);
 
@@ -70,8 +67,6 @@ component_world_mgr_on_init(struct component *this __unused)
 
         /* Read header */
         fs_read(_map_fh, &_map_header, sizeof(struct world_header));
-
-        _singleton++;
 }
 
 void
@@ -88,8 +83,18 @@ component_world_mgr_on_update(struct component *this __unused)
             (0 * sizeof(struct world_column));
         fs_seek(_map_fh, file_offset, SEEK_SET);
 
-        struct world_column column __unused;
-        fs_read(_map_fh, &column, sizeof(struct world_column));
+        fs_read(_map_fh, &_column[0], 20 * sizeof(struct world_column));
+
+        uint32_t row;
+        for (row = 0; row < 20; row++) {
+                uint32_t cell;
+                for (cell = 0; cell < 14; cell++) {
+                        text_buffer[0] = (_column[row].cell[cell].number == 0) ? ' ' : (_column[row].cell[cell].number + '0');
+                        text_buffer[1] = '\0';
+                        cons_buffer(text_buffer);
+                }
+                cons_buffer("\n");
+        }
 
         (void)sprintf(text_buffer, "Hello from component world_mgr:\n\"%s\"\n",
             _map_header.name);
@@ -104,4 +109,5 @@ component_world_mgr_on_draw(struct component *this __unused)
 void
 component_world_mgr_on_destroy(struct component *this __unused)
 {
+        fs_close(_map_fh);
 }
