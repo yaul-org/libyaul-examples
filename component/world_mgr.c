@@ -7,7 +7,10 @@
 
 #include "../blue.h"
 
-#define COLLIDERS_MAX 16
+/* Total number of colliders in a world */
+#define COLLIDERS_MAX   128
+/* Total number of coins in a world */
+#define COINS_MAX       1024
 
 struct world_header {
         const char name[16];
@@ -16,9 +19,9 @@ struct world_header {
         color_rgb555_t bg_color;
         fix16_t camera_speed;
         uint16_t start_delay;
-        fix16_t blue_position_x;
-        fix16_t blue_position_y;
+        fix16_vector2_t blue_position;
         uint16_t collider_count;
+        uint16_t item_count;
 } __packed;
 
 struct world_collider {
@@ -27,6 +30,16 @@ struct world_collider {
         int16_vector2_t cell_position;
         uint16_t width;
         uint16_t height;
+} __packed;
+
+struct world_item {
+        struct {
+                unsigned int :7;
+                unsigned int coin:1;
+        } __packed type;
+
+        fix16_vector2_t position;
+        int16_vector2_t cell_position;
 } __packed;
 
 struct world_column {
@@ -44,8 +57,10 @@ MEMB(_collider_pool, struct collider, COLLIDERS_MAX, sizeof(struct collider));
 static struct coin_mgr *_coin_mgr;
 static void *_map_fh;
 static struct world_header _map_header;
-static struct world_collider _map_colliders[COLLIDERS_MAX] __unused;
-static struct world_column _column[20] __unused;
+static struct world_collider _map_colliders[COLLIDERS_MAX];
+static struct world_item _map_items[COINS_MAX];
+static struct world_column _column[20];
+static uint32_t _column_idx = 0;
 
 void
 component_world_mgr_on_init(struct component *this __unused)
@@ -67,11 +82,26 @@ component_world_mgr_on_init(struct component *this __unused)
 
         /* Read header */
         fs_read(_map_fh, &_map_header, sizeof(struct world_header));
+
+        assert(_map_header.collider_count <= COLLIDERS_MAX);
+        assert(_map_header.item_count <= COINS_MAX);
+
+        /* Read in collision data */
+        fs_read(_map_fh, &_map_colliders[0],
+            _map_header.collider_count * sizeof(struct world_collider));
+
+        /* Read in item data */
+        fs_read(_map_fh, &_map_items[0],
+            _map_header.item_count * sizeof(struct world_item));
 }
 
 void
 component_world_mgr_on_update(struct component *this __unused)
 {
+        (void)sprintf(text_buffer, "Hello from component world_mgr\n\"%s\"\n",
+            _map_header.name);
+        cons_buffer(text_buffer);
+
         /* Calculate offset to actual map data */
         uint32_t file_offset;
         file_offset =
@@ -79,26 +109,28 @@ component_world_mgr_on_update(struct component *this __unused)
             sizeof(struct world_header) +
             /* Colliders */
             (_map_header.collider_count * sizeof(struct world_collider)) +
+            /* Items */
+            (_map_header.item_count * sizeof(struct world_item)) +
             /* Column */
             (0 * sizeof(struct world_column));
         fs_seek(_map_fh, file_offset, SEEK_SET);
 
-        fs_read(_map_fh, &_column[0], 20 * sizeof(struct world_column));
+        /* Determine if we're at the end of the world */
+        if ((_column_idx + 20) <= _map_header.width) {
+                fs_read(_map_fh, &_column[0], 20 * sizeof(struct world_column));
+        }
 
-        /* uint32_t row; */
-        /* for (row = 0; row < 20; row++) { */
-        /*         uint32_t cell; */
-        /*         for (cell = 0; cell < 14; cell++) { */
-        /*                 text_buffer[0] = (_column[row].cell[cell].number == 0) ? ' ' : (_column[row].cell[cell].number + '0'); */
-        /*                 text_buffer[1] = '\0'; */
-        /*                 cons_buffer(text_buffer); */
-        /*         } */
-        /*         cons_buffer("\n"); */
-        /* } */
-
-        (void)sprintf(text_buffer, "Hello from component world_mgr:\n\"%s\"\n",
-            _map_header.name);
-        cons_buffer(text_buffer);
+        uint32_t row;
+        for (row = 0; row < 20; row++) {
+                uint32_t cell;
+                for (cell = 0; cell < 14; cell++) {
+                        if (_column[row].cell[cell].coin) {
+                                uint32_t coin_idx;
+                                for (coin_idx = 0; coin_idx < ; coin_idx++) {
+                                }
+                        }
+                }
+        }
 }
 
 void

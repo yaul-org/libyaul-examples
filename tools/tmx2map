@@ -199,7 +199,7 @@ def process(json_data):
         # Start delay (uint16_t)
         # Blue start position (fix16_vector2_t)
         # Collider count (uint16_t)
-        output_fp.write(struct.pack(">16sHHHLHLLH",
+        output_fp.write(struct.pack(">16sHHHLHLLHH",
                                     world_name,
                                     map_width,
                                     map_height,
@@ -208,7 +208,8 @@ def process(json_data):
                                     start_delay,
                                     fix16_t(blue_position.x),
                                     fix16_t(blue_position.y),
-                                    len(colliders)))
+                                    len(colliders),
+                                    len(coins)))
         # Colliders
         for collider in colliders:
             output_fp.write(struct.pack(">HLLhhHH",
@@ -219,6 +220,14 @@ def process(json_data):
                                         collider.cell_y,
                                         collider.width,
                                         collider.height))
+        # Items
+        for coin in coins:
+            output_fp.write(struct.pack(">bLLhh",
+                                        0x01, # Hard-coded
+                                        fix16_t(coin.x),
+                                        fix16_t(coin.y),
+                                        coin.cell_x,
+                                        coin.cell_y))
         print "  " + ("-" * map_height) + "+"
         for cell_x in range(map_width):
             sys.stdout.write("  ")
@@ -248,7 +257,7 @@ def process(json_data):
 
 for json_filename in fetch_json_files():
     try:
-        print "Processing `%s'..." % (os.path.relpath(json_filename))
+        print "Processing `%s'" % (os.path.relpath(json_filename))
         with open(json_filename, "r") as file_object:
             json_data = json.load(file_object)
             process(json_data)

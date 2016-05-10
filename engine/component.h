@@ -40,7 +40,7 @@
         assert(((struct component *)(x)) != NULL);                             \
         assert(COMPONENT(((struct component *)(x)), initialized));             \
         assert(((x))->functions.CC_CONCAT(m_, name) != NULL);                  \
-        ((x))->functions.CC_CONCAT(m_, name)((struct component *)(x), ##args)  \
+        ((x))->functions.CC_CONCAT(m_, name)((struct component *)(x), ##args); \
 } while (0)
 
 #define THIS(type, member)                                                     \
