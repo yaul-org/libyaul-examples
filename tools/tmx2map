@@ -37,7 +37,9 @@ BIT_CELL_4 = 0x04
 BIT_CELL_5 = 0x05
 BIT_CELL_6 = 0x06
 BIT_CELL_7 = 0x07
-BIT_CELL_COIN = 0x80
+BIT_CELL_COIN = 0x08
+BIT_CELL_COLLIDER = 0x10
+BIT_CELL_TRIGGER = 0x20
 
 Coin = namedtuple('Coin', 'id value x y cell_x cell_y')
 Blue = namedtuple('Blue', 'x y cell_x cell_y')
@@ -190,22 +192,23 @@ def process(json_data):
     with open(output_file_name, "wb+") as output_fp:
         map = world_layer['data']
         # World name
-        output_fp.write(struct.pack("16s", world_name))
         # Width (uint16_t)
-        output_fp.write(struct.pack(">H", map_width))
         # Height (uint16_t)
-        output_fp.write(struct.pack(">H", map_height))
         # Background color (color_rgb555_t)
-        output_fp.write(struct.pack(">H", rgb555(bg_color)))
         # Camera speed (fix16_t)
-        output_fp.write(struct.pack(">L", fix16_t(camera_speed)))
         # Start delay (uint16_t)
-        output_fp.write(struct.pack(">H", start_delay))
         # Blue start position (fix16_vector2_t)
-        output_fp.write(struct.pack(">LL", fix16_t(blue_position.x),
-                                    fix16_t(blue_position.y)))
         # Collider count (uint16_t)
-        output_fp.write(struct.pack(">H", len(colliders)))
+        output_fp.write(struct.pack(">16sHHHLHLLH",
+                                    world_name,
+                                    map_width,
+                                    map_height,
+                                    rgb555(bg_color),
+                                    fix16_t(camera_speed),
+                                    start_delay,
+                                    fix16_t(blue_position.x),
+                                    fix16_t(blue_position.y),
+                                    len(colliders)))
         # Colliders
         for collider in colliders:
             output_fp.write(struct.pack(">HLLhhHH",
@@ -226,6 +229,12 @@ def process(json_data):
                 for coin in coins:
                     if (coin.cell_x == cell_x) and (coin.cell_y == cell_y):
                         byte |= BIT_CELL_COIN
+                for collider in colliders:
+                    if (collider.cell_x == cell_x) and (collider.cell_y == cell_y):
+                        if collider.type == "Collider":
+                            byte |= BIT_CELL_COLLIDER
+                        elif collider.type == "Trigger":
+                            byte |= BIT_CELL_TRIGGER
                 if cell_no == 0:
                     if (blue_position.cell_x == cell_x) and (blue_position.cell_y == cell_y):
                         sys.stdout.write("@")

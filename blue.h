@@ -20,6 +20,11 @@
 
 #include "palette.h"
 
+/* Non-engine components */
+#include "component/coin_mgr.h"
+#include "component/world_mgr.h"
+#include "component/blue_mgr.h"
+
 #define SCENE_ID_SPLASH 0
 #define SCENE_ID_TITLE  1
 #define SCENE_ID_GAME   2
@@ -38,44 +43,13 @@
 struct blue_data {
 };
 
-struct blue_world_header {
-        const char name[16];
-        uint16_t width;
-        uint16_t height;
-        color_rgb555_t bg_color;
-        fix16_t camera_speed;
-        uint16_t start_delay;
-        fix16_vector2_t blue_position;
-        uint16_t collider_count;
-} __packed;
-
-struct blue_world_collider {
-        uint16_t type;
-        fix16_vector2_t position;
-        int16_vector2_t cell_position;
-        uint16_t width;
-        uint16_t height;
-} __packed;
-
-struct blue_world_column {
-        struct {
-                unsigned int coin:1;
-                unsigned int cell_no:7;
-        } cell[14]; /* SCREEN_WIDTH / CELL_HEIGHT */
-} __packed;
+/* Objects */
+extern struct object object_camera;
+extern struct object object_world;
+extern struct object object_blue;
+extern const struct object object_coin;
 
 extern struct blue_data blue_data;
 extern const char *blue_worlds[];
-
-/* Objects */
-#include "object/camera.h"
-#include "object/world.h"
-#include "object/blue.h"
-#include "object/coin.h"
-
-/* Non-engine components */
-#include "component/coin_mgr.h"
-#include "component/world_mgr.h"
-#include "component/blue_mgr.h"
 
 #endif /* !BLUE_H */

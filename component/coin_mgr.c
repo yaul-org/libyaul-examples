@@ -7,9 +7,10 @@
 
 #include "../blue.h"
 
-#define COIN_COUNT_MAX 64
+#define COIN_VALUE      100
+#define COIN_COUNT_MAX  64
 
-static struct object_coin object_coins[COIN_COUNT_MAX];
+static struct object object_coins[COIN_COUNT_MAX];
 
 void
 component_coin_mgr_on_init(struct component *this)
@@ -19,11 +20,11 @@ component_coin_mgr_on_init(struct component *this)
                (THIS(coin_mgr, coins) <= COIN_COUNT_MAX));
         assert(this != NULL);
 
-        THIS_P_DATA(coin_mgr, coin) = 0;
+        THIS_P_DATA(coin_mgr, coin_cnt) = 0;
 
         uint32_t coin_idx;
         for (coin_idx = 0; coin_idx < COIN_COUNT_MAX; coin_idx++) {
-                struct object_coin *inst_object_coin;
+                struct object *inst_object_coin;
                 inst_object_coin = &object_coins[coin_idx];
 
                 object_instantiate((const struct object *)&object_coin,
@@ -43,7 +44,7 @@ component_coin_mgr_on_update(struct component *this __unused)
         /* Free all coins no longer active or visible */
         uint32_t coin_idx;
         for (coin_idx = 0; coin_idx < COIN_COUNT_MAX; coin_idx++) {
-                struct object_coin *object_coin;
+                struct object *object_coin;
                 object_coin = &object_coins[coin_idx];
 
                 if (!OBJECT(object_coin, active)) {
@@ -60,7 +61,6 @@ component_coin_mgr_on_update(struct component *this __unused)
                 COMPONENT(transform, position).y = F16(0.0f);
 
                 OBJECT(object_coin, active) = false;
-                OBJECT(object_coin, value) = 0;
         }
 }
 
@@ -74,7 +74,7 @@ component_coin_mgr_on_destroy(struct component *this __unused)
 {
         uint32_t coin_idx;
         for (coin_idx = 0; coin_idx < COIN_COUNT_MAX; coin_idx++) {
-                struct object_coin *object_coin;
+                struct object *object_coin;
                 object_coin = &object_coins[coin_idx];
 
                 OBJECT(object_coin, active) = false;
@@ -83,14 +83,15 @@ component_coin_mgr_on_destroy(struct component *this __unused)
 
 void
 component_coin_mgr_spawn(struct component *this __unused, fix16_t spawn_x,
-    fix16_t spawn_y, int16_t value)
+    fix16_t spawn_y)
 {
-        struct object_coin *object_coin;
+        struct object *object_coin;
         object_coin = NULL;
 
         /* Look for an inactive object coin */
         uint32_t coin_idx;
-        for (coin_idx = THIS_P_DATA(coin_mgr, coin); coin_idx < COIN_COUNT_MAX;
+        for (coin_idx = THIS_P_DATA(coin_mgr, coin_cnt);
+             coin_idx < COIN_COUNT_MAX;
              coin_idx++) {
                 object_coin = &object_coins[coin_idx];
 
@@ -111,8 +112,7 @@ component_coin_mgr_spawn(struct component *this __unused, fix16_t spawn_x,
         COMPONENT(transform, position).y = spawn_y;
 
         OBJECT(object_coin, active) = true;
-        OBJECT(object_coin, value) = value;
 
-        THIS_P_DATA(coin_mgr, coin)++;
-        THIS_P_DATA(coin_mgr, coin) &= (COIN_COUNT_MAX - 1);
+        THIS_P_DATA(coin_mgr, coin_cnt)++;
+        THIS_P_DATA(coin_mgr, coin_cnt) &= (COIN_COUNT_MAX - 1);
 }

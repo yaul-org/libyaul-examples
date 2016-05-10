@@ -65,7 +65,7 @@ static struct blue_mgr _blue_mgr = {
         .on_destroy = &component_blue_mgr_on_destroy
 };
 
-struct object_blue object_blue = {
+struct object object_blue = {
         .active = true,
         .id = OBJECT_ID_BLUE,
         .component_list = {

@@ -45,10 +45,9 @@ static struct sprite _sprite = {
         .on_destroy = NULL
 };
 
-const struct object_coin object_coin = {
+const struct object object_coin = {
         .active = false,
         .id = OBJECT_ID_COIN,
-        .value = -100,
         .component_list = {
                 OBJECT_COMPONENT_INITIALIZER(transform, &_transform),
                 OBJECT_COMPONENT_INITIALIZER(sprite, &_sprite),

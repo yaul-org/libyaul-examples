@@ -183,7 +183,7 @@ object_component_add(const struct object *object, struct component *component,
         assert(component != NULL);
         assert(component_size >= sizeof(struct object));
 
-        assert(OBJECT(component_count) <= OBJECT_COMPONENT_LIST_MAX);
+        assert(OBJECT(object, component_count) <= OBJECT_COMPONENT_LIST_MAX);
 
         uint32_t component_idx;
         for (component_idx = 0; component_idx < OBJECT(object, component_count);
@@ -210,7 +210,7 @@ object_component_remove(const struct object *object,
         assert(object != NULL);
         assert(component != NULL);
 
-        assert(OBJECT(component_count) > 0);
+        assert(OBJECT(object, component_count) > 0);
 
         uint32_t component_idx;
         for (component_idx = 0; component_idx < OBJECT(object, component_count);

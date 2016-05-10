@@ -24,7 +24,7 @@ static struct camera _camera = {
         .on_update = component_camera_on_update
 };
 
-struct object_camera object_camera = {
+struct object object_camera = {
         .active = true,
         .id = OBJECT_ID_CAMERA,
         .component_list = {

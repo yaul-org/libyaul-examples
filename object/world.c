@@ -39,7 +39,7 @@ static struct world_mgr _world_mgr = {
         .world = 0
 };
 
-struct object_world object_world = {
+struct object object_world = {
         .active = true,
         .id = OBJECT_ID_WORLD,
         .component_list = {

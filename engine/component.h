@@ -10,8 +10,6 @@
 
 #include "engine.h"
 
-struct object;
-
 #define COMPONENT_ID_TRANSFORM  0xC000
 #define COMPONENT_ID_CAMERA     0xC001
 #define COMPONENT_ID_COLLIDER   0xC002
