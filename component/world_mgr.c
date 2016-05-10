@@ -12,6 +12,13 @@
 /* Total number of coins in a world */
 #define COINS_MAX       1024
 
+/* World file format
+ *
+ *  0x0000          Header
+ *  0x0028          Collider data
+ *  0x0028 + x      Item data
+ *  0x0028 + x + y  Map data */
+
 struct world_header {
         const char name[16];
         uint16_t width;
