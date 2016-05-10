@@ -126,9 +126,9 @@ objects_project(void)
         camera_transform = (struct transform *)object_component_find(
                 camera->object, COMPONENT_ID_TRANSFORM);
 
-        matrix_view.frow[0][2] = -camera_transform->position.x;
-        matrix_view.frow[1][2] = -camera_transform->position.y;
-        matrix_view.frow[2][2] = -camera_transform->position.z;
+        matrix_view.frow[0][2] = -COMPONENT(camera_transform, position).x;
+        matrix_view.frow[1][2] = -COMPONENT(camera_transform, position).y;
+        matrix_view.frow[2][2] = F16(1.0f);
 
         matrix_stack_mode(MATRIX_STACK_MODE_MODEL_VIEW);
         matrix_stack_load(&matrix_view);
@@ -205,9 +205,8 @@ object_project(const struct object *object, const fix16_vector3_t *position)
         }
 
         /* Only objects with an active sprite component should be projected */
-        const struct sprite *sprite;
-        sprite = (const struct sprite *)object_component_find(object,
-            COMPONENT_ID_SPRITE);
+        struct sprite *sprite;
+        sprite = (struct sprite *)object_component_find(object, COMPONENT_ID_SPRITE);
         if ((sprite == NULL) || !COMPONENT(sprite, active)) {
                 return;
         }
@@ -222,7 +221,7 @@ object_project(const struct object *object, const fix16_vector3_t *position)
         matrix_stack_push(); {
                 fix16_matrix3_t *matrix_model_view;
                 matrix_stack_mode(MATRIX_STACK_MODE_MODEL_VIEW);
-                matrix_stack_translate(position->x, position->y, position->z);
+                matrix_stack_translate(position->x, position->y);
 
                 matrix_model_view = matrix_stack_top(
                         MATRIX_STACK_MODE_MODEL_VIEW)->ms_matrix;
@@ -241,7 +240,7 @@ object_project(const struct object *object, const fix16_vector3_t *position)
                         fix16_vector3_t vertex;
                         vertex.x = fix16_mul(vertices[i].x, F16(sprite_width));
                         vertex.y = fix16_mul(vertices[i].y, F16(sprite_height));
-                        vertex.z = COMPONENT(transform, position).z;
+                        vertex.z = F16(1.0f);
 
                         fix16_vector3_matrix3_multiply(matrix_model_view,
                             &vertex, &vertex_mv[i]);
@@ -250,48 +249,72 @@ object_project(const struct object *object, const fix16_vector3_t *position)
                 /* No need to project :) */
 
                 /* Clip space */
+                bool clip_x;
+                clip_x = (((vertex_mv[0].x < F16(0.0f)) &&
+                           (vertex_mv[1].x < F16(0.0f)) &&
+                           (vertex_mv[2].x < F16(0.0f)) &&
+                           (vertex_mv[3].x < F16(0.0f))) ||
+                          ((vertex_mv[0].x >= fix16_from_int(camera->width)) &&
+                           (vertex_mv[1].x >= fix16_from_int(camera->width)) &&
+                           (vertex_mv[2].x >= fix16_from_int(camera->width)) &&
+                           (vertex_mv[3].x >= fix16_from_int(camera->width))));
 
-                /* From homogeneous clip space, no need to viewport
-                 * space (NDC) */
+                bool clip_y;
+                clip_y = (((vertex_mv[0].y < F16(0.0f)) &&
+                           (vertex_mv[1].y < F16(0.0f)) &&
+                           (vertex_mv[2].y < F16(0.0f)) &&
+                           (vertex_mv[3].y < F16(0.0f))) ||
+                          ((vertex_mv[0].y >= fix16_from_int(camera->height)) &&
+                           (vertex_mv[1].y >= fix16_from_int(camera->height)) &&
+                           (vertex_mv[2].y >= fix16_from_int(camera->height)) &&
+                           (vertex_mv[3].y >= fix16_from_int(camera->height))));
 
-                /* From viewport space (NDC) to screen space */
-                int16_vector2_t screen_coords[4];
-                for (i = 0; i < 4; i++) {
-                        int16_vector2_t *screen_coord;
-                        screen_coord = &screen_coords[i];
+                if (clip_x || clip_y) {
+                        COMPONENT(sprite, visible) = false;
+                } else {
+                        COMPONENT(sprite, visible) = true;
+                        /* From homogeneous clip space, no need to viewport
+                         * space (NDC) */
 
-                        screen_coord->x = fix16_to_int(vertex_mv[i].x);
-                        screen_coord->y = fix16_to_int(vertex_mv[i].y);
+                        /* From viewport space (NDC) to screen space */
+                        int16_vector2_t screen_coords[4];
+                        for (i = 0; i < 4; i++) {
+                                int16_vector2_t *screen_coord;
+                                screen_coord = &screen_coords[i];
+
+                                screen_coord->x = fix16_to_int(vertex_mv[i].x);
+                                screen_coord->y = fix16_to_int(vertex_mv[i].y);
+                        }
+
+                        int16_t width;
+                        width = screen_coords[3].x - screen_coords[0].x;
+                        int16_t height;
+                        height = screen_coords[1].y - screen_coords[0].y;
+
+                        struct vdp1_cmdt_local_coord local_coord;
+                        local_coord.lc_coord.x = (width / 2) + screen_coords[0].x;
+                        local_coord.lc_coord.y = camera->height - ((height / 2) +
+                            screen_coords[0].y);
+
+                        struct vdp1_cmdt_polygon polygon;
+                        polygon.cp_mode.raw = 0x0000;
+                        polygon.cp_mode.transparent_pixel = true;
+                        polygon.cp_mode.end_code = true;
+                        polygon.cp_mode.mesh = material->pseudo_trans;
+                        polygon.cp_color = COLOR_RGB_DATA | material->solid_color.raw;
+                        polygon.cp_grad = 0x00000000;
+                        polygon.cp_vertex.a.x = (width / 2) - 1;
+                        polygon.cp_vertex.a.y = -(height / 2);
+                        polygon.cp_vertex.b.x = (width / 2) - 1;
+                        polygon.cp_vertex.b.y = (height / 2) - 1;
+                        polygon.cp_vertex.c.x = -(width / 2);
+                        polygon.cp_vertex.c.y = (height / 2) - 1;
+                        polygon.cp_vertex.d.x = -(width / 2);
+                        polygon.cp_vertex.d.y = -(height / 2);
+
+                        vdp1_cmdt_local_coord_set(&local_coord);
+                        vdp1_cmdt_polygon_draw(&polygon);
                 }
-
-                int16_t width;
-                width = screen_coords[3].x - screen_coords[0].x;
-                int16_t height;
-                height = screen_coords[1].y - screen_coords[0].y;
-
-                struct vdp1_cmdt_local_coord local_coord;
-                local_coord.lc_coord.x = (width / 2) + screen_coords[0].x;
-                local_coord.lc_coord.y = camera->height - ((height / 2) +
-                    screen_coords[0].y);
-
-                struct vdp1_cmdt_polygon polygon;
-                polygon.cp_mode.raw = 0x0000;
-                polygon.cp_mode.transparent_pixel = true;
-                polygon.cp_mode.end_code = true;
-                polygon.cp_mode.mesh = material->pseudo_trans;
-                polygon.cp_color = COLOR_RGB_DATA | material->solid_color.raw;
-                polygon.cp_grad = 0x00000000;
-                polygon.cp_vertex.a.x = (width / 2) - 1;
-                polygon.cp_vertex.a.y = -(height / 2);
-                polygon.cp_vertex.b.x = (width / 2) - 1;
-                polygon.cp_vertex.b.y = (height / 2) - 1;
-                polygon.cp_vertex.c.x = -(width / 2);
-                polygon.cp_vertex.c.y = (height / 2) - 1;
-                polygon.cp_vertex.d.x = -(width / 2);
-                polygon.cp_vertex.d.y = -(height / 2);
-
-                vdp1_cmdt_local_coord_set(&local_coord);
-                vdp1_cmdt_polygon_draw(&polygon);
         } matrix_stack_pop();
 }
 

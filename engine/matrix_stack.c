@@ -140,7 +140,7 @@ matrix_stack_identity_load(void)
 }
 
 void
-matrix_stack_translate(fix16_t x, fix16_t y, fix16_t z)
+matrix_stack_translate(fix16_t x, fix16_t y)
 {
         /* Make sure the correct state is set */
         assert(_initialized);
@@ -155,7 +155,7 @@ matrix_stack_translate(fix16_t x, fix16_t y, fix16_t z)
 
         transform.frow[0][2] = x;
         transform.frow[1][2] = y;
-        transform.frow[2][2] = z;
+        transform.frow[2][2] = F16(1.0f);
 
         fix16_matrix3_t matrix;
         fix16_matrix3_multiply(top_ms->ms_matrix, &transform, &matrix);

@@ -11,7 +11,7 @@ static struct transform _transform = {
         .active = true,
         .id = COMPONENT_ID_TRANSFORM,
         .object = (struct object *)&object_camera,
-        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 2.0f)
+        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 0.0f)
 };
 
 static struct camera _camera = {

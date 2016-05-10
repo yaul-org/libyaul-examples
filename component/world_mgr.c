@@ -85,16 +85,16 @@ component_world_mgr_on_update(struct component *this __unused)
 
         fs_read(_map_fh, &_column[0], 20 * sizeof(struct world_column));
 
-        uint32_t row;
-        for (row = 0; row < 20; row++) {
-                uint32_t cell;
-                for (cell = 0; cell < 14; cell++) {
-                        text_buffer[0] = (_column[row].cell[cell].number == 0) ? ' ' : (_column[row].cell[cell].number + '0');
-                        text_buffer[1] = '\0';
-                        cons_buffer(text_buffer);
-                }
-                cons_buffer("\n");
-        }
+        /* uint32_t row; */
+        /* for (row = 0; row < 20; row++) { */
+        /*         uint32_t cell; */
+        /*         for (cell = 0; cell < 14; cell++) { */
+        /*                 text_buffer[0] = (_column[row].cell[cell].number == 0) ? ' ' : (_column[row].cell[cell].number + '0'); */
+        /*                 text_buffer[1] = '\0'; */
+        /*                 cons_buffer(text_buffer); */
+        /*         } */
+        /*         cons_buffer("\n"); */
+        /* } */
 
         (void)sprintf(text_buffer, "Hello from component world_mgr:\n\"%s\"\n",
             _map_header.name);

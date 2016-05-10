@@ -35,6 +35,6 @@ extern struct matrix_stack *matrix_stack_top(int32_t);
 extern void matrix_stack_load(fix16_matrix3_t *);
 
 extern void matrix_stack_identity_load(void);
-extern void matrix_stack_translate(fix16_t, fix16_t, fix16_t);
+extern void matrix_stack_translate(fix16_t, fix16_t);
 
 #endif /* !ENGINE_MATRIX_STACK_H */

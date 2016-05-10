@@ -43,6 +43,7 @@ static struct sprite _sprite = {
         .active = true,
         .id = COMPONENT_ID_SPRITE,
         .object = (const struct object *)&object_blue,
+        .visible = true,
         .width = 8,
         .height = 16,
         .material = {
