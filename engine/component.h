@@ -30,11 +30,11 @@
 #define COMPONENT(x, member)                                                   \
         ((x)->CC_CONCAT(, member))
 
-#define COMPONENT_DATA(x, member)                                              \
-        ((x)->data.CC_CONCAT(m_, member))
-
 #define COMPONENT_EVENT(x, event)                                              \
         ((x)->CC_CONCAT(on_, event))
+
+#define COMPONENT_FUNCTION(type, member)                                       \
+        ((x)->functions.CC_CONCAT(m_, function))
 
 #define COMPONENT_FUNCTION_CALL(x, name, args...) do {                         \
         assert(((struct component *)(x)) != NULL);                             \
@@ -45,9 +45,6 @@
 
 #define THIS(type, member)                                                     \
         (((struct type *)this)->CC_CONCAT(, member))
-
-#define THIS_DATA(type, member)                                                \
-        (((struct type *)this)->data.CC_CONCAT(m_, member))
 
 #define THIS_P_DATA(type, member)                                              \
         (((struct type *)this)->private_data.CC_CONCAT(m_, member))

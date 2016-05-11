@@ -132,9 +132,6 @@ component_world_mgr_on_update(struct component *this __unused)
                 uint32_t cell;
                 for (cell = 0; cell < 14; cell++) {
                         if (_column[row].cell[cell].coin) {
-                                uint32_t coin_idx;
-                                for (coin_idx = 0; coin_idx < ; coin_idx++) {
-                                }
                         }
                 }
         }

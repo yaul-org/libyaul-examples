@@ -28,9 +28,18 @@
         }                                                                      \
 } while (false)
 
+#define COMPONENT_DESTROY(x) do {                                              \
+        /* Must already have been initialized */                               \
+        assert(COMPONENT(((struct component *)(x)), initialized));             \
+        /* Destroy event must be present */                                    \
+        assert(COMPONENT_EVENT(((struct component *)(x)), destroy) != NULL);   \
+        COMPONENT_EVENT(x, destroy)((struct component *)(x));                  \
+        /* Uninitialize the component */                                       \
+        COMPONENT(((struct component *)(x)), initialized) = false;             \
+} while (false)
+
 #define COMPONENT_UPDATE(x)     COMPONENT_EVENT_CALL(x, update)
 #define COMPONENT_DRAW(x)       COMPONENT_EVENT_CALL(x, draw)
-#define COMPONENT_DESTROY(x)    COMPONENT_EVENT_CALL(x, destroy)
 
 void
 object_init(struct object *object)
@@ -61,8 +70,43 @@ object_init(struct object *object)
 }
 
 void
-object_destroy(struct object *object __unused)
+object_destroy(struct object *object)
 {
+        assert(object != NULL);
+
+        /* Destroy components */
+        uint32_t component_idx;
+        for (component_idx = 0; component_idx < OBJECT(object, component_count);
+             component_idx++) {
+                struct component *component;
+                component = OBJECT_COMPONENT(object, component_idx);
+                assert(component == NULL);
+
+                /* Destroy */
+                COMPONENT_DESTROY(component);
+
+                if (OBJECT(object, context).instantiated) {
+                        /* Free components */
+                        free(component);
+
+                        OBJECT_COMPONENT(object, component_idx) = NULL;
+                        OBJECT_COMPONENT_SIZE(object, component_idx) = 0;
+                }
+        }
+        OBJECT(object, component_count) = 0;
+
+        OBJECT(object, context).instantiated = false;
+
+        OBJECT(object, active) = false;
+        OBJECT(object, id) = 0;
+
+        /* Remove from tree */
+        if (objects_object_added(object)) {
+                objects_object_remove(object);
+        }
+
+        /* Unregister object */
+        objects_object_unregister(object);
 }
 
 void
@@ -112,8 +156,7 @@ object_draw(const struct object *object)
  *   - The copied object is initially deactivated and must be activated.
  *   - All children objects of the source object will not be copied.
  *   - Copied object will be instantiated and initialized. It is preferred
- *     to instantiate from a prefab source object.
- *   - All components copied must explicitly freed by the caller.
+ *     to instantiate from a prefab (const) source object.
  */
 void
 object_instantiate(const struct object *object, struct object *copy,
@@ -167,7 +210,9 @@ object_instantiate(const struct object *object, struct object *copy,
         }
 
         OBJECT(copy, component_count) = OBJECT(object, component_count);
-        OBJECT(copy, on_destroy) = OBJECT(object, on_destroy);
+
+        /* Mark object as an instantiated object */
+        OBJECT(copy, context).instantiated = true;
 
         object_init(copy);
 }

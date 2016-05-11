@@ -213,7 +213,7 @@ object_project(const struct object *object, const fix16_vector3_t *position)
         const struct material *material;
         material = &COMPONENT(sprite, material);
 
-        const struct transform *transform;
+        const struct transform *transform __unused;
         transform = (const struct transform *)object_component_find(
                 object, COMPONENT_ID_TRANSFORM);
         assert(transform != NULL);

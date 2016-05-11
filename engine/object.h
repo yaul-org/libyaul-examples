@@ -25,9 +25,11 @@ struct component;
                 uint32_t size;                                                 \
         } component_list[OBJECT_COMPONENT_LIST_MAX];                           \
         uint32_t component_count;                                              \
-        void (*on_destroy)(struct object *);                                   \
-        /* Context used by objects system */                                   \
-        const void *context;
+        struct {                                                               \
+                /* Context used by objects system */                           \
+                const void *instance;                                          \
+                bool instantiated;                                             \
+        } context;
 
 #define OBJECT(x, member)                                                      \
         ((x)->CC_CONCAT(, member))

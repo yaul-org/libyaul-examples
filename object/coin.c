@@ -46,13 +46,25 @@ static struct sprite _sprite = {
         .on_destroy = NULL
 };
 
+static struct coin _coin = {
+        .active = true,
+        .id = COMPONENT_ID_COIN,
+        .object = NULL,
+        .ttl = 1,
+        .on_init = NULL,
+        .on_update = NULL,
+        .on_draw = NULL,
+        .on_destroy = NULL
+};
+
 const struct object object_coin = {
         .active = false,
         .id = OBJECT_ID_COIN,
         .component_list = {
                 OBJECT_COMPONENT_INITIALIZER(transform, &_transform),
                 OBJECT_COMPONENT_INITIALIZER(sprite, &_sprite),
-                OBJECT_COMPONENT_INITIALIZER(collider, &_collider)
+                OBJECT_COMPONENT_INITIALIZER(collider, &_collider),
+                OBJECT_COMPONENT_INITIALIZER(coin, &_coin)
          },
-        .component_count = 3
+        .component_count = 4
 };

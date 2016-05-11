@@ -40,6 +40,7 @@ extern bool objects_object_added(const struct object *);
 extern void objects_object_add(struct object *);
 extern void objects_object_child_add(struct object *, struct object *);
 extern void objects_object_remove(struct object *);
+extern void objects_object_clear(struct object *);
 extern void objects_clear(void);
 extern const struct object_z *objects_list(void);
 extern const struct objects *objects_sorted_list(void);

@@ -51,6 +51,7 @@ MEMB(_object_context_pool, struct object_context, OBJECTS_MAX,
 static void traverse_object_context_add(struct object_context *,
     struct object *);
 static void traverse_object_context_remove(struct object_context *);
+static void traverse_object_context_clear(struct object_context *);
 static void traverse_object_context_update(struct object_context *);
 
 /*
@@ -73,8 +74,7 @@ objects_init(void)
                 .component_list = {
                         OBJECT_COMPONENT_INITIALIZER(transform, &transform)
                 },
-                .component_count = 1,
-                .on_destroy = NULL,
+                .component_count = 1
         };
 
         if (_initialized) {
@@ -86,7 +86,7 @@ objects_init(void)
         /* Register root object */
         objects_object_register(&root);
         /* Get the root context */
-        _root_ctx = (struct object_context *)root.context;
+        _root_ctx = (struct object_context *)root.context.instance;
         assert(_root_ctx != NULL);
 
         _initialized = true;
@@ -102,7 +102,7 @@ void
 objects_object_register(struct object *object)
 {
         assert(object != NULL);
-        assert(object->context == NULL);
+        assert(object->context.instance == NULL);
 
         /* Initialize context */
         struct object_context *object_ctx;
@@ -117,7 +117,7 @@ objects_object_register(struct object *object)
         TAILQ_INIT(&object_ctx->oc_children);
 
         /* Connect context to object object */
-        object->context = object_ctx;
+        object->context.instance = object_ctx;
 }
 
 /*
@@ -127,10 +127,10 @@ void
 objects_object_unregister(struct object *object)
 {
         assert(object != NULL);
-        assert(object->context != NULL);
+        assert(object->context.instance != NULL);
 
         struct object_context *object_ctx;
-        object_ctx = (struct object_context *)object->context;
+        object_ctx = (struct object_context *)object->context.instance;
 
         object_ctx->oc_parent = NULL;
         object_ctx->oc_object = NULL;
@@ -141,7 +141,7 @@ objects_object_unregister(struct object *object)
         assert(error == 0);
 
         /* Disconnect context from object */
-        object->context = NULL;
+        object->context.instance = NULL;
 }
 
 /*
@@ -151,11 +151,24 @@ bool
 objects_object_added(const struct object *object)
 {
         assert(object != NULL);
+        /* Has the object been registered? */
+        assert(object->context.instance != NULL);
+        assert(object_ctx->oc_object->context.instance == object_ctx);
 
-        struct object_context *object_ctx;
-        object_ctx = (struct object_context *)object->context;
+        const struct object_z *objects;
+        objects = objects_list();
 
-        return (object_ctx != NULL) && (object_ctx->oc_object == object);
+        uint32_t object_idx;
+        for (object_idx = 0; objects[object_idx].object != NULL; object_idx++) {
+                const struct object *itr_object;
+                itr_object = objects[object_idx].object;
+
+                if (itr_object == object) {
+                        return true;
+                }
+        }
+
+        return false;
 }
 
 /*
@@ -167,7 +180,7 @@ objects_object_add(struct object *object)
         assert(_initialized);
         assert(object != NULL);
         /* Has the object been registered? */
-        assert(object->context != NULL);
+        assert(object->context.instance != NULL);
 
         traverse_object_context_add(_root_ctx, object);
 
@@ -186,30 +199,48 @@ objects_object_child_add(struct object *object, struct object *child)
 {
         assert(_initialized);
         assert(object != NULL);
-        assert(object->context != NULL);
+        assert(object->context.instance != NULL);
         assert(child != NULL);
-        assert(child->context != NULL);
+        assert(child->context.instance != NULL);
 
-        traverse_object_context_add((struct object_context *)object->context,
-            child);
+        traverse_object_context_add(
+                (struct object_context *)object->context.instance, child);
 
         _cached_objects_dirty = true;
 }
 
 /*
- * Remove object and its children.
+ * Remove object, but not its children.
  */
 void
 objects_object_remove(struct object *child)
 {
         assert(_initialized);
         assert(child != NULL);
-        assert(child->context != NULL);
+        assert(child->context.instance != NULL);
 
         struct object_context *child_ctx;
-        child_ctx = (struct object_context *)child->context;
+        child_ctx = (struct object_context *)child->context.instance;
 
         traverse_object_context_remove(child_ctx);
+
+        _cached_objects_dirty = true;
+}
+
+/*
+ * Remove object, but not its children.
+ */
+void
+objects_object_clear(struct object *child)
+{
+        assert(_initialized);
+        assert(child != NULL);
+        assert(child->context.instance != NULL);
+
+        struct object_context *child_ctx;
+        child_ctx = (struct object_context *)child->context.instance;
+
+        traverse_object_context_clear(child_ctx);
 
         _cached_objects_dirty = true;
 }
@@ -243,7 +274,7 @@ objects_clear(void)
                 struct object *itr_child;
                 itr_child = itr_ctx->oc_object;
 
-                objects_object_remove(itr_child);
+                objects_object_clear(itr_child);
         }
 
         _cached_objects_dirty = true;
@@ -351,14 +382,14 @@ traverse_object_context_add(struct object_context *parent_ctx,
 {
         assert(child != NULL);
         assert(parent_ctx != NULL);
-        assert(child->context != NULL);
+        assert(child->context.instance != NULL);
 
         struct object *parent;
         parent = parent_ctx->oc_object;
         assert(parent != NULL);
 
         struct object_context *child_ctx;
-        child_ctx = (struct object_context *)child->context;
+        child_ctx = (struct object_context *)child->context.instance;
         assert(child_ctx != NULL);
 
         child_ctx->oc_parent = parent;
@@ -369,56 +400,35 @@ traverse_object_context_add(struct object_context *parent_ctx,
 }
 
 /*
- * Remove object and its children from the tree.
+ * Remove object, but keep its children attached.
  */
 static void
 traverse_object_context_remove(struct object_context *remove_ctx)
 {
         assert(remove_ctx != NULL);
         assert(remove_ctx->oc_object != NULL);
-        assert(remove_ctx->oc_object->context == remove_ctx);
+        assert(remove_ctx->oc_object->context.instance == remove_ctx);
         /* The root node is not to be removed */
         assert(remove_ctx != _root_ctx);
 
-        SLIST_HEAD(stack, object_context) stack = SLIST_HEAD_INITIALIZER(stack);
+        const struct object *parent;
+        parent = remove_ctx->oc_parent;
+        assert(parent != NULL);
 
-        SLIST_INIT(&stack);
+        struct object_context *parent_ctx;
+        parent_ctx = (struct object_context *)parent->context.instance;
+        assert(parent_ctx != NULL);
 
-        SLIST_INSERT_HEAD(&stack, remove_ctx, oc_sl_entries);
-        while (!(SLIST_EMPTY(&stack))) {
-                struct object_context *top_remove_ctx;
-                top_remove_ctx = SLIST_FIRST(&stack);
+        /* Remove from objects tree */
+        TAILQ_REMOVE(&parent_ctx->oc_children, remove_ctx, oc_tq_entries);
+}
 
-                /* Pop */
-                SLIST_REMOVE_HEAD(&stack, oc_sl_entries);
-
-                struct object *top_remove;
-                top_remove = top_remove_ctx->oc_object;
-                assert(top_remove != NULL);
-
-                const struct object *parent;
-                parent = top_remove_ctx->oc_parent;
-                assert(parent != NULL);
-
-                struct object_context *parent_ctx;
-                parent_ctx = (struct object_context *)parent->context;
-                assert(parent_ctx != NULL);
-
-                /* Remove from objects tree */
-                TAILQ_REMOVE(&parent_ctx->oc_children, top_remove_ctx,
-                    oc_tq_entries);
-
-                /* Unregister */
-                objects_object_unregister(top_remove);
-
-                while (!(TAILQ_EMPTY(&top_remove_ctx->oc_children))) {
-                        struct object_context *itr_child_ctx;
-                        itr_child_ctx =
-                            TAILQ_FIRST(&top_remove_ctx->oc_children);
-
-                        SLIST_INSERT_HEAD(&stack, itr_child_ctx, oc_sl_entries);
-                }
-        }
+/*
+ * Remove object and its children.
+ */
+static void
+traverse_object_context_clear(struct object_context *remove_ctx __unused)
+{
 }
 
 /*
@@ -429,7 +439,7 @@ static void
 traverse_object_context_update(struct object_context *object_ctx)
 {
         assert(object_ctx != NULL);
-        assert(object_ctx->oc_object->context == object_ctx);
+        assert(object_ctx->oc_object->context.instance == object_ctx);
 
         /* Empty each bucket */
         uint32_t bucket_idx;
@@ -460,7 +470,7 @@ traverse_object_context_update(struct object_context *object_ctx)
                 parent = top_object_ctx->oc_parent;
                 if (parent != NULL) {
                         const struct object_context *parent_ctx;
-                        parent_ctx = parent->context;
+                        parent_ctx = parent->context.instance;
                         assert(parent_ctx != NULL);
 
                         struct object *object;
@@ -468,7 +478,7 @@ traverse_object_context_update(struct object_context *object_ctx)
 
                         /* Ensure that the context is connected to the
                          * right object */
-                        assert(top_object_ctx == object->context);
+                        assert(top_object_ctx == object->context.instance);
 
                         struct transform *transform;
                         transform = (struct transform *)object_component_find(
