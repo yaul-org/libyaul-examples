@@ -10,6 +10,7 @@
 void
 component_camera_mgr_on_init(struct component *this __unused)
 {
+        assert(THIS(camera_mgr, speed) > F16(0.0f));
 }
 
 void
@@ -21,7 +22,7 @@ component_camera_mgr_on_update(struct component *this __unused)
         transform = (struct transform *)object_component_find(
                 THIS(camera_mgr, object), COMPONENT_ID_TRANSFORM);
 
-        COMPONENT(transform, position).x = fix16_add(COMPONENT(transform, position).x, F16(0.33f));
+        COMPONENT(transform, position).x = fix16_add(COMPONENT(transform, position).x, THIS(camera_mgr, speed));
 }
 
 void
