@@ -13,6 +13,8 @@
 struct blue_mgr {
         COMPONENT_DECLARATIONS
 
+        fix16_vector2_t start_position;
+
         struct {
         } functions;
 

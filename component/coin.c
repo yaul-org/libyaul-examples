@@ -16,6 +16,13 @@ component_coin_on_init(struct component *this)
 void
 component_coin_on_update(struct component *this __unused)
 {
+        struct sprite *sprite;
+        sprite = (struct sprite *)object_component_find(
+                THIS(coin, object), COMPONENT_ID_SPRITE);
+
+        if (COMPONENT(sprite, visible)) {
+                THIS(coin, ttl)++;
+        }
 }
 
 void

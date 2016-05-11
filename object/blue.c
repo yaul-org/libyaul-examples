@@ -60,6 +60,7 @@ static struct blue_mgr _blue_mgr = {
         .active = true,
         .id = COMPONENT_ID_BLUE_MGR,
         .object = (struct object *)&object_blue,
+        .start_position = FIX16_VECTOR2_INITIALIZER(0.0f, 0.0f),
         .on_init = &component_blue_mgr_on_init,
         .on_update = &component_blue_mgr_on_update,
         .on_draw = &component_blue_mgr_on_draw,
@@ -75,7 +76,7 @@ struct object object_blue = {
                 OBJECT_COMPONENT_INITIALIZER(sprite, &_sprite),
                 OBJECT_COMPONENT_INITIALIZER(collider, &_collider),
                 OBJECT_COMPONENT_INITIALIZER(rigid_body, &_rigid_body),
-                OBJECT_COMPONENT_INITIALIZER(blue_mgr, &_blue_mgr),
+                OBJECT_COMPONENT_INITIALIZER(blue_mgr, &_blue_mgr)
         },
         .component_count = 5
 };

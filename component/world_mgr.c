@@ -90,8 +90,10 @@ component_world_mgr_on_init(struct component *this __unused)
         /* Read header */
         fs_read(_map_fh, &_map_header, sizeof(struct world_header));
 
-        assert(_map_header.collider_count <= COLLIDERS_MAX);
-        assert(_map_header.coin_count <= COINS_MAX);
+        assert((_map_header.collider_count > 0) &&
+               (_map_header.collider_count <= COLLIDERS_MAX));
+        assert((_map_header.coin_count > 0) &&
+               (_map_header.coin_count <= COINS_MAX));
 
         /* Read in collision data */
         fs_read(_map_fh, &_map_colliders[0],
@@ -109,6 +111,13 @@ component_world_mgr_on_init(struct component *this __unused)
 
                 COMPONENT_FUNCTION_CALL(_coin_mgr, spawn, &coin->position);
         }
+
+        /* Spawn at position */
+        struct blue_mgr *blue_mgr;
+        blue_mgr = (struct blue_mgr *)objects_component_find(COMPONENT_ID_BLUE_MGR);
+        assert(blue_mgr != NULL);
+        COMPONENT(blue_mgr, start_position).x = _map_header.blue_position.x;
+        COMPONENT(blue_mgr, start_position).y = _map_header.blue_position.y;
 }
 
 void

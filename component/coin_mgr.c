@@ -67,6 +67,7 @@ component_coin_mgr_on_destroy(struct component *this __unused)
                 COMPONENT(coin, ttl) = 0;
 
                 objects_object_remove(object_coin);
+                object_destroy(object_coin);
         }
 }
 

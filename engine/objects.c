@@ -326,7 +326,6 @@ objects_component_find(int32_t component_id)
                 const struct object *object;
                 object = objects->list[object_idx];
 
-
                 const struct component *component;
                 component = object_component_find(object, component_id);
 
