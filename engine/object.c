@@ -74,6 +74,10 @@ object_destroy(struct object *object)
 {
         assert(object != NULL);
 
+        /* The object has to be removed from the objects tree before
+         * destroying the object */
+        assert(!(objects_object_added(object)));
+
         /* Destroy components */
         uint32_t component_idx;
         for (component_idx = 0; component_idx < OBJECT(object, component_count);

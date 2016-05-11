@@ -7,10 +7,6 @@
 
 #include "engine.h"
 
-#define OBJECTS_DEPTH_MAX 3
-
-extern uint32_t tick;
-
 struct object_context;
 
 TAILQ_HEAD(object_contexts, object_context);
@@ -51,7 +47,7 @@ static void add_objects_tree(struct object_context *, struct object *);
 static void remove_objects_tree(struct object_context *);
 static void clear_objects_tree(struct object_context *);
 static void update_objects_tree(void);
-static bool added_objects_tree(const struct object *);
+static bool added_objects_tree(struct object_context *);
 
 static void traverse_objects_tree(struct object_context *,
     void (*)(struct object_context *, void *), void *);
@@ -160,7 +156,10 @@ objects_object_added(const struct object *object)
         /* Has the object been registered? */
         assert(object->context.instance != NULL);
 
-        return added_objects_tree(object);
+        struct object_context *object_ctx;
+        object_ctx = (struct object_context *)object->context.instance;
+
+        return added_objects_tree(object_ctx);
 }
 
 /*
@@ -248,21 +247,21 @@ objects_clear(void)
         assert(_initialized);
 
         /* Clear cached */
-        {
-                _cached_camera = NULL;
+        _cached_camera = NULL;
 
-                uint32_t object_idx;
-                for (object_idx = 0; object_idx < OBJECTS_MAX; object_idx++) {
-                        _cached_objects.list[object_idx] = NULL;
-                }
-
-                /* Empty each bucket */
-                uint32_t bucket_idx;
-                for (bucket_idx = 0; bucket_idx < OBJECTS_Z_MAX_BUCKETS;
-                     bucket_idx++) {
-                        STAILQ_INIT(&_cached_objects.buckets[bucket_idx]);
-                }
+        /* Empty each bucket */
+        uint32_t bucket_idx;
+        for (bucket_idx = 0; bucket_idx < OBJECTS_Z_MAX_BUCKETS;
+             bucket_idx++) {
+                STAILQ_INIT(&_cached_objects.buckets[bucket_idx]);
         }
+        /* Clear list */
+        uint32_t object_idx;
+        for (object_idx = 0; object_idx < OBJECTS_MAX; object_idx++) {
+                _cached_objects.list[object_idx] = NULL;
+        }
+
+        _cached_objects_dirty = true;
 
         while (!(TAILQ_EMPTY(&_root_ctx->children))) {
                 struct object_context *itr_ctx;
@@ -273,8 +272,6 @@ objects_clear(void)
 
                 objects_object_clear(itr_child);
         }
-
-        _cached_objects_dirty = true;
 }
 
 /*
@@ -371,12 +368,38 @@ add_objects_tree(struct object_context *parent_ctx, struct object *child)
         TAILQ_INSERT_TAIL(&parent_ctx->children, child_ctx, tq_entries);
 }
 
+/*
+ *
+ */
 static bool
-added_objects_tree(const struct object *object __unused)
+added_objects_tree(struct object_context *object_ctx)
 {
-        assert(object != NULL);
+        assert(object_ctx != NULL);
+        assert(object_ctx->object != NULL);
+        assert(object_ctx->object->context.instance == object_ctx);
 
-        return false;
+        struct object_context *top_object_ctx;
+        top_object_ctx = object_ctx;
+
+        while (top_object_ctx != _root_ctx) {
+                const struct object *parent;
+                parent = top_object_ctx->parent;
+                /* We've reached the root of the objects tree
+                 *
+                 * Or this entire traversal was performed on a dangling
+                 * objects sub-tree */
+                if (parent == NULL) {
+                        return false;
+                }
+
+                struct object_context *parent_ctx;
+                parent_ctx = (struct object_context *)parent->context.instance;
+
+                /* Traverse up the objects tree */
+                top_object_ctx = parent_ctx;
+        }
+
+        return true;
 }
 
 /*
@@ -424,7 +447,6 @@ update_objects_tree(void)
         for (bucket_idx = 0; bucket_idx < OBJECTS_Z_MAX_BUCKETS; bucket_idx++) {
                 STAILQ_INIT(&_cached_objects.buckets[bucket_idx]);
         }
-
         /* Clear list */
         uint32_t object_idx;
         for (object_idx = 0; object_idx < OBJECTS_MAX; object_idx++) {
@@ -506,6 +528,9 @@ visit_objects_tree_update(struct object_context *object_ctx, void *args)
         state->object_idx++;
 }
 
+/*
+ *
+ */
 static void
 traverse_objects_tree(struct object_context *object_ctx,
     void (*visit)(struct object_context *, void *), void *args)
