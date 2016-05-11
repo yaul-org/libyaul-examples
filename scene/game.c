@@ -10,13 +10,13 @@
 void
 scene_game_init(struct scene_ctx *scene_ctx __unused)
 {
-        object_init((struct object *)&object_camera);
-        object_init((struct object *)&object_blue);
-        object_init((struct object *)&object_world);
+        object_init(&object_camera);
+        object_init(&object_blue);
+        object_init(&object_world);
 
-        objects_object_add((struct object *)&object_camera);
-        objects_object_add((struct object *)&object_blue);
-        objects_object_add((struct object *)&object_world);
+        objects_object_add(&object_camera);
+        objects_object_add(&object_blue);
+        objects_object_add(&object_world);
 }
 
 void

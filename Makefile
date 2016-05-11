@@ -34,7 +34,8 @@ SH_OBJECTS:= \
 \
 	component/coin_mgr.o \
 	component/world_mgr.o \
-	component/blue_mgr.o
+	component/blue_mgr.o \
+	component/coin.o
 SH_LIBRARIES:= tga
 
 ifeq ($(strip $(ASSERT)),1)

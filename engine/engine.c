@@ -68,30 +68,24 @@ engine_loop(void)
 static void
 objects_update(void)
 {
-        const struct object_z *objects;
-        objects = objects_list();
+        const struct objects *objects;
+        objects = objects_fetch();
 
         uint32_t object_idx;
-        for (object_idx = 0; objects[object_idx].object != NULL; object_idx++) {
-                const struct object *object;
-                object = objects[object_idx].object;
-
-                object_update(object);
+        for (object_idx = 0; objects->list[object_idx] != NULL; object_idx++) {
+                object_update(objects->list[object_idx]);
         }
 }
 
 static void
 objects_draw(void)
 {
-        const struct object_z *objects;
-        objects = objects_list();
+        const struct objects *objects;
+        objects = objects_fetch();
 
         uint32_t object_idx;
-        for (object_idx = 0; objects[object_idx].object != NULL; object_idx++) {
-                const struct object *object;
-                object = objects[object_idx].object;
-
-                object_draw(object);
+        for (object_idx = 0; objects->list[object_idx] != NULL; object_idx++) {
+                object_draw(objects->list[object_idx]);
         }
 
         vdp1_cmdt_list_commit();
@@ -155,20 +149,17 @@ objects_project(void)
                 /* Draw in reversed order. Here we can take a shortcut
                  * and sort before projecting. */
                 const struct objects *objects;
-                objects = objects_sorted_list();
+                objects = objects_fetch();
 
                 int32_t z_bucket;
                 for (z_bucket = OBJECTS_Z_MAX; z_bucket >= 0; z_bucket--) {
-                        struct object_z_entry *itr_oze;
+                        struct object_bucket_entry *itr_oze;
                         STAILQ_FOREACH (itr_oze, &objects->buckets[z_bucket],
                             entries) {
-                                const struct object_z *object_z;
-                                object_z = itr_oze->object_z;
-
                                 const struct object *object;
-                                object = object_z->object;
+                                object = itr_oze->object;
                                 const fix16_vector3_t *position;
-                                position = object_z->position;
+                                position = itr_oze->position;
 
                                 object_project(object, position);
                         }

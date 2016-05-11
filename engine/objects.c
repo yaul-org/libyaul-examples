@@ -17,16 +17,16 @@ TAILQ_HEAD(object_contexts, object_context);
 
 struct object_context {
         /* Immediate parent */
-        struct object *oc_parent;
-        struct object *oc_object;
+        struct object *parent;
+        struct object *object;
         /* Calculated absolute position of the object in world space */
-        fix16_vector3_t oc_position;
-        struct object_contexts oc_children;
+        fix16_vector3_t position;
+        struct object_contexts children;
 
         /* Tree management */
-        TAILQ_ENTRY(object_context) oc_tq_entries;
+        TAILQ_ENTRY(object_context) tq_entries;
         /* For non-recursive traversal */
-        SLIST_ENTRY(object_context) oc_sl_entries;
+        SLIST_ENTRY(object_context) sl_entries;
 } __aligned(32);
 
 static bool _initialized = false;
@@ -36,23 +36,29 @@ static uint32_t _last_tick = 0;
 static struct object_context *_root_ctx = NULL;
 
 /* Caching */
+/* Cached pointer to camera component */
+static const struct component *_cached_camera = NULL;
 /* Cached list of objects allocated */
 static bool _cached_objects_dirty = true;
 static struct objects _cached_objects;
-static struct object_z _cached_object_z[OBJECTS_MAX];
-static struct object_z_entry _cached_object_z_entry[OBJECTS_MAX];
 
-/* Cached pointer to camera component */
-static const struct component *_cached_camera = NULL;
+static struct object_bucket_entry _obe_pool[OBJECTS_MAX];
 
 MEMB(_object_context_pool, struct object_context, OBJECTS_MAX,
     sizeof(struct object_context));
 
-static void traverse_object_context_add(struct object_context *,
-    struct object *);
-static void traverse_object_context_remove(struct object_context *);
-static void traverse_object_context_clear(struct object_context *);
-static void traverse_object_context_update(struct object_context *);
+static void add_objects_tree(struct object_context *, struct object *);
+static void remove_objects_tree(struct object_context *);
+static void clear_objects_tree(struct object_context *);
+static void update_objects_tree(void);
+static bool added_objects_tree(const struct object *);
+
+static void traverse_objects_tree(struct object_context *,
+    void (*)(struct object_context *, void *), void *);
+
+/* Visit functions */
+static void visit_objects_tree_clear(struct object_context *, void *);
+static void visit_objects_tree_update(struct object_context *, void *);
 
 /*
  * Initialize objects system.
@@ -109,12 +115,12 @@ objects_object_register(struct object *object)
         object_ctx = (struct object_context *)memb_alloc(&_object_context_pool);
         assert(object_ctx != NULL);
 
-        object_ctx->oc_parent = NULL;
-        object_ctx->oc_object = object;
+        object_ctx->parent = NULL;
+        object_ctx->object = object;
 
-        fix16_vector3_zero(&object_ctx->oc_position);
+        fix16_vector3_zero(&object_ctx->position);
 
-        TAILQ_INIT(&object_ctx->oc_children);
+        TAILQ_INIT(&object_ctx->children);
 
         /* Connect context to object object */
         object->context.instance = object_ctx;
@@ -132,8 +138,8 @@ objects_object_unregister(struct object *object)
         struct object_context *object_ctx;
         object_ctx = (struct object_context *)object->context.instance;
 
-        object_ctx->oc_parent = NULL;
-        object_ctx->oc_object = NULL;
+        object_ctx->parent = NULL;
+        object_ctx->object = NULL;
 
         /* Free context */
         int error __unused;
@@ -153,22 +159,8 @@ objects_object_added(const struct object *object)
         assert(object != NULL);
         /* Has the object been registered? */
         assert(object->context.instance != NULL);
-        assert(object_ctx->oc_object->context.instance == object_ctx);
 
-        const struct object_z *objects;
-        objects = objects_list();
-
-        uint32_t object_idx;
-        for (object_idx = 0; objects[object_idx].object != NULL; object_idx++) {
-                const struct object *itr_object;
-                itr_object = objects[object_idx].object;
-
-                if (itr_object == object) {
-                        return true;
-                }
-        }
-
-        return false;
+        return added_objects_tree(object);
 }
 
 /*
@@ -182,7 +174,7 @@ objects_object_add(struct object *object)
         /* Has the object been registered? */
         assert(object->context.instance != NULL);
 
-        traverse_object_context_add(_root_ctx, object);
+        add_objects_tree(_root_ctx, object);
 
         _cached_objects_dirty = true;
 }
@@ -203,8 +195,10 @@ objects_object_child_add(struct object *object, struct object *child)
         assert(child != NULL);
         assert(child->context.instance != NULL);
 
-        traverse_object_context_add(
-                (struct object_context *)object->context.instance, child);
+        struct object_context *object_ctx;
+        object_ctx = (struct object_context *)object->context.instance;
+
+        add_objects_tree(object_ctx, child);
 
         _cached_objects_dirty = true;
 }
@@ -213,16 +207,16 @@ objects_object_child_add(struct object *object, struct object *child)
  * Remove object, but not its children.
  */
 void
-objects_object_remove(struct object *child)
+objects_object_remove(struct object *object)
 {
         assert(_initialized);
-        assert(child != NULL);
-        assert(child->context.instance != NULL);
+        assert(object != NULL);
+        assert(object->context.instance != NULL);
 
-        struct object_context *child_ctx;
-        child_ctx = (struct object_context *)child->context.instance;
+        struct object_context *object_ctx;
+        object_ctx = (struct object_context *)object->context.instance;
 
-        traverse_object_context_remove(child_ctx);
+        remove_objects_tree(object_ctx);
 
         _cached_objects_dirty = true;
 }
@@ -231,16 +225,16 @@ objects_object_remove(struct object *child)
  * Remove object, but not its children.
  */
 void
-objects_object_clear(struct object *child)
+objects_object_clear(struct object *object)
 {
         assert(_initialized);
-        assert(child != NULL);
-        assert(child->context.instance != NULL);
+        assert(object != NULL);
+        assert(object->context.instance != NULL);
 
-        struct object_context *child_ctx;
-        child_ctx = (struct object_context *)child->context.instance;
+        struct object_context *object_ctx;
+        object_ctx = (struct object_context *)object->context.instance;
 
-        traverse_object_context_clear(child_ctx);
+        clear_objects_tree(object_ctx);
 
         _cached_objects_dirty = true;
 }
@@ -257,7 +251,10 @@ objects_clear(void)
         {
                 _cached_camera = NULL;
 
-                _cached_object_z[0].object = NULL;
+                uint32_t object_idx;
+                for (object_idx = 0; object_idx < OBJECTS_MAX; object_idx++) {
+                        _cached_objects.list[object_idx] = NULL;
+                }
 
                 /* Empty each bucket */
                 uint32_t bucket_idx;
@@ -267,12 +264,12 @@ objects_clear(void)
                 }
         }
 
-        while (!(TAILQ_EMPTY(&_root_ctx->oc_children))) {
+        while (!(TAILQ_EMPTY(&_root_ctx->children))) {
                 struct object_context *itr_ctx;
-                itr_ctx = TAILQ_FIRST(&_root_ctx->oc_children);
+                itr_ctx = TAILQ_FIRST(&_root_ctx->children);
 
                 struct object *itr_child;
-                itr_child = itr_ctx->oc_object;
+                itr_child = itr_ctx->object;
 
                 objects_object_clear(itr_child);
         }
@@ -284,33 +281,8 @@ objects_clear(void)
  * Return an array of objects in pre-order traversal from the objects
  * tree.
  */
-const struct object_z *
-objects_list(void)
-{
-        assert(_initialized);
-
-        bool new_frame;
-        new_frame = (tick - _last_tick) != 0;
-
-        if (!new_frame && !_cached_objects_dirty) {
-                goto return_list;
-        }
-
-        traverse_object_context_update(_root_ctx);
-
-        _cached_objects_dirty = false;
-
-return_list:
-        _last_tick = tick;
-
-        return (const struct object_z *)&_cached_object_z[0];
-}
-
-/*
- *
- */
 const struct objects *
-objects_sorted_list(void)
+objects_fetch(void)
 {
         assert(_initialized);
 
@@ -318,14 +290,14 @@ objects_sorted_list(void)
         new_frame = (tick - _last_tick) != 0;
 
         if (!new_frame && !_cached_objects_dirty) {
-                goto return_list;
+                goto return_objects;
         }
 
-        traverse_object_context_update(_root_ctx);
+        update_objects_tree();
 
         _cached_objects_dirty = false;
 
-return_list:
+return_objects:
         _last_tick = tick;
 
         return (const struct objects *)&_cached_objects;
@@ -349,13 +321,14 @@ objects_component_find(int32_t component_id)
                 return _cached_camera;
         }
 
-        const struct object_z *objects;
-        objects = objects_list();
+        const struct objects *objects;
+        objects = objects_fetch();
 
         uint32_t object_idx;
-        for (object_idx = 0; objects[object_idx].object != NULL; object_idx++) {
+        for (object_idx = 0; objects->list[object_idx] != NULL; object_idx++) {
                 const struct object *object;
-                object = objects[object_idx].object;
+                object = objects->list[object_idx];
+
 
                 const struct component *component;
                 component = object_component_find(object, component_id);
@@ -377,42 +350,49 @@ objects_component_find(int32_t component_id)
  *
  */
 static void
-traverse_object_context_add(struct object_context *parent_ctx,
-    struct object *child)
+add_objects_tree(struct object_context *parent_ctx, struct object *child)
 {
         assert(child != NULL);
         assert(parent_ctx != NULL);
         assert(child->context.instance != NULL);
 
         struct object *parent;
-        parent = parent_ctx->oc_object;
+        parent = parent_ctx->object;
         assert(parent != NULL);
 
         struct object_context *child_ctx;
         child_ctx = (struct object_context *)child->context.instance;
         assert(child_ctx != NULL);
 
-        child_ctx->oc_parent = parent;
-        child_ctx->oc_object = child;
-        fix16_vector3_zero(&child_ctx->oc_position);
+        child_ctx->parent = parent;
+        child_ctx->object = child;
+        fix16_vector3_zero(&child_ctx->position);
 
-        TAILQ_INSERT_TAIL(&parent_ctx->oc_children, child_ctx, oc_tq_entries);
+        TAILQ_INSERT_TAIL(&parent_ctx->children, child_ctx, tq_entries);
+}
+
+static bool
+added_objects_tree(const struct object *object __unused)
+{
+        assert(object != NULL);
+
+        return false;
 }
 
 /*
  * Remove object, but keep its children attached.
  */
 static void
-traverse_object_context_remove(struct object_context *remove_ctx)
+remove_objects_tree(struct object_context *remove_ctx)
 {
         assert(remove_ctx != NULL);
-        assert(remove_ctx->oc_object != NULL);
-        assert(remove_ctx->oc_object->context.instance == remove_ctx);
+        assert(remove_ctx->object != NULL);
+        assert(remove_ctx->object->context.instance == remove_ctx);
         /* The root node is not to be removed */
         assert(remove_ctx != _root_ctx);
 
         const struct object *parent;
-        parent = remove_ctx->oc_parent;
+        parent = remove_ctx->parent;
         assert(parent != NULL);
 
         struct object_context *parent_ctx;
@@ -420,15 +400,16 @@ traverse_object_context_remove(struct object_context *remove_ctx)
         assert(parent_ctx != NULL);
 
         /* Remove from objects tree */
-        TAILQ_REMOVE(&parent_ctx->oc_children, remove_ctx, oc_tq_entries);
+        TAILQ_REMOVE(&parent_ctx->children, remove_ctx, tq_entries);
 }
 
 /*
  * Remove object and its children.
  */
 static void
-traverse_object_context_clear(struct object_context *remove_ctx __unused)
+clear_objects_tree(struct object_context *object_ctx)
 {
+        traverse_objects_tree(object_ctx, visit_objects_tree_clear, NULL);
 }
 
 /*
@@ -436,92 +417,124 @@ traverse_object_context_clear(struct object_context *remove_ctx __unused)
  * populate the Z buckets.
  */
 static void
-traverse_object_context_update(struct object_context *object_ctx)
+update_objects_tree(void)
 {
-        assert(object_ctx != NULL);
-        assert(object_ctx->oc_object->context.instance == object_ctx);
-
         /* Empty each bucket */
         uint32_t bucket_idx;
         for (bucket_idx = 0; bucket_idx < OBJECTS_Z_MAX_BUCKETS; bucket_idx++) {
                 STAILQ_INIT(&_cached_objects.buckets[bucket_idx]);
         }
 
-        uint32_t obj_z_idx;
-        obj_z_idx = 0;
+        /* Clear list */
+        uint32_t object_idx;
+        for (object_idx = 0; object_idx < OBJECTS_MAX; object_idx++) {
+                _cached_objects.list[object_idx] = NULL;
+        }
 
-        _cached_object_z[obj_z_idx].object = NULL;
+        /* Buffer for state */
+        uint32_t args_buffer[2] = {
+                0,
+                0
+        };
 
-        uint32_t objs_z_idx;
-        objs_z_idx = 0;
+        traverse_objects_tree(_root_ctx, visit_objects_tree_update,
+            &args_buffer);
+}
+
+static void
+visit_objects_tree_clear(struct object_context *object_ctx,
+    void *args __unused)
+{
+        remove_objects_tree(object_ctx);
+}
+
+static void
+visit_objects_tree_update(struct object_context *object_ctx, void *args)
+{
+        struct {
+                uint32_t obe_idx;
+                uint32_t object_idx;
+        } __packed *state;
+
+        state = args;
+
+        const struct object *parent;
+        parent = object_ctx->parent;
+        if (parent == NULL) {
+                return;
+        }
+
+        struct object *object;
+        object = object_ctx->object;
+        /* Ensure that the context is connected to the right object */
+        assert(object_ctx == object->context.instance);
+
+        struct transform *transform;
+        transform = (struct transform *)object_component_find(object,
+            COMPONENT_ID_TRANSFORM);
+        assert(transform != NULL);
+
+        const struct object_context *parent_ctx;
+        parent_ctx = parent->context.instance;
+        assert(parent_ctx != NULL);
+
+        /* Calculate the absolute position */
+        fix16_vector3_add(&COMPONENT(transform, position),
+            &parent_ctx->position,
+            &object_ctx->position);
+
+        /* Insert object into its corresponding Z "bucket" */
+        int32_t z_position;
+        z_position = (int32_t)fix16_to_int(object_ctx->position.z);
+
+        /* Make sure the Z position falls within the buckets */
+        assert((z_position >= OBJECTS_Z_MIN) && (z_position <= OBJECTS_Z_MAX));
+
+        /* Allocate object bucket entry */
+        struct object_bucket_entry *object_bucket_entry;
+        object_bucket_entry = &_obe_pool[state->obe_idx];
+        state->obe_idx++;
+
+        /* Populate Z bucket */
+        object_bucket_entry->object = object;
+        object_bucket_entry->position = &object_ctx->position;
+        STAILQ_INSERT_TAIL(&_cached_objects.buckets[z_position],
+            object_bucket_entry, entries);
+
+        /* Populate list */
+        _cached_objects.list[state->object_idx] = object;
+        state->object_idx++;
+}
+
+static void
+traverse_objects_tree(struct object_context *object_ctx,
+    void (*visit)(struct object_context *, void *), void *args)
+{
+        assert(object_ctx != NULL);
+        assert(object_ctx->object->context.instance == object_ctx);
 
         SLIST_HEAD(stack, object_context) stack = SLIST_HEAD_INITIALIZER(stack);
-
         SLIST_INIT(&stack);
 
-        SLIST_INSERT_HEAD(&stack, object_ctx, oc_sl_entries);
+        SLIST_INSERT_HEAD(&stack, object_ctx, sl_entries);
         while (!(SLIST_EMPTY(&stack))) {
                 struct object_context *top_object_ctx;
                 top_object_ctx = SLIST_FIRST(&stack);
 
-                SLIST_REMOVE_HEAD(&stack, oc_sl_entries);
+                SLIST_REMOVE_HEAD(&stack, sl_entries);
 
-                const struct object *parent;
-                parent = top_object_ctx->oc_parent;
-                if (parent != NULL) {
-                        const struct object_context *parent_ctx;
-                        parent_ctx = parent->context.instance;
-                        assert(parent_ctx != NULL);
+                assert(top_object_ctx != NULL);
+                assert(top_object_ctx->object->context.instance == top_object_ctx);
 
-                        struct object *object;
-                        object = top_object_ctx->oc_object;
-
-                        /* Ensure that the context is connected to the
-                         * right object */
-                        assert(top_object_ctx == object->context.instance);
-
-                        struct transform *transform;
-                        transform = (struct transform *)object_component_find(
-                                object, COMPONENT_ID_TRANSFORM);
-                        assert(transform != NULL);
-
-                        /* Calculate the absolute position */
-                        fix16_vector3_add(&COMPONENT(transform, position),
-                            &parent_ctx->oc_position,
-                            &top_object_ctx->oc_position);
-
-                        /* Insert object into its corresponding Z "bucket" */
-                        int32_t z_position;
-                        z_position = (int32_t)fix16_to_int(
-                                top_object_ctx->oc_position.z);
-
-                        /* Make sure the Z position falls within the buckets */
-                        assert((z_position >= OBJECTS_Z_MIN) &&
-                               (z_position <= OBJECTS_Z_MAX));
-
-                        struct object_z *object_z;
-                        object_z = &_cached_object_z[obj_z_idx];
-                        obj_z_idx++;
-
-                        object_z->object = object;
-                        object_z->position = &top_object_ctx->oc_position;
-
-                        struct object_z_entry *object_z_entry;
-                        object_z_entry = &_cached_object_z_entry[objs_z_idx];
-                        objs_z_idx++;
-
-                        object_z_entry->object_z = object_z;
-
-                        STAILQ_INSERT_TAIL(&_cached_objects.buckets[z_position],
-                            object_z_entry, entries);
-                }
+                visit(top_object_ctx, args);
 
                 struct object_contexts *children;
-                children = &top_object_ctx->oc_children;
+                children = &top_object_ctx->children;
+
                 struct object_context *itr_child_ctx;
                 TAILQ_FOREACH_REVERSE (itr_child_ctx, children, object_contexts,
-                    oc_tq_entries) {
-                        SLIST_INSERT_HEAD(&stack, itr_child_ctx, oc_sl_entries);
+                    tq_entries) {
+                        SLIST_INSERT_HEAD(&stack, itr_child_ctx, sl_entries);
                 }
         }
 }
