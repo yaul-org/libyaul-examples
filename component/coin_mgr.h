@@ -16,7 +16,7 @@ struct coin_mgr {
         uint32_t coins;
 
         struct {
-                void (*m_spawn)(struct component *, fix16_t, fix16_t);
+                void (*m_spawn)(struct component *, const fix16_vector2_t *);
         } functions;
 
         struct {
@@ -29,6 +29,7 @@ extern void component_coin_mgr_on_update(struct component *);
 extern void component_coin_mgr_on_draw(struct component *);
 extern void component_coin_mgr_on_destroy(struct component *);
 
-extern void component_coin_mgr_spawn(struct component *, fix16_t, fix16_t);
+extern void component_coin_mgr_spawn(struct component *,
+    const fix16_vector2_t *);
 
 #endif /* !ENGINE_COIN_MGR_H */

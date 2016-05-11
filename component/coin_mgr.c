@@ -71,8 +71,8 @@ component_coin_mgr_on_destroy(struct component *this __unused)
 }
 
 void
-component_coin_mgr_spawn(struct component *this __unused, fix16_t spawn_x,
-    fix16_t spawn_y)
+component_coin_mgr_spawn(struct component *this __unused,
+    const fix16_vector2_t *spawn_pos)
 {
         struct object *object_coin;
         object_coin = NULL;
@@ -110,8 +110,8 @@ component_coin_mgr_spawn(struct component *this __unused, fix16_t spawn_x,
         transform = (struct transform *)object_component_find(object_coin,
             COMPONENT_ID_TRANSFORM);
 
-        COMPONENT(transform, position).x = spawn_x;
-        COMPONENT(transform, position).y = spawn_y;
+        COMPONENT(transform, position).x = spawn_pos->x;
+        COMPONENT(transform, position).y = spawn_pos->y;
 
         COMPONENT(sprite, visible) = false;
         COMPONENT(coin, ttl) = 0;

@@ -25,6 +25,7 @@
 #include "component/world_mgr.h"
 #include "component/blue_mgr.h"
 #include "component/coin.h"
+#include "component/camera_mgr.h"
 
 #define SCENE_ID_SPLASH 0
 #define SCENE_ID_TITLE  1
@@ -39,6 +40,7 @@
 #define COMPONENT_ID_WORLD_MGR  0x4002
 #define COMPONENT_ID_BLUE_MGR   0x4003
 #define COMPONENT_ID_COIN       0x4004
+#define COMPONENT_ID_CAMERA_MGR 0x4005
 
 #define BLUE_WORLDS     1
 

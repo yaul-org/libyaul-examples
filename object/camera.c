@@ -24,12 +24,23 @@ static struct camera _camera = {
         .on_update = component_camera_on_update
 };
 
+static struct camera_mgr _camera_mgr = {
+        .active = true,
+        .id = COMPONENT_ID_CAMERA_MGR,
+        .object = (struct object *)&object_camera,
+        .on_init = &component_camera_mgr_on_init,
+        .on_update = &component_camera_mgr_on_update,
+        .on_draw = &component_camera_mgr_on_draw,
+        .on_destroy = &component_camera_mgr_on_destroy
+};
+
 struct object object_camera = {
         .active = true,
         .id = OBJECT_ID_CAMERA,
         .component_list = {
                 OBJECT_COMPONENT_INITIALIZER(transform, &_transform),
-                OBJECT_COMPONENT_INITIALIZER(camera, &_camera)
+                OBJECT_COMPONENT_INITIALIZER(camera, &_camera),
+                OBJECT_COMPONENT_INITIALIZER(camera_mgr, &_camera_mgr)
         },
-        .component_count = 2
+        .component_count = 3
 };

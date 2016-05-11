@@ -16,7 +16,7 @@
  *
  *  0x0000          Header
  *  0x0028          Collider data
- *  0x0028 + x      Item data
+ *  0x0028 + x      Coin data
  *  0x0028 + x + y  Map data */
 
 struct world_header {
@@ -28,7 +28,7 @@ struct world_header {
         uint16_t start_delay;
         fix16_vector2_t blue_position;
         uint16_t collider_count;
-        uint16_t item_count;
+        uint16_t coin_count;
 } __packed;
 
 struct world_collider {
@@ -39,7 +39,7 @@ struct world_collider {
         uint16_t height;
 } __packed;
 
-struct world_item {
+struct world_coin {
         struct {
                 unsigned int :7;
                 unsigned int coin:1;
@@ -65,7 +65,7 @@ static struct coin_mgr *_coin_mgr;
 static void *_map_fh;
 static struct world_header _map_header;
 static struct world_collider _map_colliders[COLLIDERS_MAX];
-static struct world_item _map_items[COINS_MAX];
+static struct world_coin _map_coins[COINS_MAX];
 static struct world_column _column[20];
 static uint32_t _column_idx = 0;
 
@@ -91,15 +91,24 @@ component_world_mgr_on_init(struct component *this __unused)
         fs_read(_map_fh, &_map_header, sizeof(struct world_header));
 
         assert(_map_header.collider_count <= COLLIDERS_MAX);
-        assert(_map_header.item_count <= COINS_MAX);
+        assert(_map_header.coin_count <= COINS_MAX);
 
         /* Read in collision data */
         fs_read(_map_fh, &_map_colliders[0],
             _map_header.collider_count * sizeof(struct world_collider));
 
-        /* Read in item data */
-        fs_read(_map_fh, &_map_items[0],
-            _map_header.item_count * sizeof(struct world_item));
+        /* Read in coin data */
+        fs_read(_map_fh, &_map_coins[0],
+            _map_header.coin_count * sizeof(struct world_coin));
+
+        /* Spawn all coins */
+        uint32_t coin_idx;
+        for (coin_idx = 0; coin_idx < _map_header.coin_count; coin_idx++) {
+                struct world_coin *coin;
+                coin = &_map_coins[coin_idx];
+
+                COMPONENT_FUNCTION_CALL(_coin_mgr, spawn, &coin->position);
+        }
 }
 
 void
@@ -116,8 +125,8 @@ component_world_mgr_on_update(struct component *this __unused)
             sizeof(struct world_header) +
             /* Colliders */
             (_map_header.collider_count * sizeof(struct world_collider)) +
-            /* Items */
-            (_map_header.item_count * sizeof(struct world_item)) +
+            /* Coins */
+            (_map_header.coin_count * sizeof(struct world_coin)) +
             /* Column */
             (0 * sizeof(struct world_column));
         fs_seek(_map_fh, file_offset, SEEK_SET);
@@ -131,8 +140,6 @@ component_world_mgr_on_update(struct component *this __unused)
         for (row = 0; row < 20; row++) {
                 uint32_t cell;
                 for (cell = 0; cell < 14; cell++) {
-                        if (_column[row].cell[cell].coin) {
-                        }
                 }
         }
 }
