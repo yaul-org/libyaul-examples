@@ -39,7 +39,6 @@ component_coin_mgr_on_init(struct component *this)
 void
 component_coin_mgr_on_update(struct component *this __unused)
 {
-        cons_buffer("Hello from component coin_mgr\n");
 }
 
 void

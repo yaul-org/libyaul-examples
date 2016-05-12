@@ -47,7 +47,7 @@ static struct sprite _sprite = {
         .width = 8,
         .height = 16,
         .material = {
-                .pseudo_trans = true,
+                .pseudo_trans = false,
                 .solid_color = COLOR_RGB555_INITIALIZER(0, 0, 31)
         },
         .on_init = &component_sprite_on_init,

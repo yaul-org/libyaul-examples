@@ -152,7 +152,7 @@ objects_project(void)
                 objects = objects_fetch();
 
                 int32_t z_bucket;
-                for (z_bucket = OBJECTS_Z_MAX; z_bucket >= 0; z_bucket--) {
+                for (z_bucket = OBJECTS_Z_MAX; z_bucket > 0; z_bucket--) {
                         struct object_bucket_entry *itr_oze;
                         STAILQ_FOREACH (itr_oze, &objects->buckets[z_bucket],
                             entries) {

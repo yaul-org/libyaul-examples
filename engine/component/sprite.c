@@ -18,7 +18,6 @@ component_sprite_on_init(struct component *this __unused)
 void
 component_sprite_on_update(struct component *this __unused)
 {
-        cons_buffer("Hello from component sprite\n");
 }
 
 void

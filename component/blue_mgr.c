@@ -15,8 +15,6 @@ component_blue_mgr_on_init(struct component *this __unused)
 void
 component_blue_mgr_on_update(struct component *this __unused)
 {
-        cons_buffer("Hello from component blue_mgr\n");
-
         struct transform *transform;
         transform = (struct transform *)object_component_find(
                 THIS(camera_mgr, object), COMPONENT_ID_TRANSFORM);
