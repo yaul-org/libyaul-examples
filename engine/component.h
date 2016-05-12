@@ -10,11 +10,15 @@
 
 #include "engine.h"
 
-#define COMPONENT_ID_TRANSFORM  0xC000
-#define COMPONENT_ID_CAMERA     0xC001
-#define COMPONENT_ID_COLLIDER   0xC002
-#define COMPONENT_ID_RIGID_BODY 0xC003
-#define COMPONENT_ID_SPRITE     0xC004
+#define COMPONENT_ID_TRANSFORM          0x2000
+#define COMPONENT_ID_CAMERA             0x2001
+#define COMPONENT_ID_COLLIDER           0x2002
+#define COMPONENT_ID_RIGID_BODY         0x2003
+#define COMPONENT_ID_SPRITE             0x2004
+#define COMPONENT_ID_LAYER              0x2005
+
+#define COMPONENT_ID_BUILTIN_MASK       0xD000
+#define COMPONENT_ID_USER_MASK          0xE000
 
 #define COMPONENT_DECLARATIONS                                                 \
     bool active;                                                               \

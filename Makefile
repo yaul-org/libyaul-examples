@@ -10,6 +10,7 @@ SH_OBJECTS:= \
 \
 	engine/component/camera.o \
 	engine/component/collider.o \
+	engine/component/layer.o \
 	engine/component/rigid_body.o \
 	engine/component/sprite.o \
 	engine/component/transform.o \

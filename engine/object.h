@@ -10,10 +10,9 @@
 
 #include "engine.h"
 
-#define OBJECT_COMPONENT_LIST_MAX       16
+#define OBJECT_COMPONENT_LIST_MAX       32
 
-#define OBJECT_ID_RESERVED_BEGIN        0x8000
-#define OBJECT_ID_RESERVED_END          0xFFFF
+#define OBJECT_ID_BUILTIN_MASK          0xB000
 
 struct component;
 

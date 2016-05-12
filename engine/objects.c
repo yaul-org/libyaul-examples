@@ -72,7 +72,7 @@ objects_init(void)
         /* "Null" object */
         static struct object root = {
                 .active = true,
-                .id = OBJECT_ID_RESERVED_BEGIN + 0x0000,
+                .id = 0x4000,
                 .component_list = {
                         OBJECT_COMPONENT_INITIALIZER(transform, &transform)
                 },

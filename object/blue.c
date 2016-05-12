@@ -11,7 +11,7 @@ static struct transform _transform = {
         .active = true,
         .id = COMPONENT_ID_TRANSFORM,
         .object = (struct object *)&object_blue,
-        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 7.0f)
+        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 1.0f)
 };
 
 static struct collider _collider = {
@@ -22,7 +22,6 @@ static struct collider _collider = {
         .height = 16,
         .trigger = false,
         .fixed = false,
-        .show = true,
         .on_init = &component_collider_on_init,
         .on_update = NULL,
         .on_draw = NULL,

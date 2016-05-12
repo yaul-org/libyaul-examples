@@ -13,7 +13,7 @@
 #define OBJECTS_MAX     256
 
 #define OBJECTS_Z_MIN           0
-#define OBJECTS_Z_MAX           15
+#define OBJECTS_Z_MAX           7
 #define OBJECTS_Z_MAX_BUCKETS   (OBJECTS_Z_MAX + 1)
 
 struct object_bucket_entry;
@@ -45,5 +45,7 @@ extern void objects_object_child_add(struct object *, struct object *);
 extern void objects_object_remove(struct object *);
 extern void objects_object_clear(struct object *);
 extern const struct component *objects_component_find(int32_t);
+extern void object_component_find_all(const struct object *, int32_t,
+    struct component **);
 
 #endif /* !ENGINE_OBJECTS_H */

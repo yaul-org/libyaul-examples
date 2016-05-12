@@ -17,27 +17,6 @@
         }                                                                      \
 } while (false)
 
-#define COMPONENT_INIT(x) do {                                                 \
-        /* Must not already have been initialized */                           \
-        assert(!COMPONENT(((struct component *)(x)), initialized));            \
-        /* Init event must be present */                                       \
-        assert(COMPONENT_EVENT(((struct component *)(x)), init) != NULL);      \
-        if (COMPONENT(((struct component *)(x)), active)) {                    \
-                COMPONENT_EVENT(x, init)((struct component *)(x));             \
-                COMPONENT(((struct component *)(x)), initialized) = true;      \
-        }                                                                      \
-} while (false)
-
-#define COMPONENT_DESTROY(x) do {                                              \
-        /* Must already have been initialized */                               \
-        assert(COMPONENT(((struct component *)(x)), initialized));             \
-        /* Destroy event must be present */                                    \
-        assert(COMPONENT_EVENT(((struct component *)(x)), destroy) != NULL);   \
-        COMPONENT_EVENT(x, destroy)((struct component *)(x));                  \
-        /* Uninitialize the component */                                       \
-        COMPONENT(((struct component *)(x)), initialized) = false;             \
-} while (false)
-
 #define COMPONENT_UPDATE(x)     COMPONENT_EVENT_CALL(x, update)
 #define COMPONENT_DRAW(x)       COMPONENT_EVENT_CALL(x, draw)
 
@@ -65,7 +44,20 @@ object_init(struct object *object)
                 struct component *component;
                 component = OBJECT_COMPONENT(object, component_idx);
 
-                COMPONENT_INIT(component);
+                assert(component != NULL);
+                /* Component ID must be within range */
+                assert((COMPONENT(component, id) > 0) &&
+                       (((COMPONENT(component, id) & COMPONENT_ID_BUILTIN_MASK) == 0) ||
+                        ((COMPONENT(component, id) & COMPONENT_ID_USER_MASK) == 0)));
+                /* Must be active */
+                assert(COMPONENT(component, active));
+                /* Must not already have been initialized */
+                assert(!COMPONENT(component, initialized));
+                /* Init event must be present */
+                assert(COMPONENT_EVENT(component, init) != NULL);
+                /* Initialize */
+                COMPONENT_EVENT(component, init)(component);
+                COMPONENT(component, initialized) = true;
         }
 }
 
@@ -87,7 +79,13 @@ object_destroy(struct object *object)
                 assert(component == NULL);
 
                 /* Destroy */
-                COMPONENT_DESTROY(component);
+                /* Must already have been initialized */
+                assert(COMPONENT(component, initialized));
+                /* Destroy event must be present */
+                assert(COMPONENT_EVENT(component, destroy) != NULL);
+                COMPONENT_EVENT(component, destroy)(component);
+                /* Uninitialize the component */
+                COMPONENT(component, initialized) = false;
 
                 if (OBJECT(object, context).instantiated) {
                         /* Free components */
@@ -234,6 +232,9 @@ object_component_add(const struct object *object, struct component *component,
 
         assert(OBJECT(object, component_count) <= OBJECT_COMPONENT_LIST_MAX);
 
+        /* Don't add transform component */
+        assert(COMPONENT(component, id) != COMPONENT_ID_TRANSFORM);
+
         uint32_t component_idx;
         for (component_idx = 0; component_idx < OBJECT(object, component_count);
              component_idx++) {
@@ -261,6 +262,9 @@ object_component_remove(const struct object *object,
 
         assert(OBJECT(object, component_count) > 0);
 
+        /* Don't remove transform component */
+        assert(COMPONENT(component, id) != COMPONENT_ID_TRANSFORM);
+
         uint32_t component_idx;
         for (component_idx = 0; component_idx < OBJECT(object, component_count);
              component_idx++) {
@@ -283,7 +287,9 @@ const struct component *
 object_component_find(const struct object *object, int32_t component_id)
 {
         assert(object != NULL);
-        assert(component_id >= 1);
+        assert((component_id > 0) &&
+               (((component_id & COMPONENT_ID_BUILTIN_MASK) == 0) ||
+                ((component_id & COMPONENT_ID_USER_MASK) == 0)));
 
         /* Caching */
         if (component_id == COMPONENT_ID_TRANSFORM) {
@@ -305,4 +311,44 @@ object_component_find(const struct object *object, int32_t component_id)
         }
 
         return NULL;
+}
+
+/*
+ *
+ */
+void
+object_component_find_all(const struct object *object, int32_t component_id,
+    struct component **component_list)
+{
+        assert(object != NULL);
+        assert((component_id > 0) &&
+               (((component_id & COMPONENT_ID_BUILTIN_MASK) == 0) ||
+                ((component_id & COMPONENT_ID_USER_MASK) == 0)));
+
+        /* Caching */
+        if (component_id == COMPONENT_ID_TRANSFORM) {
+                component_list[0] = OBJECT_COMPONENT(object, 0);
+                component_list[1] = NULL;
+                return;
+        }
+
+        uint32_t component_list_idx;
+        component_list_idx = 0;
+
+        uint32_t component_idx;
+        for (component_idx = 0;
+             component_idx < OBJECT(object, component_count);
+             component_idx++) {
+                struct component *component;
+                component = OBJECT_COMPONENT(object, component_idx);
+
+                if (COMPONENT(component, id) == component_id) {
+                        assert(COMPONENT(component, initialized));
+
+                        component_list[component_list_idx] = component;
+                        component_list_idx++;
+                }
+        }
+
+        component_list[component_list_idx] = NULL;
 }

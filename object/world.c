@@ -11,7 +11,7 @@ static struct transform _transform = {
         .active = true,
         .id = COMPONENT_ID_TRANSFORM,
         .object = (struct object *)&object_world,
-        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 14.0f)
+        .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 7.0f)
 };
 
 static struct coin_mgr _coin_mgr = {
@@ -32,11 +32,22 @@ static struct world_mgr _world_mgr = {
         .active = true,
         .id = COMPONENT_ID_WORLD_MGR,
         .object = (struct object *)&object_world,
+        .world = 0,
         .on_init = &component_world_mgr_on_init,
         .on_update = &component_world_mgr_on_update,
         .on_draw = &component_world_mgr_on_draw,
-        .on_destroy = &component_world_mgr_on_destroy,
-        .world = 0
+        .on_destroy = &component_world_mgr_on_destroy
+};
+
+static struct layer _layer = {
+        .active = true,
+        .id = COMPONENT_ID_LAYER,
+        .object = (struct object *)&object_world,
+        .visible = true,
+        .on_init = &component_layer_on_init,
+        .on_update = &component_layer_on_update,
+        .on_draw = &component_layer_on_draw,
+        .on_destroy = &component_layer_on_destroy
 };
 
 struct object object_world = {
@@ -45,7 +56,8 @@ struct object object_world = {
         .component_list = {
                 OBJECT_COMPONENT_INITIALIZER(transform, &_transform),
                 OBJECT_COMPONENT_INITIALIZER(coin_mgr, &_coin_mgr),
-                OBJECT_COMPONENT_INITIALIZER(world_mgr, &_world_mgr)
+                OBJECT_COMPONENT_INITIALIZER(world_mgr, &_world_mgr),
+                OBJECT_COMPONENT_INITIALIZER(layer, &_layer)
         },
-        .component_count = 3
+        .component_count = 4
 };

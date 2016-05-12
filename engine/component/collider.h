@@ -17,18 +17,11 @@ struct collider {
         int16_t height;
         bool trigger;
         bool fixed;
-        bool show;
 
         struct {
                 struct aabb m_aabb;
-
-                struct {
-                        struct object object;
-                        fix16_vector3_t vertex_list[4];
-                        color_rgb555_t color_list[1];
-                } m_show;
         } private_data;
-} __aligned (128);
+} __aligned (64);
 
 struct collider_info {
         int16_t overlap;

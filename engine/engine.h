@@ -32,6 +32,7 @@
 #include "fs.h"
 #include "matrix_stack.h"
 #include "scene.h"
+#include "layers.h"
 
 #include "component.h"
 #include "material.h"
@@ -42,6 +43,7 @@
 #include "component/collider.h"
 #include "component/rigid_body.h"
 #include "component/sprite.h"
+#include "component/layer.h"
 #include "component/transform.h"
 
 extern void engine_init(void);
