@@ -39,6 +39,7 @@ engine_init(void)
         /* Engine specific components */
         fs_init();
         objects_init();
+        layers_init();
         scene_init();
         matrix_stack_init();
 }
@@ -54,12 +55,14 @@ engine_loop(void)
                         objects_update();
                         /* physics_update(); */
                         objects_project();
+                        layers_update();
                 }
 
                 vdp2_tvmd_vblank_in_wait(); {
                         end_scanline = tick;
                         scene_handler_draw();
                         objects_draw();
+                        layers_draw();
                         cons_flush();
                 }
         }

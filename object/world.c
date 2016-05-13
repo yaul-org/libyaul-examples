@@ -32,22 +32,30 @@ static struct world_mgr _world_mgr = {
         .active = true,
         .id = COMPONENT_ID_WORLD_MGR,
         .object = (struct object *)&object_world,
-        .world = 0,
         .on_init = &component_world_mgr_on_init,
         .on_update = &component_world_mgr_on_update,
         .on_draw = &component_world_mgr_on_draw,
-        .on_destroy = &component_world_mgr_on_destroy
+        .on_destroy = &component_world_mgr_on_destroy,
+        .world = 0
 };
 
 static struct layer _layer = {
         .active = true,
         .id = COMPONENT_ID_LAYER,
         .object = (struct object *)&object_world,
-        .visible = true,
         .on_init = &component_layer_on_init,
         .on_update = &component_layer_on_update,
         .on_draw = &component_layer_on_draw,
-        .on_destroy = &component_layer_on_destroy
+        .on_destroy = &component_layer_on_destroy,
+        .visible = true,
+        .transparent = true,
+        .number = 0,
+        .scroll = FIX16_VECTOR2_INITIALIZER(0.0f, 0.0f),
+        .palette = NULL,
+        .char_base = NULL,
+        .functions = {
+                .m_map = component_layer_map
+        }
 };
 
 struct object object_world = {

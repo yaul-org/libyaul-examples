@@ -16,6 +16,7 @@ SH_OBJECTS:= \
 	engine/component/transform.o \
 	engine/engine.o \
 	engine/fs.o \
+	engine/layers.o \
 	engine/matrix_stack.o \
 	engine/object.o \
 	engine/objects.o \
