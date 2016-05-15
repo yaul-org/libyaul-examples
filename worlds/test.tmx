@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" orientation="orthogonal" renderorder="right-down" width="20" height="14" tilewidth="16" tileheight="16" backgroundcolor="#55aaff" nextobjectid="65">
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="20" height="14" tilewidth="16" tileheight="16" backgroundcolor="#55aaff" nextobjectid="97">
  <properties>
-  <property name="camera_speed" value="0.25"/>
+  <property name="camera_speed" value="2"/>
   <property name="file_name" value="1_1.MAP"/>
   <property name="start_delay" value="2"/>
   <property name="world_name" value="1-1 Blue"/>
@@ -23,123 +23,258 @@
   </data>
  </layer>
  <objectgroup color="#ffff00" name="Objects">
-  <object id="1" name="Coin" type="Item" x="100" y="52" width="8" height="8">
+  <object id="1" name="Coin" type="Item" x="108" y="44" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="4" name="Coin" type="Item" x="116" y="52" width="8" height="8">
+  <object id="4" name="Coin" type="Item" x="124" y="44" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="5" name="Coin" type="Item" x="100" y="68" width="8" height="8">
+  <object id="5" name="Coin" type="Item" x="108" y="60" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="6" name="Coin" type="Item" x="116" y="68" width="8" height="8">
+  <object id="6" name="Coin" type="Item" x="124" y="60" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="11" name="Coin" type="Item" x="132" y="52" width="8" height="8">
+  <object id="11" name="Coin" type="Item" x="140" y="44" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="14" name="Coin" type="Item" x="132" y="68" width="8" height="8">
+  <object id="14" name="Coin" type="Item" x="140" y="60" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
   <object id="15" name="Blue" type="Player" x="36" y="80" width="8" height="16"/>
-  <object id="17" name="Coin" type="Item" x="100" y="84" width="8" height="8">
+  <object id="17" name="Coin" type="Item" x="108" y="76" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="18" name="Coin" type="Item" x="100" y="100" width="8" height="8">
+  <object id="18" name="Coin" type="Item" x="108" y="92" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="19" name="Coin" type="Item" x="132" y="100" width="8" height="8">
+  <object id="19" name="Coin" type="Item" x="140" y="92" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="20" name="Coin" type="Item" x="116" y="100" width="8" height="8">
+  <object id="20" name="Coin" type="Item" x="124" y="92" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="21" name="Coin" type="Item" x="116" y="84" width="8" height="8">
+  <object id="21" name="Coin" type="Item" x="124" y="76" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="22" name="Coin" type="Item" x="132" y="84" width="8" height="8">
+  <object id="22" name="Coin" type="Item" x="140" y="76" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="53" name="Coin" type="Item" x="100" y="164" width="8" height="8">
+  <object id="53" name="Coin" type="Item" x="108" y="156" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="54" name="Coin" type="Item" x="132" y="148" width="8" height="8">
+  <object id="54" name="Coin" type="Item" x="140" y="140" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="55" name="Coin" type="Item" x="100" y="148" width="8" height="8">
+  <object id="55" name="Coin" type="Item" x="108" y="140" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="56" name="Coin" type="Item" x="116" y="164" width="8" height="8">
+  <object id="56" name="Coin" type="Item" x="124" y="156" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="57" name="Coin" type="Item" x="116" y="132" width="8" height="8">
+  <object id="57" name="Coin" type="Item" x="124" y="124" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="58" name="Coin" type="Item" x="132" y="132" width="8" height="8">
+  <object id="58" name="Coin" type="Item" x="140" y="124" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="59" name="Coin" type="Item" x="116" y="116" width="8" height="8">
+  <object id="59" name="Coin" type="Item" x="124" y="108" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="60" name="Coin" type="Item" x="116" y="148" width="8" height="8">
+  <object id="60" name="Coin" type="Item" x="124" y="140" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="61" name="Coin" type="Item" x="132" y="116" width="8" height="8">
+  <object id="61" name="Coin" type="Item" x="140" y="108" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="62" name="Coin" type="Item" x="132" y="164" width="8" height="8">
+  <object id="62" name="Coin" type="Item" x="140" y="156" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="63" name="Coin" type="Item" x="100" y="132" width="8" height="8">
+  <object id="63" name="Coin" type="Item" x="108" y="124" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>
   </object>
-  <object id="64" name="Coin" type="Item" x="100" y="116" width="8" height="8">
+  <object id="64" name="Coin" type="Item" x="108" y="108" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="65" name="Coin" type="Item" x="188" y="76" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="66" name="Coin" type="Item" x="156" y="76" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="67" name="Coin" type="Item" x="172" y="60" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="68" name="Coin" type="Item" x="188" y="60" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="69" name="Coin" type="Item" x="172" y="44" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="70" name="Coin" type="Item" x="172" y="76" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="71" name="Coin" type="Item" x="188" y="44" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="72" name="Coin" type="Item" x="156" y="60" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="73" name="Coin" type="Item" x="156" y="44" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="74" name="Coin" type="Item" x="204" y="44" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="75" name="Coin" type="Item" x="204" y="76" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="76" name="Coin" type="Item" x="204" y="60" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="77" name="Coin" type="Item" x="204" y="156" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="80" name="Coin" type="Item" x="188" y="124" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="81" name="Coin" type="Item" x="204" y="140" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="82" name="Coin" type="Item" x="188" y="140" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="83" name="Coin" type="Item" x="188" y="92" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="84" name="Coin" type="Item" x="204" y="124" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="85" name="Coin" type="Item" x="204" y="92" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="86" name="Coin" type="Item" x="188" y="156" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="89" name="Coin" type="Item" x="188" y="108" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="91" name="Coin" type="Item" x="204" y="108" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="92" name="Coin" type="Item" x="124" y="188" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="93" name="Coin" type="Item" x="140" y="172" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="94" name="Coin" type="Item" x="124" y="172" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="95" name="Coin" type="Item" x="140" y="188" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="96" name="Coin" type="Item" x="156" y="28" width="8" height="8">
    <properties>
     <property name="value" value="100"/>
    </properties>

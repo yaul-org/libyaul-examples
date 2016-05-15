@@ -90,7 +90,9 @@ def process(json_data):
            ('world_name' in properties) and
            ('file_name' in properties))
     camera_speed = float(properties['camera_speed'])
+    print "Camera speed: %.7f" % (camera_speed)
     start_delay = int(properties['start_delay'])
+    print "Start delay: %is" % (start_delay)
     # Null-pad world name
     world_name = str(properties['world_name'])
     fmt_world_name = str(properties['world_name']) + "".join((16 - len(properties['world_name'])) * ['\00'])
@@ -117,8 +119,8 @@ def process(json_data):
         if (map_object['name'] == 'Coin') and (map_object['type'] == 'Item'):
             assert((map_object['width'] == COIN_CELL_WIDTH) and
                    (map_object['height'] == COIN_CELL_HEIGHT))
-            assert((((map_object['x'] - (COIN_CELL_WIDTH / 2)) % CELL_WIDTH) == 0) and
-                   (((map_object['y'] - (COIN_CELL_HEIGHT / 2)) % CELL_HEIGHT) == 0))
+            assert((((map_object['x'] - (COIN_CELL_WIDTH + 4)) % CELL_WIDTH) == 0) and
+                   (((map_object['y'] - (COIN_CELL_HEIGHT + 4)) % CELL_HEIGHT) == 0))
             coin = Coin(id = map_object['id'],
                         value = int(map_object['properties']['value']),
                         x = map_object['x'],
@@ -232,9 +234,9 @@ def process(json_data):
         for cell_x in range(map_width):
             sys.stdout.write("  ")
             for cell_y in range(map_height):
-                cell_no = map_data[cell_x + (cell_y * map_width)] - 1
+                cell_no = max(0, map_data[cell_x + (cell_y * map_width)] - 1)
                 byte = 0x00
-                byte |= max(0, cell_no) & BIT_CELL_MASK
+                byte |= cell_no & BIT_CELL_MASK
                 for coin in coins:
                     if (coin.cell_x == cell_x) and (coin.cell_y == cell_y):
                         byte |= BIT_CELL_COIN
