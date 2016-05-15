@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.0" orientation="orthogonal" renderorder="right-down" width="20" height="14" tilewidth="16" tileheight="16" backgroundcolor="#55aaff" nextobjectid="97">
  <properties>
-  <property name="camera_speed" value="2"/>
+  <property name="camera_speed" value="1"/>
   <property name="file_name" value="1_1.MAP"/>
   <property name="start_delay" value="2"/>
   <property name="world_name" value="1-1 Blue"/>

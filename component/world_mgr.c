@@ -61,13 +61,14 @@ struct world_column {
 
 MEMB(_collider_pool, struct collider, COLLIDERS_MAX, sizeof(struct collider));
 
+static struct camera_mgr *_camera_mgr;
 static struct coin_mgr *_coin_mgr;
 static struct layer *_layer;
 static void *_map_fh;
 static struct world_header _map_header;
 static struct world_collider _map_colliders[COLLIDERS_MAX];
 static struct world_coin _map_coins[COINS_MAX];
-static struct world_column _column[20];
+static struct world_column _map_columns[20];
 static uint32_t _column_idx = 0;
 
 static uint8_t _character_pattern_base[2048];
@@ -80,11 +81,17 @@ component_world_mgr_on_init(struct component *this __unused)
 
         memb_init(&_collider_pool);
 
+        _camera_mgr = (struct camera_mgr *)objects_component_find(
+                COMPONENT_ID_CAMERA_MGR);
+        assert(_camera_mgr != NULL);
+
         _coin_mgr = (struct coin_mgr *)object_component_find(
                 THIS(world_mgr, object), COMPONENT_ID_COIN_MGR);
+        assert(_coin_mgr != NULL);
 
         _layer = (struct layer *)object_component_find(
                 THIS(world_mgr, object), COMPONENT_ID_LAYER);
+        assert(_layer != NULL);
 
         /* Open file */
         const char *world_filename;
@@ -130,6 +137,9 @@ component_world_mgr_on_init(struct component *this __unused)
         fs_texture_load(FS_LOAD_TEXTURE_1D, "/WORLD.TGA",
             COMPONENT(_layer, character_pattern_base),
             COMPONENT(_layer, color_palette));
+
+        /* Set the camera speed */
+        COMPONENT(_camera_mgr, speed) = _map_header.camera_speed;
 }
 
 void
@@ -154,7 +164,8 @@ component_world_mgr_on_update(struct component *this __unused)
 
         /* Determine if we're at the end of the world */
         if ((_column_idx + 20) <= _map_header.width) {
-                fs_read(_map_fh, &_column[0], 20 * sizeof(struct world_column));
+                fs_read(_map_fh, &_map_columns[0],
+                    20 * sizeof(struct world_column));
         }
 
         uint32_t column;
@@ -164,7 +175,10 @@ component_world_mgr_on_update(struct component *this __unused)
                         uint16_t *page;
                         page = &COMPONENT(_layer, map).plane[0].page[0];
 
-                        page[column + (32 * row)] = _column[column].cell[row].number;
+                        uint16_t cell_no;
+                        cell_no = _map_columns[column].cell[row].number;
+
+                        page[column + (32 * row)] = cell_no;
                 }
         }
 }
