@@ -11,7 +11,7 @@ void
 component_sprite_on_init(struct component *this __unused)
 {
         assert(THIS(sprite, visible));
-        assert(((THIS(sprite, width) >= 8) && (THIS(sprite, width) <= 256)) &&
+        assert(((THIS(sprite, width) >= 8) && (THIS(sprite, width) <= 512)) &&
                ((THIS(sprite, height) >= 8) && (THIS(sprite, height) <= 256)));
 }
 

@@ -18,22 +18,26 @@ static struct camera _camera = {
         .active = true,
         .id = COMPONENT_ID_CAMERA,
         .object = (const struct object *)&object_camera,
+        .on_init = component_camera_on_init,
+        .on_update = component_camera_on_update,
         .width = 320,
         .height = 224,
-        .on_init = component_camera_on_init,
-        .on_update = component_camera_on_update
+        .functions = {
+                .m_on = component_camera_on,
+                .m_off = component_camera_off
+        }
 };
 
 static struct camera_mgr _camera_mgr = {
         .active = true,
         .id = COMPONENT_ID_CAMERA_MGR,
         .object = (struct object *)&object_camera,
-        .start_delay = 0,
-        .speed = F16(0.3333333f),
         .on_init = &component_camera_mgr_on_init,
         .on_update = &component_camera_mgr_on_update,
         .on_draw = &component_camera_mgr_on_draw,
-        .on_destroy = &component_camera_mgr_on_destroy
+        .on_destroy = &component_camera_mgr_on_destroy,
+        .start_delay = 0,
+        .speed = F16(0.3333333f),
 };
 
 struct object object_camera = {

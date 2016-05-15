@@ -155,7 +155,7 @@ objects_project(void)
                 objects = objects_fetch();
 
                 int32_t z_bucket;
-                for (z_bucket = OBJECTS_Z_MAX; z_bucket > 0; z_bucket--) {
+                for (z_bucket = OBJECTS_Z_MAX; z_bucket >= 0; z_bucket--) {
                         struct object_bucket_entry *itr_oze;
                         STAILQ_FOREACH (itr_oze, &objects->buckets[z_bucket],
                             entries) {
@@ -192,11 +192,6 @@ object_project(const struct object *object, const fix16_vector3_t *position)
         const struct camera *camera;
         camera = (const struct camera *)objects_component_find(COMPONENT_ID_CAMERA);
         assert((camera != NULL) && "No camera found");
-
-        /* The camera should not be projected */
-        if (camera->object == object) {
-                return;
-        }
 
         /* Only objects with an active sprite component should be projected */
         struct sprite *sprite;
@@ -322,8 +317,6 @@ hardware_init(void)
         vdp2_init();
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
             TVMD_VERT_224);
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(2, 0x01FFFE),
-            COLOR_RGB555(0, 0, 7));
 
         vdp2_sprite_type_set(1);
         vdp2_sprite_type_priority_set(0, 7);
@@ -380,6 +373,50 @@ hardware_init(void)
                 vblank_out = vdp2_tvmd_vblank_out_irq_get();
                 irq_mux_handle_add(vblank_out, vblank_out_handler, NULL);
         } cpu_intc_enable();
+
+        vdp1_cmdt_list_begin(0); {
+                struct vdp1_cmdt_system_clip_coord system_clip;
+                system_clip.scc_coord.x = 320 - 1;
+                system_clip.scc_coord.y = 224 - 1;
+
+                static struct vdp1_cmdt_user_clip_coord user_clip;
+                user_clip.ucc_coords[0].x = 0;
+                user_clip.ucc_coords[0].y = 0;
+                user_clip.ucc_coords[1].x = 320 - 1;
+                user_clip.ucc_coords[1].y = 224 - 1;
+
+                struct vdp1_cmdt_local_coord local_coord;
+                local_coord.lc_coord.x = 320 / 2;
+                local_coord.lc_coord.y = 224 - (224 / 2);
+
+                struct vdp1_cmdt_polygon polygon;
+                polygon.cp_mode.raw = 0x0000;
+                polygon.cp_mode.transparent_pixel = true;
+                polygon.cp_mode.end_code = true;
+                polygon.cp_color = COLOR_RGB_DATA;
+                polygon.cp_grad = 0x00000000;
+                polygon.cp_vertex.a.x = (320 / 2) - 1;
+                polygon.cp_vertex.a.y = -(224 / 2);
+                polygon.cp_vertex.b.x = (320 / 2) - 1;
+                polygon.cp_vertex.b.y = (224 / 2) - 1;
+                polygon.cp_vertex.c.x = -(320 / 2);
+                polygon.cp_vertex.c.y = (224 / 2) - 1;
+                polygon.cp_vertex.d.x = -(320 / 2);
+                polygon.cp_vertex.d.y = -(224 / 2);
+
+                vdp1_cmdt_system_clip_coord_set(&system_clip);
+                vdp1_cmdt_user_clip_coord_set(&user_clip);
+                vdp1_cmdt_local_coord_set(&local_coord);
+                vdp1_cmdt_polygon_draw(&polygon);
+                vdp1_cmdt_end();
+        } vdp1_cmdt_list_end(0);
+
+        vdp1_cmdt_list_commit();
+
+        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(2, 0x01FFFE),
+            COLOR_RGB555(0, 0, 0));
+
+        vdp2_tvmd_display_set();
 }
 
 static void

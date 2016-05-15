@@ -100,7 +100,7 @@ layers_draw(void)
                         continue;
                 }
 
-                const struct object *object;
+                const struct object *object __unused;
                 object = COMPONENT(layer, object);
 
                 uint8_t scrn;
@@ -182,13 +182,5 @@ layers_draw(void)
                 }
 
                 /* Scrolling */
-                struct transform *transform;
-                transform = (struct transform *)object_component_find(object,
-                    COMPONENT_ID_TRANSFORM);
-                const fix16_vector3_t *position;
-                position = &COMPONENT(transform, position);
-
-                vdp2_scrn_scroll_x_set(scrn, position->x);
-                vdp2_scrn_scroll_y_set(scrn, position->y);
         }
 }

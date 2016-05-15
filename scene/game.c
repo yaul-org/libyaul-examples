@@ -23,6 +23,14 @@ scene_game_init(struct scene_ctx *scene_ctx __unused)
 void
 scene_game_update(struct scene_ctx *scene_ctx __unused)
 {
+        if (scene_ctx->sc_frames >= 60) {
+                struct camera *camera;
+                camera = (struct camera *)objects_component_find(
+                        COMPONENT_ID_CAMERA);
+                assert(camera != NULL);
+
+                COMPONENT_FUNCTION_CALL(camera, on);
+        }
 }
 
 void

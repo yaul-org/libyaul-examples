@@ -61,6 +61,8 @@ struct world_column {
 
 MEMB(_collider_pool, struct collider, COLLIDERS_MAX, sizeof(struct collider));
 
+static struct transform *_transform;
+static struct camera *_camera;
 static struct camera_mgr *_camera_mgr;
 static struct coin_mgr *_coin_mgr;
 static struct layer *_layer;
@@ -80,6 +82,13 @@ component_world_mgr_on_init(struct component *this __unused)
                (THIS(world_mgr, world) < BLUE_WORLDS));
 
         memb_init(&_collider_pool);
+
+        _transform = (struct transform *)object_component_find(
+                THIS(world_mgr, object), COMPONENT_ID_TRANSFORM);
+        assert(_transform != NULL);
+
+        _camera = (struct camera *)objects_component_find(COMPONENT_ID_CAMERA);
+        assert(_camera != NULL);
 
         _camera_mgr = (struct camera_mgr *)objects_component_find(
                 COMPONENT_ID_CAMERA_MGR);
@@ -168,6 +177,7 @@ component_world_mgr_on_update(struct component *this __unused)
                     20 * sizeof(struct world_column));
         }
 
+        /* Update map */
         uint32_t column;
         for (column = 0; column < 20; column++) {
                 uint32_t row;

@@ -44,20 +44,7 @@ object_init(struct object *object)
                 struct component *component;
                 component = OBJECT_COMPONENT(object, component_idx);
 
-                assert(component != NULL);
-                /* Component ID must be within range */
-                assert((COMPONENT(component, id) > 0) &&
-                       (((COMPONENT(component, id) & COMPONENT_ID_BUILTIN_MASK) == 0) ||
-                        ((COMPONENT(component, id) & COMPONENT_ID_USER_MASK) == 0)));
-                /* Must be active */
-                assert(COMPONENT(component, active));
-                /* Must not already have been initialized */
-                assert(!COMPONENT(component, initialized));
-                /* Init event must be present */
-                assert(COMPONENT_EVENT(component, init) != NULL);
-                /* Initialize */
-                COMPONENT_EVENT(component, init)(component);
-                COMPONENT(component, initialized) = true;
+                object_component_init(object, component);
         }
 }
 
@@ -122,10 +109,14 @@ object_update(const struct object *object)
 
         uint32_t component_idx;
         for (component_idx = 0;
-             component_idx < OBJECT(object, component_count);
+             component_idx < OBJECT_COMPONENT_LIST_MAX;
              component_idx++) {
                 struct component *component;
                 component = OBJECT_COMPONENT(object, component_idx);
+
+                if (component == NULL) {
+                        continue;
+                }
 
                 COMPONENT_UPDATE(component);
         }
@@ -142,10 +133,14 @@ object_draw(const struct object *object)
 
         uint32_t component_idx;
         for (component_idx = 0;
-             component_idx < OBJECT(object, component_count);
+             component_idx < OBJECT_COMPONENT_LIST_MAX;
              component_idx++) {
                 struct component *component;
                 component = OBJECT_COMPONENT(object, component_idx);
+
+                if (component == NULL) {
+                        continue;
+                }
 
                 COMPONENT_DRAW(component);
         }
@@ -186,11 +181,14 @@ object_instantiate(const struct object *object, struct object *copy,
 
         /* Allocate components */
         uint32_t component_idx;
-        for (component_idx = 0; component_idx < OBJECT(object, component_count);
+        for (component_idx = 0;
+             component_idx < OBJECT_COMPONENT_LIST_MAX;
              component_idx++) {
                 struct component *component;
                 component = OBJECT_COMPONENT(object, component_idx);
-                assert(component != NULL);
+                if (component == NULL) {
+                        continue;
+                }
 
                 uint32_t component_size;
                 component_size = OBJECT_COMPONENT_SIZE(object, component_idx);
@@ -223,12 +221,37 @@ object_instantiate(const struct object *object, struct object *copy,
  *
  */
 void
-object_component_add(const struct object *object, struct component *component,
+object_component_init(const struct object *object, struct component *component)
+{
+        assert(object != NULL);
+        assert(component != NULL);
+        /* Component ID must be within range */
+        assert((COMPONENT(component, id) > 0) &&
+               (((COMPONENT(component, id) & COMPONENT_ID_BUILTIN_MASK) == 0) ||
+                ((COMPONENT(component, id) & COMPONENT_ID_USER_MASK) == 0)));
+        /* Must be active */
+        assert(COMPONENT(component, active));
+        /* Must not already have been initialized */
+        assert(!COMPONENT(component, initialized));
+        /* Init event must be present */
+        assert(COMPONENT_EVENT(component, init) != NULL);
+
+        /* Initialize */
+        COMPONENT(component, object) = object;
+        COMPONENT_EVENT(component, init)(component);
+        COMPONENT(component, initialized) = true;
+}
+
+/*
+ *
+ */
+void
+object_component_add(struct object *object, struct component *component,
         uint32_t component_size)
 {
         assert(object != NULL);
         assert(component != NULL);
-        assert(component_size >= sizeof(struct object));
+        assert(component_size >= sizeof(struct component));
 
         assert(OBJECT(object, component_count) <= OBJECT_COMPONENT_LIST_MAX);
 
@@ -236,7 +259,7 @@ object_component_add(const struct object *object, struct component *component,
         assert(COMPONENT(component, id) != COMPONENT_ID_TRANSFORM);
 
         uint32_t component_idx;
-        for (component_idx = 0; component_idx < OBJECT(object, component_count);
+        for (component_idx = 0; component_idx < OBJECT_COMPONENT_LIST_MAX;
              component_idx++) {
                 if (OBJECT_COMPONENT(object, component_idx) != NULL) {
                         continue;
@@ -244,6 +267,8 @@ object_component_add(const struct object *object, struct component *component,
 
                 OBJECT_COMPONENT(object, component_idx) = component;
                 OBJECT_COMPONENT_SIZE(object, component_idx) = component_size;
+
+                OBJECT(object, component_count)++;
                 return;
         }
 
@@ -254,7 +279,7 @@ object_component_add(const struct object *object, struct component *component,
  *
  */
 void
-object_component_remove(const struct object *object,
+object_component_remove(struct object *object,
     const struct component *component)
 {
         assert(object != NULL);
@@ -266,7 +291,7 @@ object_component_remove(const struct object *object,
         assert(COMPONENT(component, id) != COMPONENT_ID_TRANSFORM);
 
         uint32_t component_idx;
-        for (component_idx = 0; component_idx < OBJECT(object, component_count);
+        for (component_idx = 0; component_idx < OBJECT_COMPONENT_LIST_MAX;
              component_idx++) {
                 if (OBJECT_COMPONENT(object, component_idx) != component) {
                         continue;
@@ -274,6 +299,7 @@ object_component_remove(const struct object *object,
 
                 OBJECT_COMPONENT(object, component_idx) = NULL;
                 OBJECT_COMPONENT_SIZE(object, component_idx) = 0;
+                OBJECT(object, component_count)--;
                 return;
         }
 
