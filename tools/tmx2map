@@ -190,7 +190,7 @@ def process(json_data):
             raise
     output_file_name = os.path.join(PWD, "romdisk", "WORLDS", file_name)
     with open(output_file_name, "wb+") as output_fp:
-        map = world_layer['data']
+        map_data = world_layer['data']
         # World name
         # Width (uint16_t)
         # Height (uint16_t)
@@ -232,7 +232,7 @@ def process(json_data):
         for cell_x in range(map_width):
             sys.stdout.write("  ")
             for cell_y in range(map_height):
-                cell_no = map[cell_x + (cell_y * map_width)]
+                cell_no = map_data[cell_x + (cell_y * map_width)] - 1
                 byte = 0x00
                 byte |= max(0, cell_no) & BIT_CELL_MASK
                 for coin in coins:

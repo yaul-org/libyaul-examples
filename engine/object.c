@@ -321,6 +321,7 @@ object_component_find_all(const struct object *object, int32_t component_id,
     struct component **component_list)
 {
         assert(object != NULL);
+        assert(OBJECT(object, component_count) <= OBJECT_COMPONENT_LIST_MAX);
         assert((component_id > 0) &&
                (((component_id & COMPONENT_ID_BUILTIN_MASK) == 0) ||
                 ((component_id & COMPONENT_ID_USER_MASK) == 0)));

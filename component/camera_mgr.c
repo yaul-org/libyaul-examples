@@ -16,11 +16,6 @@ component_camera_mgr_on_init(struct component *this __unused)
 void
 component_camera_mgr_on_update(struct component *this __unused)
 {
-        struct transform *transform;
-        transform = (struct transform *)object_component_find(
-                THIS(camera_mgr, object), COMPONENT_ID_TRANSFORM);
-
-        COMPONENT(transform, position).x = fix16_add(COMPONENT(transform, position).x, THIS(camera_mgr, speed));
 }
 
 void

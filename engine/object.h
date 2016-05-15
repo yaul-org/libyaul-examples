@@ -10,7 +10,7 @@
 
 #include "engine.h"
 
-#define OBJECT_COMPONENT_LIST_MAX       32
+#define OBJECT_COMPONENT_LIST_MAX       16
 
 #define OBJECT_ID_BUILTIN_MASK          0xB000
 

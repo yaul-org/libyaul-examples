@@ -10,8 +10,6 @@
 void
 scene_game_init(struct scene_ctx *scene_ctx __unused)
 {
-        layers_layer_register(0);
-
         object_init(&object_camera);
         objects_object_add(&object_camera);
 

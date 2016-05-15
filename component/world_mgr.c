@@ -62,12 +62,15 @@ struct world_column {
 MEMB(_collider_pool, struct collider, COLLIDERS_MAX, sizeof(struct collider));
 
 static struct coin_mgr *_coin_mgr;
+static struct layer *_layer;
 static void *_map_fh;
 static struct world_header _map_header;
 static struct world_collider _map_colliders[COLLIDERS_MAX];
 static struct world_coin _map_coins[COINS_MAX];
 static struct world_column _column[20];
 static uint32_t _column_idx = 0;
+
+static uint8_t _character_pattern_base[2048];
 
 void
 component_world_mgr_on_init(struct component *this __unused)
@@ -79,6 +82,9 @@ component_world_mgr_on_init(struct component *this __unused)
 
         _coin_mgr = (struct coin_mgr *)object_component_find(
                 THIS(world_mgr, object), COMPONENT_ID_COIN_MGR);
+
+        _layer = (struct layer *)object_component_find(
+                THIS(world_mgr, object), COMPONENT_ID_LAYER);
 
         /* Open file */
         const char *world_filename;
@@ -118,6 +124,12 @@ component_world_mgr_on_init(struct component *this __unused)
         assert(blue_mgr != NULL);
         COMPONENT(blue_mgr, start_position).x = _map_header.blue_position.x;
         COMPONENT(blue_mgr, start_position).y = _map_header.blue_position.y;
+
+        /* Copy character pattern and color palette data */
+        COMPONENT(_layer, character_pattern_base) = &_character_pattern_base[0];
+        fs_texture_load(FS_LOAD_TEXTURE_1D, "/WORLD.TGA",
+            COMPONENT(_layer, character_pattern_base),
+            COMPONENT(_layer, color_palette));
 }
 
 void
@@ -145,10 +157,14 @@ component_world_mgr_on_update(struct component *this __unused)
                 fs_read(_map_fh, &_column[0], 20 * sizeof(struct world_column));
         }
 
-        uint32_t row;
-        for (row = 0; row < 20; row++) {
-                uint32_t cell;
-                for (cell = 0; cell < 14; cell++) {
+        uint32_t column;
+        for (column = 0; column < 20; column++) {
+                uint32_t row;
+                for (row = 0; row < 14; row++) {
+                        uint16_t *page;
+                        page = &COMPONENT(_layer, map).plane[0].page[0];
+
+                        page[column + (32 * row)] = _column[column].cell[row].number;
                 }
         }
 }

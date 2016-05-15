@@ -48,13 +48,10 @@ static struct layer _layer = {
         .on_draw = &component_layer_on_draw,
         .on_destroy = &component_layer_on_destroy,
         .visible = true,
-        .transparent = true,
         .number = 0,
-        .scroll = FIX16_VECTOR2_INITIALIZER(0.0f, 0.0f),
-        .palette = NULL,
-        .char_base = NULL,
+        .transparent = true,
+        .character_pattern_base = NULL,
         .functions = {
-                .m_map = component_layer_map
         }
 };
 
@@ -64,8 +61,8 @@ struct object object_world = {
         .component_list = {
                 OBJECT_COMPONENT_INITIALIZER(transform, &_transform),
                 OBJECT_COMPONENT_INITIALIZER(coin_mgr, &_coin_mgr),
+                OBJECT_COMPONENT_INITIALIZER(layer, &_layer),
                 OBJECT_COMPONENT_INITIALIZER(world_mgr, &_world_mgr),
-                OBJECT_COMPONENT_INITIALIZER(layer, &_layer)
         },
         .component_count = 4
 };

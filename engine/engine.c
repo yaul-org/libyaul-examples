@@ -335,6 +335,37 @@ hardware_init(void)
         vdp2_sprite_type_priority_set(6, 7);
         vdp2_sprite_type_priority_set(7, 7);
 
+        struct scrn_cell_format nbg0_format;
+        nbg0_format.scf_scroll_screen = SCRN_NBG0;
+        nbg0_format.scf_cc_count = SCRN_CCC_PALETTE_256;
+        nbg0_format.scf_character_size = 2 * 2;
+        nbg0_format.scf_pnd_size = 1; /* 1-word */
+        nbg0_format.scf_auxiliary_mode = 0;
+        nbg0_format.scf_plane_size = 1 * 1;
+        nbg0_format.scf_cp_table = (uint32_t)VRAM_ADDR_4MBIT(0, 0x00000);
+        nbg0_format.scf_color_palette = (uint32_t)CRAM_MODE_1_OFFSET(1, 0, 0);
+        nbg0_format.scf_map.plane_a = (uint32_t)VRAM_ADDR_4MBIT(0, 0x00800);
+        nbg0_format.scf_map.plane_b = (uint32_t)VRAM_ADDR_4MBIT(0, 0x01000);
+        nbg0_format.scf_map.plane_c = (uint32_t)VRAM_ADDR_4MBIT(0, 0x01800);
+        nbg0_format.scf_map.plane_d = (uint32_t)VRAM_ADDR_4MBIT(0, 0x02000);
+
+        vdp2_scrn_cell_format_set(&nbg0_format);
+        vdp2_scrn_priority_set(SCRN_NBG0, 7);
+
+        struct vram_ctl *vram_ctl;
+        vram_ctl = vdp2_vram_control_get();
+
+        vram_ctl->vram_cycp.pt[0].t0 = VRAM_CTL_CYCP_CHPNDR_NBG0;
+        vram_ctl->vram_cycp.pt[0].t1 = VRAM_CTL_CYCP_PNDR_NBG0;
+        vram_ctl->vram_cycp.pt[0].t2 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_ctl->vram_cycp.pt[0].t3 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_ctl->vram_cycp.pt[0].t4 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_ctl->vram_cycp.pt[0].t5 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_ctl->vram_cycp.pt[0].t6 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_ctl->vram_cycp.pt[0].t7 = VRAM_CTL_CYCP_NO_ACCESS;
+
+        vdp2_vram_control_set(vram_ctl);
+
         /* SMPC */
         smpc_init();
         smpc_peripheral_init();

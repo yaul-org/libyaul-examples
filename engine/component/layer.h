@@ -14,14 +14,13 @@ struct layer {
         COMPONENT_DECLARATIONS
 
         bool visible;
-        bool transparent;
         int16_t number;
-        fix16_vector2_t scroll;
-        color_rgb555_t *palette;
-        uint16_t *char_base;
+        bool transparent;
+        uint8_t *character_pattern_base;
+        color_rgb555_t color_palette[256];
+        struct layer_map map;
 
         struct {
-                struct layer_map *(*m_map)(struct component *);
         } functions;
 } __aligned (64);
 
@@ -29,7 +28,5 @@ extern void component_layer_on_init(struct component *);
 extern void component_layer_on_update(struct component *);
 extern void component_layer_on_draw(struct component *);
 extern void component_layer_on_destroy(struct component *);
-
-extern struct layer_map *component_layer_map(struct component *);
 
 #endif /* !ENGINE_LAYER_H */
