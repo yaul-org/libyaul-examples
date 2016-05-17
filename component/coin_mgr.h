@@ -14,14 +14,10 @@ struct coin_mgr {
         COMPONENT_DECLARATIONS
 
         uint32_t coins;
+        void (*spawn)(struct component *, const fix16_vector2_t *);
 
-        struct {
-                void (*m_spawn)(struct component *, const fix16_vector2_t *);
-        } functions;
-
-        struct {
-                uint32_t m_coin_cnt;
-        } private_data;
+        /* Private data */
+        uint32_t _coin_cnt;
 } __aligned (64);
 
 extern void component_coin_mgr_on_init(struct component *);

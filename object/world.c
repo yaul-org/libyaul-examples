@@ -11,6 +11,11 @@ static struct transform _transform = {
         .active = true,
         .id = COMPONENT_ID_TRANSFORM,
         .object = (struct object *)&object_world,
+        .on_init = NULL,
+        .on_update = NULL,
+        .on_draw = NULL,
+        .on_destroy = NULL,
+
         .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 7.0f)
 };
 
@@ -22,10 +27,9 @@ static struct coin_mgr _coin_mgr = {
         .on_update = &component_coin_mgr_on_update,
         .on_draw = &component_coin_mgr_on_draw,
         .on_destroy = &component_coin_mgr_on_destroy,
+
         .coins = 64,
-        .functions = {
-                .m_spawn = &component_coin_mgr_spawn
-        }
+        .spawn = &component_coin_mgr_spawn
 };
 
 static struct world_mgr _world_mgr = {
@@ -36,6 +40,7 @@ static struct world_mgr _world_mgr = {
         .on_update = &component_world_mgr_on_update,
         .on_draw = &component_world_mgr_on_draw,
         .on_destroy = &component_world_mgr_on_destroy,
+
         .world = 0
 };
 
@@ -47,12 +52,11 @@ static struct layer _layer = {
         .on_update = &component_layer_on_update,
         .on_draw = &component_layer_on_draw,
         .on_destroy = &component_layer_on_destroy,
+
         .visible = true,
         .number = 0,
         .transparent = true,
-        .character_pattern_base = NULL,
-        .functions = {
-        }
+        .character_pattern_base = NULL
 };
 
 struct object object_world = {

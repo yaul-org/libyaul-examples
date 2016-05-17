@@ -11,6 +11,11 @@ static struct transform _transform = {
         .active = true,
         .id = COMPONENT_ID_TRANSFORM,
         .object = (struct object *)&object_camera,
+        .on_init = NULL,
+        .on_update = NULL,
+        .on_draw = NULL,
+        .on_destroy = NULL,
+
         .position = FIX16_VECTOR3_INITIALIZER(0.0f, 0.0f, 0.0f)
 };
 
@@ -20,12 +25,11 @@ static struct camera _camera = {
         .object = (const struct object *)&object_camera,
         .on_init = component_camera_on_init,
         .on_update = component_camera_on_update,
+
         .width = 320,
         .height = 224,
-        .functions = {
-                .m_on = component_camera_on,
-                .m_off = component_camera_off
-        }
+        .on = component_camera_on,
+        .off = component_camera_off
 };
 
 static struct camera_mgr _camera_mgr = {
@@ -36,6 +40,7 @@ static struct camera_mgr _camera_mgr = {
         .on_update = &component_camera_mgr_on_update,
         .on_draw = &component_camera_mgr_on_draw,
         .on_destroy = &component_camera_mgr_on_destroy,
+
         .start_delay = 0,
         .speed = F16(0.3333333f),
 };

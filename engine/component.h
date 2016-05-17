@@ -37,24 +37,24 @@
 #define COMPONENT_EVENT(x, event)                                              \
         ((x)->CC_CONCAT(on_, event))
 
-#define COMPONENT_FUNCTION(type, member)                                       \
-        ((x)->functions.CC_CONCAT(m_, function))
+#define COMPONENT_FUNCTION(x, member)                                          \
+        COMPONENT(x, member)
 
 #define COMPONENT_FUNCTION_CALL(x, name, args...) do {                         \
         assert(((struct component *)(x)) != NULL);                             \
         assert(COMPONENT(((struct component *)(x)), initialized));             \
-        assert(((x))->functions.CC_CONCAT(m_, name) != NULL);                  \
-        ((x))->functions.CC_CONCAT(m_, name)((struct component *)(x), ##args); \
+        assert(((x))->name != NULL);                                           \
+        ((x))->name((struct component *)(x), ##args);                          \
 } while (0)
 
 #define THIS(type, member)                                                     \
         (((struct type *)this)->CC_CONCAT(, member))
 
 #define THIS_P_DATA(type, member)                                              \
-        (((struct type *)this)->private_data.CC_CONCAT(m_, member))
+        (((struct type *)this)->CC_CONCAT(_, member))
 
 #define THIS_FUNCTION(type, member)                                            \
-        (((struct type *)this)->functions.CC_CONCAT(m_, member))
+        (((struct type *)this)->CC_CONCAT(, member))
 
 struct component {
         COMPONENT_DECLARATIONS

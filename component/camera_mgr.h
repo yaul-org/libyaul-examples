@@ -15,12 +15,6 @@ struct camera_mgr {
 
         int16_t start_delay;
         fix16_t speed;
-
-        struct {
-        } functions;
-
-        struct {
-        } private_data;
 } __aligned (64);
 
 extern void component_camera_mgr_on_init(struct component *);

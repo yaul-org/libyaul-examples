@@ -18,9 +18,8 @@ struct collider {
         bool trigger;
         bool fixed;
 
-        struct {
-                struct aabb m_aabb;
-        } private_data;
+        /* Private data */
+        struct aabb _aabb;
 } __aligned (64);
 
 struct collider_info {

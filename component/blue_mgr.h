@@ -14,12 +14,6 @@ struct blue_mgr {
         COMPONENT_DECLARATIONS
 
         fix16_vector2_t start_position;
-
-        struct {
-        } functions;
-
-        struct {
-        } private_data;
 } __aligned (64);
 
 extern void component_blue_mgr_on_init(struct component *);

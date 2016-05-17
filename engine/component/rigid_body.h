@@ -17,22 +17,18 @@ struct rigid_body {
 
         bool kinematic;
 
-        struct {
-                void (*m_forces_add)(struct rigid_body *,
-                    const fix16_vector2_t *);
-                void (*m_forces_clear)(struct rigid_body *);
-                void (*m_forces_sum)(struct rigid_body *, fix16_vector2_t *);
-        } functions;
+        void (*forces_add)(struct rigid_body *, const fix16_vector2_t *);
+        void (*forces_clear)(struct rigid_body *);
+        void (*forces_sum)(struct rigid_body *, fix16_vector2_t *);
 
-        struct {
-                fix16_vector2_t m_displacement;
-                fix16_vector2_t m_velocity;
-                fix16_vector2_t m_acceleration;
-                fix16_t m_mass;
-                /* An extra force for gravity */
-                fix16_vector2_t m_forces[RIGID_BODY_FORCES_MAX];
-                uint32_t m_forces_cnt;
-        } private_data;
+        /* Private data */
+        fix16_vector2_t _displacement;
+        fix16_vector2_t _velocity;
+        fix16_vector2_t _acceleration;
+        fix16_t _mass;
+        /* An extra force for gravity */
+        fix16_vector2_t _forces[RIGID_BODY_FORCES_MAX];
+        uint32_t _forces_cnt;
 } __aligned (64);
 
 extern void component_rigid_body_init(struct component *);

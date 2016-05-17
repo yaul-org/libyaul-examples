@@ -16,10 +16,8 @@ struct camera {
         uint16_t width;
         uint16_t height;
 
-        struct {
-                void (*m_on)(struct component *);
-                void (*m_off)(struct component *);
-        } functions;
+        void (*on)(struct component *);
+        void (*off)(struct component *);
 } camera;
 
 extern void component_camera_on_init(struct component *);
