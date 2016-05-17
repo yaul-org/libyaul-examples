@@ -55,7 +55,9 @@ IP_SLAVE_STACK_ADDR:= 0x00000000
 IP_1ST_READ_ADDR:= 0x06004000
 
 ROMDISK_DEPS:= \
-	worlds/test.json
+	worlds/test.json \
+	worlds/test2.json \
+	worlds/test3.json
 
 .SUFFIXES:
 .SUFFIXES: $(SUFFIXES) .tmx .json

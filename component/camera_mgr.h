@@ -13,7 +13,6 @@
 struct camera_mgr {
         COMPONENT_DECLARATIONS
 
-        int16_t start_delay;
         fix16_t speed;
 } __aligned (64);
 

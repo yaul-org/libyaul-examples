@@ -19,9 +19,6 @@ struct layer {
         uint8_t *character_pattern_base;
         color_rgb555_t color_palette[256];
         struct layer_map map;
-
-        struct {
-        } functions;
 } __aligned (64);
 
 extern void component_layer_on_init(struct component *);

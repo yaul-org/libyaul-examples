@@ -15,7 +15,7 @@
 struct layer_map {
         struct {
                 uint16_t page[32 * 32];
-        } plane[1];
+        } plane[2]; /* Plane A and B only */
 };
 
 extern void layers_init(void);

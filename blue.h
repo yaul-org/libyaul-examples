@@ -42,7 +42,7 @@
 #define COMPONENT_ID_COIN       0x1004
 #define COMPONENT_ID_CAMERA_MGR 0x1005
 
-#define BLUE_WORLDS     1
+#define BLUE_WORLDS     3
 
 struct blue_data {
 };

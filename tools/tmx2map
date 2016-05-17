@@ -135,7 +135,7 @@ def process(json_data):
                                  y = SCREEN_HEIGHT - map_object['y'],
                                  cell_x = ((map_object['x'] - (COIN_CELL_WIDTH / 2)) / CELL_WIDTH),
                                  cell_y = ((SCREEN_HEIGHT - (map_object['y'] + BLUE_CELL_HEIGHT)) / CELL_HEIGHT))
-            print ("  [1;34mBlue[m\t\t#%2i @ (%3i,%3i) cell: [%3i,%3i]"
+            print ("  [1;34mBlue[m\t\t#%03i @ (%3i,%3i) cell: [%3i,%3i]"
                    % (map_object['id'],
                       blue_position.x,
                       blue_position.y,
@@ -143,14 +143,17 @@ def process(json_data):
                       blue_position.cell_y))
     assert(blue_position)
     coins = sorted(unsorted_coins, key = lambda coin: coin.x)
+    coin_idx = 1
     for coin in coins:
-        print ("  [1;33mCoin[m\t\t#%2i @ (%3i,%3i) cell: [%3i,%3i] value: %3i points"
-               % (coin.id,
+        print ("  %3i. [1;33mCoin[m\t\t#%03i @ (%3i,%3i) cell: [%3i,%3i] value: %3i points"
+               % (coin_idx,
+                  coin.id,
                   coin.x,
                   coin.y,
                   coin.cell_x,
                   coin.cell_y,
                   coin.value))
+        coin_idx += 1
     # Collision
     unsorted_colliders = []
     for map_object in collision_layer['objects']:
@@ -173,9 +176,11 @@ def process(json_data):
                                 height = map_object['height'])
             unsorted_colliders.append(collider)
     colliders = sorted(unsorted_colliders, key = lambda collider: collider.x)
+    collider_idx = 1
     for collider in colliders:
-        print ("  %s\t#%2i @ (%3i,%3i) cell: [%3i,%3i] W/H: (%3i,%3i)"
-               % (collider.type,
+        print ("  %3i. %s\t#%03i @ (%3i,%3i) cell: [%3i,%3i] W/H: (%3i,%3i)"
+               % (collider_idx,
+                  collider.type,
                   collider.id,
                   collider.x,
                   collider.y,
@@ -183,6 +188,7 @@ def process(json_data):
                   collider.cell_y,
                   collider.width,
                   collider.height))
+        collider_idx += 1
     # World
     try:
         os.mkdir(os.path.join(PWD, "romdisk", "WORLDS"))

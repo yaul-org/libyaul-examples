@@ -11,17 +11,18 @@ static struct sprite _sprite = {
         .active = true,
         .id = COMPONENT_ID_SPRITE,
         .object = NULL,
+        .on_init = &component_sprite_on_init,
+        .on_update = &component_sprite_on_update,
+        .on_draw = component_sprite_on_draw,
+        .on_destroy = NULL,
+
         .visible = true,
         .width = 0,
         .height = 0,
         .material = {
                 .pseudo_trans = false,
                 .solid_color = COLOR_RGB555_INITIALIZER(0, 0, 0)
-        },
-        .on_init = &component_sprite_on_init,
-        .on_update = &component_sprite_on_update,
-        .on_draw = component_sprite_on_draw,
-        .on_destroy = NULL
+        }
 };
 
 void

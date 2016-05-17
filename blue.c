@@ -10,7 +10,9 @@
 struct blue_data blue_data;
 
 const char *blue_worlds[] = {
-        "/WORLDS/1_1.MAP"
+        "/WORLDS/1_1.MAP",
+        "/WORLDS/1_2.MAP",
+        "/WORLDS/1_3.MAP"
 };
 
 void

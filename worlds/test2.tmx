@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="40" height="14" tilewidth="16" tileheight="16" backgroundcolor="#55aaff" nextobjectid="97">
+ <properties>
+  <property name="camera_speed" value="0.666666666666"/>
+  <property name="file_name" value="1_2.MAP"/>
+  <property name="start_delay" value="2"/>
+  <property name="world_name" value="1-2 Blue"/>
+ </properties>
+ <tileset firstgid="1" name="World" tilewidth="16" tileheight="16">
+  <image source="../romdisk/WORLD.PNG" width="16" height="96"/>
+  <tile id="1">
+   <objectgroup draworder="index">
+    <object id="0" x="0" y="0" width="16" height="16"/>
+   </objectgroup>
+  </tile>
+  <tile id="2">
+   <objectgroup draworder="index"/>
+  </tile>
+ </tileset>
+ <layer name="World" width="40" height="14">
+  <data encoding="base64">
+   AgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAgAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAIAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAgAAAAIAAAAAAAAAAAAAAAIAAAACAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAIAAAACAAAAAAAAAAAAAAACAAAAAgAAAAIAAAAAAAAAAgAAAAIAAAACAAAAAgAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAACAAAAAgAAAAIAAAA=
+  </data>
+ </layer>
+ <objectgroup color="#ffff00" name="Objects">
+  <object id="1" name="Coin" type="Item" x="108" y="44" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="4" name="Coin" type="Item" x="124" y="44" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="5" name="Coin" type="Item" x="108" y="60" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="6" name="Coin" type="Item" x="124" y="60" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="11" name="Coin" type="Item" x="140" y="44" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="14" name="Coin" type="Item" x="140" y="60" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="15" name="Blue" type="Player" x="36" y="80" width="8" height="16"/>
+  <object id="17" name="Coin" type="Item" x="108" y="76" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="18" name="Coin" type="Item" x="108" y="92" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="19" name="Coin" type="Item" x="140" y="92" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="20" name="Coin" type="Item" x="124" y="92" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="21" name="Coin" type="Item" x="124" y="76" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="22" name="Coin" type="Item" x="140" y="76" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="53" name="Coin" type="Item" x="108" y="156" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="54" name="Coin" type="Item" x="140" y="140" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="55" name="Coin" type="Item" x="108" y="140" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="56" name="Coin" type="Item" x="124" y="156" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="57" name="Coin" type="Item" x="124" y="124" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="58" name="Coin" type="Item" x="140" y="124" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="59" name="Coin" type="Item" x="124" y="108" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="60" name="Coin" type="Item" x="124" y="140" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="61" name="Coin" type="Item" x="140" y="108" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="62" name="Coin" type="Item" x="140" y="156" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="63" name="Coin" type="Item" x="108" y="124" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="64" name="Coin" type="Item" x="108" y="108" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="65" name="Coin" type="Item" x="188" y="76" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="66" name="Coin" type="Item" x="156" y="76" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="67" name="Coin" type="Item" x="172" y="60" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="68" name="Coin" type="Item" x="188" y="60" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="69" name="Coin" type="Item" x="172" y="44" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="70" name="Coin" type="Item" x="172" y="76" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="71" name="Coin" type="Item" x="188" y="44" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="72" name="Coin" type="Item" x="156" y="60" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="73" name="Coin" type="Item" x="156" y="44" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="74" name="Coin" type="Item" x="204" y="44" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="75" name="Coin" type="Item" x="204" y="76" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="76" name="Coin" type="Item" x="204" y="60" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="77" name="Coin" type="Item" x="204" y="156" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="80" name="Coin" type="Item" x="188" y="124" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="81" name="Coin" type="Item" x="204" y="140" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="82" name="Coin" type="Item" x="188" y="140" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="83" name="Coin" type="Item" x="188" y="92" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="84" name="Coin" type="Item" x="204" y="124" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="85" name="Coin" type="Item" x="204" y="92" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="86" name="Coin" type="Item" x="188" y="156" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="89" name="Coin" type="Item" x="188" y="108" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="91" name="Coin" type="Item" x="204" y="108" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="92" name="Coin" type="Item" x="124" y="188" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="93" name="Coin" type="Item" x="140" y="172" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="94" name="Coin" type="Item" x="124" y="172" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="95" name="Coin" type="Item" x="140" y="188" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+  <object id="96" name="Coin" type="Item" x="156" y="28" width="8" height="8">
+   <properties>
+    <property name="value" value="100"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup color="#ff0000" name="Collision">
+  <object id="28" name="End" type="Trigger" x="624" y="0" width="16" height="224"/>
+  <object id="30" name="Terrain" type="Collider" x="0" y="208" width="624" height="16"/>
+  <object id="33" name="Terrain" type="Collider" x="16" y="176" width="96" height="32"/>
+  <object id="34" name="Terrain" type="Collider" x="160" y="96" width="16" height="112"/>
+ </objectgroup>
+</map>

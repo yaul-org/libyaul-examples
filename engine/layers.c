@@ -145,7 +145,7 @@ layers_draw(void)
                 page_size = SCRN_CALCULATE_PAGE_SIZE(cell_format);
 
                 uint16_t *a_plane;
-                uint16_t *b_plane __unused;
+                uint16_t *b_plane;
                 uint16_t *c_plane __unused;
                 uint16_t *d_plane __unused;
                 a_plane = (uint16_t *)cell_format->scf_map.plane_a;
@@ -160,6 +160,13 @@ layers_draw(void)
                 a_pages[2] = NULL;
                 a_pages[3] = NULL;
 
+                /* 1x1 plane size */
+                uint16_t *b_pages[4];
+                b_pages[0] = &b_plane[0];
+                b_pages[1] = NULL;
+                b_pages[2] = NULL;
+                b_pages[3] = NULL;
+
                 uint32_t page_y;
                 for (page_y = 0; page_y < page_height; page_y++) {
                         uint32_t page_x;
@@ -167,20 +174,54 @@ layers_draw(void)
                                 uint16_t page_idx;
                                 page_idx = page_x + (page_width * page_y);
 
-                                uint32_t value __unused;
-                                value = COMPONENT(layer, map).plane[0].page[page_idx];
+                                uint32_t value_a;
+                                value_a = COMPONENT(layer, map).plane[0].page[page_idx];
+                                uint32_t value_b;
+                                value_b = COMPONENT(layer, map).plane[1].page[page_idx];
+                                //value_b = 2;
 
-                                uint16_t pnd;
-                                pnd = SCRN_PND_CONFIG_6(
-                                        cell_format->scf_cp_table + (value * 256),
+                                uint16_t pnd_a;
+                                pnd_a = SCRN_PND_CONFIG_6(
+                                        cell_format->scf_cp_table + (value_a * 256),
+                                        cell_format->scf_color_palette,
+                                        /* vf = */ 0,
+                                        /* hf = */ 0);
+                                uint16_t pnd_b;
+                                pnd_b = SCRN_PND_CONFIG_6(
+                                        cell_format->scf_cp_table + (value_b * 256),
                                         cell_format->scf_color_palette,
                                         /* vf = */ 0,
                                         /* hf = */ 0);
 
-                                a_pages[0][page_idx] = pnd;
+                                a_pages[0][page_idx] = pnd_a;
+                                b_pages[0][page_idx] = pnd_b;
                         }
                 }
 
                 /* Scrolling */
+                struct transform *transform;
+                transform = (struct transform *)object_component_find(object,
+                    COMPONENT_ID_TRANSFORM);
+                const fix16_vector3_t *position;
+                position = &COMPONENT(transform, position);
+                extern struct object object_camera;
+
+                fix16_t scroll_x;
+                scroll_x = fix16_mod(
+                        ((struct transform *)object_camera.component_list[0].component)->position.x,
+                        F16((float)(16*32)));
+
+                cons_buffer("\n\nscroll_x=");
+                fix16_to_str(scroll_x, text_buffer, 7);
+                cons_buffer(text_buffer);
+                cons_buffer("\n");
+
+                if (scroll_x >= F16(16*32.0f)) {
+                        scroll_x = F16(0.0f);
+                }
+
+                vdp2_scrn_scroll_x_set(scrn, scroll_x);
+
+                vdp2_scrn_scroll_y_set(scrn, position->y);
         }
 }

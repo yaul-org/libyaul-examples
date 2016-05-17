@@ -41,8 +41,7 @@ static struct camera_mgr _camera_mgr = {
         .on_draw = &component_camera_mgr_on_draw,
         .on_destroy = &component_camera_mgr_on_destroy,
 
-        .start_delay = 0,
-        .speed = F16(0.3333333f),
+        .speed = F16(0.3333333f)
 };
 
 struct object object_camera = {

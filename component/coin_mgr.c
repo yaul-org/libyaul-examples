@@ -7,7 +7,7 @@
 
 #include "../blue.h"
 
-#define COIN_SPAWN_COUNT_MAX    64
+#define COIN_SPAWN_COUNT_MAX    256
 #define COIN_VALUE              100
 
 static struct object object_coins[COIN_SPAWN_COUNT_MAX];

@@ -19,9 +19,9 @@ struct object_context {
         fix16_vector3_t position;
         struct object_contexts children;
 
-        /* Tree management */
+        /* Tree management (intrusive) */
         TAILQ_ENTRY(object_context) tq_entries;
-        /* For non-recursive traversal */
+        /* For non-recursive traversal (intrusive) */
         SLIST_ENTRY(object_context) sl_entries;
 } __aligned(32);
 

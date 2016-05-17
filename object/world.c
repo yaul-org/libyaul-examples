@@ -41,7 +41,7 @@ static struct world_mgr _world_mgr = {
         .on_draw = &component_world_mgr_on_draw,
         .on_destroy = &component_world_mgr_on_destroy,
 
-        .world = 0
+        .world = 2
 };
 
 static struct layer _layer = {

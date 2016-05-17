@@ -10,7 +10,7 @@
 
 #include "engine.h"
 
-#define OBJECTS_MAX     256
+#define OBJECTS_MAX     512
 
 #define OBJECTS_Z_MIN           0
 #define OBJECTS_Z_MAX           7

@@ -70,8 +70,14 @@ static void *_map_fh;
 static struct world_header _map_header;
 static struct world_collider _map_colliders[COLLIDERS_MAX];
 static struct world_coin _map_coins[COINS_MAX];
-static struct world_column _map_columns[20];
+static struct world_column _map_columns[20 + 1];
 static uint32_t _column_idx = 0;
+static uint32_t _column_idx2 = 0;
+static uint32_t _plane_idx = 0;
+static uint32_t _page_column_idx = 0;
+static fix16_t _last_scroll_x = F16(0.0f);
+
+static bool start = true;
 
 static uint8_t _character_pattern_base[2048];
 
@@ -147,7 +153,7 @@ component_world_mgr_on_init(struct component *this __unused)
             COMPONENT(_layer, character_pattern_base),
             COMPONENT(_layer, color_palette));
 
-        /* Set the camera speed */
+        /* Set the camera speed and start delay */
         COMPONENT(_camera_mgr, speed) = _map_header.camera_speed;
 }
 
@@ -157,6 +163,10 @@ component_world_mgr_on_update(struct component *this __unused)
         (void)sprintf(text_buffer, "Hello from component world_mgr\n\"%s\"\n",
             _map_header.name);
         cons_buffer(text_buffer);
+
+        if ((_column_idx2 % 32) == 0) {
+                _column_idx = _column_idx2;
+        }
 
         /* Calculate offset to actual map data */
         uint32_t file_offset;
@@ -168,28 +178,106 @@ component_world_mgr_on_update(struct component *this __unused)
             /* Coins */
             (_map_header.coin_count * sizeof(struct world_coin)) +
             /* Column */
-            (0 * sizeof(struct world_column));
+            (_column_idx * sizeof(struct world_column));
         fs_seek(_map_fh, file_offset, SEEK_SET);
 
-        /* Determine if we're at the end of the world */
-        if ((_column_idx + 20) <= _map_header.width) {
-                fs_read(_map_fh, &_map_columns[0],
-                    20 * sizeof(struct world_column));
-        }
+        /* Determine how much the camera has traveled from the world's
+         * object origion. */
+        struct transform *camera_transform;
+        camera_transform = (struct transform *)object_component_find(
+                COMPONENT(_camera, object), COMPONENT_ID_TRANSFORM);
+        assert(camera_transform != NULL);
 
-        /* Update map */
-        uint32_t column;
-        for (column = 0; column < 20; column++) {
-                uint32_t row;
-                for (row = 0; row < 14; row++) {
+        (void)sprintf(text_buffer, "\n\nwidth=%i\ncolumn_idx=%i\ncolumn_idx2=%i\n_plane_idx=%i\n",
+            (int)_map_header.width,
+            (int)_column_idx,
+            (int)_column_idx2,
+            (int)_plane_idx);
+        cons_buffer(text_buffer);
+
+        fix16_t scroll_px;
+        scroll_px = fix16_sub(COMPONENT(camera_transform, position).x, COMPONENT(_transform, position).x);
+        fix16_to_str(scroll_px, text_buffer, 7);
+        cons_buffer("scroll_px=");
+        cons_buffer(text_buffer);
+        cons_buffer("\n");
+
+        fix16_to_str(fix16_mod(scroll_px, F16(16.0f)), text_buffer, 7);
+        cons_buffer("scroll_px%16=");
+        cons_buffer(text_buffer);
+        cons_buffer("\n");
+
+        fix16_t delta_x;
+        delta_x = fix16_sub(_last_scroll_x, scroll_px);
+
+        bool moved;
+        moved = delta_x != F16(0.0f);
+
+        _last_scroll_x = scroll_px;
+
+        if (start ||
+            (moved &&
+            (fix16_to_int(fix16_mod(scroll_px, F16(16.0f))) == 0) &&
+            ((_column_idx < _map_header.width)))) {
+                if ((_column_idx2 % 32) == 0) {
+                        cons_buffer("State1\n");
+
+                        start = false;
+
+                        (void)sprintf(text_buffer, "_plane_idx=%i\n",
+                            (int)_plane_idx);
+                        cons_buffer(text_buffer);
+
+                        fs_read(_map_fh, &_map_columns[0],
+                            21 * sizeof(struct world_column));
+
                         uint16_t *page;
                         page = &COMPONENT(_layer, map).plane[0].page[0];
 
-                        uint16_t cell_no;
-                        cell_no = _map_columns[column].cell[row].number;
+                        /* Update map */
+                        uint32_t column;
+                        for (column = 0; column < 21; column++) {
+                                uint32_t row;
+                                for (row = 0; row < 14; row++) {
+                                        uint16_t cell_no;
+                                        cell_no = _map_columns[column].cell[row].number;
 
-                        page[column + (32 * row)] = cell_no;
+                                        page[column + (32 * row)] = cell_no;
+                                }
+                        }
+
+                        _column_idx += 21;
+                        _page_column_idx = 21;
+                        _plane_idx = 0;
+                } else {
+                        cons_buffer("State2\n");
+
+                        struct world_column map_column;
+                        fs_read(_map_fh, &map_column, 1 * sizeof(struct world_column));
+
+                        if ((_column_idx > 0) && ((_column_idx % 32) == 0)) {
+                                _plane_idx = 1;
+                                _page_column_idx = 0;
+                        }
+
+                        uint16_t *page;
+                        page = &COMPONENT(_layer, map).plane[_plane_idx].page[0];
+
+                        uint32_t row;
+                        for (row = 0; row < 14; row++) {
+                                uint16_t cell_no __unused;
+                                cell_no = map_column.cell[row].number;
+
+                                page[_page_column_idx + (32 * row)] = cell_no;
+                        }
+
+                        _column_idx++;
+                        _page_column_idx++;
                 }
+
+                _column_idx2++;
+        } else {
+                cons_buffer("State3\n");
         }
 }
 

@@ -339,8 +339,8 @@ hardware_init(void)
         nbg0_format.scf_color_palette = (uint32_t)CRAM_MODE_1_OFFSET(1, 0, 0);
         nbg0_format.scf_map.plane_a = (uint32_t)VRAM_ADDR_4MBIT(0, 0x00800);
         nbg0_format.scf_map.plane_b = (uint32_t)VRAM_ADDR_4MBIT(0, 0x01000);
-        nbg0_format.scf_map.plane_c = (uint32_t)VRAM_ADDR_4MBIT(0, 0x01800);
-        nbg0_format.scf_map.plane_d = (uint32_t)VRAM_ADDR_4MBIT(0, 0x02000);
+        nbg0_format.scf_map.plane_c = (uint32_t)VRAM_ADDR_4MBIT(0, 0x00800);
+        nbg0_format.scf_map.plane_d = (uint32_t)VRAM_ADDR_4MBIT(0, 0x01000);
 
         vdp2_scrn_cell_format_set(&nbg0_format);
         vdp2_scrn_priority_set(SCRN_NBG0, 7);
