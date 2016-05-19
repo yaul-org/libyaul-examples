@@ -73,12 +73,13 @@ static struct world_coin _map_coins[COINS_MAX];
 static uint32_t _column_start_idx = 0;
 static uint32_t _column_end_idx = 0;
 static uint32_t _plane_idx = 0;
-static uint32_t _page_column_idx = 0;
+static uint32_t _page_offset = 0;
 static fix16_t _last_scroll_x = F16(0.0f);
+//static bool _init = true;
 
 static uint8_t _character_pattern_base[2048];
 
-static void _map_column_update(uint32_t);
+static void _map_column_update(void);
 
 void
 component_world_mgr_on_init(struct component *this __unused)
@@ -156,7 +157,7 @@ component_world_mgr_on_init(struct component *this __unused)
         COMPONENT(_camera_mgr, speed) = _map_header.camera_speed;
 
         /* Update */
-        _map_column_update(20 + 1);
+        _map_column_update();
 }
 
 void
@@ -173,11 +174,17 @@ component_world_mgr_on_update(struct component *this __unused)
                 COMPONENT(_camera, object), COMPONENT_ID_TRANSFORM);
         assert(camera_transform != NULL);
 
-        (void)sprintf(text_buffer, "\n\nwidth=%i\ncolumn_idx=%i\ncolumn_idx2=%i\n_plane_idx=%i\n",
+        (void)sprintf(text_buffer, "\n\n"
+            "width=%i\n"
+            "column_start_idx=%i\n"
+            "column_end_idx=%i\n"
+            "_plane_idx=%i\n"
+            "_page_offset=%i\n",
             (int)_map_header.width,
-            (int)_column_end_idx,
             (int)_column_start_idx,
-            (int)_plane_idx);
+            (int)_column_end_idx,
+            (int)_plane_idx,
+            (int)_page_offset);
         cons_buffer(text_buffer);
 
         fix16_t scroll_x;
@@ -209,27 +216,8 @@ component_world_mgr_on_update(struct component *this __unused)
                 return;
         }
 
-        if ((_column_start_idx % 32) == 0) {
-                cons_buffer("State1\n");
-
-                _plane_idx = 0;
-                _page_column_idx = 0;
-
-                /* Update */
-                _map_column_update(20 + 1);
-        } else {
-                /* Update at the end of the current plane's page. */
-                cons_buffer("State2\n");
-
-                /* Update */
-                _map_column_update(1);
-        }
-
-        _column_start_idx++;
-
-        if ((_column_start_idx % 32) == 0) {
-                _column_end_idx = _column_start_idx;
-        }
+        /* Update */
+        _map_column_update();
 
         _last_scroll_x = scroll_x;
 }
@@ -246,9 +234,30 @@ component_world_mgr_on_destroy(struct component *this __unused)
 }
 
 static void
-_map_column_update(uint32_t columns)
+_map_column_update(void)
 {
-        assert((columns >= 1) && (columns <= (20 + 1)));
+        uint32_t columns;
+        columns = 0;
+
+        if ((_column_start_idx % 32) == 0) {
+                cons_buffer("State1\n");
+
+                _plane_idx = 0;
+                _page_offset = 0;
+
+                columns = 20 + 1;
+        } else {
+                cons_buffer("State2\n");
+
+                /* When reaching the end of the first page (32x32) of plane A,
+                 * move onto the next page in plane B. */
+                if ((_column_end_idx > 0) && ((_column_end_idx % 32) == 0)) {
+                        _plane_idx = 1;
+                        _page_offset = 0;
+                }
+
+                columns = 1;
+        }
 
         /* Calculate offset to actual map data */
         uint32_t file_offset;
@@ -262,13 +271,6 @@ _map_column_update(uint32_t columns)
             /* Column */
             (_column_end_idx * sizeof(struct world_column));
         fs_seek(_map_fh, file_offset, SEEK_SET);
-
-        /* When reaching the end of the first page (32x32) of plane A,
-         * move onto the next page in plane B. */
-        if ((_column_end_idx > 0) && ((_column_end_idx % 32) == 0)) {
-                _plane_idx = 1;
-                _page_column_idx = 0;
-        }
 
         uint16_t *page;
         page = &COMPONENT(_layer, map).plane[_plane_idx].page[0];
@@ -285,13 +287,16 @@ _map_column_update(uint32_t columns)
                         cell_number = map_columns[column].cell[row].number;
 
                         uint32_t page_idx;
-                        page_idx = _page_column_idx + column + (32 * row);
+                        page_idx = _page_offset + column + (32 * row);
 
                         page[page_idx] = cell_number;
                 }
-
-                _page_column_idx++;
-
-                _column_end_idx++;
         }
+
+        _column_start_idx++;
+        _column_end_idx = ((_column_start_idx % 32) == 0)
+            ? _column_start_idx
+            : _column_end_idx + column;
+
+        _page_offset += columns;
 }
