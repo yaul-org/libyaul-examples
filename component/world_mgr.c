@@ -70,7 +70,6 @@ static void *_map_fh;
 static struct world_header _map_header;
 static struct world_collider _map_colliders[COLLIDERS_MAX];
 static struct world_coin _map_coins[COINS_MAX];
-static struct world_column _map_columns[20 + 1];
 static bool _init = true;
 static uint32_t _column_start_idx = 0;
 static uint32_t _column_end_idx = 0;
@@ -79,6 +78,8 @@ static uint32_t _page_column_idx = 0;
 static fix16_t _last_scroll_x = F16(0.0f);
 
 static uint8_t _character_pattern_base[2048];
+
+static void _map_column_update(uint32_t);
 
 void
 component_world_mgr_on_init(struct component *this __unused)
@@ -115,7 +116,7 @@ component_world_mgr_on_init(struct component *this __unused)
         assert(_map_fh != NULL);
 
         /* Read header */
-        fs_read(_map_fh, &_map_header, sizeof(struct world_header));
+        fs_read(_map_fh, &_map_header, sizeof(struct world_header), 1);
 
         assert((_map_header.collider_count > 0) &&
                (_map_header.collider_count <= COLLIDERS_MAX));
@@ -123,12 +124,12 @@ component_world_mgr_on_init(struct component *this __unused)
                (_map_header.coin_count <= COINS_MAX));
 
         /* Read in collision data */
-        fs_read(_map_fh, &_map_colliders[0],
-            _map_header.collider_count * sizeof(struct world_collider));
+        fs_read(_map_fh, &_map_colliders[0], sizeof(struct world_collider),
+            _map_header.collider_count);
 
         /* Read in coin data */
-        fs_read(_map_fh, &_map_coins[0],
-            _map_header.coin_count * sizeof(struct world_coin));
+        fs_read(_map_fh, &_map_coins[0], sizeof(struct world_coin),
+            _map_header.coin_count);
 
         /* Spawn all coins */
         uint32_t coin_idx;
@@ -163,19 +164,6 @@ component_world_mgr_on_update(struct component *this __unused)
             _map_header.name);
         cons_buffer(text_buffer);
 
-        /* Calculate offset to actual map data */
-        uint32_t file_offset;
-        file_offset =
-            /* Header */
-            sizeof(struct world_header) +
-            /* Colliders */
-            (_map_header.collider_count * sizeof(struct world_collider)) +
-            /* Coins */
-            (_map_header.coin_count * sizeof(struct world_coin)) +
-            /* Column */
-            (_column_end_idx * sizeof(struct world_column));
-        fs_seek(_map_fh, file_offset, SEEK_SET);
-
         /* Determine how much the camera has traveled from the world's
          * object origion. */
         struct transform *camera_transform;
@@ -204,11 +192,11 @@ component_world_mgr_on_update(struct component *this __unused)
 
         /* Has the camera moved since the last frame? */
         bool moved;
-        moved = fix16_sub(_last_scroll_x, scroll_x) != F16(0.0f);
+        moved = fix16_sub(scroll_x, _last_scroll_x) != F16(0.0f);
 
-        /* Have we advanced to see a new column (1x14 cells)? */
+        /* Have we advanced to see a new column? */
         bool new_column;
-        new_column = fix16_to_int(fix16_mod(scroll_x, F16(16.0f))) == 0;
+        new_column = fix16_integral(fix16_mod(scroll_x, F16(16.0f))) == 0;
 
         /* Are we at the end of the world? */
         bool world_end;
@@ -224,57 +212,17 @@ component_world_mgr_on_update(struct component *this __unused)
 
                 _init = false;
 
-                (void)sprintf(text_buffer, "_plane_idx=%i\n",
-                    (int)_plane_idx);
-                cons_buffer(text_buffer);
-
-                fs_read(_map_fh, &_map_columns[0],
-                    21 * sizeof(struct world_column));
-
-                uint16_t *page;
-                page = &COMPONENT(_layer, map).plane[0].page[0];
+                _plane_idx = 0;
+                _page_column_idx = 0;
 
                 /* Update map */
-                uint32_t column;
-                for (column = 0; column < 21; column++) {
-                        uint32_t row;
-                        for (row = 0; row < 14; row++) {
-                                uint16_t cell_no;
-                                cell_no = _map_columns[column].cell[row].number;
-
-                                page[column + (32 * row)] = cell_no;
-                        }
-                }
-
-                _column_end_idx += 21;
-                _plane_idx = 0;
-                _page_column_idx = 21;
+                _map_column_update(20 + 1);
         } else {
+                /* Update at the end of the current plane's page. */
                 cons_buffer("State2\n");
 
-                struct world_column map_column;
-                fs_read(_map_fh, &map_column, 1 * sizeof(struct world_column));
-
-                /* When reaching the end of the first page (32x32) of
-                 * plane A, move onto the next page in plane B. */
-                if ((_column_end_idx > 0) && ((_column_end_idx % 32) == 0)) {
-                        _plane_idx = 1;
-                        _page_column_idx = 0;
-                }
-
-                uint16_t *page;
-                page = &COMPONENT(_layer, map).plane[_plane_idx].page[0];
-
-                uint32_t row;
-                for (row = 0; row < 14; row++) {
-                        uint16_t cell_number;
-                        cell_number = map_column.cell[row].number;
-
-                        page[_page_column_idx + (32 * row)] = cell_number;
-                }
-
-                _column_end_idx++;
-                _page_column_idx++;
+                /* Update map */
+                _map_column_update(1);
         }
 
         _column_start_idx++;
@@ -295,4 +243,55 @@ void
 component_world_mgr_on_destroy(struct component *this __unused)
 {
         fs_close(_map_fh);
+}
+
+static void
+_map_column_update(uint32_t columns)
+{
+        assert((columns >= 1) && (columns <= (20 + 1)));
+
+        /* Calculate offset to actual map data */
+        uint32_t file_offset;
+        file_offset =
+            /* Header */
+            sizeof(struct world_header) +
+            /* Colliders */
+            (_map_header.collider_count * sizeof(struct world_collider)) +
+            /* Coins */
+            (_map_header.coin_count * sizeof(struct world_coin)) +
+            /* Column */
+            (_column_end_idx * sizeof(struct world_column));
+        fs_seek(_map_fh, file_offset, SEEK_SET);
+
+        /* When reaching the end of the first page (32x32) of plane A,
+         * move onto the next page in plane B. */
+        if ((_column_end_idx > 0) && ((_column_end_idx % 32) == 0)) {
+                _plane_idx = 1;
+                _page_column_idx = 0;
+        }
+
+        uint16_t *page;
+        page = &COMPONENT(_layer, map).plane[_plane_idx].page[0];
+
+        struct world_column map_columns[20 + 1];
+        fs_read(_map_fh, &map_columns[0], sizeof(struct world_column), columns);
+
+        /* Update map */
+        uint32_t column;
+        for (column = 0; column < columns; column++) {
+                uint32_t row;
+                for (row = 0; row < 14; row++) {
+                        uint16_t cell_number;
+                        cell_number = map_columns[column].cell[row].number;
+
+                        uint32_t page_idx;
+                        page_idx = _page_column_idx + column + (32 * row);
+
+                        page[page_idx] = cell_number;
+                }
+
+                _page_column_idx++;
+
+                _column_end_idx++;
+        }
 }

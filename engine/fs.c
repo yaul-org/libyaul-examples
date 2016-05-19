@@ -42,13 +42,15 @@ fs_close(void *fh)
 }
 
 void
-fs_read(void *fh, void *dst, size_t len)
+fs_read(void *fh, void *ptr, size_t size, size_t nmemb)
 {
         assert(romdisk != NULL);
         assert(fh != NULL);
 
         size_t read_len __unused;
-        read_len = romdisk_read(fh, dst, len);
+        size_t len;
+        len = size * nmemb;
+        read_len = romdisk_read(fh, ptr, len);
 
         assert(read_len == len);
 }
@@ -83,7 +85,7 @@ fs_texture_load(uint8_t type, const char *path, void *image_dst, void *cmap_dst)
         uint8_t *ptr;
         ptr = (uint8_t *)0x00201000;
 
-        fs_read(file_handle, ptr, file_size);
+        fs_read(file_handle, ptr, file_size, 1);
         fs_close(file_handle);
 
         tga_t tga;

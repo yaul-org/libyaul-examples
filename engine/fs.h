@@ -14,7 +14,7 @@ size_t fs_size(void *);
 void *fs_open(const char *);
 void fs_close(void *);
 void fs_init(void);
-void fs_read(void *, void *, size_t);
+void fs_read(void *, void *, size_t, size_t);
 off_t fs_seek(void *, off_t, int);
 
 #define FS_LOAD_TEXTURE_1D 0
