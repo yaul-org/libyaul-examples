@@ -70,7 +70,6 @@ static void *_map_fh;
 static struct world_header _map_header;
 static struct world_collider _map_colliders[COLLIDERS_MAX];
 static struct world_coin _map_coins[COINS_MAX];
-static bool _init = true;
 static uint32_t _column_start_idx = 0;
 static uint32_t _column_end_idx = 0;
 static uint32_t _plane_idx = 0;
@@ -155,6 +154,9 @@ component_world_mgr_on_init(struct component *this __unused)
 
         /* Set the camera speed and start delay */
         COMPONENT(_camera_mgr, speed) = _map_header.camera_speed;
+
+        /* Update */
+        _map_column_update(20 + 1);
 }
 
 void
@@ -202,7 +204,7 @@ component_world_mgr_on_update(struct component *this __unused)
         bool world_end;
         world_end = _column_end_idx >= _map_header.width;
 
-        if (!_init && (!moved || !new_column || world_end)) {
+        if (!moved || !new_column || world_end) {
                 cons_buffer("State3\n");
                 return;
         }
@@ -210,18 +212,16 @@ component_world_mgr_on_update(struct component *this __unused)
         if ((_column_start_idx % 32) == 0) {
                 cons_buffer("State1\n");
 
-                _init = false;
-
                 _plane_idx = 0;
                 _page_column_idx = 0;
 
-                /* Update map */
+                /* Update */
                 _map_column_update(20 + 1);
         } else {
                 /* Update at the end of the current plane's page. */
                 cons_buffer("State2\n");
 
-                /* Update map */
+                /* Update */
                 _map_column_update(1);
         }
 
