@@ -61,12 +61,13 @@ struct world_column {
 
 MEMB(_collider_pool, struct collider, COLLIDERS_MAX, sizeof(struct collider));
 
-static struct transform *_transform;
-static struct camera *_camera;
-static struct camera_mgr *_camera_mgr;
-static struct coin_mgr *_coin_mgr;
-static struct layer *_layer;
-static void *_map_fh;
+static struct transform *_transform = NULL;
+struct transform *_camera_transform = NULL;
+static struct camera *_camera = NULL;
+static struct camera_mgr *_camera_mgr = NULL;
+static struct coin_mgr *_coin_mgr = NULL;
+static struct layer *_layer = NULL;
+static void *_map_fh = NULL;
 static struct world_header _map_header;
 static struct world_collider _map_colliders[COLLIDERS_MAX];
 static struct world_coin _map_coins[COINS_MAX];
@@ -75,7 +76,6 @@ static uint32_t _column_end_idx = 0;
 static uint32_t _plane_idx = 0;
 static uint32_t _page_offset = 0;
 static fix16_t _last_scroll_x = F16(0.0f);
-//static bool _init = true;
 
 static uint8_t _character_pattern_base[2048];
 
@@ -94,6 +94,10 @@ component_world_mgr_on_init(struct component *this __unused)
         assert(_transform != NULL);
 
         _camera = (struct camera *)objects_component_find(COMPONENT_ID_CAMERA);
+
+        _camera_transform = (struct transform *)object_component_find(
+                COMPONENT(_camera, object), COMPONENT_ID_TRANSFORM);
+        assert(_camera_transform != NULL);
         assert(_camera != NULL);
 
         _camera_mgr = (struct camera_mgr *)objects_component_find(
@@ -167,13 +171,6 @@ component_world_mgr_on_update(struct component *this __unused)
             _map_header.name);
         cons_buffer(text_buffer);
 
-        /* Determine how much the camera has traveled from the world's
-         * object origion. */
-        struct transform *camera_transform;
-        camera_transform = (struct transform *)object_component_find(
-                COMPONENT(_camera, object), COMPONENT_ID_TRANSFORM);
-        assert(camera_transform != NULL);
-
         (void)sprintf(text_buffer, "\n\n"
             "width=%i\n"
             "column_start_idx=%i\n"
@@ -187,8 +184,13 @@ component_world_mgr_on_update(struct component *this __unused)
             (int)_page_offset);
         cons_buffer(text_buffer);
 
+        /* Determine how much the camera has traveled from the world's
+         * object origion. */
+
         fix16_t scroll_x;
-        scroll_x = fix16_sub(COMPONENT(camera_transform, position).x, COMPONENT(_transform, position).x);
+        scroll_x = fix16_sub(COMPONENT(_camera_transform, position).x,
+            COMPONENT(_transform, position).x);
+
         fix16_to_str(scroll_x, text_buffer, 7);
         cons_buffer("scroll_x=");
         cons_buffer(text_buffer);
@@ -199,9 +201,12 @@ component_world_mgr_on_update(struct component *this __unused)
         cons_buffer(text_buffer);
         cons_buffer("\n");
 
+        fix16_t delta;
+        delta = fix16_sub(scroll_x, _last_scroll_x);
+
         /* Has the camera moved since the last frame? */
         bool moved;
-        moved = fix16_sub(scroll_x, _last_scroll_x) != F16(0.0f);
+        moved = delta != F16(0.0f);
 
         /* Have we advanced to see a new column? */
         bool new_column;
@@ -211,13 +216,9 @@ component_world_mgr_on_update(struct component *this __unused)
         bool world_end;
         world_end = _column_end_idx >= _map_header.width;
 
-        if (!moved || !new_column || world_end) {
-                cons_buffer("State3\n");
-                return;
+        if (moved && new_column && !world_end) {
+                _map_column_update();
         }
-
-        /* Update */
-        _map_column_update();
 
         _last_scroll_x = scroll_x;
 }
@@ -296,7 +297,7 @@ _map_column_update(void)
         _column_start_idx++;
         _column_end_idx = ((_column_start_idx % 32) == 0)
             ? _column_start_idx
-            : _column_end_idx + column;
+            : _column_end_idx + columns;
 
         _page_offset += columns;
 }
