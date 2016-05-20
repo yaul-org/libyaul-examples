@@ -1,0 +1,276 @@
+#!/usr/bin/python
+
+# -*- mode: python -*-
+
+import json
+import os
+import re
+import struct
+import sys
+import base64
+
+from collections import namedtuple
+
+PWD = os.path.realpath(os.getcwd())
+
+SCREEN_WIDTH = 320
+SCREEN_HEIGHT = 224
+
+CELL_WIDTH = 16
+CELL_HEIGHT = 16
+
+COIN_CELL_WIDTH = 8
+COIN_CELL_HEIGHT = 8
+
+BLUE_CELL_WIDTH = 8
+BLUE_CELL_HEIGHT = 16
+
+COLLIDER_TYPE_VALUES = {"Trigger": 0,
+                        "Collider": 1}
+
+BIT_CELL_MASK = 0x07
+BIT_CELL_0 = 0x00
+BIT_CELL_1 = 0x01
+BIT_CELL_2 = 0x02
+BIT_CELL_3 = 0x03
+BIT_CELL_4 = 0x04
+BIT_CELL_5 = 0x05
+BIT_CELL_6 = 0x06
+BIT_CELL_7 = 0x07
+BIT_CELL_COIN = 0x08
+BIT_CELL_COLLIDER = 0x10
+BIT_CELL_TRIGGER = 0x20
+
+Coin = namedtuple('Coin', 'id value x y cell_x cell_y')
+Blue = namedtuple('Blue', 'x y cell_x cell_y')
+Collider = namedtuple('Collider', 'id type type_value x y cell_x cell_y width height')
+
+def fix16_t(value):
+    """
+    """
+
+    return int(value * float(2 ** 16))
+
+def rgb555(hex_value):
+    """
+    """
+
+    r888 = int("0x" + hex_value[1:3], 16)
+    g888 = int("0x" + hex_value[3:5], 16)
+    b888 = int("0x" + hex_value[5:7], 16)
+    return 0x8000 | ((b888 >> 3) << 10) | ((g888 >> 3) << 5) | (r888 >> 3)
+
+def fetch_json_files():
+    """
+    """
+
+    for root, dirs, fnames in os.walk(os.path.join(os.getcwd(), "worlds")):
+        return [os.path.realpath(os.path.join(root, fname))
+                for fname in fnames
+                if re.match(r".+\.json$", fname)]
+
+def process(json_data):
+    """
+    """
+
+    # Sanity check
+    map_width = json_data['width']
+    map_height = json_data['height']
+    cell_width = json_data['tilewidth']
+    cell_height = json_data['tileheight']
+    orientation = json_data['orientation']
+    assert((cell_width == CELL_WIDTH) and (cell_height == CELL_HEIGHT))
+    assert((((map_width * cell_width) % SCREEN_WIDTH) == 0) and
+           (((map_height * cell_height) % SCREEN_HEIGHT) == 0))
+    assert(orientation == "orthogonal")
+    bg_color = json_data['backgroundcolor']
+    properties = json_data['properties']
+    assert(('camera_speed' in properties) and
+           ('start_delay' in properties) and
+           ('world_name' in properties) and
+           ('file_name' in properties))
+    camera_speed = float(properties['camera_speed'])
+    print "Camera speed: %.7f" % (camera_speed)
+    start_delay = int(properties['start_delay'])
+    print "Start delay: %is" % (start_delay)
+    # Null-pad world name
+    world_name = str(properties['world_name'])
+    fmt_world_name = str(properties['world_name']) + "".join((16 - len(properties['world_name'])) * ['\00'])
+    assert((len(world_name) > 0) and (len(world_name) <= 16))
+    file_name = properties['file_name']
+    world_layer = None
+    objects_layer = None
+    collision_layer = None
+    assert(len(json_data['layers']) == 3)
+    for layer in json_data['layers']:
+        if (layer['type'] == 'tilelayer') and (layer['name'] == 'World'):
+            world_layer = layer
+        elif (layer['type'] == 'objectgroup') and (layer['name'] == 'Objects'):
+            objects_layer = layer
+        elif (layer['type'] == 'objectgroup') and (layer['name'] == 'Collision'):
+            collision_layer = layer
+    assert(world_layer and objects_layer and collision_layer)
+    # Objects
+    unsorted_coins = []
+    blue_position = None
+    for map_object in objects_layer['objects']:
+        if not map_object['visible']:
+            continue
+        if (map_object['name'] == 'Coin') and (map_object['type'] == 'Item'):
+            assert((map_object['width'] == COIN_CELL_WIDTH) and
+                   (map_object['height'] == COIN_CELL_HEIGHT))
+            assert((((map_object['x'] - (COIN_CELL_WIDTH + 4)) % CELL_WIDTH) == 0) and
+                   (((map_object['y'] - (COIN_CELL_HEIGHT + 4)) % CELL_HEIGHT) == 0))
+            coin = Coin(id = map_object['id'],
+                        value = int(map_object['properties']['value']),
+                        x = map_object['x'],
+                        y = SCREEN_HEIGHT - (map_object['y'] + COIN_CELL_HEIGHT),
+                        cell_x = ((map_object['x'] - (COIN_CELL_WIDTH / 2)) / CELL_WIDTH),
+                        cell_y = (((SCREEN_HEIGHT - map_object['y']) - (COIN_CELL_HEIGHT / 2)) / CELL_HEIGHT) )
+            unsorted_coins.append(coin)
+        elif (map_object['name'] == 'Blue') and (map_object['type'] == 'Player'):
+            assert((((map_object['x'] - (BLUE_CELL_WIDTH / 2)) % CELL_WIDTH) == 0) and
+                   ((map_object['y'] % CELL_HEIGHT) == 0))
+            blue_position = Blue(x = map_object['x'],
+                                 y = SCREEN_HEIGHT - map_object['y'],
+                                 cell_x = ((map_object['x'] - (COIN_CELL_WIDTH / 2)) / CELL_WIDTH),
+                                 cell_y = ((SCREEN_HEIGHT - (map_object['y'] + BLUE_CELL_HEIGHT)) / CELL_HEIGHT))
+            print ("  [1;34mBlue[m\t\t#%03i @ (%3i,%3i) cell: [%3i,%3i]"
+                   % (map_object['id'],
+                      blue_position.x,
+                      blue_position.y,
+                      blue_position.cell_x,
+                      blue_position.cell_y))
+    assert(blue_position)
+    coins = sorted(unsorted_coins, key = lambda coin: coin.x)
+    coin_idx = 1
+    for coin in coins:
+        print ("  %3i. [1;33mCoin[m\t\t#%03i @ (%3i,%3i) cell: [%3i,%3i] value: %3i points"
+               % (coin_idx,
+                  coin.id,
+                  coin.x,
+                  coin.y,
+                  coin.cell_x,
+                  coin.cell_y,
+                  coin.value))
+        coin_idx += 1
+    # Collision
+    unsorted_colliders = []
+    for map_object in collision_layer['objects']:
+        if not map_object['visible']:
+            continue
+        if (map_object['type'] == 'Collider') or (map_object['type'] == 'Trigger'):
+            assert(((map_object['x'] % CELL_WIDTH) == 0) and
+                   (((SCREEN_HEIGHT - map_object['y']) % CELL_HEIGHT) == 0))
+            assert(((map_object['width'] % CELL_WIDTH) == 0) and
+                   ((map_object['height'] % CELL_HEIGHT) == 0))
+            type_value = COLLIDER_TYPE_VALUES[map_object['type']]
+            collider = Collider(id = map_object['id'],
+                                type = map_object['type'],
+                                type_value = type_value,
+                                x = map_object['x'],
+                                y = (SCREEN_HEIGHT - (map_object['y'] + map_object['height'])),
+                                cell_x = (map_object['x'] / CELL_WIDTH),
+                                cell_y = ((SCREEN_HEIGHT - (map_object['y'] + map_object['height'])) / CELL_HEIGHT),
+                                width = map_object['width'],
+                                height = map_object['height'])
+            unsorted_colliders.append(collider)
+    colliders = sorted(unsorted_colliders, key = lambda collider: collider.x)
+    collider_idx = 1
+    for collider in colliders:
+        print ("  %3i. %s\t#%03i @ (%3i,%3i) cell: [%3i,%3i] W/H: (%3i,%3i)"
+               % (collider_idx,
+                  collider.type,
+                  collider.id,
+                  collider.x,
+                  collider.y,
+                  collider.cell_x,
+                  collider.cell_y,
+                  collider.width,
+                  collider.height))
+        collider_idx += 1
+    # World
+    try:
+        os.mkdir(os.path.join(PWD, "romdisk", "WORLDS"))
+    except OSError as exception:
+        # [Errno 17] File exists: '...'
+        if exception.errno != 17:
+            raise
+    output_file_name = os.path.join(PWD, "romdisk", "WORLDS", file_name)
+    with open(output_file_name, "wb+") as output_fp:
+        map_data = world_layer['data']
+        # World name
+        # Width (uint16_t)
+        # Height (uint16_t)
+        # Background color (color_rgb555_t)
+        # Camera speed (fix16_t)
+        # Start delay (uint16_t)
+        # Blue start position (fix16_vector2_t)
+        # Collider count (uint16_t)
+        output_fp.write(struct.pack(">16sHHHLHLLHH",
+                                    world_name,
+                                    map_width,
+                                    map_height,
+                                    rgb555(bg_color),
+                                    fix16_t(camera_speed),
+                                    start_delay,
+                                    fix16_t(blue_position.x),
+                                    fix16_t(blue_position.y),
+                                    len(colliders),
+                                    len(coins)))
+        # Colliders
+        for collider in colliders:
+            output_fp.write(struct.pack(">HLLhhHH",
+                                        collider.type_value,
+                                        fix16_t(collider.x),
+                                        fix16_t(collider.y),
+                                        collider.cell_x,
+                                        collider.cell_y,
+                                        collider.width,
+                                        collider.height))
+        # Items
+        for coin in coins:
+            output_fp.write(struct.pack(">bLLhh",
+                                        0x01, # Hard-coded
+                                        fix16_t(coin.x),
+                                        fix16_t(coin.y),
+                                        coin.cell_x,
+                                        coin.cell_y))
+        print "  " + ("-" * map_height) + "+"
+        for cell_x in range(map_width):
+            sys.stdout.write("  ")
+            for cell_y in range(map_height):
+                cell_no = max(0, map_data[cell_x + (cell_y * map_width)] - 1)
+                byte = 0x00
+                byte |= cell_no & BIT_CELL_MASK
+                for coin in coins:
+                    if (coin.cell_x == cell_x) and (coin.cell_y == cell_y):
+                        byte |= BIT_CELL_COIN
+                for collider in colliders:
+                    if (collider.cell_x == cell_x) and (collider.cell_y == cell_y):
+                        if collider.type == "Collider":
+                            byte |= BIT_CELL_COLLIDER
+                        elif collider.type == "Trigger":
+                            byte |= BIT_CELL_TRIGGER
+                if cell_no == 0:
+                    if (blue_position.cell_x == cell_x) and (blue_position.cell_y == cell_y):
+                        sys.stdout.write("@")
+                    else:
+                            sys.stdout.write(" ")
+                else:
+                    sys.stdout.write(str(cell_no))
+                output_fp.write(struct.pack("B", byte))
+            print "|"
+        print "  " + ("-" * map_height) + "+"
+
+for json_filename in fetch_json_files():
+    try:
+        print "Processing `%s'" % (os.path.relpath(json_filename))
+        with open(json_filename, "r") as file_object:
+            json_data = json.load(file_object)
+            process(json_data)
+    except:
+        print (">" * 80)
+        raise
+        print ("<" * 80)
+        sys.exit(1)
