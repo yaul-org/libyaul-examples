@@ -67,7 +67,7 @@ ROMDISK_DEPS:= \
 	    printf -- "Tiled Map Editor (tiled) is required (http://www.mapeditor.org/)\n" >&2; \
 	    exit 1; \
 	fi
-	tiled --export-map "Json files (*.json)" $< $@
+	tiled --export-map $< $@
 	tools/tmx2map
 	$(RM) $@
 
