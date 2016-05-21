@@ -19,5 +19,5 @@ IP_1ST_READ_ADDR:= 0x06004000
 include $(INSTALL_ROOT)/share/post.common.mk
 
 ifneq ($(strip $(OPTION_DEV_CARTRIDGE)),2)
-  $(error Wrong development cartridge value (see `OPTION_DEV_CARTRIDGE'))
+  $(warning Wrong development cartridge value (see `OPTION_DEV_CARTRIDGE'))
 endif
