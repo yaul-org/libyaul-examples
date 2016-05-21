@@ -290,7 +290,7 @@ object_project(const struct object *object, const fix16_vector3_t *position)
                         polygon.cp_mode.transparent_pixel = true;
                         polygon.cp_mode.end_code = true;
                         polygon.cp_mode.mesh = material->pseudo_trans;
-                        polygon.cp_color = COLOR_RGB_DATA | material->solid_color.raw;
+                        polygon.cp_color = material->solid_color.raw;
                         polygon.cp_grad = 0x00000000;
                         polygon.cp_vertex.a.x = (width / 2) - 1;
                         polygon.cp_vertex.a.y = -(height / 2);
