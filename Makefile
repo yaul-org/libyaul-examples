@@ -1,11 +1,8 @@
 EXAMPLES:= \
 	games/inkfill \
 	simple/arp-comm \
-	simple/arp-msg \
-	simple/cpu-dmac \
 	simple/dram-cartridge \
 	simple/gdb \
-	simple/line-scroll-screen \
 	simple/romdisk \
 	test-suites/vdp1
 
