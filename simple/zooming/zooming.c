@@ -65,6 +65,15 @@ hardware_init(void)
 
         /* VDP1 */
         vdp1_init();
+        vdp2_sprite_type_set(1);
+        vdp2_sprite_type_priority_set(0, 7);
+        vdp2_sprite_type_priority_set(1, 7);
+        vdp2_sprite_type_priority_set(2, 7);
+        vdp2_sprite_type_priority_set(3, 7);
+        vdp2_sprite_type_priority_set(4, 7);
+        vdp2_sprite_type_priority_set(5, 7);
+        vdp2_sprite_type_priority_set(6, 7);
+        vdp2_sprite_type_priority_set(7, 7);
 
         /* VDP2 */
         vdp2_init();
