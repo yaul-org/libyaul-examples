@@ -18,3 +18,9 @@ IP_SLAVE_STACK_ADDR:= 0x00000000
 IP_1ST_READ_ADDR:= 0x06004000
 
 include $(INSTALL_ROOT)/share/post.common.mk
+
+ifeq ($(strip $(OPTION_DEV_CARTRIDGE)),0)
+  $(warning Wrong development cartridge value (see `OPTION_DEV_CARTRIDGE'))
+else ifeq ($(strip $(OPTION_DEV_CARTRIDGE)),2)
+  $(warning Wrong development cartridge value (see `OPTION_DEV_CARTRIDGE'))
+endif
