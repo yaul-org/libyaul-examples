@@ -13,9 +13,9 @@
 
 static struct smpc_peripheral_digital _digital_pad;
 static uint64_t _tick = 0;
-static fix16_t _scroll_x = 0;
-static fix16_t _scroll_y = 0;
-static fix16_t _zoom = 0;
+static fix16_t _scroll_x = F16(0.0f);
+static fix16_t _scroll_y = F16(0.0f);
+static fix16_t _zoom = F16(1.0f);
 
 static void hardware_init(void);
 
@@ -44,8 +44,8 @@ main(void)
 static void
 hardware_init(void)
 {
-        static color_rgb555_t palette[] = {
-                COLOR_RGB555(0x1F, 0x1F, 0x1F),
+        static color_rgb555_t palette[] __unused = {
+                COLOR_RGB555(0x1F, 0x00, 0x00),
                 COLOR_RGB555(0x1F, 0x1F, 0x1F),
                 COLOR_RGB555(0x04, 0x14, 0x1A),
                 COLOR_RGB555(0x1F, 0x0F, 0x09),
@@ -101,8 +101,8 @@ hardware_init(void)
         uint16_t *cpd;
         cpd = (uint16_t *)VRAM_ADDR_4MBIT(2, 0x00000);
 
-        uint16_t *color_palette;
-        color_palette = (uint16_t *)CRAM_MODE_1_OFFSET(0, 2, 0);
+        color_rgb555_t *color_palette;
+        color_palette = (color_rgb555_t *)CRAM_MODE_1_OFFSET(0, 0, 0);
 
         uint16_t *planes[4];
         planes[0] = (uint16_t *)VRAM_ADDR_4MBIT(0, 0x08000);
@@ -126,7 +126,7 @@ hardware_init(void)
 
         vdp2_scrn_cell_format_set(&format);
         vdp2_scrn_priority_set(SCRN_NBG1, 7);
-        vdp2_scrn_display_set(SCRN_NBG1, /* transparent = */ true);
+        vdp2_scrn_display_set(SCRN_NBG1, /* transparent = */ false);
 
         struct vram_ctl *vram_ctl;
         vram_ctl = vdp2_vram_control_get();
@@ -156,6 +156,7 @@ hardware_init(void)
                 for (i = 0; i < 16; i++) {
                         uint32_t x;
                         x = j & 0x0F;
+
                         cpd[i + (j * (32 / 2))] = (x << 12) | (x << 8) | (x << 4) | x;
                 }
         }
