@@ -1,4 +1,5 @@
-About
-=====
+Yaul
+====
 
-Thorough examples (and tests) using different features of `libyaul`
+### About
+  Examples repository for [`libyaul`](https://github.com/ijacquez/libyaul).
