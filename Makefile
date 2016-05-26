@@ -1,10 +1,14 @@
 EXAMPLES:= \
 	games/inkfill \
-	simple/arp-comm \
 	simple/dram-cartridge \
-	simple/gdb \
 	simple/romdisk \
 	test-suites/vdp1
+
+ifeq ($(OPTION_DEV_CARTRIDGE),$(filter $(OPTION_DEV_CARTRIDGE),1 2))
+EXAMPLES+= \
+	simple/arp-comm \
+	simple/gdb
+endif
 
 ifeq ($(strip $(INSTALL_ROOT)),)
   $(error Undefined INSTALL_ROOT (install root directory))

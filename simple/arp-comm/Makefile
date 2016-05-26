@@ -4,6 +4,10 @@ endif
 
 include $(INSTALL_ROOT)/share/pre.common.mk
 
+ifneq ($(strip $(OPTION_DEV_CARTRIDGE)),2)
+  $(error Wrong development cartridge value (see `OPTION_DEV_CARTRIDGE'))
+endif
+
 SH_PROGRAM:= arp-comm
 SH_OBJECTS:= arp-comm.o
 
@@ -17,7 +21,3 @@ IP_SLAVE_STACK_ADDR:= 0x00000000
 IP_1ST_READ_ADDR:= 0x06004000
 
 include $(INSTALL_ROOT)/share/post.common.mk
-
-ifneq ($(strip $(OPTION_DEV_CARTRIDGE)),2)
-  $(warning Wrong development cartridge value (see `OPTION_DEV_CARTRIDGE'))
-endif
