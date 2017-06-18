@@ -17,6 +17,8 @@
 #define OT_PRIMITIVE_BUCKET_SORT_BUBBLE         1
 #define OT_PRIMITIVE_BUCKET_SORT_QUICK          2
 
+TAILQ_HEAD(ot_primitive_head, ot_primitive);
+
 struct ot_primitive {
         uint16_t otp_color;
         fix16_t otp_avg;
@@ -25,16 +27,11 @@ struct ot_primitive {
         TAILQ_ENTRY(ot_primitive) otp_entries;
 } __aligned(32);
 
-struct ot_primitive_bucket {
-        TAILQ_HEAD(, ot_primitive) opb_bucket;
-        uint32_t opb_count;
-};
-
 extern void ot_init(void);
 extern void ot_primitive_add(const fix16_vector4_t *, const fix16_vector4_t *,
     uint16_t);
 extern void ot_bucket_init(int32_t);
-extern struct ot_primitive_bucket *ot_bucket(int32_t);
+extern struct ot_primitive_head *ot_bucket(int32_t);
 extern bool ot_bucket_empty(int32_t);
 
 extern void ot_bucket_primitive_sort(int32_t, int32_t);

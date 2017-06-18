@@ -7,6 +7,11 @@
 
 #include "cube.h"
 
+struct ot_primitive_bucket {
+        struct ot_primitive_head opb_bucket;
+        uint32_t opb_count;
+};
+
 /* OT */
 static struct ot_primitive_bucket ot_primitive_bucket_pool[OT_PRIMITIVE_BUCKETS];
 static struct ot_primitive ot_primitive_pool[OT_PRIMITIVE_CNT];
@@ -34,10 +39,10 @@ ot_bucket_init(int32_t idx)
         opb->opb_count = 0;
 }
 
-struct ot_primitive_bucket *
+struct ot_primitive_head *
 ot_bucket(int32_t idx)
 {
-        return &ot_primitive_bucket_pool[idx];
+        return &ot_primitive_bucket_pool[idx].opb_bucket;
 }
 
 bool

@@ -125,7 +125,7 @@ main(void)
 
 #if RENDER == 1
                                 struct ot_primitive *otp;
-                                TAILQ_FOREACH (otp, &ot_bucket(idx)->opb_bucket, otp_entries) {
+                                TAILQ_FOREACH (otp, ot_bucket(idx), otp_entries) {
                                         polygon.cp_color = otp->otp_color;
                                         polygon.cp_mode.transparent_pixel = true;
                                         polygon.cp_mode.end_code = true;
