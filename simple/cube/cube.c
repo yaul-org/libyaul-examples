@@ -104,11 +104,11 @@ main(void)
                         matrix_stack_rotate(angle, 1);
                         matrix_stack_rotate(angle, 2);
 
+                        angle = fix16_add(angle, F16(-1.0f));
+
                         model_polygon_project(teapot_vertices, teapot_indices,
                             teapot_normals, TEAPOT_POLYGON_CNT);
                 } matrix_stack_pop();
-
-                angle = fix16_add(angle, F16(-1.0f));
 
                 vdp1_cmdt_list_begin(1); {
                         int32_t idx;
@@ -236,8 +236,7 @@ model_polygon_project(const fix16_vector4_t *vb, const uint32_t *ib,
             &view_forward_object);
 
         uint32_t idx;
-        for (idx = 0; idx < (ib_cnt * 4); idx += 4)
-        {
+        for (idx = 0; idx < (ib_cnt * 4); idx += 4) {
                 uint16_t color;
                 color = colors[idx >> 2];
 
