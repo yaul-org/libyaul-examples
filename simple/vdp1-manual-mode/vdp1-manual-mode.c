@@ -34,11 +34,19 @@ static volatile uint32_t hblank_tick = 0;
 static volatile uint32_t vblank_in_scanline = 0;
 static volatile uint32_t vblank_out_scanline = 0;
 
+static volatile uint32_t tick = 0;
+
+static volatile bool vblank_in = false;
+static volatile bool swap = false;
+static volatile bool erased = true;
+
 static void hblank_in_handler(irq_mux_handle_t *);
 static void hardware_init(void);
 static void vblank_in_handler(irq_mux_handle_t *);
 static void vblank_out_handler(irq_mux_handle_t *);
 static void draw_polygon(color_rgb555_t);
+
+static void synch(void);
 
 void
 main(void)
@@ -49,12 +57,20 @@ main(void)
         MEMORY_WRITE(16, VDP1(FBCR), 0x0000);
         MEMORY_WRITE(16, VDP1(PTMR), 0x0000);
 
+        /* 1. Erase FB
+         * 2. Upload VDP1 command tables
+         * 3. Start drawing immediately
+         * 4. Wait until drawing is done
+         * 5. Stop drawing
+         * 6. Change FB
+         * 7. Wait for FB change */
+
         /* Erase FB */
         MEMORY_WRITE(16, VDP1(TVMR), 0x0000);
         MEMORY_WRITE(16, VDP1(FBCR), FCM);
 
         /* Since display is off, we're in VBLANK-IN */
-        draw_polygon(COLOR_RGB555(0, 31, 0));
+        draw_polygon(COLOR_RGB555(0, 0, 0));
         /* Commit VDP1 command tables to VDP1 VRAM */
         vdp1_cmdt_list_commit();
         /* Start drawing immediately */
@@ -71,15 +87,67 @@ main(void)
         MEMORY_WRITE(16, VDP1(TVMR), 0x0000);
         MEMORY_WRITE(16, VDP1(FBCR), FCM | FCT);
 
-        /* Wait for change of frame */
+        /* Wait for change of FB */
         while ((MEMORY_READ(16, VDP1(EDSR)) & CEF) == CEF) {
         }
 
         /* Turn on display */
         vdp2_tvmd_display_set();
 
+        cons_init(CONS_DRIVER_VDP2, 40, 30);
+
+        uint32_t idx = 0;
+
+        color_rgb555_t colors[] = {
+                COLOR_RGB555_INITIALIZER(31,  0,  0), // Red
+                COLOR_RGB555_INITIALIZER( 0, 31,  0), // Green
+                COLOR_RGB555_INITIALIZER( 0,  0, 31), // Blue
+                COLOR_RGB555_INITIALIZER(31, 31,  0), // Yellow
+                COLOR_RGB555_INITIALIZER(31,  0, 31), // Magenta
+                COLOR_RGB555_INITIALIZER( 0, 31, 31)  // Cyan
+        };
+
         while (true) {
+                (void)sprintf(text_buffer, "[H[2J%08lu, %08lu", tick, vblank_tick);
+                cons_buffer(text_buffer);
+
+                draw_polygon(colors[idx]);
+                idx = (idx + 1) % 6;
+
+                /* This simulates taking a long time to process */
+                volatile int y  = 0;
+
+                for (y = 0; y < 60; y++) {
+                        vdp2_tvmd_vblank_out_wait();
+                        vdp2_tvmd_vblank_in_wait();
+                }
+
+                synch();
         }
+}
+
+static void
+synch(void)
+{
+        /* Commit VDP1 command tables to VDP1 VRAM */
+        vdp1_cmdt_list_commit();
+        /* Start drawing immediately */
+        MEMORY_WRITE(16, VDP1(PTMR), 0x0001);
+
+        /* Request to swap frame buffers (erase & change) */
+        swap = true;
+
+        /* Wait until a frame buffer erase & change request is made and
+         * we're at the start of V-BLANK IN */
+        while (!erased && !vblank_in) {
+        }
+
+        swap = false;
+
+        /* Update tick */
+        tick++;
+
+        cons_flush();
 }
 
 static void
@@ -126,7 +194,7 @@ hardware_init(void)
          *  1   1   0
          *  1   1   1     Manual mode (erase/change)    Erase V-blank
          *
-         * VBE: V-Blank Erase/Write
+         * VBE: V-BLANK Erase/Write
          * FCM: Frame Buffer Mode
          * FCT: Frame Buffer Trigger
          *
@@ -137,11 +205,7 @@ hardware_init(void)
          * buffer to the next change.
          *
          * VDP1 can erase frame buffer during display, or in the
-         * vertical blanking interval (VBI).
-         *
-         * Instruct VDP1 to erase the frame buffer the next time it is
-         * displayed. This method requires you to know one frame in
-         * advance when you'll be finished with drawing.
+         * vertical blanking interval.
          *
          * Not knowing when you'll be ready to swap, you can tell VDP1
          * to start erasing the frame buffer at the beginning of the
@@ -218,12 +282,38 @@ hblank_in_handler(irq_mux_handle_t *irq_mux __unused)
 static void
 vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
 {
+        vblank_in = true;
+        vblank_tick++;
         vblank_in_scanline = vdp2_tvmd_vcount_get();
+
+        erased = false;
+
+        /* It's assumed when swapping is requested, a batch of command
+         * tables were uploaded to VDP1 VRAM.
+         *
+         * Waiting until CEF=1 in EDSR, display (change) the frame
+         * buffer, and erase the other frame buffer.
+         *
+         * Upon changing frame buffers (VBE=FCM=FCT=1), CEF=0. */
+        volatile uint16_t reg_edsr = MEMORY_READ(16, VDP1(EDSR));
+
+        if (swap && ((reg_edsr & CEF) == CEF)) {
+                /* Check for transfer-over (BEF=0) (how?) */
+
+                /* V-BLANK IN erase & change at beginning of next field */
+                MEMORY_WRITE(16, VDP1(TVMR), VBE);
+                MEMORY_WRITE(16, VDP1(FBCR), FCM | FCT);
+
+                erased = true;
+        }
 }
 
 static void
 vblank_out_handler(irq_mux_handle_t *irq_mux __unused)
 {
+        vblank_in = false;
         vblank_out_scanline = vdp2_tvmd_vcount_get();
-        vblank_tick++;
+
+        /* Disable V-BLANK-IN erase */
+        MEMORY_WRITE(16, VDP1(TVMR), 0x0000);
 }
