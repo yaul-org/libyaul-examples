@@ -19,8 +19,9 @@
 #define RGB888_TO_RGB555(r, g, b) (0x8000 | (((b) >> 3) << 10) |               \
     (((g) >> 3) << 5) | ((r) >> 3))
 
-#define FCM     (1 << 1)
 #define FCT     (1 << 0)
+#define FCM     (1 << 1)
+
 #define VBE     (1 << 3)
 
 #define BEF     (1 << 0)
@@ -48,7 +49,7 @@ main(void)
         MEMORY_WRITE(16, VDP1(FBCR), 0x0000);
         MEMORY_WRITE(16, VDP1(PTMR), 0x0000);
 
-        /* Erase */
+        /* Erase FB */
         MEMORY_WRITE(16, VDP1(TVMR), 0x0000);
         MEMORY_WRITE(16, VDP1(FBCR), FCM);
 
@@ -63,7 +64,10 @@ main(void)
         while ((MEMORY_READ(16, VDP1(EDSR)) & CEF) != CEF) {
         }
 
-        /* Change */
+        /* Idle */
+        MEMORY_WRITE(16, VDP1(PTMR), 0x0000);
+
+        /* Change FB */
         MEMORY_WRITE(16, VDP1(TVMR), 0x0000);
         MEMORY_WRITE(16, VDP1(FBCR), FCM | FCT);
 
@@ -76,7 +80,6 @@ main(void)
 
         while (true) {
         }
-
 }
 
 static void
