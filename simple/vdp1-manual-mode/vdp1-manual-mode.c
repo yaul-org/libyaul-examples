@@ -53,48 +53,10 @@ main(void)
 {
         hardware_init();
 
-        MEMORY_WRITE(16, VDP1(TVMR), 0x0000);
-        MEMORY_WRITE(16, VDP1(FBCR), 0x0000);
-        MEMORY_WRITE(16, VDP1(PTMR), 0x0000);
-
-        /* 1. Erase FB
-         * 2. Upload VDP1 command tables
-         * 3. Start drawing immediately
-         * 4. Wait until drawing is done
-         * 5. Stop drawing
-         * 6. Change FB
-         * 7. Wait for FB change */
-
-        /* Erase FB */
-        MEMORY_WRITE(16, VDP1(TVMR), 0x0000);
-        MEMORY_WRITE(16, VDP1(FBCR), FCM);
-
-        /* Since display is off, we're in VBLANK-IN */
-        draw_polygon(COLOR_RGB555(0, 0, 0));
-        /* Commit VDP1 command tables to VDP1 VRAM */
-        vdp1_cmdt_list_commit();
-        /* Start drawing immediately */
-        MEMORY_WRITE(16, VDP1(PTMR), 0x0001);
-
-        /* Wait until VDP1 finishes drawing */
-        while ((MEMORY_READ(16, VDP1(EDSR)) & CEF) != CEF) {
-        }
-
-        /* Idle */
-        MEMORY_WRITE(16, VDP1(PTMR), 0x0000);
-
-        /* Change FB */
-        MEMORY_WRITE(16, VDP1(TVMR), 0x0000);
-        MEMORY_WRITE(16, VDP1(FBCR), FCM | FCT);
-
-        /* Wait for change of FB */
-        while ((MEMORY_READ(16, VDP1(EDSR)) & CEF) == CEF) {
-        }
+        cons_init(CONS_DRIVER_VDP2, 40, 30);
 
         /* Turn on display */
         vdp2_tvmd_display_set();
-
-        cons_init(CONS_DRIVER_VDP2, 40, 30);
 
         uint32_t idx = 0;
 
@@ -116,8 +78,7 @@ main(void)
 
                 /* This simulates taking a long time to process */
                 volatile int y  = 0;
-
-                for (y = 0; y < 60; y++) {
+                for (y = 0; y < 39; y++) {
                         vdp2_tvmd_vblank_out_wait();
                         vdp2_tvmd_vblank_in_wait();
                 }
@@ -129,20 +90,27 @@ main(void)
 static void
 synch(void)
 {
-        /* Commit VDP1 command tables to VDP1 VRAM */
-        vdp1_cmdt_list_commit();
-        /* Start drawing immediately */
-        MEMORY_WRITE(16, VDP1(PTMR), 0x0001);
+        bool vdp1_enabled = true;
 
-        /* Request to swap frame buffers (erase & change) */
-        swap = true;
+        if (vdp1_enabled) {
+                /* Commit VDP1 command tables to VDP1 VRAM */
+                vdp1_cmdt_list_commit();
+                /* Start drawing immediately */
+                MEMORY_WRITE(16, VDP1(PTMR), 0x0001);
 
-        /* Wait until a frame buffer erase & change request is made and
-         * we're at the start of V-BLANK IN */
-        while (!erased && !vblank_in) {
+                /* Request to swap frame buffers (erase & change) */
+                swap = true;
+
+                /* Wait until a frame buffer erase & change request is made and
+                 * we're at the start of V-BLANK IN */
+                while (!erased && !vblank_in) {
+                }
+
+                swap = false;
+        } else {
+                while (!vblank_in) {
+                }
         }
-
-        swap = false;
 
         /* Update tick */
         tick++;
@@ -184,43 +152,38 @@ hardware_init(void)
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
             TVMD_VERT_224);
 
-        /* VBE FCM FCT
-         *  0   0   0     1-cycle mode                  Every 16.7ms
-         *  0   0   1
-         *  0   1   0     Manual mode (erase)           Erase next field
-         *  0   1   1     Manual mode (change)          Change next field
-         *  1   0   0
-         *  1   0   1
-         *  1   1   0
-         *  1   1   1     Manual mode (erase/change)    Erase V-blank
-         *
-         * VBE: V-BLANK Erase/Write
-         * FCM: Frame Buffer Mode
-         * FCT: Frame Buffer Trigger
-         *
-         * A field is the time it takes a scanning line to scan one
-         * screen. For NTSC, this is 1/60s.
-         *
-         * A frame is the time it takes from one change of the frame
-         * buffer to the next change.
-         *
-         * VDP1 can erase frame buffer during display, or in the
-         * vertical blanking interval.
-         *
-         * Not knowing when you'll be ready to swap, you can tell VDP1
-         * to start erasing the frame buffer at the beginning of the
-         * next vertical blanking interval. Draw a normal polygon,
-         * covering the entire screen to erase the screen.
-         *         *
-         * - When the change mode of the frame buffer is in 1-cycle
-         *   mode, one frame is equal to one field.
-         *
-         * - When the frame buffer is changed every TWO fields, one
-         *   frame comprises two fields.
-         *
-         * - When the frame buffer is changed only once a second in
-         *   manual mode, one frame comprises 60 fields in NTSC.
-         */
+        MEMORY_WRITE(16, VDP1(TVMR), 0x0000);
+        MEMORY_WRITE(16, VDP1(FBCR), 0x0000);
+        MEMORY_WRITE(16, VDP1(PTMR), 0x0000);
+
+        /* 1. Upload VDP1 command tables
+         * 2. Start drawing immediately
+         * 3. Wait until drawing is done
+         * 4. Stop drawing
+         * 5. Change FB
+         * 6. Wait for FB change */
+
+        /* Since display is off, we're in VBLANK-IN */
+        draw_polygon(COLOR_RGB555(0, 0, 0));
+        /* Commit VDP1 command tables to VDP1 VRAM */
+        vdp1_cmdt_list_commit();
+        /* Start drawing immediately */
+        MEMORY_WRITE(16, VDP1(PTMR), 0x0001);
+
+        /* Wait until VDP1 finishes drawing */
+        while ((MEMORY_READ(16, VDP1(EDSR)) & CEF) != CEF) {
+        }
+
+        /* Idle */
+        MEMORY_WRITE(16, VDP1(PTMR), 0x0000);
+
+        /* Change FB */
+        MEMORY_WRITE(16, VDP1(TVMR), 0x0000);
+        MEMORY_WRITE(16, VDP1(FBCR), FCM | FCT);
+
+        /* Wait for change of FB */
+        while ((MEMORY_READ(16, VDP1(EDSR)) & CEF) == CEF) {
+        }
 }
 
 static void
