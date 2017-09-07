@@ -53,7 +53,7 @@ main(void)
         delay(1);
 
         cons_write("Opening \"/tmp/txt/hello.world\"... ");
-        if ((fh = romdisk_open(romdisk, "/tmp/txt/hello.world", O_RDONLY)) == NULL) {
+        if ((fh = romdisk_open(romdisk, "/tmp/txt/hello.world")) == NULL) {
                 cons_write("[1;31mFAILED[0m\n");
                 abort();
         }

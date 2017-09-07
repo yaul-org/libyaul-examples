@@ -30,7 +30,7 @@ fs_open(const char *path)
 
         void *fh;
 
-        fh = romdisk_open(romdisk, path, O_RDONLY);
+        fh = romdisk_open(romdisk, path);
         assert(fh != NULL);
 
         return fh;
