@@ -70,7 +70,7 @@ main(void)
         };
 
         while (true) {
-                (void)sprintf(text_buffer, "[H[2J%08lu, %08lu", tick, vblank_tick);
+                (void)snprintf(text_buffer, sizeof(text_buffer), "[H[2J%08lu, %08lu", tick, vblank_tick);
                 cons_buffer(text_buffer);
 
                 draw_polygon(colors[idx]);

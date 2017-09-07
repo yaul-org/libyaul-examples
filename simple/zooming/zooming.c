@@ -10,6 +10,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 static struct smpc_peripheral_digital _digital_pad;
 static uint64_t _tick = 0;

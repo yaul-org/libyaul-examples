@@ -63,7 +63,7 @@ main(void)
 
         cart_area = (uint32_t *)dram_cartridge_area();
         cart_len = dram_cartridge_size();
-        (void)sprintf(buf, "%s DRAM Cartridge detected\n",
+        (void)snprintf(buf, 1024, "%s DRAM Cartridge detected\n",
             ((id == DRAM_CARTRIDGE_ID_1MIB)
                 ? "8-Mbit"
                 : "32-Mbit"));

@@ -5,6 +5,8 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
+#include <string.h>
+
 #include "matrix_stack.h"
 
 SLIST_HEAD(matrix_stacks, matrix_stack);

@@ -5,6 +5,8 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
+#include <string.h>
+
 #include "cube.h"
 
 #define MODEL_TRANSFORMATIONS   1 /* 0: No transforms   1: Apply transforms */
