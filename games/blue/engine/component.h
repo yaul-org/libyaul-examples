@@ -32,10 +32,10 @@
     void (*on_destroy)(struct component *);
 
 #define COMPONENT(x, member)                                                   \
-        ((x)->CC_CONCAT(, member))
+        ((x)->__CONCAT(, member))
 
 #define COMPONENT_EVENT(x, event)                                              \
-        ((x)->CC_CONCAT(on_, event))
+        ((x)->__CONCAT(on_, event))
 
 #define COMPONENT_FUNCTION(x, member)                                          \
         COMPONENT(x, member)
@@ -48,13 +48,13 @@
 } while (0)
 
 #define THIS(type, member)                                                     \
-        (((struct type *)this)->CC_CONCAT(, member))
+        (((struct type *)this)->__CONCAT(, member))
 
 #define THIS_P_DATA(type, member)                                              \
-        (((struct type *)this)->CC_CONCAT(_, member))
+        (((struct type *)this)->__CONCAT(_, member))
 
 #define THIS_FUNCTION(type, member)                                            \
-        (((struct type *)this)->CC_CONCAT(, member))
+        (((struct type *)this)->__CONCAT(, member))
 
 struct component {
         COMPONENT_DECLARATIONS

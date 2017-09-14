@@ -31,7 +31,7 @@ struct component;
         } context;
 
 #define OBJECT(x, member)                                                      \
-        ((x)->CC_CONCAT(, member))
+        ((x)->__CONCAT(, member))
 
 #define OBJECT_COMPONENT(x, index)                                             \
         ((struct object *)x)->component_list[(index)].component

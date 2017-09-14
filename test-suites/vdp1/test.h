@@ -20,8 +20,8 @@
 
 #define TEST_PROTOTYPE_DECLARE(name, event)                                    \
     void                                                                       \
-    CC_CONCAT(CC_CONCAT(test_, name),                                          \
-        CC_CONCAT(_,CC_CONCAT(event, )))(void)
+    __CONCAT(__CONCAT(test_, name),                                            \
+        __CONCAT(_,__CONCAT(event, )))(void)
 
 #define MATH_SIN(x)     (lut_sin[(x) & 0x1FF])
 #define MATH_COS(x)     (lut_cos[(x) & 0x1FF])

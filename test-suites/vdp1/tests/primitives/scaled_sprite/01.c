@@ -277,7 +277,7 @@ TEST_PROTOTYPE_DECLARE(scaled_sprite_01, update)
                 case STATE_ZOOM_SELECT_ANCHOR:
                         zoom_point_color = ZOOM_POINT_COLOR_HIGHLIGHT;
 
-                        zp_idx = common_log2_down(zoom_point_value) - 5;
+                        zp_idx = dlog2(zoom_point_value) - 5;
                         zp_boundary = &zoom_point_boundaries[zp_idx];
 
                         dw_dir = zp_boundary->w_dir * 1;

@@ -11,17 +11,17 @@
 #include "engine.h"
 
 #define SCENE_ADD(scene_id, scene, data) do {                                  \
-        extern void CC_CONCAT(scene_, CC_CONCAT(scene, _init))(struct scene_ctx *); \
-        extern void CC_CONCAT(scene_, CC_CONCAT(scene, _update))(struct scene_ctx *); \
-        extern void CC_CONCAT(scene_, CC_CONCAT(scene, _draw))(struct scene_ctx *); \
-        extern void CC_CONCAT(scene_, CC_CONCAT(scene, _exit))(struct scene_ctx *); \
+        extern void __CONCAT(scene_, __CONCAT(scene, _init))(struct scene_ctx *); \
+        extern void __CONCAT(scene_, __CONCAT(scene, _update))(struct scene_ctx *); \
+        extern void __CONCAT(scene_, __CONCAT(scene, _draw))(struct scene_ctx *); \
+        extern void __CONCAT(scene_, __CONCAT(scene, _exit))(struct scene_ctx *); \
                                                                                \
-        scene_add(CC_STRINGIFY(scene),                                         \
+        scene_add(__STRING(scene),                                             \
             scene_id,                                                          \
-            CC_CONCAT(scene_, CC_CONCAT(scene, _init)),                        \
-            CC_CONCAT(scene_, CC_CONCAT(scene, _update)),                      \
-            CC_CONCAT(scene_, CC_CONCAT(scene, _draw)),                        \
-            CC_CONCAT(scene_, CC_CONCAT(scene, _exit)),                        \
+            __CONCAT(scene_, __CONCAT(scene, _init)),                          \
+            __CONCAT(scene_, __CONCAT(scene, _update)),                        \
+            __CONCAT(scene_, __CONCAT(scene, _draw)),                          \
+            __CONCAT(scene_, __CONCAT(scene, _exit)),                          \
             data);                                                             \
 } while(false)
 

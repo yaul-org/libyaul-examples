@@ -5,27 +5,27 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
+#include <sys/types.h>
+
 #include <assert.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <common.h>
-
 #include "tests.h"
 
 #define TEST_PROTOTYPE_DECLARE(name)                                           \
-    void CC_CONCAT(CC_CONCAT(test_, name),_init(void));                        \
-    void CC_CONCAT(CC_CONCAT(test_, name),_update(void));                      \
-    void CC_CONCAT(CC_CONCAT(test_, name),_draw(void));                        \
-    void CC_CONCAT(CC_CONCAT(test_, name),_exit(void))
+    void __CONCAT(__CONCAT(test_, name),_init(void));                          \
+    void __CONCAT(__CONCAT(test_, name),_update(void));                        \
+    void __CONCAT(__CONCAT(test_, name),_draw(void));                          \
+    void __CONCAT(__CONCAT(test_, name),_exit(void))
 
 #define TEST_ENTRY_INITIALIZE(name) {                                          \
-        CC_STRINGIFY(name),                                                    \
-        CC_CONCAT(test_, CC_CONCAT(name, _init)),                              \
-        CC_CONCAT(test_, CC_CONCAT(name, _update)),                            \
-        CC_CONCAT(test_, CC_CONCAT(name, _draw)),                              \
-        CC_CONCAT(test_, CC_CONCAT(name, _exit))                               \
+        __STRING(name),                                                        \
+        __CONCAT(test_, __CONCAT(name, _init)),                                \
+        __CONCAT(test_, __CONCAT(name, _update)),                              \
+        __CONCAT(test_, __CONCAT(name, _draw)),                                \
+        __CONCAT(test_, __CONCAT(name, _exit))                                 \
     }
 
 TEST_PROTOTYPE_DECLARE(normal_sprite_00);
