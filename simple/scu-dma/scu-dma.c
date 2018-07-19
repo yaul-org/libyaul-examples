@@ -7,218 +7,208 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <yaul.h>
 
-#define RGB(r, g, b)    (0x8000 | ((r) & 0x1F) | (((g) & 0x1F)  << 5) | (((b) & 0x1F) << 10))
+static void _vblank_in_handler(irq_mux_handle_t *);
+static void _vblank_out_handler(irq_mux_handle_t *);
 
-static struct {
-        bool st_begin;
-#define ST_STATUS_WAIT          0
-#define ST_STATUS_END           1
-#define ST_STATUS_ILLEGAL       2
-        int st_status;
-#define ST_LEVEL_0              0
-#define ST_LEVEL_1              1
-#define ST_LEVEL_2              2
-        struct {
-#define ST_LEVEL_SF_DISABLE     0
-#define ST_LEVEL_SF_ENABLE      1
-#define ST_LEVEL_SF_VBLANK_IN   2
-#define ST_LEVEL_SF_VBLANK_OUT  3
-#define ST_LEVEL_SF_HBLANK_IN   4
-                int level_sf;
+static void _dma_l0_end_handler(void);
+static void _dma_l1_end_handler(void);
+static void _dma_l2_end_handler(void);
+static void _dma_illegal_handler(void);
 
-#define ST_LEVEL_MODE_DIRECT    0
-#define ST_LEVEL_MODE_INDIRECT  1
-                int level_mode;
-        } st_level[3];
-} state = {
-        .st_begin = false,
-        .st_status = ST_STATUS_WAIT,
-        .st_level = {
-                {
-                        .level_sf = ST_LEVEL_SF_DISABLE,
-                        .level_mode = ST_LEVEL_MODE_DIRECT
-                }, {
-                        .level_sf = ST_LEVEL_SF_DISABLE,
-                        .level_mode = ST_LEVEL_MODE_DIRECT
-                }, {
-                        .level_sf = ST_LEVEL_SF_DISABLE,
-                        .level_mode = ST_LEVEL_MODE_DIRECT
-                }
-        }
-};
+static void _hardware_init(void);
 
-static void display_menu(void);
-
-static void scu_dma_illegal(void);
-static void scu_dma_level(int);
-static void scu_dma_level_0_end(void);
-static void scu_dma_level_1_end(void);
-static void scu_dma_level_2_end(void);
+static void _test_0(void);
+static void _test_1(void);
 
 int
 main(void)
 {
-        uint16_t blcs_color[] = {
-                RGB(0, 7, 7)
-        };
+        _hardware_init();
 
-        uint16_t mask;
+        cons_init(CONS_DRIVER_VDP2, 40, 28);
 
-        struct smpc_peripheral_digital *digital;
-        int level;
+        scu_dma_init();
 
-        vdp2_init();
-        vdp2_tvmd_blcs_set(/* lcclmd = */ false, VRAM_ADDR_4MBIT(3, 0x1FFFE),
-            blcs_color, 0);
+        // _test_0();
+        _test_1();
 
-        smpc_init();
-        scu_dma_cpu_init();
-
-        cons_init(CONS_DRIVER_VDP2);
-
-        mask = IC_MSK_LEVEL_0_DMA_END | IC_MSK_LEVEL_1_DMA_END | IC_MSK_LEVEL_2_DMA_END | IC_MSK_DMA_ILLEGAL;
-        /* Disable interrupts */
-        cpu_intc_disable();
-        scu_ic_mask_chg(IC_MSK_ALL, mask);
-        scu_ic_interrupt_set(IC_VCT_LEVEL_0_DMA_END, scu_dma_level_0_end);
-        scu_ic_interrupt_set(IC_VCT_LEVEL_1_DMA_END, scu_dma_level_1_end);
-        scu_ic_interrupt_set(IC_VCT_LEVEL_2_DMA_END, scu_dma_level_2_end);
-        scu_ic_interrupt_set(IC_VCT_DMA_ILLEGAL, scu_dma_illegal);
-        scu_ic_mask_chg(IC_MSK_ALL & ~mask, IC_MSK_NULL);
-        /* Enable interrupts */
-        cpu_intc_enable();
-
-        vdp2_tvmd_display_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
-            TVMD_VERT_224);
-
-        digital = smpc_peripheral_digital_port(1);
+        char buffer[41];
+        uint32_t p;
+        p = 0;
+        uint32_t dir;
+        dir = 1;
 
         while (true) {
-                vdp2_tvmd_vblank_in_wait();
                 vdp2_tvmd_vblank_out_wait();
 
-                if (!state.st_begin) {
-                        if (!digital->connected)
-                                continue;
+                cons_buffer("[1;1H");
 
-                        display_menu();
+                cons_buffer(buffer);
 
-                        if (!digital->button.a_trg)
-                                level = ST_LEVEL_0;
-                        else if (!digital->button.b_trg)
-                                level = ST_LEVEL_1;
-                        else if (!digital->button.c_trg)
-                                level = ST_LEVEL_2;
-                        else if (!digital->button.start) {
-                                state.st_begin = true;
-                                continue;
-                        } else {
-                                level = -1;
-                                continue;
-                        }
+                memset(buffer, ' ', sizeof(buffer));
+                buffer[40] = '\0';
 
-                        if (!digital->button.l_trg)
-                                state.st_level[level].level_mode = ST_LEVEL_MODE_DIRECT;
-                        else if (!digital->button.r_trg)
-                                state.st_level[level].level_mode = ST_LEVEL_MODE_INDIRECT;
-                        else if (!digital->button.x_trg)
-                                state.st_level[level].level_sf = ST_LEVEL_SF_VBLANK_IN;
-                        else if (!digital->button.y_trg)
-                                state.st_level[level].level_sf = ST_LEVEL_SF_VBLANK_OUT;
-                        else if (!digital->button.z_trg)
-                                state.st_level[level].level_sf = ST_LEVEL_SF_HBLANK_IN;
-                        else
-                                state.st_level[level].level_sf = ST_LEVEL_SF_ENABLE;
+                buffer[p >> 16] = '*';
 
-                        continue;
+                if ((p >> 16) == 39) {
+                        dir = -1;
+                        p = 38 << 16;
+                } else if ((p >> 16) == 0) {
+                        dir = 1;
+                        p = 1 << 16;
+                } else {
+                        p = p + (dir * (1 << 14));
                 }
 
-                scu_dma_level(level);
-
-                switch (state.st_status) {
-                case ST_STATUS_WAIT:
-                        continue;
-                case ST_STATUS_ILLEGAL:
-                        assert(state.st_status != ST_STATUS_ILLEGAL);
-                        continue;
-                case ST_STATUS_END:
-                        state.st_begin = true;
-                        state.st_status = ST_STATUS_WAIT;
-                        break;
-                }
+                vdp2_tvmd_vblank_in_wait();
+                cons_flush();
         }
-
-        return 0;
 }
 
 static void
-scu_dma_illegal(void)
+_hardware_init(void)
 {
+        vdp2_init();
+
+        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
+            TVMD_VERT_224);
+
+        vdp2_sprite_priority_set(0, 0);
+        vdp2_sprite_priority_set(1, 0);
+        vdp2_sprite_priority_set(2, 0);
+        vdp2_sprite_priority_set(3, 0);
+        vdp2_sprite_priority_set(4, 0);
+        vdp2_sprite_priority_set(5, 0);
+        vdp2_sprite_priority_set(6, 0);
+        vdp2_sprite_priority_set(7, 0);
+
+        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
+            COLOR_RGB555(0, 3, 15));
+
+        irq_mux_t *vblank_in;
+        vblank_in = vdp2_tvmd_vblank_in_irq_get();
+        irq_mux_handle_add(vblank_in, _vblank_in_handler, NULL);
+
+        irq_mux_t *vblank_out;
+        vblank_out = vdp2_tvmd_vblank_out_irq_get();
+        irq_mux_handle_add(vblank_out, _vblank_out_handler, NULL);
+
+        /* Enable interrupts */
+        cpu_intc_mask_set(0x7);
+
+        vdp2_tvmd_display_set();
 }
 
 static void
-display_menu(void)
+_vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
 {
-        /* Menu */
-        cons_write("\n[1;44m       *** SCU DMA Test Menu ***        [m\n\n"
-            "[1;44mSCU DMA Level 0[m\n"
-            "\tA+L - Mode: Direct\n"
-            "\tA+R - Mode: Indirect\n"
-            "\tA+X - SF: VBLANK-IN\n"
-            "\tA+Y - SF: VBLANK-OUT\n"
-            "\tA+Z - SF: HBLANK-IN\n"
-            "\n"
-            "[1;44mSCU DMA Level 1[m\n"
-            "\tB+L - Mode: Direct\n"
-            "\tB+R - Mode: Indirect\n"
-            "\tB+X - SF: VBLANK-IN\n"
-            "\tB+Y - SF: VBLANK-OUT\n"
-            "\tB+Z - SF: HBLANK-IN\n"
-            "\n"
-            "[1;44mSCU DMA Level 2[m\n"
-            "\tC+L - Mode: Direct\n"
-            "\tC+R - Mode: Indirect\n"
-            "\tC+X - SF: VBLANK-IN\n"
-            "\tC+Y - SF: VBLANK-OUT\n"
-            "\tC+Z - SF: HBLANK-IN\n"
-            "[H");
+        vdp2_commit();
 }
 
 static void
-scu_dma_level(int level __unused)
+_vblank_out_handler(irq_mux_handle_t *irq_mux __unused)
 {
-        struct dma_level_cfg cfg;
-
-        cfg.mode.direct.src = (void *)0x06040000;
-        cfg.mode.direct.dst = (void *)0x05C00000;
-        cfg.mode.direct.len = 0x1000;
-        cfg.starting_factor = DMA_MODE_START_FACTOR_ENABLE;
-        cfg.add = 4;
-
-        scu_dma_cpu_level_set(DMA_LEVEL_0, DMA_MODE_DIRECT, &cfg);
-        scu_dma_cpu_level_start(DMA_LEVEL_0);
 }
 
-static void
-scu_dma_level_0_end(void)
+static void __unused
+_dma_illegal_handler(void)
 {
-
-        state.st_status = ST_STATUS_END;
+        assert(false);
 }
 
-static void
-scu_dma_level_1_end(void)
+static void __unused
+_dma_l0_end_handler(void)
 {
-
-        state.st_status = ST_STATUS_END;
 }
 
-static void
-scu_dma_level_2_end(void)
+static void __unused
+_dma_l1_end_handler(void)
 {
+}
 
-        state.st_status = ST_STATUS_END;
+static void __unused
+_dma_l2_end_handler(void)
+{
+}
+
+static void __unused
+_test_0(void)
+{
+        static uint32_t buffer[8] __aligned(32) = {
+                0x11111111,
+                0x22222222,
+                0x33333333,
+                0x44444444,
+                0x55555555,
+                0x66666666,
+                0x77777777,
+                0x88888888
+        };
+
+        struct dma_xfer tbl =
+            DMA_MODE_XFER_INITIALIZER(32, VRAM_ADDR_4MBIT(0, 0x00000), (uint32_t)&buffer[0]);
+
+        struct dma_level_cfg cfg = {
+                .dlc_level = 0,
+                .dlc_mode = DMA_MODE_DIRECT,
+                .dlc_xfer = &tbl,
+                .dlc_stride = DMA_STRIDE_2_BYTES,
+                .dlc_update = DMA_UPDATE_NONE,
+                .dlc_starting_factor = DMA_START_FACTOR_ENABLE,
+                .dlc_ihr = _dma_l0_end_handler
+        };
+
+        scu_dma_level_config_set(&cfg);
+        scu_dma_level_enable(0);
+        scu_dma_level_start(0);
+        scu_dma_level_wait(0);
+}
+
+static void __unused
+_test_1(void)
+{
+        static uint32_t buffer[8] __aligned(32) = {
+                0x11111111,
+                0x10000001,
+                0x10000001,
+                0x10000001,
+                0x10000001,
+                0x10000001,
+                0x10000001,
+                0x11111111
+        };
+
+        static struct dma_xfer tbl[] __aligned(128) = {
+                DMA_MODE_XFER_INITIALIZER(4, VRAM_ADDR_4MBIT(0, 0x00000), (uint32_t)&buffer[0]),
+                DMA_MODE_XFER_INITIALIZER(4, VRAM_ADDR_4MBIT(0, 0x00004), (uint32_t)&buffer[1]),
+                DMA_MODE_XFER_INITIALIZER(4, VRAM_ADDR_4MBIT(0, 0x00008), (uint32_t)&buffer[2]),
+                DMA_MODE_XFER_INITIALIZER(4, VRAM_ADDR_4MBIT(0, 0x0000C), (uint32_t)&buffer[3]),
+                DMA_MODE_XFER_INITIALIZER(4, VRAM_ADDR_4MBIT(0, 0x00010), (uint32_t)&buffer[4]),
+                DMA_MODE_XFER_INITIALIZER(4, VRAM_ADDR_4MBIT(0, 0x00014), (uint32_t)&buffer[5]),
+                DMA_MODE_XFER_INITIALIZER(4, VRAM_ADDR_4MBIT(0, 0x00018), (uint32_t)&buffer[6]),
+                DMA_MODE_XFER_INITIALIZER(4, VRAM_ADDR_4MBIT(0, 0x0001C), (uint32_t)&buffer[7])
+        };
+
+        struct dma_level_cfg cfg __unused = {
+                .dlc_level = 0,
+                .dlc_mode = DMA_MODE_INDIRECT,
+                .dlc_xfer = &tbl[0],
+                .dlc_xfer_count = sizeof(tbl) / sizeof(*tbl),
+                .dlc_stride = DMA_STRIDE_2_BYTES,
+                .dlc_update = DMA_UPDATE_NONE,
+                .dlc_starting_factor = DMA_START_FACTOR_ENABLE,
+                .dlc_ihr = _dma_l0_end_handler
+        };
+
+        cons_buffer("[4;1H");
+
+        scu_dma_level_config_set(&cfg);
+        cons_buffer((char *)buffer);
+        scu_dma_level_enable(0);
+        scu_dma_level_start(0);
+        scu_dma_level_wait(0);
 }
