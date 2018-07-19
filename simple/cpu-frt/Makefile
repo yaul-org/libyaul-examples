@@ -6,11 +6,10 @@ include $(INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= cpu-frt
 SH_OBJECTS:= \
-	frt.o \
 	cpu-frt.o
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -I.
+SH_CFLAGS+= -I. -save-temps
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
