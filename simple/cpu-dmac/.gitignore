@@ -1,0 +1,15 @@
+/*.map
+
+*.asm
+*.bin
+*.BIN
+*.d
+*.elf
+*.iso
+*.o
+*.romdisk
+*.sym
+*.i
+
+# Ignore only .s and not .S. Possible by setting core.ignorecase to false
+*.s

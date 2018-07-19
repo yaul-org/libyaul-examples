@@ -12,71 +12,161 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static bool complete = false;
+static void _vblank_in_handler(irq_mux_handle_t *);
+static void _vblank_out_handler(irq_mux_handle_t *);
 
-static void
-dma_complete(void)
+static void _hardware_init(void);
+
+static volatile uint16_t _frt = 0;
+static volatile uint32_t _ovf = 0;
+static volatile bool _done = false;
+
+static void __unused
+_dmac_handler(void)
 {
-        cons_write("[7;1HDMA transfer on channel A is complete");
-        complete = true;
+        _frt = cpu_frt_count_get();
+        _done = true;
+}
+
+static void __unused
+_frt_ovi_handler(void)
+{
+        _ovf++;
 }
 
 int
 main(void)
 {
-        char *text;
-        uint16_t frame;
+        _hardware_init();
 
-        struct cpu_channel_cfg cfg = {
-                .ch = CPU_DMAC_CHANNEL(0),
-                .dst = {
-                        .mode = CPU_DMAC_DESTINATION_INCREMENT,
-                        .ptr = (void *)0x20000000
-                },
+        cons_init(CONS_DRIVER_VDP2, 40, 28);
 
-                .src = {
-                        .mode = CPU_DMAC_SOURCE_INCREMENT,
-                        .ptr = (void *)0x20000000
-                },
+        char *buffer;
+        buffer = malloc(1024);
+        assert(buffer != NULL);
 
-                .len = 0x00100000,
-                .xfer_size = 1,
-                .priority = 15,
-                .vector = 127,
-                .ihr = dma_complete
+        cpu_dmac_init();
+        cpu_dmac_interrupt_priority_set(8);
+
+        cpu_frt_init(FRT_CLOCK_DIV_8);
+        cpu_frt_ovi_set(_frt_ovi_handler);
+
+        uint32_t ch;
+        ch = 0;
+
+        struct dmac_ch_cfg cfg __unused = {
+                .dcc_ch = ch,
+                .dcc_src_mode = DMAC_SOURCE_INCREMENT,
+                .dcc_dst = 0x20000000,
+                .dcc_dst_mode = DMAC_DESTINATION_INCREMENT,
+                .dcc_src = 0x26000000,
+                .dcc_len = 0x00100000,
+                .dcc_stride = DMAC_STRIDE_1_BYTE,
+                .dcc_bus_mode = DMAC_BUS_MODE_BURST,
+                .dcc_ihr = _dmac_handler
         };
 
-        text = malloc(1024);
-        assert(text != NULL);
-
-        vdp2_init();
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE), 0x9C00);
-
-        cons_init(CONS_DRIVER_VDP2);
-
-        cons_write("\n[1;44m         *** CPU DMAC test ***          [m\n\n");
-        cons_write("Transferring 1MiB in 1-byte strides\n");
-
-        cfg = cfg;
-        cpu_dmac_channel_stop();
-        cpu_dmac_channel_set(&cfg);
-        cpu_dmac_channel_start(CPU_DMAC_CHANNEL(0));
-
-        frame = 1;
         while (true) {
                 vdp2_tvmd_vblank_out_wait();
-                (void)sprintf(text, "[6;1H%i frames have passed\n", frame);
-                cons_buffer(text);
+
+                cons_buffer("[H");
+
+                uint32_t xfer;
+                for (xfer = 0; xfer < 3; xfer++) {
+                        cfg.dcc_stride = xfer;
+
+                        while ((xfer > 0) && !_done);
+                        _done = false;
+
+                        cpu_dmac_channel_config_set(&cfg);
+
+                        (void)sprintf(buffer, "\n DAR%lu:  0x%08lX\n"
+                            " SAR%lu:  0x%08lX\n"
+                            " TCR%lu:  0x%08lX\n"
+                            " DRCR%lu: 0x%08X\n"
+                            " CHCR%lu: 0x%08lX\n"
+                            " DMAOR: 0x%08lX\n",
+                            ch,
+                            MEMORY_READ(32, CPU(DAR0 | (ch << 4))),
+                            ch,
+                            MEMORY_READ(32, CPU(SAR0 | (ch << 4))),
+                            ch,
+                            MEMORY_READ(32, CPU(TCR0 | (ch << 4))),
+                            ch,
+                            MEMORY_READ(8, CPU(DRCR0 | (ch << 4))),
+                            ch,
+                            MEMORY_READ(32, CPU(CHCR0 | (ch << 4))),
+                            MEMORY_READ(32, CPU(DMAOR)));
+
+                        cons_buffer(buffer);
+
+                        cpu_dmac_channel_start(ch);
+                        _frt = 0;
+                        _ovf = 0;
+                        cpu_frt_count_set(0);
+
+                        while (!_done);
+
+                        uint32_t ticks;
+                        ticks = (uint32_t)(_frt + ((0xFFFF + 1) * _ovf));
+
+                        sprintf(buffer, " Completed in %lu ticks\n", ticks);
+                        cons_buffer(buffer);
+                }
+
+                /* Switch over to the next channel */
+                ch ^= 1;
+
+                cfg.dcc_ch = ch;
 
                 vdp2_tvmd_vblank_in_wait();
                 cons_flush();
-
-                frame++;
-
-                if (complete) {
-                        abort();
-                }
         }
 
         return 0;
+}
+
+static void
+_hardware_init(void)
+{
+        vdp2_init();
+
+        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
+            TVMD_VERT_224);
+
+        vdp2_sprite_priority_set(0, 0);
+        vdp2_sprite_priority_set(1, 0);
+        vdp2_sprite_priority_set(2, 0);
+        vdp2_sprite_priority_set(3, 0);
+        vdp2_sprite_priority_set(4, 0);
+        vdp2_sprite_priority_set(5, 0);
+        vdp2_sprite_priority_set(6, 0);
+        vdp2_sprite_priority_set(7, 0);
+
+        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
+            COLOR_RGB555(0, 3, 15));
+
+        irq_mux_t *vblank_in;
+        vblank_in = vdp2_tvmd_vblank_in_irq_get();
+        irq_mux_handle_add(vblank_in, _vblank_in_handler, NULL);
+
+        irq_mux_t *vblank_out;
+        vblank_out = vdp2_tvmd_vblank_out_irq_get();
+        irq_mux_handle_add(vblank_out, _vblank_out_handler, NULL);
+
+        /* Enable interrupts */
+        cpu_intc_mask_set(0x7);
+
+        vdp2_tvmd_display_set();
+}
+
+static void
+_vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
+{
+        vdp2_commit();
+}
+
+static void
+_vblank_out_handler(irq_mux_handle_t *irq_mux __unused)
+{
 }
