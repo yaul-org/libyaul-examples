@@ -1,6 +1,3 @@
-# Project specific
-/grit
-
 /*.map
 
 *.asm
@@ -12,3 +9,7 @@
 *.o
 *.romdisk
 *.sym
+*.i
+*.ii
+*.s
+*.S
