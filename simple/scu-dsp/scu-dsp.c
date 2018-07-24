@@ -29,15 +29,13 @@ main(void)
         scu_dsp_init();
 
         const uint32_t program[] = {
-                0x00000000,     /* NOP */
-                0x00000000,     /* NOP */
-                0x00000000,     /* NOP */
-                0x00000000,     /* NOP */
-
-                0x00000000,     /* NOP */
-                0x00000000,     /* NOP */
-                0x00000000,     /* NOP */
-                0xFFFFFFFF      /* ENDI */
+                /* See test1.dsp */
+                0x00001C00,
+                0x00021D00,
+                0x02494000,
+                0x01000000,
+                0x18003209,
+                0xF8000000
         };
 
         cons_buffer("Running DSP\n");
@@ -47,18 +45,30 @@ main(void)
         memset(_ram2, 0xCC, DSP_RAM_PAGE_SIZE);
         memset(_ram3, 0xDD, DSP_RAM_PAGE_SIZE);
 
-        scu_dsp_program_load(0, &program[0], 8);
+        _ram0[0] = 0x00000003;
+        _ram1[0] = 0x00000002;
+
+        scu_dsp_program_load(&program[0], sizeof(program) / sizeof(*program));
 
         scu_dsp_data_write(0, 0, _ram0, DSP_RAM_PAGE_WORD_COUNT);
         scu_dsp_data_write(1, 0, _ram1, DSP_RAM_PAGE_WORD_COUNT);
         scu_dsp_data_write(2, 0, _ram2, DSP_RAM_PAGE_WORD_COUNT);
         scu_dsp_data_write(3, 0, _ram3, DSP_RAM_PAGE_WORD_COUNT);
 
-        scu_dsp_program_start();
+        scu_dsp_program_start(0);
         scu_dsp_program_end_wait();
 
         char buffer[32];
-        sprintf(buffer, "PC: %i\n", scu_dsp_program_counter_get());
+
+        uint32_t a;
+        uint32_t b;
+        uint32_t c;
+
+        scu_dsp_data_read(0, 0, &a, 1);
+        scu_dsp_data_read(1, 0, &b, 1);
+        scu_dsp_data_read(2, 0, &c, 1);
+
+        sprintf(buffer, "Result: %lu * %lu = %lu\n", a, b, c);
 
         cons_buffer(buffer);
 
