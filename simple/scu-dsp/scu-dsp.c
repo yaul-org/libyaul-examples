@@ -14,6 +14,8 @@ static void _hardware_init(void);
 
 static void _vblank_in_handler(irq_mux_handle_t *);
 
+static void _dsp_end(void);
+
 static uint32_t _ram0[DSP_RAM_PAGE_WORD_COUNT];
 static uint32_t _ram1[DSP_RAM_PAGE_WORD_COUNT];
 static uint32_t _ram2[DSP_RAM_PAGE_WORD_COUNT];
@@ -35,6 +37,13 @@ main(void)
                 0x02494000,
                 0x01000000,
                 0x18003209,
+                0x00000000,
+                0x00000000,
+                0x00000000,
+                0x00000000,
+                0x00000000,
+                0x00000000,
+                0x00000000,
                 0xF8000000
         };
 
@@ -55,21 +64,39 @@ main(void)
         scu_dsp_data_write(2, 0, _ram2, DSP_RAM_PAGE_WORD_COUNT);
         scu_dsp_data_write(3, 0, _ram3, DSP_RAM_PAGE_WORD_COUNT);
 
-        scu_dsp_program_start(0);
-        scu_dsp_program_end_wait();
+        char buffer[128];
 
-        char buffer[32];
+        do {
+                uint8_t pc;
+                pc = scu_dsp_program_step();
 
-        uint32_t a;
-        uint32_t b;
-        uint32_t c;
+                sprintf(buffer, "PC: %02X\n", pc);
+                cons_buffer(buffer);
+        } while (!(scu_dsp_program_end()));
 
-        scu_dsp_data_read(0, 0, &a, 1);
-        scu_dsp_data_read(1, 0, &b, 1);
-        scu_dsp_data_read(2, 0, &c, 1);
+        _dsp_end();
 
-        sprintf(buffer, "Result: %lu * %lu = %lu\n", a, b, c);
+        struct dsp_status status;
+        scu_dsp_status_get(&status);
 
+        sprintf(buffer,
+            "\nT0 S Z C V E EX PC\n"
+            " %X"
+            " %X"
+            " %X"
+            " %X"
+            " %X"
+            " %X"
+            "  %X"
+            " %02X\n",
+            status.t0,
+            status.s,
+            status.z,
+            status.c,
+            status.v,
+            status.e,
+            status.ex,
+            status.pc);
         cons_buffer(buffer);
 
         while (true) {
@@ -116,4 +143,22 @@ static void
 _vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
 {
         vdp2_commit();
+}
+
+static void
+_dsp_end(void)
+{
+        char buffer[32];
+
+        uint32_t a;
+        uint32_t b;
+        uint32_t c;
+
+        scu_dsp_data_read(0, 0, &a, 1);
+        scu_dsp_data_read(1, 0, &b, 1);
+        scu_dsp_data_read(2, 0, &c, 1);
+
+        sprintf(buffer, "Result: %lu * %lu = %lu\n", a, b, c);
+
+        cons_buffer(buffer);
 }
