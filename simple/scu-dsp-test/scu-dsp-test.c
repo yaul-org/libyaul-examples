@@ -17,13 +17,14 @@ static void _hardware_init(void);
 static void _test_dsp_program(uint32_t);
 
 static void _vblank_in_handler(irq_mux_handle_t *);
+static void _dma_illegal_handler(void);
 
 static uint32_t _ram0[DSP_RAM_PAGE_WORD_COUNT];
 static uint32_t _ram1[DSP_RAM_PAGE_WORD_COUNT];
 static uint32_t _ram2[DSP_RAM_PAGE_WORD_COUNT];
 static uint32_t _ram3[DSP_RAM_PAGE_WORD_COUNT];
 
-static void *_romdisk;
+static void *_romdisk = NULL;
 
 static char _buffer[256];
 
@@ -36,7 +37,10 @@ main(void)
 
         _romdisk = romdisk_mount("/", root_romdisk);
 
+        scu_dma_init();
         scu_dsp_init();
+
+        scu_dma_illegal_set(_dma_illegal_handler);
 
         memset(_ram0, 0xAA, DSP_RAM_PAGE_SIZE);
         memset(_ram1, 0xBB, DSP_RAM_PAGE_SIZE);
@@ -107,6 +111,12 @@ _vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
 }
 
 static void
+_dma_illegal_handler(void)
+{
+        assert(false);
+}
+
+static void
 _test_dsp_program(uint32_t program_id __unused)
 {
         uint32_t *program = (uint32_t *)0x20201000;
@@ -114,20 +124,33 @@ _test_dsp_program(uint32_t program_id __unused)
         char program_name[64] __unused;
         (void)sprintf(program_name, "%04lu.dsp.bin", program_id);
 
-        MEMORY_WRITE(32, 0x00200000, program_id);
-
         void *fh;
         fh = romdisk_open(_romdisk, program_name);
         assert(fh != NULL);
 
-        char mnemonic[48];
+        char mnemonic[64];
         romdisk_read(fh, mnemonic, sizeof(mnemonic));
 
-        romdisk_read(fh, program, 8);
+        uint32_t end_pc;
+        romdisk_read(fh, &end_pc, sizeof(end_pc));
+
+        uint32_t program_size;
+        romdisk_read(fh, &program_size, sizeof(program_size));
+
+        romdisk_read(fh, program, program_size);
         romdisk_close(fh);
 
         scu_dsp_program_clear();
-        scu_dsp_program_load(&program[0], 2);
+        scu_dsp_program_load(&program[0], program_size / 4);
+
+        /* For instructions that invokes DMA D0->DSP */
+        /* For instruction that invokes DMA to PRG RAM */
+        uint32_t endi = 0xF8000000;
+
+        _ram0[0] = (uint32_t)&endi >> 2;
+        _ram1[0] = (uint32_t)&endi >> 2;
+        _ram2[0] = (uint32_t)&endi >> 2;
+        _ram3[0] = (uint32_t)&endi >> 2;
 
         scu_dsp_data_write(0, 0, _ram0, DSP_RAM_PAGE_WORD_COUNT);
         scu_dsp_data_write(1, 0, _ram1, DSP_RAM_PAGE_WORD_COUNT);
@@ -136,12 +159,14 @@ _test_dsp_program(uint32_t program_id __unused)
 
         scu_dsp_program_pc_set(0);
 
-        (void)sprintf(_buffer, "[2;1H[0J"
+        (void)sprintf(_buffer,
+            "[2;1H[0J"
             "program ID: %lu\n"
             "%s\n",
             program_id,
             mnemonic);
         cons_buffer(_buffer);
+
         vdp2_tvmd_vblank_out_wait();
         vdp2_tvmd_vblank_in_wait();
         cons_flush();
@@ -154,7 +179,7 @@ _test_dsp_program(uint32_t program_id __unused)
 
         scu_dsp_status_get(&status);
 
-        if (status.pc > 0) {
+        if (status.pc == end_pc) {
                 return;
         }
 
