@@ -131,6 +131,9 @@ _test_dsp_program(uint32_t program_id __unused)
         char mnemonic[64];
         romdisk_read(fh, mnemonic, sizeof(mnemonic));
 
+        uint32_t start_pc;
+        romdisk_read(fh, &start_pc, sizeof(start_pc));
+
         uint32_t end_pc;
         romdisk_read(fh, &end_pc, sizeof(end_pc));
 
@@ -140,24 +143,39 @@ _test_dsp_program(uint32_t program_id __unused)
         romdisk_read(fh, program, program_size);
         romdisk_close(fh);
 
-        scu_dsp_program_clear();
-        scu_dsp_program_load(&program[0], program_size / 4);
+        /* Clear Z, S, and C flags */
+        uint32_t clear_program[] = {
+                0x00020000, /* CLR A */
+                0x00001501, /* MOV #$01, PL */
+                0x10000000, /* AND */
+                0xF8000000  /* ENDI */
+        };
+
+        scu_dsp_program_load(&clear_program[0], sizeof(clear_program) / sizeof(*clear_program));
+        scu_dsp_program_pc_set(0);
+        scu_dsp_program_start();
+        scu_dsp_program_end_wait();
 
         /* For instructions that invokes DMA D0->DSP */
         /* For instruction that invokes DMA to PRG RAM */
         uint32_t endi = 0xF8000000;
 
-        _ram0[0] = (uint32_t)&endi >> 2;
-        _ram1[0] = (uint32_t)&endi >> 2;
-        _ram2[0] = (uint32_t)&endi >> 2;
-        _ram3[0] = (uint32_t)&endi >> 2;
+        uint32_t i;
+        for (i = 0; i < DSP_RAM_PAGE_WORD_COUNT; i++) {
+                _ram0[i] = CPU_CACHE_THROUGH | (uint32_t)&endi >> 2;
+                _ram1[i] = CPU_CACHE_THROUGH | (uint32_t)&endi >> 2;
+                _ram2[i] = CPU_CACHE_THROUGH | (uint32_t)&endi >> 2;
+                _ram3[i] = CPU_CACHE_THROUGH | (uint32_t)&endi >> 2;
+        }
 
         scu_dsp_data_write(0, 0, _ram0, DSP_RAM_PAGE_WORD_COUNT);
         scu_dsp_data_write(1, 0, _ram1, DSP_RAM_PAGE_WORD_COUNT);
         scu_dsp_data_write(2, 0, _ram2, DSP_RAM_PAGE_WORD_COUNT);
         scu_dsp_data_write(3, 0, _ram3, DSP_RAM_PAGE_WORD_COUNT);
 
-        scu_dsp_program_pc_set(0);
+        scu_dsp_program_clear();
+        scu_dsp_program_load(&program[0], program_size / 4);
+        scu_dsp_program_pc_set(start_pc);
 
         (void)sprintf(_buffer,
             "[2;1H[0J"
