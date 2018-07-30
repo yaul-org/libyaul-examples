@@ -143,19 +143,6 @@ _test_dsp_program(uint32_t program_id __unused)
         romdisk_read(fh, program, program_size);
         romdisk_close(fh);
 
-        /* Clear Z, S, and C flags */
-        uint32_t clear_program[] = {
-                0x00020000, /* CLR A */
-                0x00001501, /* MOV #$01, PL */
-                0x10000000, /* AND */
-                0xF8000000  /* ENDI */
-        };
-
-        scu_dsp_program_load(&clear_program[0], sizeof(clear_program) / sizeof(*clear_program));
-        scu_dsp_program_pc_set(0);
-        scu_dsp_program_start();
-        scu_dsp_program_end_wait();
-
         /* For instructions that invokes DMA D0->DSP */
         /* For instruction that invokes DMA to PRG RAM */
         uint32_t endi = 0xF8000000;
