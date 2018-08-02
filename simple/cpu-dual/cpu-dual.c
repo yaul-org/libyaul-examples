@@ -16,9 +16,8 @@ static void _vblank_in_handler(irq_mux_handle_t *);
 static void _master_entry(void);
 static void _slave_entry(void);
 
-static char _buffer[64];
-static uint32_t _master_counter = 0;
-static uint32_t _slave_counter = 0;
+static uint32_t _master_counter __section (".uncached") = 0;
+static uint32_t _slave_counter __section (".uncached") = 0;
 
 int
 main(void)
@@ -27,35 +26,38 @@ main(void)
 
         cons_init(CONS_DRIVER_VDP2, 40, 28);
 
-        _buffer[0] = '\0';
+        _master_counter = 0;
         _slave_counter = 0;
 
+        cpu_dual_init(CPU_DUAL_ENTRY_ICI);
+
         cpu_dual_master_set(_master_entry);
-        cpu_dual_slave_set(CPU_DUAL_ENTRY_ICI, _slave_entry);
+        cpu_dual_slave_set(_slave_entry);
 
         cpu_intc_mask_set(0);
 
         cons_buffer("Ping ponging between master and slave\n");
 
-        while (true) {
+        uint32_t counter;
+
+        do {
+                cpu_dual_slave_notify();
+
                 cpu_sync_spinlock(0); {
-                        cpu_cache_purge_line(&_slave_counter);
-
-                        (void)sprintf(_buffer, "[3;1H[0J"
-                            "Master responded %lu times\n"
-                            "Slave responded  %lu times\n", _master_counter, _slave_counter);
-                        cons_buffer(_buffer);
-
-                        if (_slave_counter >= 10) {
-                                break;
-                        }
-
-                        cpu_dual_slave_notify();
+                        counter = _slave_counter;
                 } cpu_sync_spinlock_clear(0);
-        }
+        } while (counter < 10);
+
+        char buffer[64];
 
         while (true) {
                 vdp2_tvmd_vblank_out_wait();
+
+                (void)sprintf(buffer,
+                    "[3;1H[0J"
+                    "Master responded %lu times\n"
+                    "Slave responded  %lu times\n", _master_counter, _slave_counter);
+                cons_buffer(buffer);
 
                 vdp2_tvmd_vblank_in_wait();
                 cons_flush();
@@ -103,6 +105,10 @@ _vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
 static void
 _master_entry(void)
 {
+        if (_master_counter >= 10) {
+                return;
+        }
+
         _master_counter++;
 }
 
@@ -110,11 +116,13 @@ static void
 _slave_entry(void)
 {
         cpu_sync_spinlock(0); {
-                cpu_cache_purge_line(&_slave_counter);
+                if (_slave_counter >= 10) {
+                        cpu_sync_spinlock_clear(0);
+
+                        return;
+                }
 
                 _slave_counter++;
-
-                cpu_cache_purge_line(&_slave_counter);
         } cpu_sync_spinlock_clear(0);
 
         cpu_dual_master_notify();
