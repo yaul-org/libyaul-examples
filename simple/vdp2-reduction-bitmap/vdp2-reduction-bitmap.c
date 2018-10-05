@@ -13,7 +13,7 @@
 
 extern uint8_t root_romdisk[];
 
-static void vblank_in_handler(irq_mux_handle_t *);
+static void _vblank_in_handler(void);
 
 int
 main(void)
@@ -110,23 +110,21 @@ main(void)
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A, TVMD_VERT_240);
         vdp2_tvmd_display_set();
 
-        cpu_intc_mask_set (15); {
-                irq_mux_t *vblank_in;
-                vblank_in = vdp2_tvmd_vblank_in_irq_get();
-
-                irq_mux_handle_add(vblank_in, vblank_in_handler, NULL);
-        } cpu_intc_mask_set(0);
+        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN | IC_MASK_VBLANK_OUT);
+        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
+        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN | IC_MASK_VBLANK_OUT), IC_MASK_NONE);
 
         while (true) {
                 vdp2_tvmd_vblank_out_wait();
                 vdp2_tvmd_vblank_in_wait();
+                vdp2_commit();
         }
 
         return 0;
 }
 
 static void
-vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
+_vblank_in_handler(void)
 {
-        vdp2_commit();
+        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
 }
