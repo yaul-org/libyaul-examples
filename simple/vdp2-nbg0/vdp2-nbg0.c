@@ -7,18 +7,18 @@
 
 #include <yaul.h>
 
-static void vblank_in_handler(irq_mux_handle_t *);
+static void _vblank_in_handler(void);
 
-static void hardware_init(void);
+static void _hardware_init(void);
 
-static void copy_character_pattern_data(const struct scrn_cell_format *);
-static void copy_color_palette(const struct scrn_cell_format *);
-static void copy_map(const struct scrn_cell_format *);
+static void _copy_character_pattern_data(const struct scrn_cell_format *);
+static void _copy_color_palette(const struct scrn_cell_format *);
+static void _copy_map(const struct scrn_cell_format *);
 
 int
 main(void)
 {
-        hardware_init();
+        _hardware_init();
 
         struct scrn_cell_format format;
 
@@ -74,9 +74,9 @@ main(void)
         vram_ctl->vram_cycp.pt[3].t6 = VRAM_CTL_CYCP_NO_ACCESS;
         vram_ctl->vram_cycp.pt[3].t7 = VRAM_CTL_CYCP_NO_ACCESS;
 
-        copy_character_pattern_data(&format);
-        copy_color_palette(&format);
-        copy_map(&format);
+        _copy_character_pattern_data(&format);
+        _copy_color_palette(&format);
+        _copy_map(&format);
 
         vdp2_vram_control_set(vram_ctl);
 
@@ -90,39 +90,37 @@ main(void)
         while (true) {
                 vdp2_tvmd_vblank_out_wait();
                 vdp2_tvmd_vblank_in_wait();
+                vdp2_commit();
         }
 }
 
 static void
-hardware_init(void)
+_hardware_init(void)
 {
         /* VDP2 */
         vdp2_init();
         vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(2, 0x01FFFE), COLOR_RGB555(0, 0, 7));
 
-        /* VDP1 */
-        vdp1_init();
+        vdp2_sprite_type_set(0);
+        vdp2_sprite_priority_set(0, 0);
 
         /* SMPC */
         smpc_init();
         smpc_peripheral_init();
 
-        cpu_intc_mask_set (15); {
-                irq_mux_t *vblank_in;
-
-                vblank_in = vdp2_tvmd_vblank_in_irq_get();
-                irq_mux_handle_add(vblank_in, vblank_in_handler, NULL);
-        } cpu_intc_mask_set(0);
+        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN);
+        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
+        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN), IC_MASK_NONE);
 }
 
 static void
-vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
+_vblank_in_handler()
 {
-        vdp2_commit();
+        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
 }
 
 static void
-copy_character_pattern_data(const struct scrn_cell_format *format)
+_copy_character_pattern_data(const struct scrn_cell_format *format)
 {
         uint8_t *cpd;
         cpd = (uint8_t *)format->scf_cp_table;
@@ -132,7 +130,7 @@ copy_character_pattern_data(const struct scrn_cell_format *format)
 }
 
 static void
-copy_color_palette(const struct scrn_cell_format *format)
+_copy_color_palette(const struct scrn_cell_format *format)
 {
         uint16_t *color_palette;
         color_palette = (uint16_t *)format->scf_color_palette;
@@ -142,7 +140,7 @@ copy_color_palette(const struct scrn_cell_format *format)
 }
 
 static void
-copy_map(const struct scrn_cell_format *format)
+_copy_map(const struct scrn_cell_format *format)
 {
         uint32_t page_width;
         page_width = SCRN_CALCULATE_PAGE_WIDTH(format);
