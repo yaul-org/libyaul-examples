@@ -18,32 +18,32 @@ static fix16_t _scroll_x = F16(0.0f);
 static fix16_t _scroll_y = F16(0.0f);
 static fix16_t _zoom = F16(1.0f);
 
-static void hardware_init(void);
+static void _hardware_init(void);
 
-static void update(void);
-static void draw(void);
+static void _update(void);
+static void _draw(void);
 
-static void vblank_in_handler(irq_mux_handle_t *);
-static void vblank_out_handler(irq_mux_handle_t *);
+static void _vblank_in_handler(void);
+static void _vblank_out_handler(void);
 
 int
 main(void)
 {
-        hardware_init();
+        _hardware_init();
 
         while (true) {
-                vdp2_tvmd_vblank_out_wait(); {
-                        update();
-                }
+                vdp2_tvmd_vblank_out_wait();
+                smpc_peripheral_digital_port(1, &_digital_pad);
+                _update();
 
-                vdp2_tvmd_vblank_in_wait(); {
-                        draw();
-                }
+                vdp2_tvmd_vblank_in_wait();
+                _draw();
+                vdp2_commit();
         }
 }
 
 static void
-hardware_init(void)
+_hardware_init(void)
 {
         static color_rgb555_t palette[] __unused = {
                 COLOR_RGB555(0x1F, 0x00, 0x00),
@@ -64,19 +64,10 @@ hardware_init(void)
                 COLOR_RGB555(0x10, 0x15, 0x1F)
         };
 
-        /* VDP1 */
         vdp1_init();
-        vdp2_sprite_type_set(1);
-        vdp2_sprite_type_priority_set(0, 7);
-        vdp2_sprite_type_priority_set(1, 7);
-        vdp2_sprite_type_priority_set(2, 7);
-        vdp2_sprite_type_priority_set(3, 7);
-        vdp2_sprite_type_priority_set(4, 7);
-        vdp2_sprite_type_priority_set(5, 7);
-        vdp2_sprite_type_priority_set(6, 7);
-        vdp2_sprite_type_priority_set(7, 7);
+        vdp2_sprite_type_set(0);
+        vdp2_sprite_priority_set(0, 0);
 
-        /* VDP2 */
         vdp2_init();
         vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(2, 0x01FFFE),
             COLOR_RGB555(0, 0, 7));
@@ -86,18 +77,10 @@ hardware_init(void)
         smpc_init();
         smpc_peripheral_init();
 
-        /* Disable interrupts */
-        cpu_intc_disable(); {
-                irq_mux_t *vblank_in;
-                vblank_in = vdp2_tvmd_vblank_in_irq_get();
-                irq_mux_handle_add(vblank_in, vblank_in_handler, NULL);
-
-                irq_mux_t *vblank_out;
-                vblank_out = vdp2_tvmd_vblank_out_irq_get();
-                irq_mux_handle_add(vblank_out, vblank_out_handler, NULL);
-
-                /* Enable interrupts */
-        } cpu_intc_enable();
+        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN | IC_MASK_VBLANK_OUT);
+        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
+        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_OUT, _vblank_out_handler);
+        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN | IC_MASK_VBLANK_OUT), IC_MASK_NONE);
 
         uint16_t *cpd;
         cpd = (uint16_t *)VRAM_ADDR_4MBIT(2, 0x00000);
@@ -237,7 +220,7 @@ hardware_init(void)
 }
 
 static void
-update(void)
+_update(void)
 {
         if (_digital_pad.connected == 0) {
                 return;
@@ -272,7 +255,7 @@ update(void)
 }
 
 static void
-draw(void)
+_draw(void)
 {
         vdp2_scrn_scroll_x_set(SCRN_NBG1, _scroll_x);
         vdp2_scrn_scroll_y_set(SCRN_NBG1, _scroll_y);
@@ -282,15 +265,17 @@ draw(void)
 }
 
 static void
-vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
+_vblank_in_handler(void)
 {
-        smpc_peripheral_digital_port(1, &_digital_pad);
+        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
 }
 
 static void
-vblank_out_handler(irq_mux_handle_t *irq_mux __unused)
+_vblank_out_handler(void)
 {
         if ((vdp2_tvmd_vcount_get()) == 0) {
                 _tick = (_tick & 0xFFFFFFFF) + 1;
         }
+
+        smpc_peripheral_intback_issue();
 }
