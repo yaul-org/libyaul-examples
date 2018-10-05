@@ -12,27 +12,19 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-static void delay(uint16_t);
-static bool xchg(uint32_t, uint32_t);
+static void _hardware_init(void);
 
-static uint32_t *cart_area = NULL;
+static void _vblank_in_handler(void);
+
+static void _delay(uint16_t);
+static bool _xchg(uint32_t, uint32_t);
+
+static uint32_t *_cart_area = NULL;
 
 int
 main(void)
 {
-        bool passed;
-        char *result;
-        uint32_t x;
-        char *buf;
-
-        size_t cart_len;
-        uint32_t id;
-
-        vdp2_init();
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
-            COLOR_RGB555(0, 0, 7));
-
-        smpc_init();
+        _hardware_init();
 
         cons_init(CONS_DRIVER_VDP2, 40, 28);
 
@@ -43,39 +35,49 @@ main(void)
 
         cons_write("OK!\n");
 
-        delay(2);
+        _delay(2);
 
+        uint32_t id;
         id = dram_cartridge_id();
+
         if ((id != DRAM_CARTRIDGE_ID_1MIB) && (id != DRAM_CARTRIDGE_ID_4MIB)) {
                 cons_write("[4;1H[2K[11CThe extended RAM\n"
                     "[11Ccartridge is not\n"
-                    "[11Cinsert properly.\n"
+                    "[11Cinserted properly.\n"
                     "\n"
                     "[11CPlease turn off\n"
-                    "[11Cpower and reinsert\n"
+                    "[11Cpower and re-insert\n"
                     "[11Cthe extended RAM\n"
                     "[11Ccartridge.\n");
                 abort();
         }
 
+        char *buf;
         buf = (char *)malloc(1024);
         assert(buf != NULL);
 
-        cart_area = (uint32_t *)dram_cartridge_area();
+        _cart_area = (uint32_t *)dram_cartridge_area();
+
+        size_t cart_len;
         cart_len = dram_cartridge_size();
-        (void)snprintf(buf, 1024, "%s DRAM Cartridge detected\n",
+        (void)sprintf(buf, "%s DRAM Cartridge detected\n",
             ((id == DRAM_CARTRIDGE_ID_1MIB)
                 ? "8-Mbit"
                 : "32-Mbit"));
         cons_write(buf);
 
+        bool passed;
+        
+        uint32_t x;
         for (x = 0; x < cart_len / sizeof(x); x++) {
                 vdp2_tvmd_vblank_out_wait();
 
-                passed = xchg(x, x);
+                passed = _xchg(x, x);
+
+                char *result;
                 result = passed ? "OK!" : "FAILED!";
                 (void)sprintf(buf, "[7;1HWriting to 0x%08X (%d%%) %s\n",
-                    (uintptr_t)&cart_area[x], (int)(x / cart_len), result);
+                    (uintptr_t)&_cart_area[x], (int)(x / cart_len), result);
                 cons_buffer(buf);
 
                 vdp2_tvmd_vblank_in_wait();
@@ -92,27 +94,58 @@ main(void)
         while (true) {
                 vdp2_tvmd_vblank_out_wait();
                 vdp2_tvmd_vblank_in_wait();
+                vdp2_commit();
         }
 }
 
 static void
-delay(uint16_t t)
+_hardware_init(void)
+{
+        vdp2_init();
+
+        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
+            TVMD_VERT_224);
+
+        vdp2_sprite_type_set(0);
+        vdp2_sprite_priority_set(0, 0);
+
+        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
+            COLOR_RGB555(0, 3, 3));
+
+        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN);
+        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
+        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN), IC_MASK_NONE);
+
+        cpu_intc_mask_set(0);
+
+        vdp2_tvmd_display_set();
+}
+
+static void
+_delay(uint16_t t)
 {
         uint16_t frame;
 
         for (frame = 0; frame < (60 * t); frame++) {
                 vdp2_tvmd_vblank_out_wait();
                 vdp2_tvmd_vblank_in_wait();
+                vdp2_commit();
         }
 }
 
 static bool
-xchg(uint32_t v, uint32_t ofs)
+_xchg(uint32_t v, uint32_t ofs)
 {
         uint32_t w;
 
-        cart_area[ofs] = v;
-        w = cart_area[ofs];
+        _cart_area[ofs] = v;
+        w = _cart_area[ofs];
 
         return (w == v);
+}
+
+static void
+_vblank_in_handler(void)
+{
+        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
 }
