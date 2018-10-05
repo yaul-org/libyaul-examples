@@ -1,26 +1,3 @@
-/*-
- * Copyright (c) 2006-2018 Israel Jacquez <mrkotfw@gmail.com>
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 #include <yaul.h>
 
 #include <sys/queue.h>
@@ -32,20 +9,17 @@
 #include "fs.h"
 #include "bg.h"
 
-#define SCREEN_WIDTH    320
-#define SCREEN_HEIGHT   240
+static struct smpc_peripheral_digital _digital_pad __unused;
 
-static struct smpc_peripheral_digital digital_pad;
+static bg_t _bg_rbg0;
 
-static bg_t bg_rbg0 __unused;
-
-static void hardware_init(void);
-static void vblank_in_handler(irq_mux_handle_t *);
+static void _hardware_init(void);
+static void _vblank_in_handler(void);
 
 /* Helpers */
-static void cpu_load_map(const char *, const bg_t *, uint16_t, uint16_t) __unused;
-static void cpu_copy_file(const char *, void *) __unused;
-static void *cpu_dup_file(const char *) __unused;
+static void _cpu_load_map(const char *, const bg_t *, uint16_t, uint16_t) __unused;
+static void _cpu_copy_file(const char *, void *) __unused;
+static void *_cpu_dup_file(const char *) __unused;
 
 struct vdp2_scrn_rotation_table {
         /* Screen start coordinates */
@@ -115,23 +89,26 @@ main(void)
 {
         fs_init();
 
-        hardware_init();
+        _hardware_init();
 
         struct vdp2_scrn_rotation_table *rot_tbl __unused;
         rot_tbl = (struct vdp2_scrn_rotation_table *)VRAM_ADDR_4MBIT(2, 0x00000);
 
         while (true) {
                 vdp2_tvmd_vblank_out_wait();
+                smpc_peripheral_digital_port(1, &_digital_pad);
+
                 vdp2_tvmd_vblank_in_wait();
+                vdp2_commit();
         }
 }
 
 static void
-hardware_init(void)
+_hardware_init(void)
 {
         /* VDP2 */
         color_rgb555_t bs_color;
-        bs_color = COLOR_RGB555(0x2F >> 3, 0x28 >> 3, 0x3A >> 3);
+        bs_color = COLOR_RGB555(5, 5, 7);
 
         vdp2_init();
 
@@ -145,44 +122,41 @@ hardware_init(void)
         smpc_init();
         smpc_peripheral_init();
 
-        cpu_intc_mask_set (15); {
-                irq_mux_t *vblank_in;
-                vblank_in = vdp2_tvmd_vblank_in_irq_get();
-
-                irq_mux_handle_add(vblank_in, vblank_in_handler, NULL);
-        } cpu_intc_mask_set(0);
+        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN);
+        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
+        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN), IC_MASK_NONE);
 
         vdp2_tvmd_display_clear();
 
-        memset(&bg_rbg0, 0x00, sizeof(bg_rbg0));
+        memset(&_bg_rbg0, 0x00, sizeof(_bg_rbg0));
 
-        bg_rbg0.format.scf_scroll_screen = SCRN_RBG0;
-        bg_rbg0.format.scf_cc_count = SCRN_CCC_PALETTE_256;
-        bg_rbg0.format.scf_character_size = 2 * 2;
-        bg_rbg0.format.scf_pnd_size = 1; /* 1-word */
-        bg_rbg0.format.scf_auxiliary_mode = 0;
-        bg_rbg0.format.scf_plane_size = 2 * 2;
-        bg_rbg0.format.scf_cp_table = (uint32_t)VRAM_ADDR_4MBIT(0, 0x10000);
-        bg_rbg0.format.scf_color_palette = (uint32_t)CRAM_MODE_1_OFFSET(0, 0, 0);
-        bg_rbg0.format.scf_map.plane_a = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_b = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_c = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_d = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_d = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_e = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_f = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_g = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_h = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_i = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_j = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_k = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_l = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_m = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_n = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_o = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
-        bg_rbg0.format.scf_map.plane_p = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_scroll_screen = SCRN_RBG0;
+        _bg_rbg0.format.scf_cc_count = SCRN_CCC_PALETTE_256;
+        _bg_rbg0.format.scf_character_size = 2 * 2;
+        _bg_rbg0.format.scf_pnd_size = 1; /* 1-word */
+        _bg_rbg0.format.scf_auxiliary_mode = 0;
+        _bg_rbg0.format.scf_plane_size = 2 * 2;
+        _bg_rbg0.format.scf_cp_table = (uint32_t)VRAM_ADDR_4MBIT(0, 0x10000);
+        _bg_rbg0.format.scf_color_palette = (uint32_t)CRAM_MODE_1_OFFSET(0, 0, 0);
+        _bg_rbg0.format.scf_map.plane_a = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_b = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_c = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_d = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_d = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_e = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_f = (uint32_t)VRAM_ADDR_4MBIT(1, 0);
+        _bg_rbg0.format.scf_map.plane_g = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_h = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_i = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_j = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_k = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_l = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_m = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_n = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_o = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
+        _bg_rbg0.format.scf_map.plane_p = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000);
 
-        vdp2_scrn_cell_format_set(&bg_rbg0.format);
+        vdp2_scrn_cell_format_set(&_bg_rbg0.format);
 
         vdp2_scrn_priority_set(SCRN_RBG0, 3);
         vdp2_scrn_display_set(SCRN_RBG0, /* transparent = */ true);
@@ -196,9 +170,9 @@ hardware_init(void)
         vdp2_sprite_priority_set(6, 0);
         vdp2_sprite_priority_set(7, 0);
 
-        bg_calculate_params(&bg_rbg0);
+        bg_calculate_params(&_bg_rbg0);
 
-        bg_clear(&bg_rbg0);
+        bg_clear(&_bg_rbg0);
 
         struct vram_ctl *vram_ctl;
         vram_ctl = vdp2_vram_control_get();
@@ -241,7 +215,7 @@ hardware_init(void)
 
         vdp2_vram_control_set(vram_ctl);
 
-        struct vdp2_scrn_rotation_table *rot_tbl __unused;
+        struct vdp2_scrn_rotation_table *rot_tbl;
         rot_tbl = (struct vdp2_scrn_rotation_table *)VRAM_ADDR_4MBIT(2, 0x00000);
 
         memset(rot_tbl, 0x00, sizeof(*rot_tbl));
@@ -281,23 +255,17 @@ hardware_init(void)
         rot_tbl->delta_kast = 0;
         rot_tbl->delta_kax = 0;
 
-
-        cpu_copy_file("/TILESET.CEL", (void *)VRAM_ADDR_4MBIT(0, 0x10000));
-        cpu_copy_file("/TILESET.PAL", (void *)CRAM_MODE_0_OFFSET(0, 0, 0));
-        cpu_load_map("/LEVEL1.MAP", &bg_rbg0, 32, 32);
+        _cpu_copy_file("/TILESET.CEL", (void *)VRAM_ADDR_4MBIT(0, 0x10000));
+        _cpu_copy_file("/TILESET.PAL", (void *)CRAM_MODE_0_OFFSET(0, 0, 0));
+        _cpu_load_map("/LEVEL1.MAP", &_bg_rbg0, 32, 32);
 
         vdp2_tvmd_display_set();
 }
 
 static void
-vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
+_vblank_in_handler(void)
 {
-        smpc_peripheral_digital_port(1, &digital_pad);
-        vdp2_commit();
-        
-        /* Remove this hack. We have to wait until SCU DMA is done
-         * copying the buffered VDP2 registers to memory. */
-        scu_dma_level0_wait();
+        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
 
         MEMORY_WRITE(16, VDP2(RAMCTL), 0x030B);
         MEMORY_WRITE(16, VDP2(RPTAU), 0x0002);
@@ -305,14 +273,14 @@ vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
 }
 
 static void
-cpu_load_map(
+_cpu_load_map(
         const char *map_path,
         const bg_t *bg,
         uint16_t map_width,
         uint16_t map_height)
 {
         uint16_t *map;
-        map = cpu_dup_file(map_path);
+        map = _cpu_dup_file(map_path);
 
         uint32_t page_x;
         uint32_t page_y;
@@ -332,7 +300,7 @@ cpu_load_map(
 }
 
 static void
-cpu_copy_file(const char *path, void *dst)
+_cpu_copy_file(const char *path, void *dst)
 {
         void *fh;
 
@@ -345,7 +313,7 @@ cpu_copy_file(const char *path, void *dst)
 }
 
 static void *
-cpu_dup_file(const char *path)
+_cpu_dup_file(const char *path)
 {
         void *fh;
         fh = fs_open(path);
