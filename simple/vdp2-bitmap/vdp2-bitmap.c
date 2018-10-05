@@ -15,7 +15,7 @@
 
 extern uint8_t root_romdisk[];
 
-static void vblank_in_handler(irq_mux_handle_t *) __unused;
+static void _vblank_in_handler(void);
 
 struct vdp2_scrn_rotation_table {
         /* Screen start coordinates */
@@ -85,12 +85,9 @@ main(void)
 {
         vdp2_init();
 
-        cpu_intc_mask_set (15); {
-                irq_mux_t *vblank_in;
-                vblank_in = vdp2_tvmd_vblank_in_irq_get();
-
-                irq_mux_handle_add(vblank_in, vblank_in_handler, NULL);
-        } cpu_intc_mask_set(0);
+        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN);
+        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
+        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN), IC_MASK_NONE);
 
         struct scrn_bitmap_format format;
         memset(&format, 0x00, sizeof(format));
@@ -222,7 +219,7 @@ main(void)
         rot_tbl->delta_kax = 0;
 
         vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE), bs_color);
-        
+
         vdp2_sprite_type_set(0);
         vdp2_sprite_priority_set(0, 0);
 
@@ -240,15 +237,17 @@ main(void)
                 /* Translate */
                 rot_tbl->mx += 0x00010000;
                 rot_tbl->my += 0x00010000;
+
+                vdp2_commit();
         }
 
         return 0;
 }
 
 static void
-vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
+_vblank_in_handler(void)
 {
-        vdp2_commit();
+        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
 
         /* Remove this hack. We have to wait until SCU DMA is done
          * copying the buffered VDP2 registers to memory. */
