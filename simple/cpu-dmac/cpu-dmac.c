@@ -12,27 +12,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void _vblank_in_handler(irq_mux_handle_t *);
-static void _vblank_out_handler(irq_mux_handle_t *);
+static void _dmac_handler(void);
+static void _frt_ovi_handler(void);
+static void _vblank_in_handler(void);
 
 static void _hardware_init(void);
 
 static volatile uint16_t _frt = 0;
 static volatile uint32_t _ovf = 0;
 static volatile bool _done = false;
-
-static void __unused
-_dmac_handler(void)
-{
-        _frt = cpu_frt_count_get();
-        _done = true;
-}
-
-static void __unused
-_frt_ovi_handler(void)
-{
-        _ovf++;
-}
 
 int
 main(void)
@@ -121,6 +109,7 @@ main(void)
 
                 vdp2_tvmd_vblank_in_wait();
                 cons_flush();
+                vdp2_commit();
         }
 
         return 0;
@@ -134,39 +123,36 @@ _hardware_init(void)
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
             TVMD_VERT_224);
 
+        vdp2_sprite_type_set(0);
         vdp2_sprite_priority_set(0, 0);
-        vdp2_sprite_priority_set(1, 0);
-        vdp2_sprite_priority_set(2, 0);
-        vdp2_sprite_priority_set(3, 0);
-        vdp2_sprite_priority_set(4, 0);
-        vdp2_sprite_priority_set(5, 0);
-        vdp2_sprite_priority_set(6, 0);
-        vdp2_sprite_priority_set(7, 0);
 
         vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
             COLOR_RGB555(0, 3, 15));
 
-        irq_mux_t *vblank_in;
-        vblank_in = vdp2_tvmd_vblank_in_irq_get();
-        irq_mux_handle_add(vblank_in, _vblank_in_handler, NULL);
+        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN);
+        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
+        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN), IC_MASK_NONE);
 
-        irq_mux_t *vblank_out;
-        vblank_out = vdp2_tvmd_vblank_out_irq_get();
-        irq_mux_handle_add(vblank_out, _vblank_out_handler, NULL);
-
-        /* Enable interrupts */
-        cpu_intc_mask_set(0x7);
+        cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
 }
 
 static void
-_vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
+_dmac_handler(void)
 {
-        vdp2_commit();
+        _frt = cpu_frt_count_get();
+        _done = true;
 }
 
 static void
-_vblank_out_handler(irq_mux_handle_t *irq_mux __unused)
+_frt_ovi_handler(void)
 {
+        _ovf++;
+}
+
+static void
+_vblank_in_handler(void)
+{
+        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
 }
