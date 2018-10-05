@@ -9,8 +9,7 @@
 
 #include <yaul.h>
 
-static void _vblank_in_handler(irq_mux_handle_t *);
-static void _vblank_out_handler(irq_mux_handle_t *);
+static void _vblank_in_handler(void);
 
 static void _hardware_init(void);
 
@@ -140,6 +139,7 @@ int main(void) {
 
         vdp2_tvmd_vblank_in_wait();
         cons_flush();
+        vdp2_commit();
     }
 }
 
@@ -149,35 +149,22 @@ static void _hardware_init(void) {
     vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
                               TVMD_VERT_224);
 
+    vdp2_sprite_type_set(0);
     vdp2_sprite_priority_set(0, 0);
-    vdp2_sprite_priority_set(1, 0);
-    vdp2_sprite_priority_set(2, 0);
-    vdp2_sprite_priority_set(3, 0);
-    vdp2_sprite_priority_set(4, 0);
-    vdp2_sprite_priority_set(5, 0);
-    vdp2_sprite_priority_set(6, 0);
-    vdp2_sprite_priority_set(7, 0);
 
     vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
                                     COLOR_RGB555(0, 3, 3));
 
-    irq_mux_t *vblank_in;
-    vblank_in = vdp2_tvmd_vblank_in_irq_get();
-    irq_mux_handle_add(vblank_in, _vblank_in_handler, NULL);
-
-    irq_mux_t *vblank_out;
-    vblank_out = vdp2_tvmd_vblank_out_irq_get();
-    irq_mux_handle_add(vblank_out, _vblank_out_handler, NULL);
+    scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN);
+    scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
+    scu_ic_mask_chg(~(IC_MASK_VBLANK_IN), IC_MASK_NONE);
 
     // Enable interrupts
-    cpu_intc_mask_set(0x7);
+    cpu_intc_mask_set(0);
 
     vdp2_tvmd_display_set();
 }
 
-static void _vblank_in_handler(irq_mux_handle_t *irq_mux __unused) {
-    vdp2_commit();
-}
-
-static void _vblank_out_handler(irq_mux_handle_t *irq_mux __unused) {
+static void _vblank_in_handler(void) {
+    dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
 }
