@@ -16,8 +16,7 @@ extern uint8_t root_romdisk[];
 static void _hardware_init(void);
 static void _test_dsp_program(uint32_t);
 
-static void _vblank_in_handler(irq_mux_handle_t *);
-static void _dma_illegal_handler(void);
+static void _vblank_in_handler(void);
 
 static uint32_t _ram0[DSP_RAM_PAGE_WORD_COUNT];
 static uint32_t _ram1[DSP_RAM_PAGE_WORD_COUNT];
@@ -36,11 +35,6 @@ main(void)
         cons_init(CONS_DRIVER_VDP2, 40, 28);
 
         _romdisk = romdisk_mount("/", root_romdisk);
-
-        scu_dma_init();
-        scu_dsp_init();
-
-        scu_dma_illegal_set(_dma_illegal_handler);
 
         memset(_ram0, 0xAA, DSP_RAM_PAGE_SIZE);
         memset(_ram1, 0xBB, DSP_RAM_PAGE_SIZE);
@@ -69,6 +63,7 @@ main(void)
 
                 vdp2_tvmd_vblank_in_wait();
                 cons_flush();
+                vdp2_commit();
         }
 
         return 0;
@@ -82,42 +77,31 @@ _hardware_init(void)
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
             TVMD_VERT_224);
 
+        vdp2_sprite_type_set(0);
         vdp2_sprite_priority_set(0, 0);
-        vdp2_sprite_priority_set(1, 0);
-        vdp2_sprite_priority_set(2, 0);
-        vdp2_sprite_priority_set(3, 0);
-        vdp2_sprite_priority_set(4, 0);
-        vdp2_sprite_priority_set(5, 0);
-        vdp2_sprite_priority_set(6, 0);
-        vdp2_sprite_priority_set(7, 0);
 
         vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
             COLOR_RGB555(0, 3, 15));
 
-        irq_mux_t *vblank_in;
-        vblank_in = vdp2_tvmd_vblank_in_irq_get();
-        irq_mux_handle_add(vblank_in, _vblank_in_handler, NULL);
+        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN);
+        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
+        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN), IC_MASK_NONE);
 
-        /* Enable interrupts */
         cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
+
+        scu_dsp_init();
 }
 
 static void
-_vblank_in_handler(irq_mux_handle_t *irq_mux __unused)
+_vblank_in_handler(void)
 {
-        vdp2_commit();
+        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
 }
 
 static void
-_dma_illegal_handler(void)
-{
-        assert(false);
-}
-
-static void
-_test_dsp_program(uint32_t program_id __unused)
+_test_dsp_program(uint32_t program_id)
 {
         uint32_t *program = (uint32_t *)0x20201000;
 
