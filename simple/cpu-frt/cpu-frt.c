@@ -53,7 +53,6 @@ static int32_t _timer_remove(uint32_t) __unused;
 static void _frt_compare_output_handler(void);
 static void _frt_ovi_handler(void);
 static void _frt_ocb_handler(void);
-static void _vblank_in_handler(void);
 static void _timer_handler(struct timer_event *);
 
 static void _hardware_init(void);
@@ -104,8 +103,6 @@ main(void)
         _timer_add(&match4);
 
         while (true) {
-                vdp2_tvmd_vblank_out_wait();
-
                 cons_buffer("[1;1H[2J");
 
                 (void)sprintf(_buffer, "\n"
@@ -123,29 +120,21 @@ main(void)
                     _ocb_count);
                 cons_buffer(_buffer);
 
-                vdp2_tvmd_vblank_in_wait();
+                vdp2_sync_commit();
+                /* cons_flush() needs to be called during VBLANK-IN */
                 cons_flush();
-                vdp2_commit();
+                vdp_sync(0);
         }
 }
 
 static void
 _hardware_init(void)
 {
-        vdp2_init();
-
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
             TVMD_VERT_224);
 
-        vdp2_sprite_type_set(0);
-        vdp2_sprite_priority_set(0, 0);
-
         vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
             COLOR_RGB555(0, 3, 3));
-
-        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN);
-        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
-        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN), IC_MASK_NONE);
 
         cpu_intc_mask_set(0);
 
@@ -324,12 +313,6 @@ static void
 _frt_ocb_handler(void)
 {
         _ocb_count++;
-}
-
-static void
-_vblank_in_handler(void)
-{
-        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
 }
 
 static void

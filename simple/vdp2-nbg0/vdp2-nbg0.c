@@ -7,8 +7,6 @@
 
 #include <yaul.h>
 
-static void _vblank_in_handler(void);
-
 static void _hardware_init(void);
 
 static void _copy_character_pattern_data(const struct scrn_cell_format *);
@@ -35,88 +33,74 @@ main(void)
         format.scf_map.plane_c = (uint32_t)VRAM_ADDR_4MBIT(0, 0x08000);
         format.scf_map.plane_d = (uint32_t)VRAM_ADDR_4MBIT(0, 0x08000);
 
-        struct vram_ctl *vram_ctl;
-        vram_ctl = vdp2_vram_control_get();
+        struct vram_cycp vram_cycp;
 
-        vram_ctl->vram_cycp.pt[0].t0 = VRAM_CTL_CYCP_PNDR_NBG0;
-        vram_ctl->vram_cycp.pt[0].t1 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t2 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t3 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t4 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[0].t5 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t6 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t7 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t0 = VRAM_CYCP_PNDR_NBG0;
+        vram_cycp.pt[0].t1 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t2 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t3 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t4 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[0].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t7 = VRAM_CYCP_NO_ACCESS;
 
-        vram_ctl->vram_cycp.pt[1].t0 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[1].t1 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[1].t2 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[1].t3 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[1].t4 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[1].t5 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[1].t6 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[1].t7 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t0 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t1 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t2 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t3 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t4 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t7 = VRAM_CYCP_NO_ACCESS;
 
-        vram_ctl->vram_cycp.pt[2].t0 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[2].t1 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[2].t2 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[2].t3 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[2].t4 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[2].t5 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[2].t6 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[2].t7 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t0 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t1 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t2 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t3 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t4 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t7 = VRAM_CYCP_NO_ACCESS;
 
-        vram_ctl->vram_cycp.pt[3].t0 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[3].t1 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[3].t2 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[3].t3 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[3].t4 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[3].t5 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[3].t6 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[3].t7 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t0 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t1 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t2 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t3 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t4 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t7 = VRAM_CYCP_NO_ACCESS;
+
+        vdp2_vram_cycp_set(&vram_cycp);
 
         _copy_character_pattern_data(&format);
         _copy_color_palette(&format);
         _copy_map(&format);
 
-        vdp2_vram_control_set(vram_ctl);
-
         vdp2_scrn_cell_format_set(&format);
         vdp2_scrn_priority_set(SCRN_NBG0, 7);
         vdp2_scrn_display_set(SCRN_NBG0, /* transparent = */ false);
 
-        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A, TVMD_VERT_224);
+        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
+            TVMD_VERT_224);
         vdp2_tvmd_display_set();
 
+        vdp2_sync_commit();
+        vdp_sync(0);
+
         while (true) {
-                vdp2_tvmd_vblank_out_wait();
-                vdp2_tvmd_vblank_in_wait();
-                vdp2_commit();
         }
 }
 
 static void
 _hardware_init(void)
 {
-        /* VDP2 */
-        vdp2_init();
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(2, 0x01FFFE), COLOR_RGB555(0, 0, 7));
+        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(2, 0x01FFFE),
+            COLOR_RGB555(0, 0, 7));
 
-        vdp2_sprite_type_set(0);
-        vdp2_sprite_priority_set(0, 0);
+        cpu_intc_mask_set(0);
 
-        /* SMPC */
-        smpc_init();
-        smpc_peripheral_init();
-
-        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN);
-        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
-        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN), IC_MASK_NONE);
-}
-
-static void
-_vblank_in_handler()
-{
-        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
+        vdp2_tvmd_display_clear();
 }
 
 static void

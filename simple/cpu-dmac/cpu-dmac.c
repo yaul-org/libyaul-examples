@@ -14,7 +14,6 @@
 
 static void _dmac_handler(void);
 static void _frt_ovi_handler(void);
-static void _vblank_in_handler(void);
 
 static void _hardware_init(void);
 
@@ -55,8 +54,6 @@ main(void)
         };
 
         while (true) {
-                vdp2_tvmd_vblank_out_wait();
-
                 cons_buffer("[H");
 
                 uint32_t xfer;
@@ -93,6 +90,11 @@ main(void)
                         _ovf = 0;
                         cpu_frt_count_set(0);
 
+                        vdp2_sync_commit();
+                        /* cons_flush() needs to be called during VBLANK-IN */
+                        cons_flush();
+                        vdp_sync(0);
+
                         while (!_done);
 
                         uint32_t ticks;
@@ -100,16 +102,17 @@ main(void)
 
                         sprintf(buffer, " Completed in %lu ticks\n", ticks);
                         cons_buffer(buffer);
+
+                        vdp2_sync_commit();
+                        /* cons_flush() needs to be called during VBLANK-IN */
+                        cons_flush();
+                        vdp_sync(0);
                 }
 
                 /* Switch over to the next channel */
                 ch ^= 1;
 
                 cfg.dcc_ch = ch;
-
-                vdp2_tvmd_vblank_in_wait();
-                cons_flush();
-                vdp2_commit();
         }
 
         return 0;
@@ -118,20 +121,11 @@ main(void)
 static void
 _hardware_init(void)
 {
-        vdp2_init();
-
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
             TVMD_VERT_224);
 
-        vdp2_sprite_type_set(0);
-        vdp2_sprite_priority_set(0, 0);
-
         vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
             COLOR_RGB555(0, 3, 15));
-
-        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN);
-        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
-        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN), IC_MASK_NONE);
 
         cpu_intc_mask_set(0);
 
@@ -149,10 +143,4 @@ static void
 _frt_ovi_handler(void)
 {
         _ovf++;
-}
-
-static void
-_vblank_in_handler(void)
-{
-        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
 }

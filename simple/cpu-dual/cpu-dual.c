@@ -11,8 +11,6 @@
 
 static void _hardware_init(void);
 
-static void _vblank_in_handler(void);
-
 static void _master_entry(void);
 static void _slave_entry(void);
 
@@ -50,19 +48,18 @@ main(void)
 
         char buffer[64];
 
+        (void)sprintf(buffer,
+            "[3;1H[0J"
+            "Master responded %lu times\n"
+            "Slave responded  %lu times\n", _master_counter, _slave_counter);
+        cons_buffer(buffer);
+
+        vdp2_sync_commit();
+        /* cons_flush() needs to be called during VBLANK-IN */
+        cons_flush();
+        vdp_sync(0);
+
         while (true) {
-                vdp2_tvmd_vblank_out_wait();
-
-                (void)sprintf(buffer,
-                    "[3;1H[0J"
-                    "Master responded %lu times\n"
-                    "Slave responded  %lu times\n", _master_counter, _slave_counter);
-                cons_buffer(buffer);
-
-                vdp2_commit();
-
-                vdp2_tvmd_vblank_in_wait();
-                cons_flush();
         }
 
         return 0;
@@ -71,37 +68,15 @@ main(void)
 static void
 _hardware_init(void)
 {
-        vdp2_init();
-
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
             TVMD_VERT_224);
-
-        vdp2_sprite_type_set(0);
-        vdp2_sprite_priority_set(0, 0);
-        vdp2_sprite_priority_set(1, 0);
-        vdp2_sprite_priority_set(2, 0);
-        vdp2_sprite_priority_set(3, 0);
-        vdp2_sprite_priority_set(4, 0);
-        vdp2_sprite_priority_set(5, 0);
-        vdp2_sprite_priority_set(6, 0);
-        vdp2_sprite_priority_set(7, 0);
 
         vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
             COLOR_RGB555(0, 3, 15));
 
-        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN);
-        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
-        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN), IC_MASK_NONE);
-
         cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
-}
-
-static void
-_vblank_in_handler(void)
-{
-        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
 }
 
 static void

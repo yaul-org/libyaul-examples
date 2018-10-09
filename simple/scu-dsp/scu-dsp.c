@@ -12,8 +12,6 @@
 
 static void _hardware_init(void);
 
-static void _vblank_in_handler(void);
-
 static void _dsp_end(void);
 
 static uint32_t _ram0[DSP_RAM_PAGE_WORD_COUNT];
@@ -72,6 +70,10 @@ main(void)
 
                 sprintf(buffer, "PC: %02X\n", pc);
                 cons_buffer(buffer);
+                vdp2_sync_commit();
+                /* cons_flush() needs to be called during VBLANK-IN */
+                cons_flush();
+                vdp_sync(0);
         } while (!(scu_dsp_program_end()));
 
         _dsp_end();
@@ -99,12 +101,12 @@ main(void)
             status.pc);
         cons_buffer(buffer);
 
-        while (true) {
-                vdp2_tvmd_vblank_out_wait();
+        vdp2_sync_commit();
+        /* cons_flush() needs to be called during VBLANK-IN */
+        cons_flush();
+        vdp_sync(0);
 
-                vdp2_tvmd_vblank_in_wait();
-                cons_flush();
-                vdp2_commit();
+        while (true) {
         }
 
         return 0;
@@ -113,30 +115,15 @@ main(void)
 static void
 _hardware_init(void)
 {
-        vdp2_init();
-
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
             TVMD_VERT_224);
-
-        vdp2_sprite_type_set(0);
-        vdp2_sprite_priority_set(0, 0);
 
         vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
             COLOR_RGB555(0, 3, 15));
 
-        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN);
-        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
-        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN), IC_MASK_NONE);
-
         cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
-}
-
-static void
-_vblank_in_handler(void)
-{
-        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
 }
 
 static void
