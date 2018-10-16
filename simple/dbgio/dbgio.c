@@ -54,7 +54,7 @@ main(void)
         _ovf_count = 0;
 
         before = cpu_frt_count_get();
-        usb_cart_dma_send(buffer, sizeof(_copy_buffer));
+        usb_cart_dma_send(_copy_buffer, sizeof(_copy_buffer));
         after = cpu_frt_count_get();
         count = (after - before) + (65535 * _ovf_count);
 
