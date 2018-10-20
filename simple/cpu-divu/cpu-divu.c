@@ -17,7 +17,8 @@ main(void)
 {
         _hardware_init();
 
-        cons_init(CONS_DRIVER_VDP2, 40, 28);
+        dbgio_dev_default_init(DBGIO_DEV_VDP2);
+        dbgio_dev_set(DBGIO_DEV_VDP2);
 
         /* Shift dividend by 16 bits (32-bit to 64-bit value)
          *
@@ -50,12 +51,11 @@ main(void)
         quotient = cpu_divu_quotient_get();
 
         fix16_to_str((fix16_t)quotient, text, 7);
-        cons_buffer(text);
-        cons_buffer("\n");
+        dbgio_buffer(text);
+        dbgio_buffer("\n");
 
         vdp2_sync_commit();
-        /* cons_flush() needs to be called during VBLANK-IN */
-        cons_flush();
+        dbgio_flush();
         vdp_sync(0);
 
         while (true) {

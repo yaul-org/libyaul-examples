@@ -9,22 +9,38 @@
 
 #include <assert.h>
 
-void jsr(void);
+static void _hardware_init(void);
 
 int
 main(void)
 {
-        vdp1_init();
-        vdp2_init();
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
-            COLOR_RGB555(0, 0, 7));
+        _hardware_init();
+
+        dbgio_dev_default_init(DBGIO_DEV_VDP2);
+        dbgio_dev_set(DBGIO_DEV_VDP2);
+
+        dbgio_buffer("Initializing GDB...\n");
+
+        vdp2_sync_commit();
+        dbgio_flush();
+        vdp_sync(0);
 
         gdb_init();
 
         while (true) {
-                vdp2_tvmd_vblank_in_wait();
-                vdp2_tvmd_vblank_out_wait();
         }
+}
 
-        return 0;
+static void
+_hardware_init(void)
+{
+        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
+            TVMD_VERT_224);
+
+        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
+            COLOR_RGB555(0, 3, 15));
+
+        cpu_intc_mask_set(0);
+
+        vdp2_tvmd_display_set();
 }

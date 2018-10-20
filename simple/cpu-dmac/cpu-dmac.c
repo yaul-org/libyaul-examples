@@ -26,7 +26,8 @@ main(void)
 {
         _hardware_init();
 
-        cons_init(CONS_DRIVER_VDP2, 40, 28);
+        dbgio_dev_default_init(DBGIO_DEV_VDP2);
+        dbgio_dev_set(DBGIO_DEV_VDP2);
 
         char *buffer;
         buffer = malloc(1024);
@@ -54,7 +55,7 @@ main(void)
         };
 
         while (true) {
-                cons_buffer("[H");
+                dbgio_buffer("[H");
 
                 uint32_t xfer;
                 for (xfer = 0; xfer < 3; xfer++) {
@@ -83,7 +84,7 @@ main(void)
                             MEMORY_READ(32, CPU(CHCR0 | (ch << 4))),
                             MEMORY_READ(32, CPU(DMAOR)));
 
-                        cons_buffer(buffer);
+                        dbgio_buffer(buffer);
 
                         cpu_dmac_channel_start(ch);
                         _frt = 0;
@@ -91,8 +92,7 @@ main(void)
                         cpu_frt_count_set(0);
 
                         vdp2_sync_commit();
-                        /* cons_flush() needs to be called during VBLANK-IN */
-                        cons_flush();
+                        dbgio_flush();
                         vdp_sync(0);
 
                         while (!_done);
@@ -101,11 +101,10 @@ main(void)
                         ticks = (uint32_t)(_frt + ((0xFFFF + 1) * _ovf));
 
                         sprintf(buffer, " Completed in %lu ticks\n", ticks);
-                        cons_buffer(buffer);
+                        dbgio_buffer(buffer);
 
                         vdp2_sync_commit();
-                        /* cons_flush() needs to be called during VBLANK-IN */
-                        cons_flush();
+                        dbgio_flush();
                         vdp_sync(0);
                 }
 

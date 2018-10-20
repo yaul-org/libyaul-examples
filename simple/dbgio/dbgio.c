@@ -16,18 +16,20 @@ static void _ovi_handler(void);
 static volatile uint32_t _ovf_count = 0;
 
 /* Transfer 512 KiB */
-static uint8_t _copy_buffer[512 << 10];
+static uint8_t _copy_buffer[62] __aligned(0x100);
 
 int
 main(void)
 {
+        (void)memset(_copy_buffer, '\0', sizeof(_copy_buffer));
+        usb_cart_dma_read(_copy_buffer, sizeof(_copy_buffer));
+
         _hardware_init();
 
-        cons_init(CONS_DRIVER_VDP2, 40, 28);
+        dbgio_dev_default_init(DBGIO_DEV_VDP2);
+        dbgio_dev_set(DBGIO_DEV_VDP2);
 
-        (void)memset(_copy_buffer, '*', sizeof(_copy_buffer));
-
-        cons_buffer("Using f/8 CPU FRT divisor\n\n");
+        dbgio_buffer("Using f/8 CPU FRT divisor\n\n");
 
         char buffer[256];
 
@@ -48,7 +50,7 @@ main(void)
         count = (after - before) + (65535 * _ovf_count);
 
         (void)sprintf(buffer, "Using CPU byte transfer:\n%16lu FRT ticks\n", count);
-        cons_buffer(buffer);
+        dbgio_buffer(buffer);
 
         cpu_frt_count_set(0);
         _ovf_count = 0;
@@ -59,9 +61,15 @@ main(void)
         count = (after - before) + (65535 * _ovf_count);
 
         (void)sprintf(buffer, "Using CPU-DMAC:\n%16lu FRT ticks\n", count);
-        cons_buffer(buffer);
+        dbgio_buffer(buffer);
 
-        cons_flush();
+        dbgio_buffer(".\n");
+
+        dbgio_flush();
+        vdp2_sync_commit();
+        vdp_sync(0);
+
+        dbgio_flush();
         vdp2_sync_commit();
         vdp_sync(0);
 

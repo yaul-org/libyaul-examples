@@ -19,7 +19,7 @@ static char* _dtor = &_dtor_buffer[0];
 
 namespace Foo {
     void bar() {
-        cons_buffer("Foo::bar()\n");
+        dbgio_buffer("Foo::bar()\n");
     }
 }
 
@@ -70,11 +70,11 @@ public:
 class T {
 public:
     ~T() {
-        cons_buffer("T::~T()\n");
+        dbgio_buffer("T::~T()\n");
     }
 
     void call() {
-        cons_buffer("T::call(), dynamically allocated object\n");
+        dbgio_buffer("T::call(), dynamically allocated object\n");
     }
 };
 
@@ -87,14 +87,14 @@ static inline void _function_overload(int a) {
     char buffer[32];
 
     (void)sprintf(buffer, "%s(), type int: %i\n", __FUNCTION__, a);
-    cons_buffer(buffer);
+    dbgio_buffer(buffer);
 }
 
 static inline void _function_overload(char a) {
     char buffer[32];
 
     (void)sprintf(buffer, "%s(), type char: '%c'\n", __FUNCTION__, a);
-    cons_buffer(buffer);
+    dbgio_buffer(buffer);
 }
 
 static A a;
@@ -105,18 +105,19 @@ static D d;
 int main(void) {
     _hardware_init();
 
-    cons_init(CONS_DRIVER_VDP2, 40, 30);
+    dbgio_dev_default_init(DBGIO_DEV_VDP2);
+    dbgio_dev_set(DBGIO_DEV_VDP2);
 
-    cons_buffer("Global constructor order: ");
-    cons_buffer(_ctor_buffer);
-    cons_buffer("\n");
+    dbgio_buffer("Global constructor order: ");
+    dbgio_buffer(_ctor_buffer);
+    dbgio_buffer("\n");
 
     char *buffer;
     buffer = (char *)malloc(1024);
     assert(buffer != NULL);
 
     (void)sprintf(buffer, "_max<T> template: %i, %lu, '%c'\n", _max<int>(-2, -1), _max<uint32_t>(0, -1), _max<char>('A', 'Z'));
-    cons_buffer(buffer);
+    dbgio_buffer(buffer);
 
     _function_overload(1);
     _function_overload('A');
@@ -133,8 +134,7 @@ int main(void) {
     free(buffer);
 
     vdp2_sync_commit();
-    /* cons_flush() needs to be called during VBLANK-IN */
-    cons_flush();
+    dbgio_flush();
     vdp_sync(0);
 
     while (true) {

@@ -24,9 +24,8 @@ main(void)
 {
         _hardware_init();
 
-        cons_init(CONS_DRIVER_VDP2, 40, 28);
-
-        scu_dsp_init();
+        dbgio_dev_default_init(DBGIO_DEV_VDP2);
+        dbgio_dev_set(DBGIO_DEV_VDP2);
 
         const uint32_t program[] = {
                 /* See test1.dsp */
@@ -45,7 +44,7 @@ main(void)
                 0xF8000000
         };
 
-        cons_buffer("Running DSP\n");
+        dbgio_buffer("Running DSP\n");
 
         memset(_ram0, 0xAA, DSP_RAM_PAGE_SIZE);
         memset(_ram1, 0xBB, DSP_RAM_PAGE_SIZE);
@@ -69,10 +68,10 @@ main(void)
                 pc = scu_dsp_program_step();
 
                 sprintf(buffer, "PC: %02X\n", pc);
-                cons_buffer(buffer);
+                dbgio_buffer(buffer);
                 vdp2_sync_commit();
-                /* cons_flush() needs to be called during VBLANK-IN */
-                cons_flush();
+                /* dbgio_flush() needs to be called during VBLANK-IN */
+                dbgio_flush();
                 vdp_sync(0);
         } while (!(scu_dsp_program_end()));
 
@@ -99,11 +98,10 @@ main(void)
             status.e,
             status.ex,
             status.pc);
-        cons_buffer(buffer);
+        dbgio_buffer(buffer);
 
         vdp2_sync_commit();
-        /* cons_flush() needs to be called during VBLANK-IN */
-        cons_flush();
+        dbgio_flush();
         vdp_sync(0);
 
         while (true) {
@@ -141,5 +139,5 @@ _dsp_end(void)
 
         sprintf(buffer, "Result: %lu * %lu = %lu\n", a, b, c);
 
-        cons_buffer(buffer);
+        dbgio_buffer(buffer);
 }

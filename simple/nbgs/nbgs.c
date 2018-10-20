@@ -13,14 +13,9 @@
 #include <assert.h>
 #include <stdbool.h>
 
-static void _vblank_in_handler(void);
-static void _vblank_out_handler(void);
-
 static void _hardware_init(void);
 
 static void _config_0(void);
-
-static uint32_t _tick = 0;
 
 int
 main(void)
@@ -33,48 +28,28 @@ main(void)
         scale = F16(0.0f);
 
         while (true) {
-                vdp2_tvmd_vblank_out_wait();
+                scale = fix16_add(scale, F16(64.0f));
 
-                scale = fix16_add(scale, F16(0.25f));
+                vdp2_scrn_scroll_x_update(SCRN_NBG1, F16(8.0f));
+                vdp2_scrn_scroll_y_update(SCRN_NBG1, F16(8.0f));
 
-                vdp2_scrn_reduction_x_set(SCRN_NBG1, scale);
-                vdp2_scrn_reduction_y_set(SCRN_NBG1, scale);
-
-                vdp2_tvmd_vblank_in_wait();
-                vdp2_commit();
+                vdp2_sync_commit();
+                vdp_sync(0);
         }
 }
 
 static void
 _hardware_init(void)
 {
-        vdp2_init();
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
             TVMD_VERT_224);
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(2, 0x01FFFE),
-            COLOR_RGB555(0, 0, 7));
 
-        vdp2_sprite_type_set(0);
-        vdp2_sprite_priority_set(0, 0);
+        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
+            COLOR_RGB555(0, 3, 15));
 
-        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN | IC_MASK_VBLANK_OUT);
-        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
-        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_OUT, _vblank_out_handler);
-        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN | IC_MASK_VBLANK_OUT), IC_MASK_NONE);
-}
+        cpu_intc_mask_set(0);
 
-static void
-_vblank_in_handler(void)
-{
-        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
-}
-
-static void
-_vblank_out_handler(void)
-{
-        if ((vdp2_tvmd_vcount_get()) == 0) {
-                _tick = (_tick & 0xFFFFFFFF) + 1;
-        }
+        vdp2_tvmd_display_set();
 }
 
 static void
@@ -86,12 +61,12 @@ _config_0(void)
         color_palette = (uint16_t *)CRAM_MODE_1_OFFSET(0, 2, 0);
 
         uint16_t *planes[4];
-        planes[0] = (uint16_t *)VRAM_ADDR_4MBIT(0, 0x08000);
-        planes[1] = (uint16_t *)VRAM_ADDR_4MBIT(0, 0x10000);
-        planes[2] = (uint16_t *)VRAM_ADDR_4MBIT(0, 0x18000);
-        planes[3] = (uint16_t *)VRAM_ADDR_4MBIT(0, 0x20000);
+        planes[0] = (uint16_t *)VRAM_ADDR_4MBIT(1, 0x00000);
+        planes[1] = (uint16_t *)VRAM_ADDR_4MBIT(1, 0x08000);
+        planes[2] = (uint16_t *)VRAM_ADDR_4MBIT(1, 0x10000);
+        planes[3] = (uint16_t *)VRAM_ADDR_4MBIT(1, 0x18000);
         uint16_t *cpd;
-        cpd = (uint16_t *)VRAM_ADDR_4MBIT(2, 0x00000);
+        cpd = (uint16_t *)VRAM_ADDR_4MBIT(0, 0x00000);
 
         format.scf_scroll_screen = SCRN_NBG1;
         format.scf_cc_count = SCRN_CCC_PALETTE_16;
@@ -106,26 +81,45 @@ _config_0(void)
         format.scf_map.plane_c = (uint32_t)planes[2];
         format.scf_map.plane_d = (uint32_t)planes[3];
 
-        struct vram_ctl *vram_ctl;
-        vram_ctl = vdp2_vram_control_get();
+        struct vram_cycp vram_cycp;
 
-        vram_ctl->vram_cycp.pt[0].t7 = VRAM_CTL_CYCP_CHPNDR_NBG1;
-        vram_ctl->vram_cycp.pt[0].t6 = VRAM_CTL_CYCP_CHPNDR_NBG1;
-        vram_ctl->vram_cycp.pt[0].t5 = VRAM_CTL_CYCP_CHPNDR_NBG2;
-        vram_ctl->vram_cycp.pt[0].t4 = VRAM_CTL_CYCP_CHPNDR_NBG2;
-        vram_ctl->vram_cycp.pt[0].t3 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t2 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t1 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t0 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t0 = VRAM_CYCP_CHPNDR_NBG1;
+        vram_cycp.pt[0].t1 = VRAM_CYCP_CHPNDR_NBG1;
+        vram_cycp.pt[0].t2 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t3 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t4 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t7 = VRAM_CYCP_NO_ACCESS;
 
-        vram_ctl->vram_cycp.pt[1].t7 = VRAM_CTL_CYCP_PNDR_NBG1;
-        vram_ctl->vram_cycp.pt[1].t6 = VRAM_CTL_CYCP_PNDR_NBG1;
-        vram_ctl->vram_cycp.pt[1].t5 = VRAM_CTL_CYCP_PNDR_NBG2;
-        vram_ctl->vram_cycp.pt[1].t4 = VRAM_CTL_CYCP_PNDR_NBG2;
-        vram_ctl->vram_cycp.pt[1].t3 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[1].t2 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[1].t1 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[1].t0 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t0 = VRAM_CYCP_PNDR_NBG1;
+        vram_cycp.pt[1].t1 = VRAM_CYCP_PNDR_NBG1;
+        vram_cycp.pt[1].t2 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t3 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t4 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t7 = VRAM_CYCP_NO_ACCESS;
+
+        vram_cycp.pt[2].t0 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t1 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t2 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t3 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t4 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t7 = VRAM_CYCP_NO_ACCESS;
+
+        vram_cycp.pt[3].t0 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t1 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t2 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t3 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t4 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t7 = VRAM_CYCP_NO_ACCESS;
+
+        vdp2_vram_cycp_set(&vram_cycp);
 
         uint32_t i;
         uint32_t j;
@@ -217,13 +211,10 @@ _config_0(void)
                 }
         }
 
-        vdp2_vram_control_set(vram_ctl);
-
         vdp2_scrn_cell_format_set(&format);
         vdp2_scrn_priority_set(SCRN_NBG1, 7);
         vdp2_scrn_scroll_x_set(SCRN_NBG1, F16(0.0f));
         vdp2_scrn_scroll_y_set(SCRN_NBG1, F16(0.0f));
-        vdp2_scrn_reduction_set(SCRN_NBG1, SCRN_REDUCTION_QUARTER);
 
         vdp2_scrn_display_set(SCRN_NBG1, /* transparent = */ true);
 

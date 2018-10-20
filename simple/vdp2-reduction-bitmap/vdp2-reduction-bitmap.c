@@ -13,19 +13,19 @@
 
 extern uint8_t root_romdisk[];
 
-static void _vblank_in_handler(void);
+static void _hardware_init(void);
 
 int
 main(void)
 {
+        _hardware_init();
+
         void *romdisk;
 
         romdisk_init();
 
         romdisk = romdisk_mount("/", root_romdisk);
         assert(romdisk != NULL);
-
-        vdp2_init();
 
         struct scrn_bitmap_format format;
         memset(&format, 0x00, sizeof(format));
@@ -47,84 +47,107 @@ main(void)
         vdp2_scrn_reduction_y_set(SCRN_NBG0, Q0_3_8(1.0f / (1.0f - (240.0f / 512.0f))));
         vdp2_scrn_display_set(SCRN_NBG0, /* no_trans = */ false);
 
-        struct vram_ctl *vram_ctl;
-        vram_ctl = vdp2_vram_control_get();
+        struct vram_cycp vram_cycp;
 
-        vram_ctl->vram_cycp.pt[0].t0 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[0].t1 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[0].t2 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[0].t3 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[0].t4 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t5 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t6 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t7 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t0 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[0].t1 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[0].t2 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[0].t3 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[0].t4 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[0].t7 = VRAM_CYCP_NO_ACCESS;
 
-        vram_ctl->vram_cycp.pt[1].t0 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[1].t1 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[1].t2 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[1].t3 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[1].t4 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[1].t5 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[1].t6 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[1].t7 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t0 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[1].t1 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[1].t2 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[1].t3 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[1].t4 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[1].t7 = VRAM_CYCP_NO_ACCESS;
 
-        vram_ctl->vram_cycp.pt[2].t0 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[2].t1 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[2].t2 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[2].t3 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[2].t4 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[2].t5 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[2].t6 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[2].t7 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t0 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[2].t1 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[2].t2 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[2].t3 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[2].t4 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[2].t7 = VRAM_CYCP_NO_ACCESS;
 
-        vram_ctl->vram_cycp.pt[3].t0 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[3].t1 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[3].t2 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[3].t3 = VRAM_CTL_CYCP_CHPNDR_NBG0;
-        vram_ctl->vram_cycp.pt[3].t4 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[3].t5 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[3].t6 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[3].t7 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t0 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[3].t1 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[3].t2 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[3].t3 = VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp.pt[3].t4 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp.pt[3].t7 = VRAM_CYCP_NO_ACCESS;
 
-        vdp2_vram_control_set(vram_ctl);
+        vdp2_vram_cycp_set(&vram_cycp);
 
-        void *fh;
-        size_t len;
+        /* Set up and enqueue two DMA transfers tagged as VBLANK-IN */
 
-        fh = romdisk_open(romdisk, "/BITMAP_PAL.BIN");
-        assert(fh != NULL);
-        len = romdisk_read(fh, (void *)CRAM_ADDR(0x0000), romdisk_total(fh));
-        assert(len == romdisk_total(fh));
-        romdisk_close(fh);
+        struct dma_level_cfg dma_level_cfg;
+        uint8_t reg_buffer[DMA_REG_BUFFER_BYTE_SIZE];
 
-        fh = romdisk_open(romdisk, "/BITMAP_CPD.BIN");
-        assert(fh != NULL);
-        len = romdisk_read(fh, (void *)VRAM_ADDR_4MBIT(0, 0x00000), romdisk_total(fh));
-        assert(len == romdisk_total(fh));
-        romdisk_close(fh);
+        dma_level_cfg.dlc_mode = DMA_MODE_DIRECT;
+        dma_level_cfg.dlc_stride = DMA_STRIDE_2_BYTES;
+        dma_level_cfg.dlc_update = DMA_UPDATE_NONE;
 
-        color_rgb555_t bs_color;
-        bs_color = COLOR_RGB555(0x05, 0x05, 0x07);
+        void *fh[2];
+        void *p;
+        int8_t ret;
 
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE), bs_color);
-        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A, TVMD_VERT_240);
-        vdp2_tvmd_display_set();
+        fh[0] = romdisk_open(romdisk, "/BITMAP_PAL.BIN");
+        assert(fh[0] != NULL);
 
-        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN | IC_MASK_VBLANK_OUT);
-        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
-        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN | IC_MASK_VBLANK_OUT), IC_MASK_NONE);
+        p = romdisk_direct(fh[0]);
+
+        dma_level_cfg.dlc_xfer.direct.len = romdisk_total(fh[0]);
+        dma_level_cfg.dlc_xfer.direct.dst = CRAM_ADDR(0x0000);
+        dma_level_cfg.dlc_xfer.direct.src = (uint32_t)p;
+
+        scu_dma_config_buffer(&reg_buffer[0], &dma_level_cfg);
+        ret = dma_queue_enqueue(&reg_buffer[0], DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
+        assert(ret == 0);
+
+        fh[1] = romdisk_open(romdisk, "/BITMAP_CPD.BIN");
+        assert(fh[1] != NULL);
+
+        p = romdisk_direct(fh[1]);
+
+        dma_level_cfg.dlc_xfer.direct.len = romdisk_total(fh[1]);
+        dma_level_cfg.dlc_xfer.direct.dst = VRAM_ADDR_4MBIT(0, 0x00000);
+        dma_level_cfg.dlc_xfer.direct.src = (uint32_t)p;
+
+        scu_dma_config_buffer(&reg_buffer[0], &dma_level_cfg);
+        ret = dma_queue_enqueue(&reg_buffer[0], DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
+        assert(ret == 0);
+
+        vdp2_sync_commit();
+        vdp_sync(0);
+
+        romdisk_close(fh[0]);
+        romdisk_close(fh[1]);
 
         while (true) {
-                vdp2_tvmd_vblank_out_wait();
-                vdp2_tvmd_vblank_in_wait();
-                vdp2_commit();
         }
 
         return 0;
 }
 
 static void
-_vblank_in_handler(void)
+_hardware_init(void)
 {
-        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
+        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
+            TVMD_VERT_224);
+
+        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
+            COLOR_RGB555(0, 3, 15));
+
+        cpu_intc_mask_set(0);
+
+        vdp2_tvmd_display_set();
 }

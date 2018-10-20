@@ -30,7 +30,8 @@ main(void)
 {
         _hardware_init();
 
-        cons_init(CONS_DRIVER_VDP2, 40, 28);
+        dbgio_dev_default_init(DBGIO_DEV_VDP2);
+        dbgio_dev_set(DBGIO_DEV_VDP2);
 
         _romdisk = romdisk_mount("/", root_romdisk);
 
@@ -47,18 +48,17 @@ main(void)
         romdisk_close(fh);
 
         (void)sprintf(_buffer, "Running %lu DSP programs\n", program_count);
-        cons_buffer(_buffer);
+        dbgio_buffer(_buffer);
 
         uint32_t program_id;
         for (program_id = 1; program_id <= program_count; program_id++) {
                 _test_dsp_program(program_id);
         }
 
-        cons_buffer("Passed");
+        dbgio_buffer("Passed");
 
         vdp2_sync_commit();
-        /* cons_flush() needs to be called during VBLANK-IN */
-        cons_flush();
+        dbgio_flush();
         vdp_sync(0);
 
         while (true) {
@@ -135,11 +135,10 @@ _test_dsp_program(uint32_t program_id)
             "%s\n",
             program_id,
             mnemonic);
-        cons_buffer(_buffer);
+        dbgio_buffer(_buffer);
 
         vdp2_sync_commit();
-        /* cons_flush() needs to be called during VBLANK-IN */
-        cons_flush();
+        dbgio_flush();
         vdp_sync(0);
 
         scu_dsp_program_start();
@@ -172,11 +171,10 @@ _test_dsp_program(uint32_t program_id)
             status.e,
             status.ex,
             status.pc);
-        cons_buffer(_buffer);
+        dbgio_buffer(_buffer);
 
         vdp2_sync_commit();
-        /* cons_flush() needs to be called during VBLANK-IN */
-        cons_flush();
+        dbgio_flush();
         vdp_sync(0);
 
         abort();

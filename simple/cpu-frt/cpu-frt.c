@@ -69,7 +69,8 @@ main(void)
 {
         _hardware_init();
 
-        cons_init(CONS_DRIVER_VDP2, 40, 28);
+        dbgio_dev_default_init(DBGIO_DEV_VDP2);
+        dbgio_dev_set(DBGIO_DEV_VDP2);
 
         _timer_init();
 
@@ -103,7 +104,7 @@ main(void)
         _timer_add(&match4);
 
         while (true) {
-                cons_buffer("[1;1H[2J");
+                dbgio_buffer("[1;1H[2J");
 
                 (void)sprintf(_buffer, "\n"
                     " counter_1: %10lu (1s)\n"
@@ -118,11 +119,10 @@ main(void)
                     _counter_4,
                     _ovi_count,
                     _ocb_count);
-                cons_buffer(_buffer);
+                dbgio_buffer(_buffer);
 
                 vdp2_sync_commit();
-                /* cons_flush() needs to be called during VBLANK-IN */
-                cons_flush();
+                dbgio_flush();
                 vdp_sync(0);
         }
 }

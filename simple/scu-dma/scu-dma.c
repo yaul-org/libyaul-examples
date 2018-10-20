@@ -18,7 +18,8 @@ main(void)
 {
         _hardware_init();
 
-        cons_init(CONS_DRIVER_VDP2, 40, 28);
+        dbgio_dev_default_init(DBGIO_DEV_VDP2);
+        dbgio_dev_set(DBGIO_DEV_VDP2);
 
         char buffer[41];
         uint32_t p;
@@ -29,9 +30,9 @@ main(void)
         while (true) {
                 vdp2_tvmd_vblank_out_wait();
 
-                cons_buffer("[1;1H");
+                dbgio_buffer("[1;1H");
 
-                cons_buffer(buffer);
+                dbgio_buffer(buffer);
 
                 memset(buffer, ' ', sizeof(buffer));
                 buffer[40] = '\0';
@@ -49,8 +50,7 @@ main(void)
                 }
 
                 vdp2_sync_commit();
-                /* cons_flush() needs to be called during VBLANK-IN */
-                cons_flush();
+                dbgio_flush();
                 vdp_sync(0);
         }
 }

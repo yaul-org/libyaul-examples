@@ -22,7 +22,8 @@ main(void)
 {
         _hardware_init();
 
-        cons_init(CONS_DRIVER_VDP2, 40, 28);
+        dbgio_dev_default_init(DBGIO_DEV_VDP2);
+        dbgio_dev_set(DBGIO_DEV_VDP2);
 
         _master_counter = 0;
         _slave_counter = 0;
@@ -34,7 +35,7 @@ main(void)
 
         cpu_intc_mask_set(0);
 
-        cons_buffer("Ping ponging between master and slave\n");
+        dbgio_buffer("Ping ponging between master and slave\n");
 
         uint32_t counter;
 
@@ -52,11 +53,10 @@ main(void)
             "[3;1H[0J"
             "Master responded %lu times\n"
             "Slave responded  %lu times\n", _master_counter, _slave_counter);
-        cons_buffer(buffer);
+        dbgio_buffer(buffer);
 
         vdp2_sync_commit();
-        /* cons_flush() needs to be called during VBLANK-IN */
-        cons_flush();
+        dbgio_flush();
         vdp_sync(0);
 
         while (true) {
