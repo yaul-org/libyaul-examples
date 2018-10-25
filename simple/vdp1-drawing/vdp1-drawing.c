@@ -23,19 +23,23 @@ main(void)
 {
         _hardware_init();
 
-        struct vdp1_cmdt *cmdts;
-        cmdts = malloc(sizeof(struct vdp1_cmdt) * 8);
-        assert(cmdts != NULL);
-
+        struct vdp1_cmdt *cmdts[2];
         struct vdp1_cmdt *cmdt_p;
-        cmdt_p = cmdts;
+
+        cmdts[0] = malloc(sizeof(struct vdp1_cmdt) * 5);
+        assert(cmdts[0] != NULL);
+        cmdt_p = cmdts[0];
+
         cmdt_p = _setup_drawing(cmdt_p, false);
         cmdt_p = _clear_fb(cmdt_p, COLOR_RGB555(31, 0, 0), true);
 
-        vdp1_sync_draw(cmdts, cmdt_p - cmdts);
+        vdp1_sync_draw(cmdts[0], cmdt_p - cmdts[0]);
 
-        /* Reset pointer */
-        cmdt_p = cmdts;
+        /* Process another list while drawing */
+
+        cmdts[1] = malloc(sizeof(struct vdp1_cmdt) * 2);
+        assert(cmdts[1] != NULL);
+        cmdt_p = cmdts[1];
 
         struct vdp1_cmdt_polygon polygon;
 
@@ -56,11 +60,14 @@ main(void)
         cmdt_p = vdp1_cmdt_polygon_draw(cmdt_p, &polygon);
         cmdt_p = vdp1_cmdt_end(cmdt_p);
 
-        vdp1_sync_draw(cmdts, cmdt_p - cmdts);
+        vdp1_sync_draw(cmdts[1], cmdt_p - cmdts[1]);
 
         dbgio_flush();
         vdp2_sync_commit();
         vdp_sync(0);
+
+        free(cmdts[0]);
+        free(cmdts[1]);
 
         while (true) {
         }
