@@ -23,9 +23,6 @@ main(void)
 {
         _hardware_init();
 
-        dbgio_dev_default_init(DBGIO_DEV_USB_CART);
-        dbgio_dev_set(DBGIO_DEV_USB_CART);
-
         struct vdp1_cmdt *cmdts;
         cmdts = malloc(sizeof(struct vdp1_cmdt) * 8);
         assert(cmdts != NULL);
