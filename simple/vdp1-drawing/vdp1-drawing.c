@@ -15,31 +15,26 @@
 
 static void _hardware_init(void);
 
-static struct vdp1_cmdt *_setup_drawing(struct vdp1_cmdt *, bool);
-static struct vdp1_cmdt *_clear_fb(struct vdp1_cmdt *, const color_rgb555_t, bool);
+static void _setup_drawing(struct vdp1_cmdt_list *, bool);
+static void _clear_fb(struct vdp1_cmdt_list *, const color_rgb555_t, bool);
 
 void
 main(void)
 {
         _hardware_init();
 
-        struct vdp1_cmdt *cmdts[2];
-        struct vdp1_cmdt *cmdt_p;
+        struct vdp1_cmdt_list *cmdt_lists[2];
 
-        cmdts[0] = malloc(sizeof(struct vdp1_cmdt) * 5);
-        assert(cmdts[0] != NULL);
-        cmdt_p = cmdts[0];
+        cmdt_lists[0] = vdp1_cmdt_list_alloc(5);
 
-        cmdt_p = _setup_drawing(cmdt_p, false);
-        cmdt_p = _clear_fb(cmdt_p, COLOR_RGB555(31, 0, 0), true);
+        _setup_drawing(cmdt_lists[0], false);
+        _clear_fb(cmdt_lists[0], COLOR_RGB555(31, 0, 0), true);
 
-        vdp1_sync_draw(cmdts[0], cmdt_p - cmdts[0]);
+        vdp1_sync_draw(cmdt_lists[0]);
 
         /* Process another list while drawing */
 
-        cmdts[1] = malloc(sizeof(struct vdp1_cmdt) * 2);
-        assert(cmdts[1] != NULL);
-        cmdt_p = cmdts[1];
+        cmdt_lists[1] = vdp1_cmdt_list_alloc(2);
 
         struct vdp1_cmdt_polygon polygon;
 
@@ -57,17 +52,16 @@ main(void)
         polygon.cp_vertex.d.x = 0;
         polygon.cp_vertex.d.y = 0;
 
-        cmdt_p = vdp1_cmdt_polygon_draw(cmdt_p, &polygon);
-        cmdt_p = vdp1_cmdt_end(cmdt_p);
+        vdp1_cmdt_polygon_draw(cmdt_lists[1], &polygon);
+        vdp1_cmdt_end(cmdt_lists[1]);
 
-        vdp1_sync_draw(cmdts[1], cmdt_p - cmdts[1]);
+        vdp1_sync_draw(cmdt_lists[1]);
 
-        dbgio_flush();
         vdp2_sync_commit();
         vdp_sync(0);
 
-        free(cmdts[0]);
-        free(cmdts[1]);
+        vdp1_cmdt_list_free(cmdt_lists[0]);
+        vdp1_cmdt_list_free(cmdt_lists[1]);
 
         while (true) {
         }
@@ -90,8 +84,8 @@ _hardware_init(void)
         vdp2_tvmd_display_set();
 }
 
-static struct vdp1_cmdt *
-_setup_drawing(struct vdp1_cmdt *cmdt_p, bool end)
+static void
+_setup_drawing(struct vdp1_cmdt_list *cmdt_list, bool end)
 {
         struct vdp1_cmdt_local_coord local_coord = {
                 .lc_coord = {
@@ -120,19 +114,17 @@ _setup_drawing(struct vdp1_cmdt *cmdt_p, bool end)
                 }
         };
 
-        cmdt_p = vdp1_cmdt_system_clip_coord_set(cmdt_p, &system_clip);
-        cmdt_p = vdp1_cmdt_user_clip_coord_set(cmdt_p, &user_clip);
-        cmdt_p = vdp1_cmdt_local_coord_set(cmdt_p, &local_coord);
+        vdp1_cmdt_system_clip_coord_set(cmdt_list, &system_clip);
+        vdp1_cmdt_user_clip_coord_set(cmdt_list, &user_clip);
+        vdp1_cmdt_local_coord_set(cmdt_list, &local_coord);
 
         if (end) {
-                cmdt_p = vdp1_cmdt_end(cmdt_p);
+                vdp1_cmdt_end(cmdt_list);
         }
-
-        return cmdt_p;
 }
 
-static struct vdp1_cmdt *
-_clear_fb(struct vdp1_cmdt *cmdt_p, const color_rgb555_t color, bool end)
+static void
+_clear_fb(struct vdp1_cmdt_list *cmdt_list, const color_rgb555_t color, bool end)
 {
         struct vdp1_cmdt_polygon polygon;
 
@@ -150,11 +142,9 @@ _clear_fb(struct vdp1_cmdt *cmdt_p, const color_rgb555_t color, bool end)
         polygon.cp_vertex.d.x = 0;
         polygon.cp_vertex.d.y = 0;
 
-        cmdt_p = vdp1_cmdt_polygon_draw(cmdt_p, &polygon);
+        vdp1_cmdt_polygon_draw(cmdt_list, &polygon);
 
         if (end) {
-                cmdt_p = vdp1_cmdt_end(cmdt_p);
+                vdp1_cmdt_end(cmdt_list);
         }
-
-        return cmdt_p;
 }
