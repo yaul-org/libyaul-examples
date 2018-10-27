@@ -1,0 +1,15 @@
+/*.map
+
+*.asm
+*.bin
+*.BIN
+*.d
+*.elf
+*.iso
+*.o
+*.romdisk
+*.sym
+*.i
+*.ii
+*.s
+*.S
