@@ -341,7 +341,7 @@ static void _transform(point *, point *, int32_t, int32_t, int32_t, int32_t);
 static void _project(point *, point *, int32_t);
 static void _sort_quads(quad *, point *, int32_t *, int32_t);
 
-static void _setup_drawing(struct vdp1_cmdt_list *, bool);
+static void _setup_drawing_env(struct vdp1_cmdt_list *, bool);
 static void _setup_clear_fb(struct vdp1_cmdt_list *, const color_rgb555_t, bool);
 
 void
@@ -354,7 +354,7 @@ main(void)
         cmdt_lists[0] = vdp1_cmdt_list_alloc(5);
         cmdt_lists[1] = vdp1_cmdt_list_alloc(50);
 
-        _setup_drawing(cmdt_lists[0], false);
+        _setup_drawing_env(cmdt_lists[0], false);
         _setup_clear_fb(cmdt_lists[0], COLOR_RGB555(0, 15, 0), true);
 
         uint32_t i;
@@ -602,7 +602,7 @@ _hardware_init(void)
 }
 
 static void
-_setup_drawing(struct vdp1_cmdt_list *cmdt_list, bool end)
+_setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
 {
         struct vdp1_cmdt_local_coord local_coord = {
                 .lc_coord = {

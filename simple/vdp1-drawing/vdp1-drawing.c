@@ -15,8 +15,8 @@
 
 static void _hardware_init(void);
 
-static void _setup_drawing(struct vdp1_cmdt_list *, bool);
-static void _clear_fb(struct vdp1_cmdt_list *, const color_rgb555_t, bool);
+static void _setup_drawing_env(struct vdp1_cmdt_list *, bool);
+static void _setup_clear_fb(struct vdp1_cmdt_list *, const color_rgb555_t, bool);
 
 void
 main(void)
@@ -27,8 +27,8 @@ main(void)
 
         cmdt_lists[0] = vdp1_cmdt_list_alloc(5);
 
-        _setup_drawing(cmdt_lists[0], false);
-        _clear_fb(cmdt_lists[0], COLOR_RGB555(31, 0, 0), true);
+        _setup_drawing_env(cmdt_lists[0], false);
+        _setup_clear_fb(cmdt_lists[0], COLOR_RGB555(31, 0, 0), true);
 
         vdp1_sync_draw(cmdt_lists[0]);
 
@@ -85,7 +85,7 @@ _hardware_init(void)
 }
 
 static void
-_setup_drawing(struct vdp1_cmdt_list *cmdt_list, bool end)
+_setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
 {
         struct vdp1_cmdt_local_coord local_coord = {
                 .lc_coord = {
@@ -124,7 +124,7 @@ _setup_drawing(struct vdp1_cmdt_list *cmdt_list, bool end)
 }
 
 static void
-_clear_fb(struct vdp1_cmdt_list *cmdt_list, const color_rgb555_t color, bool end)
+_setup_clear_fb(struct vdp1_cmdt_list *cmdt_list, const color_rgb555_t color, bool end)
 {
         struct vdp1_cmdt_polygon polygon;
 
