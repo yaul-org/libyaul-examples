@@ -462,7 +462,7 @@ main(void)
                         color_rgb555_t color;
                         color = COLOR_RGB555(r, g, b);
 
-                        polygon.cp_color = color.raw;
+                        polygon.cp_color = color;
 
                         polygon.cp_mode.raw = 0x0000;
                         polygon.cp_mode.pre_clipping = true;
@@ -646,7 +646,7 @@ _setup_clear_fb(struct vdp1_cmdt_list *cmdt_list, const color_rgb555_t color, bo
         struct vdp1_cmdt_polygon polygon;
 
         polygon.cp_mode.raw = 0x0000;
-        polygon.cp_color = (uint16_t)color.raw;
+        polygon.cp_color = color;
         polygon.cp_vertex.a.x = 0;
         polygon.cp_vertex.a.y = SCREEN_HEIGHT - 1;
 
