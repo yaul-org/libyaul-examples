@@ -4,14 +4,14 @@ endif
 
 include $(INSTALL_ROOT)/share/pre.common.mk
 
-SH_PROGRAM:= dram-cartridge
-SH_OBJECTS:= dram-cartridge.o
+SH_PROGRAM:= dram-cart
+SH_OBJECTS:= dram-cart.o
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
 IP_AREAS:= JTUBKAEL
 IP_PERIPHERALS:= JAMKST
-IP_TITLE:= dram-cartridge
+IP_TITLE:= DRAM cartridge
 IP_MASTER_STACK_ADDR:= 0x06004000
 IP_SLAVE_STACK_ADDR:= 0x06002000
 IP_1ST_READ_ADDR:= 0x06004000
