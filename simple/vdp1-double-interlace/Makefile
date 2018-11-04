@@ -1,8 +1,8 @@
-ifeq ($(strip $(INSTALL_ROOT)),)
-  $(error Undefined INSTALL_ROOT (install root directory))
+ifeq ($(strip $(YAUL_INSTALL_ROOT)),)
+  $(error Undefined YAUL_INSTALL_ROOT (install root directory))
 endif
 
-include $(INSTALL_ROOT)/share/pre.common.mk
+include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= vdp1-double-interlace
 SH_OBJECTS:= \
@@ -23,4 +23,4 @@ IP_1ST_READ_ADDR:= 0x06004000
 M68K_PROGRAM:=
 M68K_OBJECTS:=
 
-include $(INSTALL_ROOT)/share/post.common.mk
+include $(YAUL_INSTALL_ROOT)/share/post.common.mk
