@@ -12,270 +12,281 @@
 #include <stdlib.h>
 #include <string.h>
 
-static struct smpc_peripheral_digital _digital_pad;
-static uint64_t _tick = 0;
-static fix16_t _scroll_x = F16(0.0f);
-static fix16_t _scroll_y = F16(0.0f);
-static fix16_t _zoom = F16(1.0f);
+#define NBG1_CPD                VRAM_ADDR_4MBIT(2, 0x00000)
+#define NBG1_PAL                CRAM_MODE_1_OFFSET(0, 0, 0)
+#define NBG1_MAP_PLANE_A        VRAM_ADDR_4MBIT(0, 0x00000)
+#define NBG1_MAP_PLANE_B        VRAM_ADDR_4MBIT(0, 0x08000)
+#define NBG1_MAP_PLANE_C        VRAM_ADDR_4MBIT(0, 0x10000)
+#define NBG1_MAP_PLANE_D        VRAM_ADDR_4MBIT(0, 0x18000)
 
 static void _hardware_init(void);
 
-static void _update(void);
-static void _draw(void);
+static void _transfer_cpd(void);
+static void _transfer_pal(void);
+static void _transfer_pnd(const struct scrn_cell_format *);
 
-static void _vblank_in_handler(void);
-static void _vblank_out_handler(void);
+static void _fill_map_pnd(uint16_t *, uint16_t, uint16_t, uint16_t);
+
+static const color_rgb555_t _palette[] __unused = {
+        COLOR_RGB888_RGB555(  0,   0,   0),
+        COLOR_RGB888_RGB555(  0,   0, 170),
+        COLOR_RGB888_RGB555(  0, 170,   0),
+        COLOR_RGB888_RGB555(  0, 170, 170),
+        COLOR_RGB888_RGB555( 85,  85,  85),
+        COLOR_RGB888_RGB555( 85,  85, 255),
+        COLOR_RGB888_RGB555( 85, 255,  85),
+        COLOR_RGB888_RGB555( 85, 255, 255),
+        COLOR_RGB888_RGB555(170,   0,   0),
+        COLOR_RGB888_RGB555(170,   0, 170),
+        COLOR_RGB888_RGB555(170,  85,   0),
+        COLOR_RGB888_RGB555(170, 170, 170),
+        COLOR_RGB888_RGB555(255,  85,  85),
+        COLOR_RGB888_RGB555(255,  85, 255),
+        COLOR_RGB888_RGB555(255, 255,  85),
+        COLOR_RGB888_RGB555(255, 255, 255)
+};
 
 int
 main(void)
 {
         _hardware_init();
 
-        while (true) {
-                vdp2_tvmd_vblank_out_wait();
-                smpc_peripheral_digital_port(1, &_digital_pad);
-                _update();
+        fix16_t scroll_x;
+        scroll_x = F16(0.0f);
 
-                vdp2_tvmd_vblank_in_wait();
-                _draw();
-                vdp2_commit();
+        fix16_t scroll_y;
+        scroll_y = F16(0.0f);
+
+        q0_3_8_t zoom;
+        zoom = SCRN_REDUCTION_MIN;
+
+        int32_t zoom_dir;
+        zoom_dir = 1;
+
+        while (true) {
+                vdp2_scrn_scroll_x_set(SCRN_NBG1, scroll_x);
+                vdp2_scrn_scroll_y_set(SCRN_NBG1, scroll_y);
+
+                vdp2_scrn_reduction_x_set(SCRN_NBG1, zoom);
+                vdp2_scrn_reduction_y_set(SCRN_NBG1, zoom);
+
+                scroll_x = fix16_add(scroll_x, F16(16.0f));
+                scroll_y = fix16_add(scroll_y, F16(16.0f));
+
+                zoom = zoom + (zoom_dir * Q0_3_8(0.125f));
+
+                if (zoom >= SCRN_REDUCTION_MAX) {
+                        zoom = SCRN_REDUCTION_MAX;
+                        zoom_dir = -1;
+                } else if (zoom <= SCRN_REDUCTION_MIN) {
+                        zoom = SCRN_REDUCTION_MIN;
+                        zoom_dir = 1;
+                }
+
+                vdp2_sync_commit();
+                vdp_sync(0);
         }
 }
 
 static void
 _hardware_init(void)
 {
-        static color_rgb555_t palette[] __unused = {
-                COLOR_RGB555(0x1F, 0x00, 0x00),
-                COLOR_RGB555(0x1F, 0x1F, 0x1F),
-                COLOR_RGB555(0x04, 0x14, 0x1A),
-                COLOR_RGB555(0x1F, 0x0F, 0x09),
-                COLOR_RGB555(0x13, 0x19, 0x1F),
-                COLOR_RGB555(0x19, 0x18, 0x1F),
-                COLOR_RGB555(0x1F, 0x1F, 0x14),
-                COLOR_RGB555(0x10, 0x10, 0x10),
-                COLOR_RGB555(0x18, 0x18, 0x18),
-                COLOR_RGB555(0x04, 0x10, 0x19),
-                COLOR_RGB555(0x1F, 0x07, 0x02),
-                COLOR_RGB555(0x07, 0x13, 0x1B),
-                COLOR_RGB555(0x14, 0x13, 0x1F),
-                COLOR_RGB555(0x1F, 0x19, 0x04),
-                COLOR_RGB555(0x00, 0x00, 0x00),
-                COLOR_RGB555(0x10, 0x15, 0x1F)
-        };
-
-        vdp1_init();
-        vdp2_sprite_type_set(0);
-        vdp2_sprite_priority_set(0, 0);
-
-        vdp2_init();
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(2, 0x01FFFE),
-            COLOR_RGB555(0, 0, 7));
         vdp2_tvmd_display_clear();
 
-        /* SMPC */
-        smpc_init();
-        smpc_peripheral_init();
+        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(2, 0x01FFFE),
+            COLOR_RGB555(0, 0, 7));
 
-        scu_ic_mask_chg(IC_MASK_ALL, IC_MASK_VBLANK_IN | IC_MASK_VBLANK_OUT);
-        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_IN, _vblank_in_handler);
-        scu_ic_ihr_set(IC_INTERRUPT_VBLANK_OUT, _vblank_out_handler);
-        scu_ic_mask_chg(~(IC_MASK_VBLANK_IN | IC_MASK_VBLANK_OUT), IC_MASK_NONE);
-
-        uint16_t *cpd;
-        cpd = (uint16_t *)VRAM_ADDR_4MBIT(2, 0x00000);
-
-        color_rgb555_t *color_palette;
-        color_palette = (color_rgb555_t *)CRAM_MODE_1_OFFSET(0, 0, 0);
-
-        uint16_t *planes[4];
-        planes[0] = (uint16_t *)VRAM_ADDR_4MBIT(0, 0x08000);
-        planes[1] = (uint16_t *)VRAM_ADDR_4MBIT(0, 0x10000);
-        planes[2] = (uint16_t *)VRAM_ADDR_4MBIT(0, 0x18000);
-        planes[3] = (uint16_t *)VRAM_ADDR_4MBIT(0, 0x20000);
-
-        struct scrn_cell_format format;
-        format.scf_scroll_screen = SCRN_NBG1;
-        format.scf_cc_count = SCRN_CCC_PALETTE_16;
-        format.scf_character_size = 1 * 1;
-        format.scf_pnd_size = 1;
-        format.scf_auxiliary_mode = 1;
-        format.scf_plane_size = 2 * 2;
-        format.scf_cp_table = (uint32_t)cpd;
-        format.scf_color_palette = (uint32_t)color_palette;
-        format.scf_map.plane_a = (uint32_t)planes[0];
-        format.scf_map.plane_b = (uint32_t)planes[1];
-        format.scf_map.plane_c = (uint32_t)planes[2];
-        format.scf_map.plane_d = (uint32_t)planes[3];
+        const struct scrn_cell_format format = {
+                .scf_scroll_screen = SCRN_NBG1,
+                .scf_cc_count = SCRN_CCC_PALETTE_16,
+                .scf_character_size = 1 * 1,
+                .scf_pnd_size = 1,
+                .scf_auxiliary_mode = 1,
+                .scf_plane_size = 2 * 2,
+                .scf_cp_table = NBG1_CPD,
+                .scf_color_palette = NBG1_PAL,
+                .scf_map = {
+                        .planes = {
+                                NBG1_MAP_PLANE_A,
+                                NBG1_MAP_PLANE_B,
+                                NBG1_MAP_PLANE_C,
+                                NBG1_MAP_PLANE_D
+                        }
+                }
+        };
 
         vdp2_scrn_cell_format_set(&format);
-        vdp2_scrn_priority_set(SCRN_NBG1, 7);
+        vdp2_scrn_priority_set(SCRN_NBG1, 6);
         vdp2_scrn_display_set(SCRN_NBG1, /* transparent = */ false);
 
-        struct vram_ctl *vram_ctl;
-        vram_ctl = vdp2_vram_control_get();
+        struct vram_cycp_bank vram_cycp_bank[2];
 
-        vram_ctl->vram_cycp.pt[0].t7 = VRAM_CTL_CYCP_PNDR_NBG1;
-        vram_ctl->vram_cycp.pt[0].t6 = VRAM_CTL_CYCP_PNDR_NBG1;
-        vram_ctl->vram_cycp.pt[0].t5 = VRAM_CTL_CYCP_PNDR_NBG1;
-        vram_ctl->vram_cycp.pt[0].t4 = VRAM_CTL_CYCP_PNDR_NBG1;
-        vram_ctl->vram_cycp.pt[0].t3 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t2 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t1 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[0].t0 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_cycp_bank[0].t0 = VRAM_CYCP_PNDR_NBG1;
+        vram_cycp_bank[0].t1 = VRAM_CYCP_PNDR_NBG1;
+        vram_cycp_bank[0].t2 = VRAM_CYCP_PNDR_NBG1;
+        vram_cycp_bank[0].t3 = VRAM_CYCP_PNDR_NBG1;
+        vram_cycp_bank[0].t4 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[0].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[0].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[0].t7 = VRAM_CYCP_NO_ACCESS;
 
-        vram_ctl->vram_cycp.pt[2].t7 = VRAM_CTL_CYCP_CHPNDR_NBG1;
-        vram_ctl->vram_cycp.pt[2].t6 = VRAM_CTL_CYCP_CHPNDR_NBG1;
-        vram_ctl->vram_cycp.pt[2].t5 = VRAM_CTL_CYCP_CHPNDR_NBG1;
-        vram_ctl->vram_cycp.pt[2].t4 = VRAM_CTL_CYCP_CHPNDR_NBG1;
-        vram_ctl->vram_cycp.pt[2].t3 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[2].t2 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[2].t1 = VRAM_CTL_CYCP_NO_ACCESS;
-        vram_ctl->vram_cycp.pt[2].t0 = VRAM_CTL_CYCP_NO_ACCESS;
+        vram_cycp_bank[1].t0 = VRAM_CYCP_CHPNDR_NBG1;
+        vram_cycp_bank[1].t1 = VRAM_CYCP_CHPNDR_NBG1;
+        vram_cycp_bank[1].t2 = VRAM_CYCP_CHPNDR_NBG1;
+        vram_cycp_bank[1].t3 = VRAM_CYCP_CHPNDR_NBG1;
+        vram_cycp_bank[1].t4 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[1].t5 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[1].t6 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[1].t7 = VRAM_CYCP_NO_ACCESS;
 
-        /* We want to be in VBLANK-IN (retrace) */
-        uint32_t j;
-        for (j = 0; j < 4096; j++) {
-                uint32_t i;
-                for (i = 0; i < 16; i++) {
-                        uint32_t x;
-                        x = j & 0x0F;
-
-                        cpd[i + (j * (32 / 2))] = (x << 12) | (x << 8) | (x << 4) | x;
-                }
-        }
-
-        (void)memcpy(color_palette, palette, sizeof(palette));
-
-        uint32_t page_width;
-        page_width = SCRN_CALCULATE_PAGE_WIDTH(&format);
-        uint32_t page_height;
-        page_height = SCRN_CALCULATE_PAGE_HEIGHT(&format);
-        uint32_t page_size;
-        page_size = SCRN_CALCULATE_PAGE_SIZE(&format);
-
-        uint16_t *a_pages[4];
-        a_pages[0] = &planes[0][0];
-        a_pages[1] = &planes[0][1 * (page_size / 2)];
-        a_pages[2] = &planes[0][2 * (page_size / 2)];
-        a_pages[3] = &planes[0][3 * (page_size / 2)];
-
-        uint16_t *b_pages[4];
-        b_pages[0] = &planes[1][0];
-        b_pages[1] = &planes[1][1 * (page_size / 2)];
-        b_pages[2] = &planes[1][2 * (page_size / 2)];
-        b_pages[3] = &planes[1][3 * (page_size / 2)];
-
-        uint16_t *c_pages[4];
-        c_pages[0] = &planes[2][0];
-        c_pages[1] = &planes[2][1 * (page_size / 2)];
-        c_pages[2] = &planes[2][2 * (page_size / 2)];
-        c_pages[3] = &planes[2][3 * (page_size / 2)];
-
-        uint16_t *d_pages[4];
-        d_pages[0] = &planes[3][0];
-        d_pages[1] = &planes[3][1 * (page_size / 2)];
-        d_pages[2] = &planes[3][2 * (page_size / 2)];
-        d_pages[3] = &planes[3][3 * (page_size / 2)];
-
-        uint32_t page_y;
-        for (page_y = 0; page_y < page_height; page_y++) {
-                uint32_t page_x;
-                for (page_x = 0; page_x < page_width; page_x++) {
-                        uint16_t page_idx;
-                        page_idx = page_x + (page_width * page_y);
-
-                        a_pages[0][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + ( 0 * 32), (uint32_t)color_palette);
-                        a_pages[1][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + ( 1 * 32), (uint32_t)color_palette);
-                        a_pages[2][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + ( 2 * 32), (uint32_t)color_palette);
-                        a_pages[3][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + ( 3 * 32), (uint32_t)color_palette);
-
-                        b_pages[0][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + ( 4 * 32), (uint32_t)color_palette);
-                        b_pages[1][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + ( 5 * 32), (uint32_t)color_palette);
-                        b_pages[2][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + ( 6 * 32), (uint32_t)color_palette);
-                        b_pages[3][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + ( 7 * 32), (uint32_t)color_palette);
-
-                        c_pages[0][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + ( 8 * 32), (uint32_t)color_palette);
-                        c_pages[1][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + ( 9 * 32), (uint32_t)color_palette);
-                        c_pages[2][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + (10 * 32), (uint32_t)color_palette);
-                        c_pages[3][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + (11 * 32), (uint32_t)color_palette);
-
-                        d_pages[0][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + (12 * 32), (uint32_t)color_palette);
-                        d_pages[1][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + (13 * 32), (uint32_t)color_palette);
-                        d_pages[2][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + (14 * 32), (uint32_t)color_palette);
-                        d_pages[3][page_idx] = SCRN_PND_CONFIG_1((uint32_t)cpd + (15 * 32), (uint32_t)color_palette);
-                }
-        }
-
-        vdp2_vram_control_set(vram_ctl);
+        vdp2_vram_cycp_bank_set(0, &vram_cycp_bank[0]);
+        vdp2_vram_cycp_bank_clear(1);
+        vdp2_vram_cycp_bank_set(2, &vram_cycp_bank[1]);
+        vdp2_vram_cycp_bank_clear(3);
 
         vdp2_scrn_reduction_set(SCRN_NBG0, SCRN_REDUCTION_QUARTER);
 
-        /* Set TV display to 320x240 */
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
-            TVMD_VERT_240);
+            TVMD_VERT_224);
 
-        /* Turn on display */
+        vdp2_sync_commit();
+        vdp_sync(0);
+
+        _transfer_cpd();
+        _transfer_pal();
+        _transfer_pnd(&format);
+
         vdp2_tvmd_display_set();
+
+        vdp2_sync_commit();
+        vdp_sync(0);
 }
 
 static void
-_update(void)
+_transfer_cpd(void)
 {
-        if (_digital_pad.connected == 0) {
-                return;
+        uint32_t tile;
+        for (tile = 0; tile < 16; tile++) {
+                uint8_t byte;
+                byte = (tile << 4) | tile;
+
+                (void)memset((void *)((uint32_t)NBG1_CPD | (tile << 5)), byte, 32);
         }
-
-        if (_digital_pad.pressed.button.left) {
-                _scroll_x = fix16_sub(_scroll_x, F16(4.0f));
-        } else if (_digital_pad.pressed.button.right) {
-                _scroll_x = fix16_add(_scroll_x, F16(4.0f));
-        }
-
-        if (_digital_pad.pressed.button.up) {
-                _scroll_y = fix16_sub(_scroll_y, F16(4.0f));
-        } else if (_digital_pad.pressed.button.down) {
-                _scroll_y = fix16_add(_scroll_y, F16(4.0f));
-        }
-
-        if (_digital_pad.pressed.button.l) {
-                _zoom = fix16_add(_zoom, SCRN_REDUCTION_STEP);
-        } else if (_digital_pad.pressed.button.r) {
-                _zoom = fix16_sub(_zoom, SCRN_REDUCTION_STEP);
-        }
-
-        if (_digital_pad.pressed.button.start) {
-                abort();
-        }
-
-        _scroll_x = fix16_clamp(_scroll_x, F16(0.0f), _scroll_x);
-        _scroll_y = fix16_clamp(_scroll_y, F16(0.0f), _scroll_y);
-
-        _zoom = fix16_clamp(_zoom, SCRN_REDUCTION_MIN, SCRN_REDUCTION_MAX);
 }
 
 static void
-_draw(void)
+_transfer_pal(void)
 {
-        vdp2_scrn_scroll_x_set(SCRN_NBG1, _scroll_x);
-        vdp2_scrn_scroll_y_set(SCRN_NBG1, _scroll_y);
-
-        vdp2_scrn_reduction_x_set(SCRN_NBG1, _zoom);
-        vdp2_scrn_reduction_y_set(SCRN_NBG1, _zoom);
+        (void)memcpy((void *)NBG1_PAL, _palette, sizeof(_palette));
 }
 
 static void
-_vblank_in_handler(void)
+_transfer_pnd(const struct scrn_cell_format *format)
 {
-        dma_queue_flush(DMA_QUEUE_TAG_VBLANK_IN);
-}
+        /* The scroll screen is set up to have 16 64x64 cell pages (4 planes
+         * total), each 4 KiB, resulting in 64 KiB.
+         *
+         * 1. Set up a DMA indirect table with 2 entries
+         * 2. Split a single page into two 64x32 sub-pages
+         * 3. While one sub-page is being filled, transfer the other sub-page
+         *    via the DMA queue
+         * 4. Use the two entries to transfer one mirrored sub-page one after
+         *    the other
+         * 5. Swap sub-pages and repeat */
 
-static void
-_vblank_out_handler(void)
-{
-        if ((vdp2_tvmd_vcount_get()) == 0) {
-                _tick = (_tick & 0xFFFFFFFF) + 1;
+        uint32_t page_width;
+        page_width = SCRN_CALCULATE_PAGE_WIDTH(format);
+        uint32_t page_height;
+        page_height = SCRN_CALCULATE_PAGE_HEIGHT(format);
+        uint32_t page_size;
+        page_size = SCRN_CALCULATE_PAGE_SIZE(format);
+
+        uint8_t *dma_reg_buffer;
+        dma_reg_buffer = malloc(DMA_REG_BUFFER_BYTE_SIZE);
+        assert(dma_reg_buffer != NULL);
+
+        /* XXX: WA until memalign() is implemented { */
+        void *p;
+        p = malloc(32 + (2 * sizeof(struct dma_xfer)));
+        assert(p != NULL);
+
+        uint32_t aligned_offset;
+        aligned_offset = (((uint32_t)p + 0x0000001F) & ~0x0000001F) - (uint32_t)p;
+
+        struct dma_xfer *xfer_table;
+        xfer_table = (struct dma_xfer *)((uint32_t)p + aligned_offset);
+        /* } */
+
+        struct dma_level_cfg dma_level_cfg = {
+                .dlc_mode = DMA_MODE_INDIRECT,
+                .dlc_stride = DMA_STRIDE_2_BYTES,
+                .dlc_update = DMA_UPDATE_NONE,
+                .dlc_xfer.indirect = xfer_table
+        };
+
+        scu_dma_config_buffer(dma_reg_buffer, &dma_level_cfg);
+
+        uint16_t *map[2];
+        map[0] = malloc(page_size / 2);
+        assert(map[0] != NULL);
+        map[1] = malloc(page_size / 2);
+        assert(map[1] != NULL);
+
+        uint32_t offset;
+        offset = 0;
+
+        uint32_t pnd;
+        pnd = NBG1_MAP_PLANE_A;
+
+        uint32_t tile;
+        for (tile = 0; tile < 16; tile++) {
+                uint16_t *map_p;
+                map_p = map[offset];
+
+                _fill_map_pnd(map_p, page_width, page_height / 2, tile);
+
+                dma_queue_flush_wait(DMA_QUEUE_TAG_IMMEDIATE);
+
+                xfer_table[0].len = page_size / 2;
+                xfer_table[0].dst = (uint32_t)pnd;
+                xfer_table[0].src = CPU_CACHE_THROUGH | (uint32_t)map_p;
+
+                xfer_table[1].len = page_size / 2;
+                xfer_table[1].dst = (uint32_t)pnd | (page_size / 2);
+                xfer_table[1].src = DMA_INDIRECT_TBL_END | CPU_CACHE_THROUGH | (uint32_t)map_p;
+
+                int8_t ret;
+                ret = dma_queue_enqueue(dma_reg_buffer, DMA_QUEUE_TAG_IMMEDIATE, NULL, NULL);
+                assert(ret == 0);
+
+                dma_queue_flush(DMA_QUEUE_TAG_IMMEDIATE);
+
+                offset ^= 1;
+                pnd += page_size;
         }
 
-        smpc_peripheral_intback_issue();
+        dma_queue_flush_wait(DMA_QUEUE_TAG_IMMEDIATE);
+
+        free(p);
+        free(map[0]);
+        free(map[1]);
+        free(dma_reg_buffer);
+}
+
+static void
+_fill_map_pnd(uint16_t *map, uint16_t page_width, uint16_t page_height, uint16_t tile)
+{
+        uint16_t x;
+        for (x = 0; x < page_width; x++) {
+                uint16_t y;
+                for (y = 0; y < page_height; y++) {
+                        uint32_t cpd;
+                        cpd = (uint32_t)NBG1_CPD | (tile << 5);
+
+                        uint16_t pnd;
+                        pnd = SCRN_PND_CONFIG_1(cpd, NBG1_PAL);
+
+                        map[x + (y * page_width)] = pnd;
+                }
+        }
 }
