@@ -96,7 +96,7 @@ main(void)
         page_size = SCRN_CALCULATE_PAGE_SIZE(&format);
 
         struct dma_level_cfg dma_level_cfg;
-        uint8_t reg_buffer[DMA_REG_BUFFER_BYTE_SIZE];
+        struct dma_reg_buffer reg_buffer;
 
         dma_level_cfg.dlc_mode = DMA_MODE_DIRECT;
         dma_level_cfg.dlc_stride = DMA_STRIDE_2_BYTES;
@@ -116,9 +116,9 @@ main(void)
                 dma_level_cfg.dlc_xfer.direct.len = len;
                 dma_level_cfg.dlc_xfer.direct.dst = (uint32_t)color_palette;
                 dma_level_cfg.dlc_xfer.direct.src = (uint32_t)p;
-                scu_dma_config_buffer(&reg_buffer[0], &dma_level_cfg);
+                scu_dma_config_buffer(&reg_buffer, &dma_level_cfg);
 
-                ret = dma_queue_enqueue(&reg_buffer[0], DMA_QUEUE_TAG_VBLANK_IN,
+                ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN,
                     NULL, NULL);
                 assert(ret == 0);
         }
@@ -132,9 +132,9 @@ main(void)
                 dma_level_cfg.dlc_xfer.direct.len = len;
                 dma_level_cfg.dlc_xfer.direct.dst = (uint32_t)cpd;
                 dma_level_cfg.dlc_xfer.direct.src = (uint32_t)p;
-                scu_dma_config_buffer(&reg_buffer[0], &dma_level_cfg);
+                scu_dma_config_buffer(&reg_buffer, &dma_level_cfg);
 
-                ret = dma_queue_enqueue(&reg_buffer[0], DMA_QUEUE_TAG_VBLANK_IN,
+                ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN,
                     NULL, NULL);
                 assert(ret == 0);
         }
@@ -160,11 +160,9 @@ main(void)
                                 xfer->dst = (uint32_t)page;
                                 xfer->src = (uint32_t)p;
 
-                                scu_dma_config_buffer(&reg_buffer[0],
-                                    &dma_level_cfg);
+                                scu_dma_config_buffer(&reg_buffer, &dma_level_cfg);
 
-                                ret = dma_queue_enqueue(&reg_buffer[0],
-                                    DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
+                                ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
                                 assert(ret == 0);
 
                                 page += page_size;

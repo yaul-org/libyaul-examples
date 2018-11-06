@@ -201,9 +201,7 @@ _transfer_pnd(const struct scrn_cell_format *format)
         uint32_t page_size;
         page_size = SCRN_CALCULATE_PAGE_SIZE(format);
 
-        uint8_t *dma_reg_buffer;
-        dma_reg_buffer = malloc(DMA_REG_BUFFER_BYTE_SIZE);
-        assert(dma_reg_buffer != NULL);
+        struct dma_reg_buffer dma_reg_buffer;
 
         /* XXX: WA until memalign() is implemented { */
         void *p;
@@ -224,7 +222,7 @@ _transfer_pnd(const struct scrn_cell_format *format)
                 .dlc_xfer.indirect = xfer_table
         };
 
-        scu_dma_config_buffer(dma_reg_buffer, &dma_level_cfg);
+        scu_dma_config_buffer(&dma_reg_buffer, &dma_level_cfg);
 
         uint16_t *map[2];
         map[0] = malloc(page_size / 2);
@@ -256,7 +254,7 @@ _transfer_pnd(const struct scrn_cell_format *format)
                 xfer_table[1].src = DMA_INDIRECT_TBL_END | CPU_CACHE_THROUGH | (uint32_t)map_p;
 
                 int8_t ret;
-                ret = dma_queue_enqueue(dma_reg_buffer, DMA_QUEUE_TAG_IMMEDIATE, NULL, NULL);
+                ret = dma_queue_enqueue(&dma_reg_buffer, DMA_QUEUE_TAG_IMMEDIATE, NULL, NULL);
                 assert(ret == 0);
 
                 dma_queue_flush(DMA_QUEUE_TAG_IMMEDIATE);
@@ -270,7 +268,6 @@ _transfer_pnd(const struct scrn_cell_format *format)
         free(p);
         free(map[0]);
         free(map[1]);
-        free(dma_reg_buffer);
 }
 
 static void
