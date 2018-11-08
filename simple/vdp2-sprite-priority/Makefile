@@ -7,8 +7,6 @@ include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 SH_PROGRAM:= vdp2-sprite-priority
 SH_OBJECTS:= \
 	root.romdisk.o \
-	fs.o \
-	bg.o \
 \
 	vdp2-sprite-priority.o \
 
