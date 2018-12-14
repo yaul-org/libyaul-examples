@@ -159,7 +159,7 @@ main(void)
         _dma_immediate_upload((void *)CRAM_MODE_1_OFFSET(1, 0, 0x0000), p, len);
 
         struct vdp1_cmdt_list *cmdt_list_env;
-        cmdt_list_env = vdp1_cmdt_list_alloc(6);
+        cmdt_list_env = vdp1_cmdt_list_alloc(7);
 
         _setup_drawing_env(cmdt_list_env, true);
 
@@ -174,11 +174,11 @@ main(void)
         struct vdp1_cmdt_sprite sprite;
         (void)memset(&sprite, 0x00, sizeof(sprite));
 
-        _zoom_point.x = ZOOM_POINT_WIDTH;
-        _zoom_point.y = ZOOM_POINT_HEIGHT;
+        _zoom_point.x = 0;
+        _zoom_point.y = 0;
 
-        _display.x =100;
-        _display.y = 100;
+        _display.x = ZOOM_POINT_WIDTH;
+        _display.y = ZOOM_POINT_HEIGHT;
 
         sprite.cs_mode.color_mode = 4;
         sprite.cs_mode.transparent_pixel = 0;
@@ -186,7 +186,6 @@ main(void)
         sprite.cs_zoom_point.enable = true;
         sprite.cs_zoom_point.raw = _zoom_point_value;
         sprite.cs_char = (uint32_t)vdp1_tex;
-        sprite.cs_color_bank.raw = 0x0000;
         sprite.cs_color_bank.type_0.dc = 0x0100;
         sprite.cs_width = ZOOM_POINT_WIDTH;
         sprite.cs_height = ZOOM_POINT_HEIGHT;
@@ -194,7 +193,7 @@ main(void)
         sprite.cs_zoom.point.y = _zoom_point.y;
         sprite.cs_zoom.display.x = _display.x;
         sprite.cs_zoom.display.y = _display.y;
-        
+
         vdp1_cmdt_scaled_sprite_draw(cmdt_list, &sprite);
         vdp1_cmdt_end(cmdt_list);
 
@@ -232,12 +231,7 @@ _hardware_init(void)
 static void
 _setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
 {
-        struct vdp1_cmdt_local_coord local_coord = {
-                .lc_coord = {
-                        .x = 0,
-                        .y = 0
-                }
-        };
+        struct vdp1_cmdt_local_coord local_coord;
 
         struct vdp1_cmdt_system_clip_coord system_clip = {
                 .scc_coord = {
@@ -261,6 +255,10 @@ _setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
 
         vdp1_cmdt_system_clip_coord_set(cmdt_list, &system_clip);
         vdp1_cmdt_user_clip_coord_set(cmdt_list, &user_clip);
+
+        local_coord.lc_coord.x = 0;
+        local_coord.lc_coord.y = 0;
+
         vdp1_cmdt_local_coord_set(cmdt_list, &local_coord);
 
         struct vdp1_cmdt_polygon polygon;
@@ -281,6 +279,11 @@ _setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
         polygon.cp_vertex.d.y = 0;
 
         vdp1_cmdt_polygon_draw(cmdt_list, &polygon);
+
+        local_coord.lc_coord.x = SCREEN_WIDTH / 2;
+        local_coord.lc_coord.y = SCREEN_HEIGHT / 2;
+
+        vdp1_cmdt_local_coord_set(cmdt_list, &local_coord);
 
         if (end) {
                 vdp1_cmdt_end(cmdt_list);
