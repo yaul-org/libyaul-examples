@@ -31,9 +31,9 @@ extern uint8_t root_romdisk[];
 
 static uint32_t _state_zoom = STATE_ZOOM_MOVE_INVALID;
 static int16_vector2_t _pointer = INT16_VECTOR2_INITIALIZER(0, 0);
-static int16_vector2_t _display = INT16_VECTOR2_INITIALIZER(0, 0);
-static int16_vector2_t _zoom_point = INT16_VECTOR2_INITIALIZER(0, 0);;
-static uint16_t _zoom_point_value = 0x0000;
+static int16_vector2_t _display = INT16_VECTOR2_INITIALIZER(ZOOM_POINT_WIDTH, ZOOM_POINT_HEIGHT);
+static int16_vector2_t _zoom_point = INT16_VECTOR2_INITIALIZER(0, 0);
+static uint16_t _zoom_point_value = CMDT_ZOOM_POINT_CENTER;
 static color_rgb555_t _zoom_point_color = COLOR_RGB555(0, 0, 0);
 static uint16_t _captured_buttons = 0xFFFF;
 static uint32_t _delay_frames = 0;
@@ -120,7 +120,8 @@ static void _hardware_init(void);
 
 static void _setup_drawing_env(struct vdp1_cmdt_list *, bool);
 
-static void _dma_upload(void *, void *, size_t);
+static void _dma_immediate_upload(void *, void *, size_t);
+static void _dma_upload(void *, void *, size_t, uint8_t);
 
 int
 main(void)
@@ -149,13 +150,13 @@ main(void)
         assert(fh[0] != NULL);
         p = romdisk_direct(fh[0]);
         len = romdisk_total(fh[0]);
-        _dma_upload(vdp1_tex, p, len);
+        _dma_immediate_upload(vdp1_tex, p, len);
 
         fh[1] = romdisk_open(romdisk, "ZOOM.PAL");
         assert(fh[1] != NULL);
         p = romdisk_direct(fh[1]);
         len = romdisk_total(fh[1]);
-        _dma_upload((void *)CRAM_MODE_1_OFFSET(1, 0, 0x0000), p, len);
+        _dma_immediate_upload((void *)CRAM_MODE_1_OFFSET(1, 0, 0x0000), p, len);
 
         struct vdp1_cmdt_list *cmdt_list_env;
         cmdt_list_env = vdp1_cmdt_list_alloc(6);
@@ -164,24 +165,37 @@ main(void)
 
         vdp1_sync_draw(cmdt_list_env);
 
+        romdisk_close(fh[0]);
+        romdisk_close(fh[1]);
+
         struct vdp1_cmdt_list *cmdt_list;
         cmdt_list = vdp1_cmdt_list_alloc(2);
 
         struct vdp1_cmdt_sprite sprite;
+        (void)memset(&sprite, 0x00, sizeof(sprite));
 
-        sprite.cs_mode.raw = 0x0000;
+        _zoom_point.x = ZOOM_POINT_WIDTH;
+        _zoom_point.y = ZOOM_POINT_HEIGHT;
+
+        _display.x =100;
+        _display.y = 100;
+
         sprite.cs_mode.color_mode = 4;
         sprite.cs_mode.transparent_pixel = 0;
         sprite.cs_mode.pre_clipping = 1;
+        sprite.cs_zoom_point.enable = true;
+        sprite.cs_zoom_point.raw = _zoom_point_value;
         sprite.cs_char = (uint32_t)vdp1_tex;
         sprite.cs_color_bank.raw = 0x0000;
         sprite.cs_color_bank.type_0.dc = 0x0100;
-        sprite.cs_width = 160;
-        sprite.cs_height = 96;
-        sprite.cs_position.x = 0;
-        sprite.cs_position.y = 0;
-
-        vdp1_cmdt_normal_sprite_draw(cmdt_list, &sprite);
+        sprite.cs_width = ZOOM_POINT_WIDTH;
+        sprite.cs_height = ZOOM_POINT_HEIGHT;
+        sprite.cs_zoom.point.x = _zoom_point.x;
+        sprite.cs_zoom.point.y = _zoom_point.y;
+        sprite.cs_zoom.display.x = _display.x;
+        sprite.cs_zoom.display.y = _display.y;
+        
+        vdp1_cmdt_scaled_sprite_draw(cmdt_list, &sprite);
         vdp1_cmdt_end(cmdt_list);
 
         dbgio_flush();
@@ -274,7 +288,13 @@ _setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
 }
 
 static void
-_dma_upload(void *dst, void *src, size_t len)
+_dma_immediate_upload(void *dst, void *src, size_t len)
+{
+        _dma_upload(dst, src, len, DMA_QUEUE_TAG_IMMEDIATE);
+}
+
+static void
+_dma_upload(void *dst, void *src, size_t len, uint8_t tag)
 {
         struct dma_level_cfg dma_level_cfg;
         struct dma_reg_buffer reg_buffer;
@@ -289,34 +309,10 @@ _dma_upload(void *dst, void *src, size_t len)
         scu_dma_config_buffer(&reg_buffer, &dma_level_cfg);
 
         int8_t ret;
-        ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
+        ret = dma_queue_enqueue(&reg_buffer, tag, NULL, NULL);
         assert(ret == 0);
 }
 ////////////////////////////////////////////////////////////////////////////////
-/* TEST_PROTOTYPE_DECLARE(scaled_sprite_01, init) */
-/* { */
-/*         void *file_handle; */
-/*         file_handle = fs_open("/TESTS/03/ZOOM.TGA"); */
-/*  */
-/*         uint8_t *ptr; */
-/*         ptr = (uint8_t *)0x00201000; */
-/*  */
-/*         fs_read(file_handle, ptr); */
-/*         fs_close(file_handle); */
-/*  */
-/*         tga_t tga; */
-/*         int status; */
-/*         status = tga_read(&tga, ptr); */
-/*         assert(status == TGA_FILE_OK); */
-/*         uint32_t amount; */
-/*         amount = tga_image_decode(&tga, (void *)CHAR(0)); */
-/*         assert(amount > 0); */
-/*         amount = tga_cmap_decode(&tga, (uint16_t *)CRAM_MODE_1_OFFSET(1, 0, 0)); */
-/*         assert(amount > 0); */
-/*  */
-/*         state_zoom = STATE_ZOOM_MOVE_ORIGIN; */
-/* } */
-/*  */
 /* TEST_PROTOTYPE_DECLARE(scaled_sprite_01, update) */
 /* { */
 /*  */
@@ -551,7 +547,7 @@ _dma_upload(void *dst, void *src, size_t len)
 /*                 vdp1_cmdt_system_clip_coord_set(&system_clip); */
 /*                 vdp1_cmdt_user_clip_coord_set(&user_clip); */
 /*                 vdp1_cmdt_local_coord_set(&local_coord); */
-/*                 vdp1_cmdt_sprite_draw(&scaled_sprite); */
+/*                vdp1_cmdt_sprite_draw(&scaled_sprite); */
 /*                 vdp1_cmdt_polygon_draw(&polygon_pointer); */
 /*                 vdp1_cmdt_end(); */
 /*         } vdp1_cmdt_list_end(0); */
