@@ -6,7 +6,6 @@
  */
 
 #include <yaul.h>
-#include <tga.h>
 
 #include <assert.h>
 #include <stdbool.h>
