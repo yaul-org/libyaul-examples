@@ -29,13 +29,12 @@
 
 extern uint8_t root_romdisk[];
 
-static uint32_t _state_zoom = STATE_ZOOM_MOVE_ORIGIN;
+static int32_t _state_zoom = STATE_ZOOM_MOVE_ORIGIN;
 static int16_vector2_t _pointer = INT16_VECTOR2_INITIALIZER(0, 0);
 static int16_vector2_t _display = INT16_VECTOR2_INITIALIZER(ZOOM_POINT_WIDTH, ZOOM_POINT_HEIGHT);
 static int16_vector2_t _zoom_point = INT16_VECTOR2_INITIALIZER(0, 0);
 static uint16_t _zoom_point_value = CMDT_ZOOM_POINT_CENTER;
 static color_rgb555_t _zoom_point_color = COLOR_RGB555(0, 0, 0);
-static uint16_t _captured_buttons = 0xFFFF;
 static uint32_t _delay_frames = 0;
 static struct smpc_peripheral_digital _digital;
 
@@ -234,17 +233,12 @@ main(void)
                         _delay_frames = 0;
 
                         if (dirs_pressed) {
-                                _captured_buttons = _digital.pressed.raw;
                                 _state_zoom = STATE_ZOOM_WAIT;
                         } else if ((_digital.held.button.a) != 0) {
                                 _state_zoom = STATE_ZOOM_RELEASE_BUTTONS;
                         }
                         break;
                 case STATE_ZOOM_WAIT:
-                        if (dirs_pressed) {
-                                _captured_buttons = _digital.pressed.raw;
-                        }
-
                         _delay_frames++;
 
                         if (_delay_frames > 9) {
@@ -256,19 +250,22 @@ main(void)
                         }
                         break;
                 case STATE_ZOOM_MOVE_ANCHOR:
-                        if ((_captured_buttons & PERIPHERAL_DIGITAL_LEFT) != 0) {
+                        _pointer.x = 0;
+                        _pointer.y = 0;
+
+                        if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_LEFT) != 0) {
                                 _pointer.x = -_display.x / 2;
                         }
 
-                        if ((_captured_buttons & PERIPHERAL_DIGITAL_RIGHT) != 0) {
+                        if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_RIGHT) != 0) {
                                 _pointer.x = _display.x / 2;
                         }
 
-                        if ((_captured_buttons & PERIPHERAL_DIGITAL_UP) != 0) {
+                        if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_UP) != 0) {
                                 _pointer.y = -_display.y / 2;
                         }
 
-                        if ((_captured_buttons & PERIPHERAL_DIGITAL_DOWN) != 0) {
+                        if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_DOWN) != 0) {
                                 _pointer.y = _display.y / 2;
                         }
 
@@ -318,8 +315,6 @@ main(void)
                                 _zoom_point.x = 0;
                                 _zoom_point.y = 0;
                         }
-
-                        _captured_buttons = _digital.pressed.raw;
 
                         if (!dirs_pressed) {
                                 _state_zoom = STATE_ZOOM_MOVE_ORIGIN;
