@@ -23,13 +23,13 @@
 #define ZOOM_POINT_WIDTH                160
 #define ZOOM_POINT_HEIGHT               96
 #define ZOOM_POINT_POINTER_SIZE         3
-#define ZOOM_POINT_COLOR_SELECT         RGB888_TO_RGB555(  0,   0, 255)
-#define ZOOM_POINT_COLOR_WAIT           RGB888_TO_RGB555(255,   0,   0)
-#define ZOOM_POINT_COLOR_HIGHLIGHT      RGB888_TO_RGB555(  0, 255,   0)
+#define ZOOM_POINT_COLOR_SELECT         COLOR_RGB555( 0,  0, 31)
+#define ZOOM_POINT_COLOR_WAIT           COLOR_RGB555(31,  0,  0)
+#define ZOOM_POINT_COLOR_HIGHLIGHT      COLOR_RGB555( 0, 31,  0)
 
 extern uint8_t root_romdisk[];
 
-static uint32_t _state_zoom = STATE_ZOOM_MOVE_INVALID;
+static uint32_t _state_zoom = STATE_ZOOM_MOVE_ORIGIN;
 static int16_vector2_t _pointer = INT16_VECTOR2_INITIALIZER(0, 0);
 static int16_vector2_t _display = INT16_VECTOR2_INITIALIZER(ZOOM_POINT_WIDTH, ZOOM_POINT_HEIGHT);
 static int16_vector2_t _zoom_point = INT16_VECTOR2_INITIALIZER(0, 0);
@@ -37,6 +37,7 @@ static uint16_t _zoom_point_value = CMDT_ZOOM_POINT_CENTER;
 static color_rgb555_t _zoom_point_color = COLOR_RGB555(0, 0, 0);
 static uint16_t _captured_buttons = 0xFFFF;
 static uint32_t _delay_frames = 0;
+static struct smpc_peripheral_digital _digital;
 
 static struct zoom_point_boundary {
         int16_t w_dir; /* Display width direction */
@@ -123,6 +124,8 @@ static void _setup_drawing_env(struct vdp1_cmdt_list *, bool);
 static void _dma_immediate_upload(void *, void *, size_t);
 static void _dma_upload(void *, void *, size_t, uint8_t);
 
+static void _vblank_out_handler(void);
+
 int
 main(void)
 {
@@ -130,8 +133,6 @@ main(void)
 
         dbgio_dev_default_init(DBGIO_DEV_VDP2);
         dbgio_dev_set(DBGIO_DEV_VDP2);
-
-        char buffer[128] __unused;
 
         romdisk_init();
 
@@ -141,6 +142,9 @@ main(void)
 
         uint16_t *vdp1_tex;
         vdp1_tex = vdp1_vram_texture_base_get();
+
+        uint16_t *vdp1_pal;
+        vdp1_pal = (void *)CRAM_MODE_1_OFFSET(1, 0, 0x0000);
 
         void *fh[2];
         void *p;
@@ -156,7 +160,7 @@ main(void)
         assert(fh[1] != NULL);
         p = romdisk_direct(fh[1]);
         len = romdisk_total(fh[1]);
-        _dma_immediate_upload((void *)CRAM_MODE_1_OFFSET(1, 0, 0x0000), p, len);
+        _dma_immediate_upload(vdp1_pal, p, len);
 
         struct vdp1_cmdt_list *cmdt_list_env;
         cmdt_list_env = vdp1_cmdt_list_alloc(7);
@@ -169,17 +173,10 @@ main(void)
         romdisk_close(fh[1]);
 
         struct vdp1_cmdt_list *cmdt_list;
-        cmdt_list = vdp1_cmdt_list_alloc(2);
+        cmdt_list = vdp1_cmdt_list_alloc(3);
 
         struct vdp1_cmdt_sprite sprite;
         (void)memset(&sprite, 0x00, sizeof(sprite));
-
-        _zoom_point.x = 0;
-        _zoom_point.y = 0;
-
-        _display.x = ZOOM_POINT_WIDTH;
-        _display.y = ZOOM_POINT_HEIGHT;
-
         sprite.cs_mode.color_mode = 4;
         sprite.cs_mode.transparent_pixel = 0;
         sprite.cs_mode.pre_clipping = 1;
@@ -189,23 +186,88 @@ main(void)
         sprite.cs_color_bank.type_0.dc = 0x0100;
         sprite.cs_width = ZOOM_POINT_WIDTH;
         sprite.cs_height = ZOOM_POINT_HEIGHT;
-        sprite.cs_zoom.point.x = _zoom_point.x;
-        sprite.cs_zoom.point.y = _zoom_point.y;
-        sprite.cs_zoom.display.x = _display.x;
-        sprite.cs_zoom.display.y = _display.y;
 
-        vdp1_cmdt_scaled_sprite_draw(cmdt_list, &sprite);
-        vdp1_cmdt_end(cmdt_list);
-
-        dbgio_flush();
-
-        vdp1_sync_draw(cmdt_list);
-        vdp2_sync_commit();
-        vdp_sync(0);
-
-        _state_zoom = STATE_ZOOM_MOVE_ORIGIN;
+        struct vdp1_cmdt_polygon polygon_pointer;
+        (void)memset(&polygon_pointer, 0x00, sizeof(struct vdp1_cmdt_polygon));
+        polygon_pointer.cp_mode.transparent_pixel = true;
 
         while (true) {
+                smpc_peripheral_process();
+                smpc_peripheral_digital_port(1, &_digital);
+
+                dbgio_buffer("[H[2J");
+
+                vdp1_cmdt_list_reset(cmdt_list);
+
+                bool dirs_pressed;
+                dirs_pressed = (_digital.pressed.raw & PERIPHERAL_DIGITAL_DIRECTIONS) != 0;
+
+                switch (_state_zoom) {
+                case STATE_ZOOM_MOVE_ORIGIN:
+                        _pointer.x = 0;
+                        _pointer.y = 0;
+
+                        _display.x = ZOOM_POINT_WIDTH;
+                        _display.y = ZOOM_POINT_HEIGHT;
+
+                        _zoom_point_value = CMDT_ZOOM_POINT_CENTER;
+                        _zoom_point.x = 0;
+                        _zoom_point.y = 0;
+                        _zoom_point_color = ZOOM_POINT_COLOR_SELECT;
+
+                        _delay_frames = 0;
+
+                        if (dirs_pressed) {
+                                _captured_buttons = _digital.pressed.raw;
+                                _state_zoom = STATE_ZOOM_WAIT;
+                        } else if ((_digital.held.button.a) != 0) {
+                                _state_zoom = STATE_ZOOM_RELEASE_BUTTONS;
+                        }
+                        break;
+                case STATE_ZOOM_WAIT:
+                        if (dirs_pressed) {
+                                _captured_buttons = _digital.pressed.raw;
+                        }
+
+                        _delay_frames++;
+
+                        if (_delay_frames > 9) {
+                                _delay_frames = 0;
+                                _state_zoom = STATE_ZOOM_MOVE_ANCHOR;
+                        } else if (!dirs_pressed) {
+                                _delay_frames = 0;
+                                _state_zoom = STATE_ZOOM_MOVE_ORIGIN;
+                        }
+                        break;
+                case STATE_ZOOM_MOVE_ANCHOR:
+                        break;
+                }
+
+                sprite.cs_zoom.point.x = _zoom_point.x;
+                sprite.cs_zoom.point.y = _zoom_point.y;
+                sprite.cs_zoom.display.x = _display.x;
+                sprite.cs_zoom.display.y = _display.y;
+
+                polygon_pointer.cp_color = _zoom_point_color;
+                polygon_pointer.cp_vertex.a.x = ZOOM_POINT_POINTER_SIZE + _pointer.x - 1;
+                polygon_pointer.cp_vertex.a.y = -ZOOM_POINT_POINTER_SIZE + _pointer.y;
+                polygon_pointer.cp_vertex.b.x = ZOOM_POINT_POINTER_SIZE + _pointer.x - 1;
+                polygon_pointer.cp_vertex.b.y = ZOOM_POINT_POINTER_SIZE + _pointer.y - 1;
+                polygon_pointer.cp_vertex.c.x = -ZOOM_POINT_POINTER_SIZE + _pointer.x;
+                polygon_pointer.cp_vertex.c.y = ZOOM_POINT_POINTER_SIZE + _pointer.y - 1;
+                polygon_pointer.cp_vertex.d.x = -ZOOM_POINT_POINTER_SIZE + _pointer.x;
+                polygon_pointer.cp_vertex.d.y = -ZOOM_POINT_POINTER_SIZE + _pointer.y;
+
+                vdp1_cmdt_scaled_sprite_draw(cmdt_list, &sprite);
+                vdp1_cmdt_polygon_draw(cmdt_list, &polygon_pointer);
+                vdp1_cmdt_end(cmdt_list);
+
+                dbgio_flush();
+
+                vdp1_sync_draw(cmdt_list_env);
+                vdp1_sync_draw(cmdt_list);
+                vdp2_sync_commit();
+                vdp_sync(0);
         }
 
         return 0;
@@ -226,6 +288,11 @@ _hardware_init(void)
         cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
+
+        smpc_init();
+        smpc_peripheral_init();
+
+        vdp_sync_vblank_out_set(_vblank_out_handler);
 }
 
 static void
@@ -314,6 +381,12 @@ _dma_upload(void *dst, void *src, size_t len, uint8_t tag)
         int8_t ret;
         ret = dma_queue_enqueue(&reg_buffer, tag, NULL, NULL);
         assert(ret == 0);
+}
+
+static void
+_vblank_out_handler(void)
+{
+        smpc_peripheral_intback_issue();
 }
 ////////////////////////////////////////////////////////////////////////////////
 /* TEST_PROTOTYPE_DECLARE(scaled_sprite_01, update) */
