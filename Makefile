@@ -1,17 +1,49 @@
 EXAMPLES:= \
-	games/inkfill \
-	simple/dram-cartridge \
-	simple/romdisk \
-	test-suites/vdp1
+	c++ \
+	cpu-divu \
+	cpu-dmac \
+	cpu-dual \
+	cpu-frt \
+	dram-cart \
+	romdisk \
+	scu-dma \
+	scu-dsp \
+	scu-dsp-test \
+	vdp1-double-interlace \
+	vdp1-drawing \
+	vdp1-mic3d \
+	vdp1-zoom-sprite \
+	vdp2-24bpp-bitmap \
+	vdp2-2x2-plane \
+	vdp2-nbg0 \
+	vdp2-normal-bitmap \
+	vdp2-reduction-bitmap \
+	vdp2-special-function \
+	vdp2-zooming
 
-ifeq ($(OPTION_DEV_CARTRIDGE),$(filter $(OPTION_DEV_CARTRIDGE),1 2))
+# Following examples are broken:
+#   1. vdp2-rbg0
+#   2. vdp2-bitmap
+#   3. vdp1-cube
+#   4. scu-timers
+
+ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),$(filter $(YAUL_OPTION_DEV_CARTRIDGE),1 2))
 EXAMPLES+= \
-	simple/arp-comm \
-	simple/gdb
+	gdb
 endif
 
-ifeq ($(strip $(INSTALL_ROOT)),)
-  $(error Undefined INSTALL_ROOT (install root directory))
+ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),1)
+EXAMPLES+= \
+	usb-cart
+endif
+
+ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),2)
+EXAMPLES+= \
+	arp-comm
+endif
+
+ifeq ($(strip $(YAUL_INSTALL_ROOT)),)
+  $(error Undefined YAUL_INSTALL_ROOT (install root directory))
 endif
 
 ifeq ($(strip $(SILENT)),1)
