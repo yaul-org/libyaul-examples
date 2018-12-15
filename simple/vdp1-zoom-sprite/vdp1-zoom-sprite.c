@@ -181,7 +181,6 @@ main(void)
         sprite.cs_mode.transparent_pixel = 0;
         sprite.cs_mode.pre_clipping = 1;
         sprite.cs_zoom_point.enable = true;
-        sprite.cs_zoom_point.raw = _zoom_point_value;
         sprite.cs_char = (uint32_t)vdp1_tex;
         sprite.cs_color_bank.type_0.dc = 0x0100;
         sprite.cs_width = ZOOM_POINT_WIDTH;
@@ -190,6 +189,10 @@ main(void)
         struct vdp1_cmdt_polygon polygon_pointer;
         (void)memset(&polygon_pointer, 0x00, sizeof(struct vdp1_cmdt_polygon));
         polygon_pointer.cp_mode.transparent_pixel = true;
+
+        char *buffer;
+        buffer = malloc(256);
+        assert(buffer != NULL);
 
         while (true) {
                 smpc_peripheral_process();
@@ -201,6 +204,19 @@ main(void)
 
                 bool dirs_pressed;
                 dirs_pressed = (_digital.pressed.raw & PERIPHERAL_DIGITAL_DIRECTIONS) != 0;
+
+                bool x_center;
+                bool x_left;
+                bool x_right;
+                bool y_center;
+                bool y_up;
+                bool y_down;
+
+                struct zoom_point_boundary *zp_boundary;
+                uint32_t zp_idx;
+
+                int16_t dw_dir;
+                int16_t dh_dir;
 
                 switch (_state_zoom) {
                 case STATE_ZOOM_MOVE_ORIGIN:
@@ -240,9 +256,128 @@ main(void)
                         }
                         break;
                 case STATE_ZOOM_MOVE_ANCHOR:
+                        if ((_captured_buttons & PERIPHERAL_DIGITAL_LEFT) != 0) {
+                                _pointer.x = -_display.x / 2;
+                        }
+
+                        if ((_captured_buttons & PERIPHERAL_DIGITAL_RIGHT) != 0) {
+                                _pointer.x = _display.x / 2;
+                        }
+
+                        if ((_captured_buttons & PERIPHERAL_DIGITAL_UP) != 0) {
+                                _pointer.y = -_display.y / 2;
+                        }
+
+                        if ((_captured_buttons & PERIPHERAL_DIGITAL_DOWN) != 0) {
+                                _pointer.y = _display.y / 2;
+                        }
+
+                        /* Determine the zoom point */
+                        x_center = _pointer.x == 0;
+                        x_left = _pointer.x < 0;
+                        x_right = _pointer.x > 0;
+
+                        y_center = _pointer.y == 0;
+                        y_up = _pointer.y < 0;
+                        y_down = _pointer.y > 0;
+
+                        if (x_center && y_up) {
+                                _zoom_point_value = CMDT_ZOOM_POINT_UPPER_CENTER;
+                                _zoom_point.x = 0;
+                                _zoom_point.y = -ZOOM_POINT_HEIGHT / 2;
+                        } else if (x_center && y_down) {
+                                _zoom_point_value = CMDT_ZOOM_POINT_LOWER_CENTER;
+                                _zoom_point.x = 0;
+                                _zoom_point.y = ZOOM_POINT_HEIGHT / 2;
+                        } else if (y_center && x_left) {
+                                _zoom_point_value = CMDT_ZOOM_POINT_CENTER_LEFT;
+                                _zoom_point.x = -ZOOM_POINT_WIDTH / 2;
+                                _zoom_point.y = 0;
+                        } else if (y_center && x_right) {
+                                _zoom_point_value = CMDT_ZOOM_POINT_CENTER_RIGHT;
+                                _zoom_point.x = ZOOM_POINT_WIDTH / 2;
+                                _zoom_point.y = 0;
+                        } else if (y_up && x_left) {
+                                _zoom_point_value = CMDT_ZOOM_POINT_UPPER_LEFT;
+                                _zoom_point.x = -ZOOM_POINT_WIDTH / 2;
+                                _zoom_point.y = -ZOOM_POINT_HEIGHT / 2;
+                        } else if (y_up && x_right) {
+                                _zoom_point_value = CMDT_ZOOM_POINT_UPPER_RIGHT;
+                                _zoom_point.x = ZOOM_POINT_WIDTH / 2;
+                                _zoom_point.y = -ZOOM_POINT_HEIGHT / 2;
+                        } else if (y_down && x_left) {
+                                _zoom_point_value = CMDT_ZOOM_POINT_LOWER_LEFT;
+                                _zoom_point.x = -ZOOM_POINT_WIDTH / 2;
+                                _zoom_point.y = ZOOM_POINT_HEIGHT / 2;
+                        } else if (y_down && x_right) {
+                                _zoom_point_value = CMDT_ZOOM_POINT_LOWER_RIGHT;
+                                _zoom_point.x = ZOOM_POINT_WIDTH / 2;
+                                _zoom_point.y = ZOOM_POINT_HEIGHT / 2;
+                        } else if (x_center && y_center) {
+                                _zoom_point_value = CMDT_ZOOM_POINT_CENTER;
+                                _zoom_point.x = 0;
+                                _zoom_point.y = 0;
+                        }
+
+                        _captured_buttons = _digital.pressed.raw;
+
+                        if (!dirs_pressed) {
+                                _state_zoom = STATE_ZOOM_MOVE_ORIGIN;
+                        } else if ((_digital.held.button.a) != 0) {
+                                _state_zoom = STATE_ZOOM_RELEASE_BUTTONS;
+                        }
+                        break;
+                case STATE_ZOOM_RELEASE_BUTTONS:
+                        _zoom_point_color = ZOOM_POINT_COLOR_WAIT;
+
+                        if (!dirs_pressed) {
+                                _state_zoom = STATE_ZOOM_SELECT_ANCHOR;
+                        }
+                        break;
+                case STATE_ZOOM_SELECT_ANCHOR:
+                        _zoom_point_color = ZOOM_POINT_COLOR_HIGHLIGHT;
+
+                        zp_idx = dlog2(_zoom_point_value) - 5;
+                        zp_boundary = &_zoom_point_boundaries[zp_idx];
+
+                        dw_dir = zp_boundary->w_dir * 1;
+                        dh_dir = zp_boundary->h_dir * 1;
+
+                        if ((_digital.pressed.button.up) != 0) {
+                                if (((_display.y + dh_dir) >= zp_boundary->y_min) &&
+                                    ((_display.y + dh_dir) <= zp_boundary->y_max)) {
+                                        _display.y = _display.y + dh_dir;
+                                }
+                        }
+
+                        if ((_digital.pressed.button.down) != 0) {
+                                if (((_display.y - dh_dir) >= zp_boundary->y_min) &&
+                                    ((_display.y - dh_dir) <= zp_boundary->y_max)) {
+                                        _display.y = _display.y - dh_dir;
+                                }
+                        }
+
+                        if ((_digital.pressed.button.left) != 0) {
+                                if (((_display.x - dw_dir) >= zp_boundary->x_min) &&
+                                    ((_display.x - dw_dir) <= zp_boundary->x_max)) {
+                                        _display.x = _display.x - dw_dir;
+                                }
+                        }
+
+                        if ((_digital.pressed.button.right) != 0) {
+                                if (((_display.x + dw_dir) >= zp_boundary->x_min) &&
+                                    ((_display.x + dw_dir) <= zp_boundary->x_max)) {
+                                        _display.x = _display.x + dw_dir;
+                                }
+                        }
+
+                        if ((_digital.held.button.b) != 0) {
+                                _state_zoom = STATE_ZOOM_MOVE_ORIGIN;
+                        }
                         break;
                 }
 
+                sprite.cs_zoom_point.raw = _zoom_point_value;
                 sprite.cs_zoom.point.x = _zoom_point.x;
                 sprite.cs_zoom.point.y = _zoom_point.y;
                 sprite.cs_zoom.display.x = _display.x;
@@ -277,7 +412,7 @@ static void
 _hardware_init(void)
 {
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
-            TVMD_VERT_224);
+            TVMD_VERT_240);
 
         vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
             COLOR_RGB555(0, 3, 15));
@@ -388,243 +523,3 @@ _vblank_out_handler(void)
 {
         smpc_peripheral_intback_issue();
 }
-////////////////////////////////////////////////////////////////////////////////
-/* TEST_PROTOTYPE_DECLARE(scaled_sprite_01, update) */
-/* { */
-/*  */
-/*         if (digital_pad.connected == 1) { */
-/*                 if (digital_pad.held.button.start) { */
-/*                         test_exit(); */
-/*                         return; */
-/*                 } */
-/*  */
-/*                 bool dirs_pressed; */
-/*                 dirs_pressed = */
-/*                     (digital_pad.pressed.raw & PERIPHERAL_DIGITAL_DIRECTIONS) != 0; */
-/*  */
-/*                 bool x_center; */
-/*                 bool x_left; */
-/*                 bool x_right; */
-/*                 bool y_center; */
-/*                 bool y_up; */
-/*                 bool y_down; */
-/*  */
-/*                 struct zoom_point_boundary *zp_boundary; */
-/*                 uint32_t zp_idx; */
-/*  */
-/*                 int16_t dw_dir; */
-/*                 int16_t dh_dir; */
-/*  */
-/*                 switch (state_zoom) { */
-/*                 case STATE_ZOOM_MOVE_ORIGIN: */
-/*                         pointer.x = 0; */
-/*                         pointer.y = 0; */
-/*  */
-/*                         display.x = ZOOM_POINT_WIDTH; */
-/*                         display.y = ZOOM_POINT_HEIGHT; */
-/*  */
-/*                         zoom_point_value = CMDT_ZOOM_POINT_CENTER; */
-/*                         zoom_point.x = 0; */
-/*                         zoom_point.y = 0; */
-/*                         zoom_point_color = ZOOM_POINT_COLOR_SELECT; */
-/*  */
-/*                         delay_frames = 0; */
-/*  */
-/*                         if (dirs_pressed) { */
-/*                                 captured_buttons = digital_pad.pressed.raw; */
-/*                                 state_zoom = STATE_ZOOM_WAIT; */
-/*                         } else if ((digital_pad.held.button.a) != 0) { */
-/*                                 state_zoom = STATE_ZOOM_RELEASE_BUTTONS; */
-/*                         } */
-/*                         break; */
-/*                 case STATE_ZOOM_WAIT: */
-/*                         if (dirs_pressed) { */
-/*                                 captured_buttons = digital_pad.pressed.raw; */
-/*                         } */
-/*  */
-/*                         delay_frames++; */
-/*  */
-/*                         if (delay_frames > 9) { */
-/*                                 delay_frames = 0; */
-/*                                 state_zoom = STATE_ZOOM_MOVE_ANCHOR; */
-/*                         } else if (!dirs_pressed) { */
-/*                                 delay_frames = 0; */
-/*                                 state_zoom = STATE_ZOOM_MOVE_ORIGIN; */
-/*                         } */
-/*                         break; */
-/*                 case STATE_ZOOM_MOVE_ANCHOR: */
-/*                         if ((captured_buttons & PERIPHERAL_DIGITAL_LEFT) != 0) { */
-/*                                 pointer.x = -display.x / 2; */
-/*                         } */
-/*  */
-/*                         if ((captured_buttons & PERIPHERAL_DIGITAL_RIGHT) != 0) { */
-/*                                 pointer.x = display.x / 2; */
-/*                         } */
-/*  */
-/*                         if ((captured_buttons & PERIPHERAL_DIGITAL_UP) != 0) { */
-/*                                 pointer.y = -display.y / 2; */
-/*                         } */
-/*  */
-/*                         if ((captured_buttons & PERIPHERAL_DIGITAL_DOWN) != 0) { */
-/*                                 pointer.y = display.y / 2; */
-/*                         } */
-/*  */
-/*                         /\* Determine the zoom point *\/ */
-/*                         x_center = pointer.x == 0; */
-/*                         x_left = pointer.x < 0; */
-/*                         x_right = pointer.x > 0; */
-/*  */
-/*                         y_center = pointer.y == 0; */
-/*                         y_up = pointer.y < 0; */
-/*                         y_down = pointer.y > 0; */
-/*  */
-/*                         if (x_center && y_up) { */
-/*                                 zoom_point_value = CMDT_ZOOM_POINT_UPPER_CENTER; */
-/*                                 zoom_point.x = 0; */
-/*                                 zoom_point.y = -ZOOM_POINT_HEIGHT / 2; */
-/*                         } else if (x_center && y_down) { */
-/*                                 zoom_point_value = CMDT_ZOOM_POINT_LOWER_CENTER; */
-/*                                 zoom_point.x = 0; */
-/*                                 zoom_point.y = ZOOM_POINT_HEIGHT / 2; */
-/*                         } else if (y_center && x_left) { */
-/*                                 zoom_point_value = CMDT_ZOOM_POINT_CENTER_LEFT; */
-/*                                 zoom_point.x = -ZOOM_POINT_WIDTH / 2; */
-/*                                 zoom_point.y = 0; */
-/*                         } else if (y_center && x_right) { */
-/*                                 zoom_point_value = CMDT_ZOOM_POINT_CENTER_RIGHT; */
-/*                                 zoom_point.x = ZOOM_POINT_WIDTH / 2; */
-/*                                 zoom_point.y = 0; */
-/*                         } else if (y_up && x_left) { */
-/*                                 zoom_point_value = CMDT_ZOOM_POINT_UPPER_LEFT; */
-/*                                 zoom_point.x = -ZOOM_POINT_WIDTH / 2; */
-/*                                 zoom_point.y = -ZOOM_POINT_HEIGHT / 2; */
-/*                         } else if (y_up && x_right) { */
-/*                                 zoom_point_value = CMDT_ZOOM_POINT_UPPER_RIGHT; */
-/*                                 zoom_point.x = ZOOM_POINT_WIDTH / 2; */
-/*                                 zoom_point.y = -ZOOM_POINT_HEIGHT / 2; */
-/*                         } else if (y_down && x_left) { */
-/*                                 zoom_point_value = CMDT_ZOOM_POINT_LOWER_LEFT; */
-/*                                 zoom_point.x = -ZOOM_POINT_WIDTH / 2; */
-/*                                 zoom_point.y = ZOOM_POINT_HEIGHT / 2; */
-/*                         } else if (y_down && x_right) { */
-/*                                 zoom_point_value = CMDT_ZOOM_POINT_LOWER_RIGHT; */
-/*                                 zoom_point.x = ZOOM_POINT_WIDTH / 2; */
-/*                                 zoom_point.y = ZOOM_POINT_HEIGHT / 2; */
-/*                         } else if (x_center && y_center) { */
-/*                                 zoom_point_value = CMDT_ZOOM_POINT_CENTER; */
-/*                                 zoom_point.x = 0; */
-/*                                 zoom_point.y = 0; */
-/*                         } */
-/*  */
-/*                         captured_buttons = digital_pad.pressed.raw; */
-/*  */
-/*                         if (!dirs_pressed) { */
-/*                                 state_zoom = STATE_ZOOM_MOVE_ORIGIN; */
-/*                         } else if ((digital_pad.held.button.a) != 0) { */
-/*                                 state_zoom = STATE_ZOOM_RELEASE_BUTTONS; */
-/*                         } */
-/*                         break; */
-/*                 case STATE_ZOOM_RELEASE_BUTTONS: */
-/*                         zoom_point_color = ZOOM_POINT_COLOR_WAIT; */
-/*  */
-/*                         if (!dirs_pressed) { */
-/*                                 state_zoom = STATE_ZOOM_SELECT_ANCHOR; */
-/*                         } */
-/*                         break; */
-/*                 case STATE_ZOOM_SELECT_ANCHOR: */
-/*                         zoom_point_color = ZOOM_POINT_COLOR_HIGHLIGHT; */
-/*  */
-/*                         zp_idx = dlog2(zoom_point_value) - 5; */
-/*                         zp_boundary = &zoom_point_boundaries[zp_idx]; */
-/*  */
-/*                         dw_dir = zp_boundary->w_dir * 1; */
-/*                         dh_dir = zp_boundary->h_dir * 1; */
-/*  */
-/*                         if ((digital_pad.pressed.button.up) != 0) { */
-/*                                 if (((display.y + dh_dir) >= zp_boundary->y_min) && */
-/*                                     ((display.y + dh_dir) <= zp_boundary->y_max)) { */
-/*                                         display.y = display.y + dh_dir; */
-/*                                 } */
-/*                         } */
-/*  */
-/*                         if ((digital_pad.pressed.button.down) != 0) { */
-/*                                 if (((display.y - dh_dir) >= zp_boundary->y_min) && */
-/*                                     ((display.y - dh_dir) <= zp_boundary->y_max)) { */
-/*                                         display.y = display.y - dh_dir; */
-/*                                 } */
-/*                         } */
-/*  */
-/*                         if ((digital_pad.pressed.button.left) != 0) { */
-/*                                 if (((display.x - dw_dir) >= zp_boundary->x_min) && */
-/*                                     ((display.x - dw_dir) <= zp_boundary->x_max)) { */
-/*                                         display.x = display.x - dw_dir; */
-/*                                 } */
-/*                         } */
-/*  */
-/*                         if ((digital_pad.pressed.button.right) != 0) { */
-/*                                 if (((display.x + dw_dir) >= zp_boundary->x_min) && */
-/*                                     ((display.x + dw_dir) <= zp_boundary->x_max)) { */
-/*                                         display.x = display.x + dw_dir; */
-/*                                 } */
-/*                         } */
-/*  */
-/*                         if ((digital_pad.held.button.b) != 0) { */
-/*                                 state_zoom = STATE_ZOOM_MOVE_ORIGIN; */
-/*                         } */
-/*                         break; */
-/*                 } */
-/*         } */
-/*  */
-/*         vdp1_cmdt_list_begin(0); { */
-/*                 struct vdp1_cmdt_local_coord local_coord; */
-/*                 local_coord.lc_coord.x = SCREEN_WIDTH / 2; */
-/*                 local_coord.lc_coord.y = SCREEN_HEIGHT / 2; */
-/*  */
-/*                 struct vdp1_cmdt_system_clip_coord system_clip; */
-/*                 system_clip.scc_coord.x = SCREEN_WIDTH - 1; */
-/*                 system_clip.scc_coord.y = SCREEN_HEIGHT - 1; */
-/*  */
-/*                 struct vdp1_cmdt_user_clip_coord user_clip; */
-/*                 user_clip.ucc_coords[0].x = 0; */
-/*                 user_clip.ucc_coords[0].y = 0; */
-/*                 user_clip.ucc_coords[1].x = SCREEN_WIDTH - 1; */
-/*                 user_clip.ucc_coords[1].y = SCREEN_HEIGHT - 1; */
-/*  */
-/*                 struct vdp1_cmdt_polygon polygon_pointer; */
-/*                 memset(&polygon_pointer, 0x00, sizeof(struct vdp1_cmdt_polygon)); */
-/*                 polygon_pointer.cp_color = zoom_point_color; */
-/*                 polygon_pointer.cp_mode.transparent_pixel = true; */
-/*                 polygon_pointer.cp_vertex.a.x = ZOOM_POINT_POINTER_SIZE + pointer.x - 1; */
-/*                 polygon_pointer.cp_vertex.a.y = -ZOOM_POINT_POINTER_SIZE + pointer.y; */
-/*                 polygon_pointer.cp_vertex.b.x = ZOOM_POINT_POINTER_SIZE + pointer.x - 1; */
-/*                 polygon_pointer.cp_vertex.b.y = ZOOM_POINT_POINTER_SIZE + pointer.y - 1; */
-/*                 polygon_pointer.cp_vertex.c.x = -ZOOM_POINT_POINTER_SIZE + pointer.x; */
-/*                 polygon_pointer.cp_vertex.c.y = ZOOM_POINT_POINTER_SIZE + pointer.y - 1; */
-/*                 polygon_pointer.cp_vertex.d.x = -ZOOM_POINT_POINTER_SIZE + pointer.x; */
-/*                 polygon_pointer.cp_vertex.d.y = -ZOOM_POINT_POINTER_SIZE + pointer.y; */
-/*  */
-/*                 struct vdp1_cmdt_sprite scaled_sprite; */
-/*                 memset(&scaled_sprite, 0x00, sizeof(struct vdp1_cmdt_sprite)); */
-/*                 scaled_sprite.cs_type = CMDT_TYPE_SCALED_SPRITE; */
-/*                 scaled_sprite.cs_zoom_point.enable = true; */
-/*                 scaled_sprite.cs_zoom_point.raw = zoom_point_value; */
-/*                 scaled_sprite.cs_mode.cc_mode = 0; */
-/*                 scaled_sprite.cs_mode.color_mode = 4; */
-/*                 scaled_sprite.cs_mode.transparent_pixel = true; */
-/*                 scaled_sprite.cs_color_bank = 1; */
-/*                 scaled_sprite.cs_char = CHAR(0); */
-/*                 scaled_sprite.cs_width = ZOOM_POINT_WIDTH; */
-/*                 scaled_sprite.cs_height = ZOOM_POINT_HEIGHT; */
-/*                 scaled_sprite.cs_zoom.point.x = zoom_point.x; */
-/*                 scaled_sprite.cs_zoom.point.y = zoom_point.y; */
-/*                 scaled_sprite.cs_zoom.display.x = display.x; */
-/*                 scaled_sprite.cs_zoom.display.y = display.y; */
-/*  */
-/*                 vdp1_cmdt_system_clip_coord_set(&system_clip); */
-/*                 vdp1_cmdt_user_clip_coord_set(&user_clip); */
-/*                 vdp1_cmdt_local_coord_set(&local_coord); */
-/*                vdp1_cmdt_sprite_draw(&scaled_sprite); */
-/*                 vdp1_cmdt_polygon_draw(&polygon_pointer); */
-/*                 vdp1_cmdt_end(); */
-/*         } vdp1_cmdt_list_end(0); */
-/* } */
