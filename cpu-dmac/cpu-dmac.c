@@ -91,7 +91,6 @@ main(void)
                         _ovf = 0;
                         cpu_frt_count_set(0);
 
-                        vdp2_sync_commit();
                         dbgio_flush();
                         vdp_sync(0);
 
@@ -103,7 +102,6 @@ main(void)
                         sprintf(buffer, " Completed in %lu ticks\n", ticks);
                         dbgio_buffer(buffer);
 
-                        vdp2_sync_commit();
                         dbgio_flush();
                         vdp_sync(0);
                 }

@@ -52,7 +52,6 @@ main(void)
 
         free(msg);
 
-        vdp2_sync_commit();
         dbgio_flush();
         vdp_sync(0);
 

@@ -31,7 +31,6 @@ main(void)
         _setup_clear_fb(cmdt_list, COLOR_RGB555(31, 0, 0), true);
 
         vdp1_sync_draw(cmdt_list);
-        vdp2_sync_commit();
         vdp_sync(0);
 
         vdp1_cmdt_list_free(cmdt_list);

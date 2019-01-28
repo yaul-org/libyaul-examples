@@ -115,7 +115,6 @@ main(void)
             TVMD_VERT_240);
         vdp2_tvmd_display_set();
 
-        vdp2_sync_commit();
         vdp_sync(0);
 
         while (true) {

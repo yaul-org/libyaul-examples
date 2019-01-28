@@ -121,7 +121,6 @@ main(void)
                     _ocb_count);
                 dbgio_buffer(_buffer);
 
-                vdp2_sync_commit();
                 dbgio_flush();
                 vdp_sync(0);
         }

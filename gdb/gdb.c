@@ -21,7 +21,6 @@ main(void)
 
         dbgio_buffer("Initializing GDB...\n");
 
-        vdp2_sync_commit();
         dbgio_flush();
         vdp_sync(0);
 

@@ -180,7 +180,6 @@ main(void)
 
         vdp2_scrn_display_set(SCRN_NBG1, /* transparent = */ true);
 
-        vdp2_sync_commit();
         vdp_sync(0);
 
         vdp2_tvmd_display_set();
@@ -189,7 +188,6 @@ main(void)
                 vdp2_scrn_scroll_x_update(SCRN_NBG1, F16(4.0f));
                 vdp2_scrn_scroll_y_update(SCRN_NBG1, F16(4.0f));
 
-                vdp2_sync_commit();
                 vdp_sync(0);
         }
 }

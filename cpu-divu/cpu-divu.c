@@ -54,7 +54,6 @@ main(void)
         dbgio_buffer(text);
         dbgio_buffer("\n");
 
-        vdp2_sync_commit();
         dbgio_flush();
         vdp_sync(0);
 

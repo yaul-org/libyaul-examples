@@ -69,7 +69,6 @@ main(void)
 
                 sprintf(buffer, "PC: %02X\n", pc);
                 dbgio_buffer(buffer);
-                vdp2_sync_commit();
                 /* dbgio_flush() needs to be called during VBLANK-IN */
                 dbgio_flush();
                 vdp_sync(0);
@@ -100,7 +99,6 @@ main(void)
             status.pc);
         dbgio_buffer(buffer);
 
-        vdp2_sync_commit();
         dbgio_flush();
         vdp_sync(0);
 

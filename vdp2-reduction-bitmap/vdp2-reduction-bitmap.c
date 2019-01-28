@@ -126,7 +126,6 @@ main(void)
         ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
         assert(ret == 0);
 
-        vdp2_sync_commit();
         vdp_sync(0);
 
         romdisk_close(fh[0]);

@@ -49,7 +49,6 @@ main(void)
                         p = p + (dir * (1 << 14));
                 }
 
-                vdp2_sync_commit();
                 dbgio_flush();
                 vdp_sync(0);
         }

@@ -57,7 +57,6 @@ main(void)
 
         dbgio_buffer("Passed");
 
-        vdp2_sync_commit();
         dbgio_flush();
         vdp_sync(0);
 
@@ -137,7 +136,6 @@ _test_dsp_program(uint32_t program_id)
             mnemonic);
         dbgio_buffer(_buffer);
 
-        vdp2_sync_commit();
         dbgio_flush();
         vdp_sync(0);
 
@@ -173,7 +171,6 @@ _test_dsp_program(uint32_t program_id)
             status.pc);
         dbgio_buffer(_buffer);
 
-        vdp2_sync_commit();
         dbgio_flush();
         vdp_sync(0);
 

@@ -66,11 +66,9 @@ main(void)
         dbgio_buffer(".\n");
 
         dbgio_flush();
-        vdp2_sync_commit();
         vdp_sync(0);
 
         dbgio_flush();
-        vdp2_sync_commit();
         vdp_sync(0);
 
         while (true) {

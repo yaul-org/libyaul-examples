@@ -486,7 +486,6 @@ main(void)
 
                 vdp1_sync_draw(cmdt_lists[1]);
 
-                vdp2_sync_commit();
                 vdp_sync(0);
         }
 }

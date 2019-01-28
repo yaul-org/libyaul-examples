@@ -55,7 +55,6 @@ main(void)
             "Slave responded  %lu times\n", _master_counter, _slave_counter);
         dbgio_buffer(buffer);
 
-        vdp2_sync_commit();
         dbgio_flush();
         vdp_sync(0);
 
