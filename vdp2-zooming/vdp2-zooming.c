@@ -240,7 +240,7 @@ _transfer_pnd(const struct scrn_cell_format *format)
 
                 _fill_map_pnd(map_p, page_width, page_height / 2, tile);
 
-                dma_queue_flush_wait(DMA_QUEUE_TAG_IMMEDIATE);
+                dma_queue_flush_wait();
 
                 xfer_table[0].len = page_size / 2;
                 xfer_table[0].dst = (uint32_t)pnd;
@@ -260,7 +260,7 @@ _transfer_pnd(const struct scrn_cell_format *format)
                 pnd += page_size;
         }
 
-        dma_queue_flush_wait(DMA_QUEUE_TAG_IMMEDIATE);
+        dma_queue_flush_wait();
 
         free(p);
         free(map[0]);

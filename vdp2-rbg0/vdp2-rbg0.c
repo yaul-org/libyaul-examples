@@ -112,7 +112,6 @@ _hardware_init(void)
 
         vdp2_init();
 
-        vdp2_sprite_type_set(0);
         vdp2_sprite_priority_set(0, 0);
 
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A, TVMD_VERT_240);

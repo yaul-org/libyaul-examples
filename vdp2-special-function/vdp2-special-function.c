@@ -208,12 +208,13 @@ _hardware_init(void)
          * (set at 4-Mbit) is 0x20000 bytes. Without going across bank
          * boundaries, we need to not part a bank into two */
         const struct vram_ctl vram_ctl = {
-                .cram_mode = VRAM_CTL_CRAM_MODE_1,
                 .vram_size = VRAM_CTL_SIZE_4MBIT,
                 .vram_mode = VRAM_CTL_MODE_NO_PART_BANK_A | VRAM_CTL_MODE_PART_BANK_B
         };
 
         vdp2_vram_control_set(&vram_ctl);
+
+        vdp2_cram_mode_set(1);
 
         struct vram_cycp_bank vram_cycp_bank[2];
 
@@ -242,9 +243,19 @@ _hardware_init(void)
         vdp2_vram_cycp_bank_clear(2);
         vdp2_vram_cycp_bank_set(3, &vram_cycp_bank[1]);
 
+        const struct vdp1_env vdp1_env = {
+                .env_erase_color = COLOR_RGB555(0, 0, 0),
+                /* int16_vector2_t env_erase_points[2]; */
+                .env_bpp = ENV_BPP_8,
+                .env_rotation = ENV_ROTATION_0,
+                .env_color_mode = ENV_COLOR_MODE_RGB_PALETTE,
+                .env_sprite_type = 0x5
+        };
+
+        vdp1_env_set(&vdp1_env);
+
         /* Sprite type 5 has 3 bits dedicated to priority, allowing the
          * selection of 7 of the sprite registers */
-        vdp2_sprite_type_set(0x5);
         vdp2_sprite_priority_set(0, 2);
         vdp2_sprite_priority_set(1, 2);
         vdp2_sprite_priority_set(2, 2);

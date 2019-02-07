@@ -181,7 +181,7 @@ main(void)
         sprite.cs_mode.pre_clipping = 1;
         sprite.cs_zoom_point.enable = true;
         sprite.cs_char = (uint32_t)vdp1_tex;
-        sprite.cs_color_bank.type_0.dc = 0x0100;
+        sprite.cs_sprite_type.type_0.dc = 0x0100;
         sprite.cs_width = ZOOM_POINT_WIDTH;
         sprite.cs_height = ZOOM_POINT_HEIGHT;
 
@@ -411,7 +411,6 @@ _hardware_init(void)
         vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
             COLOR_RGB555(0, 3, 15));
 
-        vdp2_sprite_type_set(0);
         vdp2_sprite_priority_set(0, 6);
 
         cpu_intc_mask_set(0);

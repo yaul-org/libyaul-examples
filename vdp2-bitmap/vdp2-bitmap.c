@@ -220,7 +220,6 @@ main(void)
 
         vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE), bs_color);
 
-        vdp2_sprite_type_set(0);
         vdp2_sprite_priority_set(0, 0);
 
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A, TVMD_VERT_240);

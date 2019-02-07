@@ -75,7 +75,6 @@ _hardware_init(void)
         vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
             COLOR_RGB555(0, 3, 15));
 
-        vdp2_sprite_type_set(0);
         vdp2_sprite_priority_set(0, 6);
 
         cpu_intc_mask_set(0);
