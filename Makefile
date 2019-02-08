@@ -15,6 +15,7 @@ EXAMPLES:= \
 	vdp1-zoom-sprite \
 	vdp2-24bpp-bitmap \
 	vdp2-2x2-plane \
+	vdp2-bitmap \
 	vdp2-nbg0 \
 	vdp2-normal-bitmap \
 	vdp2-reduction-bitmap \
@@ -23,7 +24,6 @@ EXAMPLES:= \
 
 # Following examples are broken:
 #   1. vdp2-rbg0
-#   2. vdp2-bitmap
 #   3. vdp1-cube
 #   4. scu-timers
 
