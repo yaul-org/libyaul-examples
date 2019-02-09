@@ -136,7 +136,7 @@ main(void)
 
                 count_frames++;
 
-                if (count_frames >= 60) {
+                if (count_frames >= 15) {
                         count_frames = 0;
                         show_polygon ^= true;
                 }
@@ -245,8 +245,11 @@ _hardware_init(void)
 
         const struct vdp1_env vdp1_env = {
                 .env_erase_color = COLOR_RGB555(0, 0, 0),
-                /* int16_vector2_t env_erase_points[2]; */
-                .env_bpp = ENV_BPP_8,
+                .env_erase_points = {
+                        INT16_VECTOR2_INITIALIZER(0, 0),
+                        INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1)
+                },
+                .env_bpp = ENV_BPP_16,
                 .env_rotation = ENV_ROTATION_0,
                 .env_color_mode = ENV_COLOR_MODE_RGB_PALETTE,
                 .env_sprite_type = 0x5
