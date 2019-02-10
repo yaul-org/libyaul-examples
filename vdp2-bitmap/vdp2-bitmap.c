@@ -30,60 +30,60 @@ main(void)
         fh = romdisk_open(romdisk, "/BITMAP.TGA");
         assert(fh != NULL);
 
-        uint8_t *tga_file;
         tga_t tga;
-        int ret;
-        size_t len;
-
-        tga_file = (uint8_t *)LWRAM(0x00000000);
-        assert(tga_file != NULL);
-
-        len = romdisk_read(fh, tga_file, romdisk_total(fh));
-        assert(len == romdisk_total(fh));
-
-        ret = tga_read(&tga, tga_file);
+        int32_t ret;
+        ret = tga_read(&tga, romdisk_direct(fh));
         assert(ret == TGA_FILE_OK);
 
-        tga_image_decode(&tga, (void *)VRAM_ADDR_4MBIT(0, 0x00000));
+        (void)tga_image_decode(&tga, (void *)VRAM_ADDR_4MBIT(0, 0x00000));
 
-        struct scrn_rotation_table rot_tbl;
+        struct scrn_rotation_table rot_tbl = {
+                /* Screen start coordinates */
+                .xst = 0,
+                .yst = 0,
+                .zst = 0,
 
-        (void)memset(&rot_tbl, 0x00, sizeof(rot_tbl));
+                /* Screen vertical coordinate increments (per each line) */
+                .delta_xst = 0x00000000,
+                .delta_yst = 0x00010000,
 
-        rot_tbl.xst = 0;
-        rot_tbl.yst = 0;
-        rot_tbl.zst = 0;
+                /* Screen horizontal coordinate increments (per each dot) */
+                .delta_x = 0x00010000,
+                .delta_y = 0x00000000,
 
-        rot_tbl.delta_xst = 0x00000000;
-        rot_tbl.delta_yst = 0x00010000;
+                /* Rotation matrix */
+                .matrix.param.a = 0x00010000,
+                .matrix.param.b = 0x00000000,
+                .matrix.param.c = 0x00000000,
+                .matrix.param.d = 0x00000000,
+                .matrix.param.e = 0x00010000,
+                .matrix.param.f = 0x00000000,
 
-        rot_tbl.delta_x = 0x00010000;
-        rot_tbl.delta_y = 0x00000000;
+                /* View point coordinates */
+                .px = 0,
+                .py = 0,
+                .pz = 0,
 
-        rot_tbl.matrix.param.a = 0x00010000;
-        rot_tbl.matrix.param.b = 0x00000000;
-        rot_tbl.matrix.param.c = 0x00000000;
-        rot_tbl.matrix.param.d = 0x00000000;
-        rot_tbl.matrix.param.e = 0x00010000;
-        rot_tbl.matrix.param.f = 0x00000000;
+                /* Center coordinates */
+                .cx = 0,
+                .cy = 0,
+                .cz = 0,
 
-        rot_tbl.px = 0;
-        rot_tbl.py = 0;
-        rot_tbl.pz = 0;
+                /* Amount of horizontal shifting */
+                .mx = 0,
+                .my = 0,
 
-        rot_tbl.cx = 0;
-        rot_tbl.cy = 0;
-        rot_tbl.cz = 0;
+                /* Scaling coefficients */
+                .kx = 0x00010000,
+                .ky = 0x00010000,
 
-        rot_tbl.mx = 0;
-        rot_tbl.my = 0;
-
-        rot_tbl.kx = 0x00010000;
-        rot_tbl.ky = 0x00010000;
-
-        rot_tbl.kast = 0;
-        rot_tbl.delta_kast = 0;
-        rot_tbl.delta_kax = 0;
+                /* Coefficient table start address */
+                .kast = 0,
+                /* Addr. increment coeff. table (per line) */
+                .delta_kast = 0,
+                /* Addr. increment coeff. table (per dot) */
+                .delta_kax = 0
+        };
 
         struct dma_level_cfg dma_level_cfg;
         struct dma_reg_buffer reg_buffer;
@@ -106,6 +106,7 @@ main(void)
                 rot_tbl.mx += 0x00010000;
                 rot_tbl.my += 0x00010000;
 
+                int8_t ret;
                 ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN,
                     NULL, NULL);
                 assert(ret == 0);
