@@ -1,4 +1,3 @@
-Description
-===========
-
-Purpose of this example is to make basic use of the reduction feature.
+<p align="center">
+  <img width="640" height="448" src=".images/preview.gif">
+</p>
