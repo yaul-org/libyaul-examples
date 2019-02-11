@@ -87,6 +87,9 @@ main(void)
 
         vdp2_vram_cycp_set(&vram_cycp);
 
+        /* Set for CRAM mode 1: RGB 555 2,048 colors */
+        vdp2_cram_mode_set(1);
+
         /* Set up and enqueue two DMA transfers tagged as VBLANK-IN */
 
         struct dma_level_cfg dma_level_cfg;
