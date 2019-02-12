@@ -7,8 +7,6 @@ include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 SH_PROGRAM:= vdp2-rbg0
 SH_OBJECTS:= \
 	root.romdisk.o \
-	bg.o \
-	fs.o \
 	vdp2-rbg0.o \
 
 SH_CFLAGS+= -I.

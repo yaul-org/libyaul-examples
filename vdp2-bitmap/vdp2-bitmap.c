@@ -134,6 +134,10 @@ _hardware_init(void)
         format.sbf_sf_code = SCRN_SF_CODE_A;
         format.sbf_sf_mode = 0;
         format.sbf_rotation_table = VRAM_ADDR_4MBIT(2, 0x00000);
+        format.sbf_usage_banks.a0 = VRAM_USAGE_TYPE_BPD;
+        format.sbf_usage_banks.a1 = VRAM_USAGE_TYPE_BPD;
+        format.sbf_usage_banks.b0 = VRAM_USAGE_TYPE_NONE;
+        format.sbf_usage_banks.b1 = VRAM_USAGE_TYPE_NONE;
 
         vdp2_scrn_bitmap_format_set(&format);
         vdp2_scrn_priority_set(SCRN_RBG0, 7);
