@@ -1,10 +1,15 @@
 #include <yaul.h>
 
-#include <sys/queue.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+
+#define RBG0_CPD                VRAM_ADDR_4MBIT(0, 0x10000)
+#define RBG0_PAL                CRAM_MODE_1_OFFSET(0, 0, 0)
+#define RBG0_PND                VRAM_ADDR_4MBIT(1, 0x00000)
+#define RBG0_ROTATION_TABLE     VRAM_ADDR_4MBIT(2, 0x00000)
+
+#define BACK_SCREEN             VRAM_ADDR_4MBIT(3, 0x1FFFE)
 
 extern uint8_t root_romdisk[];
 
@@ -20,12 +25,14 @@ static const struct scrn_rotation_table _rot_tbl __used = {
         .delta_y = 0x00000000,
 
         .matrix = {
-                .param.a = 0x00010000,
-                .param.b = 0x00000000,
-                .param.c = 0x00000000,
-                .param.d = 0x00000000,
-                .param.e = 0x00010000,
-                .param.f = 0x00000000
+                .param = {
+                        .a = 0x00010000,
+                        .b = 0x00000000,
+                        .c = 0x00000000,
+                        .d = 0x00000000,
+                        .e = 0x00010000,
+                        .f = 0x00000000
+                }
         },
 
         .px = 0,
@@ -47,6 +54,8 @@ static const struct scrn_rotation_table _rot_tbl __used = {
         .delta_kax = 0,
 };
 
+static struct dma_xfer _xfer_table[4] __aligned(4 * 16);
+
 static void _hardware_init(void);
 
 void
@@ -60,26 +69,51 @@ main(void)
         romdisk = romdisk_mount("/", root_romdisk);
         assert(romdisk != NULL);
 
-        void *fh;
+        void *fh[3];
 
-        fh = romdisk_open(romdisk, "/TILESET.CEL");
-        assert(fh != NULL);
-        (void)memcpy((void *)VRAM_ADDR_4MBIT(0, 0x10000), romdisk_direct(fh), romdisk_total(fh));
-        romdisk_close(fh);
+        struct dma_level_cfg dma_level_cfg = {
+                .dlc_xfer.indirect = &_xfer_table[0],
+                .dlc_mode = DMA_MODE_INDIRECT,
+                .dlc_stride = DMA_STRIDE_2_BYTES,
+                .dlc_update = DMA_UPDATE_NONE
+        };
 
-        fh = romdisk_open(romdisk, "/TILESET.PAL");
-        assert(fh != NULL);
-        (void)memcpy((void *)CRAM_ADDR(0x0000), romdisk_direct(fh), romdisk_total(fh));
-        romdisk_close(fh);
+        struct dma_reg_buffer reg_buffer;
 
-        fh = romdisk_open(romdisk, "/LEVEL1.MAP");
-        assert(fh != NULL);
-        (void)memcpy((void *)VRAM_ADDR_4MBIT(1, 0x00000), romdisk_direct(fh), romdisk_total(fh));
-        romdisk_close(fh);
+        scu_dma_config_buffer(&reg_buffer, &dma_level_cfg);
 
-        (void)memcpy((void *)VRAM_ADDR_4MBIT(2, 0x00000), &_rot_tbl, sizeof(_rot_tbl));
+        fh[0] = romdisk_open(romdisk, "/CPD.BIN");
+        assert(fh[0] != NULL);
+        _xfer_table[0].len = romdisk_total(fh[0]);
+        _xfer_table[0].dst = RBG0_CPD;
+        _xfer_table[0].src = (uint32_t)romdisk_direct(fh[0]);
+
+        fh[1] = romdisk_open(romdisk, "/PAL.BIN");
+        assert(fh[1] != NULL);
+        _xfer_table[1].len = romdisk_total(fh[1]);
+        _xfer_table[1].dst = RBG0_PAL;
+        _xfer_table[1].src = (uint32_t)romdisk_direct(fh[1]);
+
+        fh[2] = romdisk_open(romdisk, "/PND.BIN");
+        assert(fh[2] != NULL);
+        _xfer_table[2].len = romdisk_total(fh[2]);
+        _xfer_table[2].dst = RBG0_PND;
+        _xfer_table[2].src = (uint32_t)romdisk_direct(fh[2]);
+
+        _xfer_table[3].len = sizeof(_rot_tbl);
+        _xfer_table[3].dst = RBG0_ROTATION_TABLE;
+        _xfer_table[3].src = DMA_INDIRECT_TBL_END | (uint32_t)&_rot_tbl;
+
+        int8_t ret;
+        ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN,
+            NULL, NULL);
+        assert(ret == 0);
 
         vdp_sync(0);
+
+        romdisk_close(fh[2]);
+        romdisk_close(fh[1]);
+        romdisk_close(fh[0]);
 
         while (true) {
         }
@@ -95,41 +129,44 @@ _hardware_init(void)
                 .scf_pnd_size = 1, /* 1-word */
                 .scf_auxiliary_mode = 0,
                 .scf_plane_size = 2 * 2,
-                .scf_cp_table = (uint32_t)VRAM_ADDR_4MBIT(0, 0x10000),
-                .scf_color_palette = (uint32_t)CRAM_MODE_1_OFFSET(0, 0, 0),
+                .scf_cp_table = RBG0_CPD,
+                .scf_color_palette = RBG0_PAL,
                 .scf_map = {
-                        .plane_a = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
-                        .plane_b = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
-                        .plane_c = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
-                        .plane_d = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
+                        .planes = {
+                                RBG0_PND,
+                                RBG0_PND,
+                                RBG0_PND,
+                                RBG0_PND,
 
-                        .plane_e = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
-                        .plane_f = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
-                        .plane_g = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
-                        .plane_h = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
+                                RBG0_PND,
+                                RBG0_PND,
+                                RBG0_PND,
+                                RBG0_PND,
 
-                        .plane_i = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
-                        .plane_j = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
-                        .plane_k = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
-                        .plane_l = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
+                                RBG0_PND,
+                                RBG0_PND,
+                                RBG0_PND,
+                                RBG0_PND,
 
-                        .plane_m = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
-                        .plane_n = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
-                        .plane_o = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000),
-                        .plane_p = (uint32_t)VRAM_ADDR_4MBIT(1, 0x00000)
+                                RBG0_PND,
+                                RBG0_PND,
+                                RBG0_PND,
+                                RBG0_PND
+                        }
                 },
                 .scf_rotation_tbl = VRAM_ADDR_4MBIT(2, 0x00000),
-                .scf_usage_banks.a0 = VRAM_USAGE_TYPE_CPD,
-                .scf_usage_banks.a1 = VRAM_USAGE_TYPE_PND,
-                .scf_usage_banks.b0 = VRAM_USAGE_TYPE_NONE,
-                .scf_usage_banks.b1 = VRAM_USAGE_TYPE_NONE
+                .scf_usage_banks = {
+                        .a0 = VRAM_USAGE_TYPE_CPD,
+                        .a1 = VRAM_USAGE_TYPE_PND,
+                        .b0 = VRAM_USAGE_TYPE_NONE,
+                        .b1 = VRAM_USAGE_TYPE_NONE
+                }
         };
 
         vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
             TVMD_VERT_240);
 
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
-            COLOR_RGB555(5, 5, 7));
+        vdp2_scrn_back_screen_color_set(BACK_SCREEN, COLOR_RGB555(5, 5, 7));
 
         vdp2_tvmd_display_clear();
 
