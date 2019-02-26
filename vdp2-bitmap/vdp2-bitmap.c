@@ -9,10 +9,10 @@
 
 #include <tga.h>
 
-#define RBG0_BPD                VRAM_ADDR_4MBIT(0, 0x00000)
-#define RBG0_ROTATION_TABLE     VRAM_ADDR_4MBIT(2, 0x00000)
+#define RBG0_BPD                VDP2_VRAM_ADDR_4MBIT(0, 0x00000)
+#define RBG0_ROTATION_TABLE     VDP2_VRAM_ADDR_4MBIT(2, 0x00000)
 
-#define BACK_SCREEN             VRAM_ADDR_4MBIT(3, 0x1FFFE)
+#define BACK_SCREEN             VDP2_VRAM_ADDR_4MBIT(3, 0x1FFFE)
 
 extern uint8_t root_romdisk[];
 
@@ -40,7 +40,7 @@ main(void)
 
         (void)tga_image_decode(&tga, (void *)RBG0_BPD);
 
-        struct scrn_rotation_table rot_tbl = {
+        struct vdp2_scrn_rotation_table rot_tbl = {
                 /* Screen start coordinates */
                 .xst = 0,
                 .yst = 0,
@@ -92,17 +92,17 @@ main(void)
                 .delta_kax = 0
         };
 
-        struct dma_level_cfg dma_level_cfg;
-        struct dma_reg_buffer reg_buffer;
+        struct scu_dma_level_cfg scu_dma_level_cfg;
+        struct scu_dma_reg_buffer reg_buffer;
 
-        dma_level_cfg.dlc_xfer.direct.len = sizeof(struct scrn_rotation_table);
-        dma_level_cfg.dlc_xfer.direct.dst = RBG0_ROTATION_TABLE;
-        dma_level_cfg.dlc_xfer.direct.src = (uint32_t)&rot_tbl;
-        dma_level_cfg.dlc_mode = DMA_MODE_DIRECT;
-        dma_level_cfg.dlc_stride = DMA_STRIDE_2_BYTES;
-        dma_level_cfg.dlc_update = DMA_UPDATE_NONE;
+        scu_dma_level_cfg.dlc_xfer.direct.len = sizeof(struct vdp2_scrn_rotation_table);
+        scu_dma_level_cfg.dlc_xfer.direct.dst = RBG0_ROTATION_TABLE;
+        scu_dma_level_cfg.dlc_xfer.direct.src = (uint32_t)&rot_tbl;
+        scu_dma_level_cfg.dlc_mode = SCU_DMA_MODE_DIRECT;
+        scu_dma_level_cfg.dlc_stride = SCU_DMA_STRIDE_2_BYTES;
+        scu_dma_level_cfg.dlc_update = SCU_DMA_UPDATE_NONE;
 
-        scu_dma_config_buffer(&reg_buffer, &dma_level_cfg);
+        scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
 
         while (true) {
                 /* Scale */
@@ -127,9 +127,9 @@ main(void)
 static void
 _hardware_init(void)
 {
-        const struct scrn_bitmap_format format = {
-                .sbf_scroll_screen = SCRN_RBG0,
-                .sbf_cc_count = SCRN_CCC_RGB_32768,
+        const struct vdp2_scrn_bitmap_format format = {
+                .sbf_scroll_screen = VDP2_SCRN_RBG0,
+                .sbf_cc_count = VDP2_SCRN_CCC_RGB_32768,
                 .sbf_bitmap_size = {
                         512,
                         256
@@ -137,21 +137,21 @@ _hardware_init(void)
                 .sbf_color_palette = 0x00000000,
                 .sbf_bitmap_pattern = RBG0_BPD,
                 .sbf_rp_mode = 0,
-                .sbf_sf_type = SCRN_SF_TYPE_NONE,
-                .sbf_sf_code = SCRN_SF_CODE_A,
+                .sbf_sf_type = VDP2_SCRN_SF_TYPE_NONE,
+                .sbf_sf_code = VDP2_SCRN_SF_CODE_A,
                 .sbf_sf_mode = 0,
                 .sbf_rotation_table = RBG0_ROTATION_TABLE,
                 .sbf_usage_banks = {
-                        .a0 = VRAM_USAGE_TYPE_BPD,
-                        .a1 = VRAM_USAGE_TYPE_BPD,
-                        .b0 = VRAM_USAGE_TYPE_NONE,
-                        .b1 = VRAM_USAGE_TYPE_NONE
+                        .a0 = VDP2_VRAM_USAGE_TYPE_BPD,
+                        .a1 = VDP2_VRAM_USAGE_TYPE_BPD,
+                        .b0 = VDP2_VRAM_USAGE_TYPE_NONE,
+                        .b1 = VDP2_VRAM_USAGE_TYPE_NONE
                 }
         };
 
         vdp2_scrn_bitmap_format_set(&format);
-        vdp2_scrn_priority_set(SCRN_RBG0, 7);
-        vdp2_scrn_display_set(SCRN_RBG0, /* no_trans = */ false);
+        vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);
+        vdp2_scrn_display_set(VDP2_SCRN_RBG0, /* no_trans = */ false);
 
         vdp2_vram_cycp_clear();
 
@@ -166,7 +166,7 @@ _hardware_init(void)
         vdp2_sprite_priority_set(6, 0);
         vdp2_sprite_priority_set(7, 0);
 
-        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
-            TVMD_VERT_224);
+        vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
+            VDP2_TVMD_VERT_224);
         vdp2_tvmd_display_set();
 }

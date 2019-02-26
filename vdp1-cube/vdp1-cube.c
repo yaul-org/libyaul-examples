@@ -83,7 +83,7 @@ main(void)
                 local_coord.lc_coord.x = SCREEN_WIDTH / 2;
                 local_coord.lc_coord.y = SCREEN_HEIGHT / 2;
 
-                vdp1_cmdt_local_coord_set(&local_coord);
+                vdp1_cmdt_local_coord_add(&local_coord);
                 vdp1_cmdt_end();
         } vdp1_cmdt_list_end(0);
 
@@ -141,7 +141,7 @@ main(void)
                                         polygon.cp_vertex.d.x = otp->otp_coords[3].x;
                                         polygon.cp_vertex.d.y = otp->otp_coords[3].y;
 
-                                        vdp1_cmdt_polygon_draw(&polygon);
+                                        vdp1_cmdt_polygon_add(&polygon);
                                 }
 #endif
                                 /* Clear OT bucket */
@@ -185,11 +185,12 @@ hardware_init(void)
         /* Enable interrupts */
         cpu_intc_enable();
 
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(2, 0x01FFFE),
+        vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
+            VDP2_TVMD_VERT_224);
+
+        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR_4MBIT(2, 0x01FFFE),
             COLOR_RGB555(0, 0, 7));
 
-        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
-            TVMD_VERT_224);
         vdp2_tvmd_display_set();
 }
 

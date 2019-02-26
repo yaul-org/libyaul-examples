@@ -143,7 +143,7 @@ main(void)
         vdp1_tex = vdp1_vram_texture_base_get();
 
         uint16_t *vdp1_pal;
-        vdp1_pal = (void *)CRAM_MODE_1_OFFSET(1, 0, 0x0000);
+        vdp1_pal = (void *)VDP2_CRAM_MODE_1_OFFSET(1, 0, 0x0000);
 
         void *fh[2];
         void *p;
@@ -174,8 +174,9 @@ main(void)
         struct vdp1_cmdt_list *cmdt_list;
         cmdt_list = vdp1_cmdt_list_alloc(3);
 
-        struct vdp1_cmdt_sprite sprite;
+        struct vdp1_cmdt_scaled_sprite sprite;
         (void)memset(&sprite, 0x00, sizeof(sprite));
+
         sprite.cs_mode.color_mode = 4;
         sprite.cs_mode.transparent_pixel = 0;
         sprite.cs_mode.pre_clipping = 1;
@@ -388,8 +389,8 @@ main(void)
                 polygon_pointer.cp_vertex.d.x = -ZOOM_POINT_POINTER_SIZE + _pointer.x;
                 polygon_pointer.cp_vertex.d.y = -ZOOM_POINT_POINTER_SIZE + _pointer.y;
 
-                vdp1_cmdt_scaled_sprite_draw(cmdt_list, &sprite);
-                vdp1_cmdt_polygon_draw(cmdt_list, &polygon_pointer);
+                vdp1_cmdt_scaled_sprite_add(cmdt_list, &sprite);
+                vdp1_cmdt_polygon_add(cmdt_list, &polygon_pointer);
                 vdp1_cmdt_end(cmdt_list);
 
                 dbgio_flush();
@@ -405,10 +406,10 @@ main(void)
 static void
 _hardware_init(void)
 {
-        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
-            TVMD_VERT_240);
+        vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
+            VDP2_TVMD_VERT_240);
 
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
+        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR_4MBIT(3, 0x01FFFE),
             COLOR_RGB555(0, 3, 15));
 
         vdp2_sprite_priority_set(0, 6);
@@ -448,13 +449,13 @@ _setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
                 }
         };
 
-        vdp1_cmdt_system_clip_coord_set(cmdt_list, &system_clip);
-        vdp1_cmdt_user_clip_coord_set(cmdt_list, &user_clip);
+        vdp1_cmdt_system_clip_coord_add(cmdt_list, &system_clip);
+        vdp1_cmdt_user_clip_coord_add(cmdt_list, &user_clip);
 
         local_coord.lc_coord.x = 0;
         local_coord.lc_coord.y = 0;
 
-        vdp1_cmdt_local_coord_set(cmdt_list, &local_coord);
+        vdp1_cmdt_local_coord_add(cmdt_list, &local_coord);
 
         struct vdp1_cmdt_polygon polygon;
 
@@ -473,12 +474,12 @@ _setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
         polygon.cp_vertex.d.x = 0;
         polygon.cp_vertex.d.y = 0;
 
-        vdp1_cmdt_polygon_draw(cmdt_list, &polygon);
+        vdp1_cmdt_polygon_add(cmdt_list, &polygon);
 
         local_coord.lc_coord.x = SCREEN_WIDTH / 2;
         local_coord.lc_coord.y = SCREEN_HEIGHT / 2;
 
-        vdp1_cmdt_local_coord_set(cmdt_list, &local_coord);
+        vdp1_cmdt_local_coord_add(cmdt_list, &local_coord);
 
         if (end) {
                 vdp1_cmdt_end(cmdt_list);
@@ -494,17 +495,17 @@ _dma_immediate_upload(void *dst, void *src, size_t len)
 static void
 _dma_upload(void *dst, void *src, size_t len, uint8_t tag)
 {
-        struct dma_level_cfg dma_level_cfg;
-        struct dma_reg_buffer reg_buffer;
+        struct scu_dma_level_cfg scu_dma_level_cfg;
+        struct scu_dma_reg_buffer reg_buffer;
 
-        dma_level_cfg.dlc_mode = DMA_MODE_DIRECT;
-        dma_level_cfg.dlc_stride = DMA_STRIDE_2_BYTES;
-        dma_level_cfg.dlc_update = DMA_UPDATE_NONE;
-        dma_level_cfg.dlc_xfer.direct.len = len;
-        dma_level_cfg.dlc_xfer.direct.dst = (uint32_t)dst;
-        dma_level_cfg.dlc_xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src;
+        scu_dma_level_cfg.dlc_mode = SCU_DMA_MODE_DIRECT;
+        scu_dma_level_cfg.dlc_stride = SCU_DMA_STRIDE_2_BYTES;
+        scu_dma_level_cfg.dlc_update = SCU_DMA_UPDATE_NONE;
+        scu_dma_level_cfg.dlc_xfer.direct.len = len;
+        scu_dma_level_cfg.dlc_xfer.direct.dst = (uint32_t)dst;
+        scu_dma_level_cfg.dlc_xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src;
 
-        scu_dma_config_buffer(&reg_buffer, &dma_level_cfg);
+        scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
 
         int8_t ret;
         ret = dma_queue_enqueue(&reg_buffer, tag, NULL, NULL);

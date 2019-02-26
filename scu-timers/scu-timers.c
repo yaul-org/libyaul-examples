@@ -25,7 +25,7 @@ static color_rgb555_t _colors[] __unused = {
         COLOR_RGB555(15, 31,  0)
 };
 
-static uint16_t *_back_screen = (uint16_t *)VRAM_ADDR_4MBIT(3, 0x01FFFE);
+static uint16_t *_back_screen = (uint16_t *)VDP2_VRAM_ADDR_4MBIT(3, 0x01FFFE);
 static uint16_t _line = 0;
 
 int
@@ -62,8 +62,8 @@ _hardware_init(void)
 {
         vdp2_init();
 
-        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
-            TVMD_VERT_224);
+        vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
+            VDP2_TVMD_VERT_224);
 
         vdp2_sprite_priority_set(0, 0);
         vdp2_sprite_priority_set(1, 0);

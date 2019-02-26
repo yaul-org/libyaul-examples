@@ -16,12 +16,12 @@
 #define SCREEN_WIDTH    320
 #define SCREEN_HEIGHT   240
 
-#define NBG0_CPD                VRAM_ADDR_4MBIT(0, 0x00000)
-#define NBG0_PAL                CRAM_MODE_1_OFFSET(0, 0, 0)
-#define NBG0_MAP_PLANE_A        VRAM_ADDR_4MBIT(3, 0x00000)
-#define NBG0_MAP_PLANE_B        VRAM_ADDR_4MBIT(3, 0x00000)
-#define NBG0_MAP_PLANE_C        VRAM_ADDR_4MBIT(3, 0x00000)
-#define NBG0_MAP_PLANE_D        VRAM_ADDR_4MBIT(3, 0x00000)
+#define NBG0_CPD                VDP2_VRAM_ADDR_4MBIT(0, 0x00000)
+#define NBG0_PAL                VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
+#define NBG0_MAP_PLANE_A        VDP2_VRAM_ADDR_4MBIT(3, 0x00000)
+#define NBG0_MAP_PLANE_B        VDP2_VRAM_ADDR_4MBIT(3, 0x00000)
+#define NBG0_MAP_PLANE_C        VDP2_VRAM_ADDR_4MBIT(3, 0x00000)
+#define NBG0_MAP_PLANE_D        VDP2_VRAM_ADDR_4MBIT(3, 0x00000)
 
 extern uint8_t root_romdisk[];
 
@@ -87,7 +87,7 @@ main(void)
         clear_polygon.cp_vertex.d.x = 0;
         clear_polygon.cp_vertex.d.y = 0;
 
-        vdp1_cmdt_polygon_draw(cmdt_list, &clear_polygon);
+        vdp1_cmdt_polygon_add(cmdt_list, &clear_polygon);
         vdp1_cmdt_end(cmdt_list);
 
         struct vdp1_cmdt_list *cmdt_list_polygon;
@@ -109,7 +109,7 @@ main(void)
         polygon.cp_vertex.d.x = 0;
         polygon.cp_vertex.d.y = 0;
 
-        vdp1_cmdt_polygon_draw(cmdt_list_polygon, &polygon);
+        vdp1_cmdt_polygon_add(cmdt_list_polygon, &polygon);
         vdp1_cmdt_end(cmdt_list_polygon);
 
         vdp1_sync_draw(cmdt_list);
@@ -148,17 +148,17 @@ _hardware_init(void)
 {
         vdp2_tvmd_display_clear();
 
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
+        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR_4MBIT(3, 0x01FFFE),
             COLOR_RGB555(0, 0, 7));
 
-        const struct scrn_cell_format format = {
-                .scf_scroll_screen = SCRN_NBG0,
-                .scf_cc_count = SCRN_CCC_PALETTE_2048,
+        const struct vdp2_scrn_cell_format format = {
+                .scf_scroll_screen = VDP2_SCRN_NBG0,
+                .scf_cc_count = VDP2_SCRN_CCC_PALETTE_2048,
                 .scf_character_size = 1 * 1,
                 .scf_pnd_size = 2,
                 .scf_auxiliary_mode = 1,
                 .scf_sf_mode = 2,
-                .scf_sf_code = SCRN_SF_CODE_A,
+                .scf_sf_code = VDP2_SCRN_SF_CODE_A,
                 .scf_plane_size = 1 * 1,
                 .scf_cp_table = NBG0_CPD,
                 .scf_color_palette = NBG0_PAL,
@@ -176,7 +176,7 @@ _hardware_init(void)
 
         /* The special priority function only toggles the LSB, so the priority
          * must be even */
-        vdp2_scrn_priority_set(SCRN_NBG0, 2);
+        vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 2);
 
         /* The lower two bits of the CPD are used to determine which pixel in
          * the character pattern data will be above or below the VDP1 layer.
@@ -196,45 +196,45 @@ _hardware_init(void)
          * also be used: (0x03, 0x07, 0x0B, and 0x0F).
          */
 
-        vdp2_scrn_sf_codes_set(SCRN_SF_CODE_A, SCRN_SF_CODE_0x02_0x03 |
-                                               SCRN_SF_CODE_0x06_0x07 |
-                                               SCRN_SF_CODE_0x0A_0x0B |
-                                               SCRN_SF_CODE_0x0E_0x0F);
+        vdp2_scrn_sf_codes_set(VDP2_SCRN_SF_CODE_A, VDP2_SCRN_SF_CODE_0x02_0x03 |
+                                               VDP2_SCRN_SF_CODE_0x06_0x07 |
+                                               VDP2_SCRN_SF_CODE_0x0A_0x0B |
+                                               VDP2_SCRN_SF_CODE_0x0E_0x0F);
 
-        vdp2_scrn_display_set(SCRN_NBG0, /* transparent = */ false);
+        vdp2_scrn_display_set(VDP2_SCRN_NBG0, /* transparent = */ false);
 
         /* Each cell is 128 bytes (8x8 cell, at 2-bytes per pixel). To fill a
          * 40x30 cell background, 0x25800 bytes is needed. A single VRAM bank
          * (set at 4-Mbit) is 0x20000 bytes. Without going across bank
          * boundaries, we need to not part a bank into two */
-        const struct vram_ctl vram_ctl = {
-                .vram_size = VRAM_CTL_SIZE_4MBIT,
-                .vram_mode = VRAM_CTL_MODE_NO_PART_BANK_A | VRAM_CTL_MODE_PART_BANK_B
+        const struct vdp2_vram_ctl vram_ctl = {
+                .vram_size = VDP2_VRAM_CTL_SIZE_4MBIT,
+                .vram_mode = VDP2_VRAM_CTL_MODE_NO_PART_BANK_A | VDP2_VRAM_CTL_MODE_PART_BANK_B
         };
 
         vdp2_vram_control_set(&vram_ctl);
 
         vdp2_cram_mode_set(1);
 
-        struct vram_cycp_bank vram_cycp_bank[2];
+        struct vdp2_vram_cycp_bank vram_cycp_bank[2];
 
-        vram_cycp_bank[0].t0 = VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp_bank[0].t1 = VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp_bank[0].t2 = VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp_bank[0].t3 = VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp_bank[0].t4 = VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[0].t5 = VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[0].t6 = VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[0].t7 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp_bank[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp_bank[0].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp_bank[0].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
+        vram_cycp_bank[0].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[0].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[0].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[0].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
 
-        vram_cycp_bank[1].t0 = VRAM_CYCP_PNDR_NBG0;
-        vram_cycp_bank[1].t1 = VRAM_CYCP_PNDR_NBG0;
-        vram_cycp_bank[1].t2 = VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[1].t3 = VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[1].t4 = VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[1].t5 = VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[1].t6 = VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[1].t7 = VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[1].t0 = VDP2_VRAM_CYCP_PNDR_NBG0;
+        vram_cycp_bank[1].t1 = VDP2_VRAM_CYCP_PNDR_NBG0;
+        vram_cycp_bank[1].t2 = VDP2_VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[1].t3 = VDP2_VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[1].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[1].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[1].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
+        vram_cycp_bank[1].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
 
         /* When bank A (or B) is not parted, cycle patterns for bank A1 does not
          * need to be set */
@@ -249,9 +249,9 @@ _hardware_init(void)
                         INT16_VECTOR2_INITIALIZER(0, 0),
                         INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1)
                 },
-                .env_bpp = ENV_BPP_16,
-                .env_rotation = ENV_ROTATION_0,
-                .env_color_mode = ENV_COLOR_MODE_RGB_PALETTE,
+                .env_bpp = VDP1_ENV_BPP_16,
+                .env_rotation = VDP1_ENV_ROTATION_0,
+                .env_color_mode = VDP1_ENV_COLOR_MODE_RGB_PALETTE,
                 .env_sprite_type = 0x5
         };
 
@@ -268,8 +268,8 @@ _hardware_init(void)
         vdp2_sprite_priority_set(6, 2);
         vdp2_sprite_priority_set(7, 2);
 
-        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
-            TVMD_VERT_240);
+        vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
+            VDP2_TVMD_VERT_240);
 
         vdp_sync(0);
 }
@@ -304,9 +304,9 @@ _create_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
                 }
         };
 
-        vdp1_cmdt_system_clip_coord_set(cmdt_list, &system_clip);
-        vdp1_cmdt_user_clip_coord_set(cmdt_list, &user_clip);
-        vdp1_cmdt_local_coord_set(cmdt_list, &local_coord);
+        vdp1_cmdt_system_clip_coord_add(cmdt_list, &system_clip);
+        vdp1_cmdt_user_clip_coord_add(cmdt_list, &user_clip);
+        vdp1_cmdt_local_coord_add(cmdt_list, &local_coord);
 
         if (end) {
                 vdp1_cmdt_end(cmdt_list);
@@ -316,17 +316,17 @@ _create_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
 static void
 _dma_upload(void *dst, void *src, size_t len)
 {
-        struct dma_level_cfg dma_level_cfg;
-        struct dma_reg_buffer reg_buffer;
+        struct scu_dma_level_cfg scu_dma_level_cfg;
+        struct scu_dma_reg_buffer reg_buffer;
 
-        dma_level_cfg.dlc_mode = DMA_MODE_DIRECT;
-        dma_level_cfg.dlc_stride = DMA_STRIDE_2_BYTES;
-        dma_level_cfg.dlc_update = DMA_UPDATE_NONE;
-        dma_level_cfg.dlc_xfer.direct.len = len;
-        dma_level_cfg.dlc_xfer.direct.dst = (uint32_t)dst;
-        dma_level_cfg.dlc_xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src;
+        scu_dma_level_cfg.dlc_mode = SCU_DMA_MODE_DIRECT;
+        scu_dma_level_cfg.dlc_stride = SCU_DMA_STRIDE_2_BYTES;
+        scu_dma_level_cfg.dlc_update = SCU_DMA_UPDATE_NONE;
+        scu_dma_level_cfg.dlc_xfer.direct.len = len;
+        scu_dma_level_cfg.dlc_xfer.direct.dst = (uint32_t)dst;
+        scu_dma_level_cfg.dlc_xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src;
 
-        scu_dma_config_buffer(&reg_buffer, &dma_level_cfg);
+        scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
 
         int8_t ret;
         ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);

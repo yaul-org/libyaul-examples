@@ -4,16 +4,16 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define RBG0_CPD                VRAM_ADDR_4MBIT(0, 0x10000)
-#define RBG0_PAL                CRAM_MODE_1_OFFSET(0, 0, 0)
-#define RBG0_PND                VRAM_ADDR_4MBIT(1, 0x00000)
-#define RBG0_ROTATION_TABLE     VRAM_ADDR_4MBIT(2, 0x00000)
+#define RBG0_CPD                VDP2_VRAM_ADDR_4MBIT(0, 0x10000)
+#define RBG0_PAL                VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
+#define RBG0_PND                VDP2_VRAM_ADDR_4MBIT(1, 0x00000)
+#define RBG0_ROTATION_TABLE     VDP2_VRAM_ADDR_4MBIT(2, 0x00000)
 
-#define BACK_SCREEN             VRAM_ADDR_4MBIT(3, 0x1FFFE)
+#define BACK_SCREEN             VDP2_VRAM_ADDR_4MBIT(3, 0x1FFFE)
 
 extern uint8_t root_romdisk[];
 
-static const struct scrn_rotation_table _rot_tbl __used = {
+static const struct vdp2_scrn_rotation_table _rot_tbl __used = {
         .xst = 0,
         .yst = 0,
         .zst = 0,
@@ -54,7 +54,7 @@ static const struct scrn_rotation_table _rot_tbl __used = {
         .delta_kax = 0,
 };
 
-static struct dma_xfer _xfer_table[4] __aligned(4 * 16);
+static struct scu_dma_xfer _xfer_table[4] __aligned(4 * 16);
 
 static void _hardware_init(void);
 
@@ -71,16 +71,16 @@ main(void)
 
         void *fh[3];
 
-        struct dma_level_cfg dma_level_cfg = {
+        struct scu_dma_level_cfg scu_dma_level_cfg = {
                 .dlc_xfer.indirect = &_xfer_table[0],
-                .dlc_mode = DMA_MODE_INDIRECT,
-                .dlc_stride = DMA_STRIDE_2_BYTES,
-                .dlc_update = DMA_UPDATE_NONE
+                .dlc_mode = SCU_DMA_MODE_INDIRECT,
+                .dlc_stride = SCU_DMA_STRIDE_2_BYTES,
+                .dlc_update = SCU_DMA_UPDATE_NONE
         };
 
-        struct dma_reg_buffer reg_buffer;
+        struct scu_dma_reg_buffer reg_buffer;
 
-        scu_dma_config_buffer(&reg_buffer, &dma_level_cfg);
+        scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
 
         fh[0] = romdisk_open(romdisk, "/CPD.BIN");
         assert(fh[0] != NULL);
@@ -102,7 +102,7 @@ main(void)
 
         _xfer_table[3].len = sizeof(_rot_tbl);
         _xfer_table[3].dst = RBG0_ROTATION_TABLE;
-        _xfer_table[3].src = DMA_INDIRECT_TBL_END | (uint32_t)&_rot_tbl;
+        _xfer_table[3].src = SCU_DMA_INDIRECT_TBL_END | (uint32_t)&_rot_tbl;
 
         int8_t ret;
         ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN,
@@ -122,9 +122,9 @@ main(void)
 static void
 _hardware_init(void)
 {
-        const struct scrn_cell_format format = {
-                .scf_scroll_screen = SCRN_RBG0,
-                .scf_cc_count = SCRN_CCC_PALETTE_256,
+        const struct vdp2_scrn_cell_format format = {
+                .scf_scroll_screen = VDP2_SCRN_RBG0,
+                .scf_cc_count = VDP2_SCRN_CCC_PALETTE_256,
                 .scf_character_size = 2 * 2,
                 .scf_pnd_size = 1, /* 1-word */
                 .scf_auxiliary_mode = 0,
@@ -154,17 +154,17 @@ _hardware_init(void)
                                 RBG0_PND
                         }
                 },
-                .scf_rotation_tbl = VRAM_ADDR_4MBIT(2, 0x00000),
+                .scf_rotation_tbl = VDP2_VRAM_ADDR_4MBIT(2, 0x00000),
                 .scf_usage_banks = {
-                        .a0 = VRAM_USAGE_TYPE_CPD,
-                        .a1 = VRAM_USAGE_TYPE_PND,
-                        .b0 = VRAM_USAGE_TYPE_NONE,
-                        .b1 = VRAM_USAGE_TYPE_NONE
+                        .a0 = VDP2_VRAM_USAGE_TYPE_CPD,
+                        .a1 = VDP2_VRAM_USAGE_TYPE_PND,
+                        .b0 = VDP2_VRAM_USAGE_TYPE_NONE,
+                        .b1 = VDP2_VRAM_USAGE_TYPE_NONE
                 }
         };
 
-        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
-            TVMD_VERT_240);
+        vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
+            VDP2_TVMD_VERT_240);
 
         vdp2_scrn_back_screen_color_set(BACK_SCREEN, COLOR_RGB555(5, 5, 7));
 
@@ -172,8 +172,8 @@ _hardware_init(void)
 
         vdp2_scrn_cell_format_set(&format);
 
-        vdp2_scrn_priority_set(SCRN_RBG0, 3);
-        vdp2_scrn_display_set(SCRN_RBG0, /* transparent = */ false);
+        vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 3);
+        vdp2_scrn_display_set(VDP2_SCRN_RBG0, /* transparent = */ false);
 
         vdp2_sprite_priority_set(0, 0);
         vdp2_sprite_priority_set(1, 0);

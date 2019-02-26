@@ -52,7 +52,7 @@ main(void)
         polygon.cp_vertex.d.x = 0;
         polygon.cp_vertex.d.y = 0;
 
-        vdp1_cmdt_polygon_draw(cmdt_lists[1], &polygon);
+        vdp1_cmdt_polygon_add(cmdt_lists[1], &polygon);
         vdp1_cmdt_end(cmdt_lists[1]);
 
         vdp1_sync_draw(cmdt_lists[1]);
@@ -69,10 +69,10 @@ main(void)
 static void
 _hardware_init(void)
 {
-        vdp2_tvmd_display_res_set(TVMD_INTERLACE_NONE, TVMD_HORZ_NORMAL_A,
-            TVMD_VERT_224);
+        vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
+            VDP2_TVMD_VERT_224);
 
-        vdp2_scrn_back_screen_color_set(VRAM_ADDR_4MBIT(3, 0x01FFFE),
+        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR_4MBIT(3, 0x01FFFE),
             COLOR_RGB555(0, 3, 15));
 
         vdp2_sprite_priority_set(0, 6);
@@ -112,9 +112,9 @@ _setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
                 }
         };
 
-        vdp1_cmdt_system_clip_coord_set(cmdt_list, &system_clip);
-        vdp1_cmdt_user_clip_coord_set(cmdt_list, &user_clip);
-        vdp1_cmdt_local_coord_set(cmdt_list, &local_coord);
+        vdp1_cmdt_system_clip_coord_add(cmdt_list, &system_clip);
+        vdp1_cmdt_user_clip_coord_add(cmdt_list, &user_clip);
+        vdp1_cmdt_local_coord_add(cmdt_list, &local_coord);
 
         if (end) {
                 vdp1_cmdt_end(cmdt_list);
@@ -140,7 +140,7 @@ _setup_clear_fb(struct vdp1_cmdt_list *cmdt_list, const color_rgb555_t color, bo
         polygon.cp_vertex.d.x = 0;
         polygon.cp_vertex.d.y = 0;
 
-        vdp1_cmdt_polygon_draw(cmdt_list, &polygon);
+        vdp1_cmdt_polygon_add(cmdt_list, &polygon);
 
         if (end) {
                 vdp1_cmdt_end(cmdt_list);
