@@ -18,14 +18,14 @@ EXAMPLES:= \
 	vdp2-bitmap \
 	vdp2-nbg0 \
 	vdp2-normal-bitmap \
+	vdp2-rbg0 \
 	vdp2-reduction-bitmap \
 	vdp2-special-function \
 	vdp2-zooming
 
 # Following examples are broken:
-#   1. vdp2-rbg0
-#   3. vdp1-cube
-#   4. scu-timers
+#   1. vdp1-cube
+#   2. scu-timers
 
 ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),$(filter $(YAUL_OPTION_DEV_CARTRIDGE),1 2))
 EXAMPLES+= \
