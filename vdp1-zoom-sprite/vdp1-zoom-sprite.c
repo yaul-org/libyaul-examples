@@ -178,8 +178,9 @@ main(void)
         (void)memset(&sprite, 0x00, sizeof(sprite));
 
         sprite.cs_mode.color_mode = 4;
-        sprite.cs_mode.transparent_pixel = 0;
-        sprite.cs_mode.pre_clipping = 1;
+        sprite.cs_mode.trans_pixel_disable = true;
+        sprite.cs_mode.pre_clipping_disable = true;
+        sprite.cs_mode.end_code_disable = true;
         sprite.cs_zoom_point.enable = true;
         sprite.cs_char = (uint32_t)vdp1_tex;
         sprite.cs_sprite_type.type_0.dc = 0x0100;
@@ -188,7 +189,6 @@ main(void)
 
         struct vdp1_cmdt_polygon polygon_pointer;
         (void)memset(&polygon_pointer, 0x00, sizeof(struct vdp1_cmdt_polygon));
-        polygon_pointer.cp_mode.transparent_pixel = true;
 
         char *buffer;
         buffer = malloc(256);

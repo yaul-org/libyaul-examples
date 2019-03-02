@@ -465,8 +465,6 @@ main(void)
                         polygon.cp_color = color;
 
                         polygon.cp_mode.raw = 0x0000;
-                        polygon.cp_mode.pre_clipping = true;
-                        polygon.cp_mode.mesh = false;
 
                         polygon.cp_vertex.a.x = _all_points[_faces[j].p0].x;
                         polygon.cp_vertex.a.y = _all_points[_faces[j].p0].y;
