@@ -80,8 +80,8 @@ main(void)
         vdp1_cmdt_list_begin(0); {
                 struct vdp1_cmdt_local_coord local_coord;
 
-                local_coord.lc_coord.x = SCREEN_WIDTH / 2;
-                local_coord.lc_coord.y = SCREEN_HEIGHT / 2;
+                local_coord.coord.x = SCREEN_WIDTH / 2;
+                local_coord.coord.y = SCREEN_HEIGHT / 2;
 
                 vdp1_cmdt_local_coord_add(&local_coord);
                 vdp1_cmdt_end();
@@ -128,18 +128,18 @@ main(void)
 #if RENDER == 1
                                 struct ot_primitive *otp;
                                 TAILQ_FOREACH (otp, ot_bucket(idx), otp_entries) {
-                                        polygon.cp_color = otp->otp_color;
-                                        polygon.cp_mode.transparent_pixel = true;
-                                        polygon.cp_mode.end_code = true;
+                                        polygon.color = otp->otp_color;
+                                        polygon.draw_mode.transparent_pixel = true;
+                                        polygon.draw_mode.end_code = true;
 
-                                        polygon.cp_vertex.a.x = otp->otp_coords[0].x;
-                                        polygon.cp_vertex.a.y = otp->otp_coords[0].y;
-                                        polygon.cp_vertex.b.x = otp->otp_coords[1].x;
-                                        polygon.cp_vertex.b.y = otp->otp_coords[1].y;
-                                        polygon.cp_vertex.c.x = otp->otp_coords[2].x;
-                                        polygon.cp_vertex.c.y = otp->otp_coords[2].y;
-                                        polygon.cp_vertex.d.x = otp->otp_coords[3].x;
-                                        polygon.cp_vertex.d.y = otp->otp_coords[3].y;
+                                        polygon.vertex.a.x = otp->otp_coords[0].x;
+                                        polygon.vertex.a.y = otp->otp_coords[0].y;
+                                        polygon.vertex.b.x = otp->otp_coords[1].x;
+                                        polygon.vertex.b.y = otp->otp_coords[1].y;
+                                        polygon.vertex.c.x = otp->otp_coords[2].x;
+                                        polygon.vertex.c.y = otp->otp_coords[2].y;
+                                        polygon.vertex.d.x = otp->otp_coords[3].x;
+                                        polygon.vertex.d.y = otp->otp_coords[3].y;
 
                                         vdp1_cmdt_polygon_add(&polygon);
                                 }

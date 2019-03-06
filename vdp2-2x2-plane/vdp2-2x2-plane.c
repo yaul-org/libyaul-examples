@@ -38,18 +38,18 @@ main(void)
         uint16_t *cpd;
         cpd = (uint16_t *)VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
 
-        format.scf_scroll_screen = VDP2_SCRN_NBG1;
-        format.scf_cc_count = VDP2_SCRN_CCC_PALETTE_256;
-        format.scf_character_size = 1 * 1;
-        format.scf_pnd_size = 1; /* 1-word */
-        format.scf_auxiliary_mode = 0;
-        format.scf_plane_size = 2 * 2;
-        format.scf_cp_table = (uint32_t)cpd;
-        format.scf_color_palette = (uint32_t)color_palette;
-        format.scf_map.plane_a = (uint32_t)planes[0];
-        format.scf_map.plane_b = (uint32_t)planes[1];
-        format.scf_map.plane_c = (uint32_t)planes[2];
-        format.scf_map.plane_d = (uint32_t)planes[3];
+        format.scroll_screen = VDP2_SCRN_NBG1;
+        format.cc_count = VDP2_SCRN_CCC_PALETTE_256;
+        format.character_size = 1 * 1;
+        format.pnd_size = 1; /* 1-word */
+        format.auxiliary_mode = 0;
+        format.plane_size = 2 * 2;
+        format.cp_table = (uint32_t)cpd;
+        format.color_palette = (uint32_t)color_palette;
+        format.map_bases.plane_a = (uint32_t)planes[0];
+        format.map_bases.plane_b = (uint32_t)planes[1];
+        format.map_bases.plane_c = (uint32_t)planes[2];
+        format.map_bases.plane_d = (uint32_t)planes[3];
 
         struct vdp2_vram_cycp vram_cycp;
 
@@ -97,9 +97,9 @@ main(void)
         struct scu_dma_level_cfg scu_dma_level_cfg;
         struct scu_dma_reg_buffer reg_buffer;
 
-        scu_dma_level_cfg.dlc_mode = SCU_DMA_MODE_DIRECT;
-        scu_dma_level_cfg.dlc_stride = SCU_DMA_STRIDE_2_BYTES;
-        scu_dma_level_cfg.dlc_update = SCU_DMA_UPDATE_NONE;
+        scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
+        scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;
+        scu_dma_level_cfg.update = SCU_DMA_UPDATE_NONE;
 
         void *fh[3];
         void *p;
@@ -112,9 +112,9 @@ main(void)
                 p = romdisk_direct(fh[0]);
                 len = romdisk_total(fh[0]);
 
-                scu_dma_level_cfg.dlc_xfer.direct.len = len;
-                scu_dma_level_cfg.dlc_xfer.direct.dst = (uint32_t)color_palette;
-                scu_dma_level_cfg.dlc_xfer.direct.src = (uint32_t)p;
+                scu_dma_level_cfg.xfer.direct.len = len;
+                scu_dma_level_cfg.xfer.direct.dst = (uint32_t)color_palette;
+                scu_dma_level_cfg.xfer.direct.src = (uint32_t)p;
                 scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
 
                 ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN,
@@ -128,9 +128,9 @@ main(void)
                 p = romdisk_direct(fh[1]);
                 len = romdisk_total(fh[1]);
 
-                scu_dma_level_cfg.dlc_xfer.direct.len = len;
-                scu_dma_level_cfg.dlc_xfer.direct.dst = (uint32_t)cpd;
-                scu_dma_level_cfg.dlc_xfer.direct.src = (uint32_t)p;
+                scu_dma_level_cfg.xfer.direct.len = len;
+                scu_dma_level_cfg.xfer.direct.dst = (uint32_t)cpd;
+                scu_dma_level_cfg.xfer.direct.src = (uint32_t)p;
                 scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
 
                 ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN,
@@ -153,7 +153,7 @@ main(void)
                         uint32_t i;
                         for (i = 0; i < (2 * 2); i++) {
                                 struct scu_dma_xfer *xfer;
-                                xfer = &scu_dma_level_cfg.dlc_xfer.direct;
+                                xfer = &scu_dma_level_cfg.xfer.direct;
 
                                 xfer->len = len;
                                 xfer->dst = (uint32_t)page;

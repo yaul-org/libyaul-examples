@@ -30,15 +30,15 @@ main(void)
         struct vdp2_scrn_bitmap_format format;
         memset(&format, 0x00, sizeof(format));
 
-        format.sbf_scroll_screen = VDP2_SCRN_NBG0;
-        format.sbf_cc_count = VDP2_SCRN_CCC_PALETTE_256;
-        format.sbf_bitmap_size.width = 1024;
-        format.sbf_bitmap_size.height = 512;
-        format.sbf_color_palette = VDP2_CRAM_ADDR(0x300);
-        format.sbf_bitmap_pattern = VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
-        format.sbf_sf_type = VDP2_SCRN_SF_TYPE_NONE;
-        format.sbf_sf_code = VDP2_SCRN_SF_CODE_A;
-        format.sbf_sf_mode = 0;
+        format.scroll_screen = VDP2_SCRN_NBG0;
+        format.cc_count = VDP2_SCRN_CCC_PALETTE_256;
+        format.bitmap_size.width = 1024;
+        format.bitmap_size.height = 512;
+        format.color_palette = VDP2_CRAM_ADDR(0x300);
+        format.bitmap_pattern = VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
+        format.sf_type = VDP2_SCRN_SF_TYPE_NONE;
+        format.sf_code = VDP2_SCRN_SF_CODE_A;
+        format.sf_mode = 0;
 
         vdp2_scrn_bitmap_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
@@ -95,9 +95,9 @@ main(void)
         struct scu_dma_level_cfg scu_dma_level_cfg;
         struct scu_dma_reg_buffer reg_buffer;
 
-        scu_dma_level_cfg.dlc_mode = SCU_DMA_MODE_DIRECT;
-        scu_dma_level_cfg.dlc_stride = SCU_DMA_STRIDE_2_BYTES;
-        scu_dma_level_cfg.dlc_update = SCU_DMA_UPDATE_NONE;
+        scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
+        scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;
+        scu_dma_level_cfg.update = SCU_DMA_UPDATE_NONE;
 
         void *fh[2];
         void *p;
@@ -108,9 +108,9 @@ main(void)
 
         p = romdisk_direct(fh[0]);
 
-        scu_dma_level_cfg.dlc_xfer.direct.len = romdisk_total(fh[0]);
-        scu_dma_level_cfg.dlc_xfer.direct.dst = VDP2_CRAM_ADDR(0x0000);
-        scu_dma_level_cfg.dlc_xfer.direct.src = (uint32_t)p;
+        scu_dma_level_cfg.xfer.direct.len = romdisk_total(fh[0]);
+        scu_dma_level_cfg.xfer.direct.dst = VDP2_CRAM_ADDR(0x0000);
+        scu_dma_level_cfg.xfer.direct.src = (uint32_t)p;
 
         scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
         ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
@@ -121,9 +121,9 @@ main(void)
 
         p = romdisk_direct(fh[1]);
 
-        scu_dma_level_cfg.dlc_xfer.direct.len = romdisk_total(fh[1]);
-        scu_dma_level_cfg.dlc_xfer.direct.dst = VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
-        scu_dma_level_cfg.dlc_xfer.direct.src = (uint32_t)p;
+        scu_dma_level_cfg.xfer.direct.len = romdisk_total(fh[1]);
+        scu_dma_level_cfg.xfer.direct.dst = VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
+        scu_dma_level_cfg.xfer.direct.src = (uint32_t)p;
 
         scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
         ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);

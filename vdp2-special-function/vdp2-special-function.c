@@ -73,19 +73,19 @@ main(void)
 
         struct vdp1_cmdt_polygon clear_polygon;
 
-        clear_polygon.cp_mode.raw = 0x0000;
-        clear_polygon.cp_color.raw = 0x00000;
-        clear_polygon.cp_vertex.a.x = 0;
-        clear_polygon.cp_vertex.a.y = SCREEN_HEIGHT - 1;
+        clear_polygon.draw_mode.raw = 0x0000;
+        clear_polygon.color.raw = 0x00000;
+        clear_polygon.vertex.a.x = 0;
+        clear_polygon.vertex.a.y = SCREEN_HEIGHT - 1;
 
-        clear_polygon.cp_vertex.b.x = SCREEN_WIDTH - 1;
-        clear_polygon.cp_vertex.b.y = SCREEN_HEIGHT - 1;
+        clear_polygon.vertex.b.x = SCREEN_WIDTH - 1;
+        clear_polygon.vertex.b.y = SCREEN_HEIGHT - 1;
 
-        clear_polygon.cp_vertex.c.x = SCREEN_WIDTH - 1;
-        clear_polygon.cp_vertex.c.y = 0;
+        clear_polygon.vertex.c.x = SCREEN_WIDTH - 1;
+        clear_polygon.vertex.c.y = 0;
 
-        clear_polygon.cp_vertex.d.x = 0;
-        clear_polygon.cp_vertex.d.y = 0;
+        clear_polygon.vertex.d.x = 0;
+        clear_polygon.vertex.d.y = 0;
 
         vdp1_cmdt_polygon_add(cmdt_list, &clear_polygon);
         vdp1_cmdt_end(cmdt_list);
@@ -95,19 +95,19 @@ main(void)
 
         struct vdp1_cmdt_polygon polygon;
 
-        polygon.cp_mode.raw = 0x0000;
-        polygon.cp_color = COLOR_RGB555(31, 0, 0);
-        polygon.cp_vertex.a.x = 0;
-        polygon.cp_vertex.a.y = SCREEN_HEIGHT - 1;
+        polygon.draw_mode.raw = 0x0000;
+        polygon.color = COLOR_RGB555(31, 0, 0);
+        polygon.vertex.a.x = 0;
+        polygon.vertex.a.y = SCREEN_HEIGHT - 1;
 
-        polygon.cp_vertex.b.x = SCREEN_WIDTH - 1;
-        polygon.cp_vertex.b.y = SCREEN_HEIGHT - 1;
+        polygon.vertex.b.x = SCREEN_WIDTH - 1;
+        polygon.vertex.b.y = SCREEN_HEIGHT - 1;
 
-        polygon.cp_vertex.c.x = SCREEN_WIDTH - 1;
-        polygon.cp_vertex.c.y = 0;
+        polygon.vertex.c.x = SCREEN_WIDTH - 1;
+        polygon.vertex.c.y = 0;
 
-        polygon.cp_vertex.d.x = 0;
-        polygon.cp_vertex.d.y = 0;
+        polygon.vertex.d.x = 0;
+        polygon.vertex.d.y = 0;
 
         vdp1_cmdt_polygon_add(cmdt_list_polygon, &polygon);
         vdp1_cmdt_end(cmdt_list_polygon);
@@ -152,17 +152,17 @@ _hardware_init(void)
             COLOR_RGB555(0, 0, 7));
 
         const struct vdp2_scrn_cell_format format = {
-                .scf_scroll_screen = VDP2_SCRN_NBG0,
-                .scf_cc_count = VDP2_SCRN_CCC_PALETTE_2048,
-                .scf_character_size = 1 * 1,
-                .scf_pnd_size = 2,
-                .scf_auxiliary_mode = 1,
-                .scf_sf_mode = 2,
-                .scf_sf_code = VDP2_SCRN_SF_CODE_A,
-                .scf_plane_size = 1 * 1,
-                .scf_cp_table = NBG0_CPD,
-                .scf_color_palette = NBG0_PAL,
-                .scf_map = {
+                .scroll_screen = VDP2_SCRN_NBG0,
+                .cc_count = VDP2_SCRN_CCC_PALETTE_2048,
+                .character_size = 1 * 1,
+                .pnd_size = 2,
+                .auxiliary_mode = 1,
+                .sf_mode = 2,
+                .sf_code = VDP2_SCRN_SF_CODE_A,
+                .plane_size = 1 * 1,
+                .cp_table = NBG0_CPD,
+                .color_palette = NBG0_PAL,
+                .map_bases = {
                         .planes = {
                                 NBG0_MAP_PLANE_A,
                                 NBG0_MAP_PLANE_B,
@@ -244,15 +244,15 @@ _hardware_init(void)
         vdp2_vram_cycp_bank_set(3, &vram_cycp_bank[1]);
 
         const struct vdp1_env vdp1_env = {
-                .env_erase_color = COLOR_RGB555(0, 0, 0),
-                .env_erase_points = {
+                .erase_color = COLOR_RGB555(0, 0, 0),
+                .erase_points = {
                         INT16_VECTOR2_INITIALIZER(0, 0),
                         INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1)
                 },
-                .env_bpp = VDP1_ENV_BPP_16,
-                .env_rotation = VDP1_ENV_ROTATION_0,
-                .env_color_mode = VDP1_ENV_COLOR_MODE_RGB_PALETTE,
-                .env_sprite_type = 0x5
+                .bpp = VDP1_ENV_BPP_16,
+                .rotation = VDP1_ENV_ROTATION_0,
+                .color_mode = VDP1_ENV_COLOR_MODE_RGB_PALETTE,
+                .sprite_type = 0x5
         };
 
         vdp1_env_set(&vdp1_env);
@@ -278,21 +278,21 @@ static void
 _create_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
 {
         struct vdp1_cmdt_local_coord local_coord = {
-                .lc_coord = {
+                .coord = {
                         .x = 0,
                         .y = 0
                 }
         };
 
         struct vdp1_cmdt_system_clip_coord system_clip = {
-                .scc_coord = {
+                .coord = {
                         .x = SCREEN_WIDTH - 1,
                         .y = SCREEN_HEIGHT - 1
                 }
         };
 
         struct vdp1_cmdt_user_clip_coord user_clip = {
-                .ucc_coords = {
+                .coords = {
                         {
                                 .x = 0,
                                 .y = 0
@@ -319,12 +319,12 @@ _dma_upload(void *dst, void *src, size_t len)
         struct scu_dma_level_cfg scu_dma_level_cfg;
         struct scu_dma_reg_buffer reg_buffer;
 
-        scu_dma_level_cfg.dlc_mode = SCU_DMA_MODE_DIRECT;
-        scu_dma_level_cfg.dlc_stride = SCU_DMA_STRIDE_2_BYTES;
-        scu_dma_level_cfg.dlc_update = SCU_DMA_UPDATE_NONE;
-        scu_dma_level_cfg.dlc_xfer.direct.len = len;
-        scu_dma_level_cfg.dlc_xfer.direct.dst = (uint32_t)dst;
-        scu_dma_level_cfg.dlc_xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src;
+        scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
+        scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;
+        scu_dma_level_cfg.update = SCU_DMA_UPDATE_NONE;
+        scu_dma_level_cfg.xfer.direct.len = len;
+        scu_dma_level_cfg.xfer.direct.dst = (uint32_t)dst;
+        scu_dma_level_cfg.xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src;
 
         scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
 

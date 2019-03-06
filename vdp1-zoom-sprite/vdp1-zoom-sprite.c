@@ -177,15 +177,15 @@ main(void)
         struct vdp1_cmdt_scaled_sprite sprite;
         (void)memset(&sprite, 0x00, sizeof(sprite));
 
-        sprite.cs_mode.color_mode = 4;
-        sprite.cs_mode.trans_pixel_disable = true;
-        sprite.cs_mode.pre_clipping_disable = true;
-        sprite.cs_mode.end_code_disable = true;
-        sprite.cs_zoom_point.enable = true;
-        sprite.cs_char = (uint32_t)vdp1_tex;
-        sprite.cs_sprite_type.type_0.dc = 0x0100;
-        sprite.cs_width = ZOOM_POINT_WIDTH;
-        sprite.cs_height = ZOOM_POINT_HEIGHT;
+        sprite.draw_mode.color_mode = 4;
+        sprite.draw_mode.trans_pixel_disable = true;
+        sprite.draw_mode.pre_clipping_disable = true;
+        sprite.draw_mode.end_code_disable = true;
+        sprite.zoom_point.enable = true;
+        sprite.char_base = (uint32_t)vdp1_tex;
+        sprite.sprite_type.type_0.dc = 0x0100;
+        sprite.width = ZOOM_POINT_WIDTH;
+        sprite.height = ZOOM_POINT_HEIGHT;
 
         struct vdp1_cmdt_polygon polygon_pointer;
         (void)memset(&polygon_pointer, 0x00, sizeof(struct vdp1_cmdt_polygon));
@@ -373,21 +373,21 @@ main(void)
                         break;
                 }
 
-                sprite.cs_zoom_point.raw = _zoom_point_value;
-                sprite.cs_zoom.point.x = _zoom_point.x;
-                sprite.cs_zoom.point.y = _zoom_point.y;
-                sprite.cs_zoom.display.x = _display.x;
-                sprite.cs_zoom.display.y = _display.y;
+                sprite.zoom_point.raw = _zoom_point_value;
+                sprite.zoom.point.x = _zoom_point.x;
+                sprite.zoom.point.y = _zoom_point.y;
+                sprite.zoom.display.x = _display.x;
+                sprite.zoom.display.y = _display.y;
 
-                polygon_pointer.cp_color = _zoom_point_color;
-                polygon_pointer.cp_vertex.a.x = ZOOM_POINT_POINTER_SIZE + _pointer.x - 1;
-                polygon_pointer.cp_vertex.a.y = -ZOOM_POINT_POINTER_SIZE + _pointer.y;
-                polygon_pointer.cp_vertex.b.x = ZOOM_POINT_POINTER_SIZE + _pointer.x - 1;
-                polygon_pointer.cp_vertex.b.y = ZOOM_POINT_POINTER_SIZE + _pointer.y - 1;
-                polygon_pointer.cp_vertex.c.x = -ZOOM_POINT_POINTER_SIZE + _pointer.x;
-                polygon_pointer.cp_vertex.c.y = ZOOM_POINT_POINTER_SIZE + _pointer.y - 1;
-                polygon_pointer.cp_vertex.d.x = -ZOOM_POINT_POINTER_SIZE + _pointer.x;
-                polygon_pointer.cp_vertex.d.y = -ZOOM_POINT_POINTER_SIZE + _pointer.y;
+                polygon_pointer.color = _zoom_point_color;
+                polygon_pointer.vertex.a.x = ZOOM_POINT_POINTER_SIZE + _pointer.x - 1;
+                polygon_pointer.vertex.a.y = -ZOOM_POINT_POINTER_SIZE + _pointer.y;
+                polygon_pointer.vertex.b.x = ZOOM_POINT_POINTER_SIZE + _pointer.x - 1;
+                polygon_pointer.vertex.b.y = ZOOM_POINT_POINTER_SIZE + _pointer.y - 1;
+                polygon_pointer.vertex.c.x = -ZOOM_POINT_POINTER_SIZE + _pointer.x;
+                polygon_pointer.vertex.c.y = ZOOM_POINT_POINTER_SIZE + _pointer.y - 1;
+                polygon_pointer.vertex.d.x = -ZOOM_POINT_POINTER_SIZE + _pointer.x;
+                polygon_pointer.vertex.d.y = -ZOOM_POINT_POINTER_SIZE + _pointer.y;
 
                 vdp1_cmdt_scaled_sprite_add(cmdt_list, &sprite);
                 vdp1_cmdt_polygon_add(cmdt_list, &polygon_pointer);
@@ -430,14 +430,14 @@ _setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
         struct vdp1_cmdt_local_coord local_coord;
 
         struct vdp1_cmdt_system_clip_coord system_clip = {
-                .scc_coord = {
+                .coord = {
                         .x = SCREEN_WIDTH - 1,
                         .y = SCREEN_HEIGHT - 1
                 }
         };
 
         struct vdp1_cmdt_user_clip_coord user_clip = {
-                .ucc_coords = {
+                .coords = {
                         {
                                 .x = 0,
                                 .y = 0
@@ -452,32 +452,32 @@ _setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
         vdp1_cmdt_system_clip_coord_add(cmdt_list, &system_clip);
         vdp1_cmdt_user_clip_coord_add(cmdt_list, &user_clip);
 
-        local_coord.lc_coord.x = 0;
-        local_coord.lc_coord.y = 0;
+        local_coord.coord.x = 0;
+        local_coord.coord.y = 0;
 
         vdp1_cmdt_local_coord_add(cmdt_list, &local_coord);
 
         struct vdp1_cmdt_polygon polygon;
 
-        polygon.cp_mode.raw = 0x0000;
-        polygon.cp_color.raw = 0x0000;
+        polygon.draw_mode.raw = 0x0000;
+        polygon.color.raw = 0x0000;
 
-        polygon.cp_vertex.a.x = 0;
-        polygon.cp_vertex.a.y = SCREEN_HEIGHT - 1;
+        polygon.vertex.a.x = 0;
+        polygon.vertex.a.y = SCREEN_HEIGHT - 1;
 
-        polygon.cp_vertex.b.x = SCREEN_WIDTH - 1;
-        polygon.cp_vertex.b.y = SCREEN_HEIGHT - 1;
+        polygon.vertex.b.x = SCREEN_WIDTH - 1;
+        polygon.vertex.b.y = SCREEN_HEIGHT - 1;
 
-        polygon.cp_vertex.c.x = SCREEN_WIDTH - 1;
-        polygon.cp_vertex.c.y = 0;
+        polygon.vertex.c.x = SCREEN_WIDTH - 1;
+        polygon.vertex.c.y = 0;
 
-        polygon.cp_vertex.d.x = 0;
-        polygon.cp_vertex.d.y = 0;
+        polygon.vertex.d.x = 0;
+        polygon.vertex.d.y = 0;
 
         vdp1_cmdt_polygon_add(cmdt_list, &polygon);
 
-        local_coord.lc_coord.x = SCREEN_WIDTH / 2;
-        local_coord.lc_coord.y = SCREEN_HEIGHT / 2;
+        local_coord.coord.x = SCREEN_WIDTH / 2;
+        local_coord.coord.y = SCREEN_HEIGHT / 2;
 
         vdp1_cmdt_local_coord_add(cmdt_list, &local_coord);
 
@@ -498,12 +498,12 @@ _dma_upload(void *dst, void *src, size_t len, uint8_t tag)
         struct scu_dma_level_cfg scu_dma_level_cfg;
         struct scu_dma_reg_buffer reg_buffer;
 
-        scu_dma_level_cfg.dlc_mode = SCU_DMA_MODE_DIRECT;
-        scu_dma_level_cfg.dlc_stride = SCU_DMA_STRIDE_2_BYTES;
-        scu_dma_level_cfg.dlc_update = SCU_DMA_UPDATE_NONE;
-        scu_dma_level_cfg.dlc_xfer.direct.len = len;
-        scu_dma_level_cfg.dlc_xfer.direct.dst = (uint32_t)dst;
-        scu_dma_level_cfg.dlc_xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src;
+        scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
+        scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;
+        scu_dma_level_cfg.update = SCU_DMA_UPDATE_NONE;
+        scu_dma_level_cfg.xfer.direct.len = len;
+        scu_dma_level_cfg.xfer.direct.dst = (uint32_t)dst;
+        scu_dma_level_cfg.xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src;
 
         scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
 

@@ -72,10 +72,10 @@ main(void)
         void *fh[3];
 
         struct scu_dma_level_cfg scu_dma_level_cfg = {
-                .dlc_xfer.indirect = &_xfer_table[0],
-                .dlc_mode = SCU_DMA_MODE_INDIRECT,
-                .dlc_stride = SCU_DMA_STRIDE_2_BYTES,
-                .dlc_update = SCU_DMA_UPDATE_NONE
+                .xfer.indirect = &_xfer_table[0],
+                .mode = SCU_DMA_MODE_INDIRECT,
+                .stride = SCU_DMA_STRIDE_2_BYTES,
+                .update = SCU_DMA_UPDATE_NONE
         };
 
         struct scu_dma_reg_buffer reg_buffer;
@@ -123,15 +123,15 @@ static void
 _hardware_init(void)
 {
         const struct vdp2_scrn_cell_format format = {
-                .scf_scroll_screen = VDP2_SCRN_RBG0,
-                .scf_cc_count = VDP2_SCRN_CCC_PALETTE_256,
-                .scf_character_size = 2 * 2,
-                .scf_pnd_size = 1, /* 1-word */
-                .scf_auxiliary_mode = 0,
-                .scf_plane_size = 2 * 2,
-                .scf_cp_table = RBG0_CPD,
-                .scf_color_palette = RBG0_PAL,
-                .scf_map = {
+                .scroll_screen = VDP2_SCRN_RBG0,
+                .cc_count = VDP2_SCRN_CCC_PALETTE_256,
+                .character_size = 2 * 2,
+                .pnd_size = 1, /* 1-word */
+                .auxiliary_mode = 0,
+                .plane_size = 2 * 2,
+                .cp_table = RBG0_CPD,
+                .color_palette = RBG0_PAL,
+                .map_bases = {
                         .planes = {
                                 RBG0_PND,
                                 RBG0_PND,
@@ -154,8 +154,8 @@ _hardware_init(void)
                                 RBG0_PND
                         }
                 },
-                .scf_rotation_tbl = VDP2_VRAM_ADDR_4MBIT(2, 0x00000),
-                .scf_usage_banks = {
+                .rotation_table = VDP2_VRAM_ADDR_4MBIT(2, 0x00000),
+                .usage_banks = {
                         .a0 = VDP2_VRAM_USAGE_TYPE_CPD,
                         .a1 = VDP2_VRAM_USAGE_TYPE_PND,
                         .b0 = VDP2_VRAM_USAGE_TYPE_NONE,

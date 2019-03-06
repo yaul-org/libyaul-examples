@@ -96,15 +96,15 @@ _hardware_init(void)
             COLOR_RGB555(0, 0, 7));
 
         const struct vdp2_scrn_cell_format format = {
-                .scf_scroll_screen = VDP2_SCRN_NBG1,
-                .scf_cc_count = VDP2_SCRN_CCC_PALETTE_16,
-                .scf_character_size = 1 * 1,
-                .scf_pnd_size = 1,
-                .scf_auxiliary_mode = 1,
-                .scf_plane_size = 2 * 2,
-                .scf_cp_table = NBG1_CPD,
-                .scf_color_palette = NBG1_PAL,
-                .scf_map = {
+                .scroll_screen = VDP2_SCRN_NBG1,
+                .cc_count = VDP2_SCRN_CCC_PALETTE_16,
+                .character_size = 1 * 1,
+                .pnd_size = 1,
+                .auxiliary_mode = 1,
+                .plane_size = 2 * 2,
+                .cp_table = NBG1_CPD,
+                .color_palette = NBG1_PAL,
+                .map_bases = {
                         .planes = {
                                 NBG1_MAP_PLANE_A,
                                 NBG1_MAP_PLANE_B,
@@ -213,10 +213,10 @@ _transfer_pnd(const struct vdp2_scrn_cell_format *format)
         /* } */
 
         struct scu_dma_level_cfg scu_dma_level_cfg = {
-                .dlc_mode = SCU_DMA_MODE_INDIRECT,
-                .dlc_stride = SCU_DMA_STRIDE_2_BYTES,
-                .dlc_update = SCU_DMA_UPDATE_NONE,
-                .dlc_xfer.indirect = xfer_table
+                .mode = SCU_DMA_MODE_INDIRECT,
+                .stride = SCU_DMA_STRIDE_2_BYTES,
+                .update = SCU_DMA_UPDATE_NONE,
+                .xfer.indirect = xfer_table
         };
 
         scu_dma_config_buffer(&scu_dma_reg_buffer, &scu_dma_level_cfg);

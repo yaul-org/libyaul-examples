@@ -59,21 +59,21 @@ static void
 _setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
 {
         struct vdp1_cmdt_local_coord local_coord = {
-                .lc_coord = {
+                .coord = {
                         .x = 0,
                         .y = 0
                 }
         };
 
         struct vdp1_cmdt_system_clip_coord system_clip = {
-                .scc_coord = {
+                .coord = {
                         .x = SCREEN_WIDTH - 1,
                         .y = SCREEN_HEIGHT - 1
                 }
         };
 
         struct vdp1_cmdt_user_clip_coord user_clip = {
-                .ucc_coords = {
+                .coords = {
                         {
                                 .x = 0,
                                 .y = 0
@@ -99,19 +99,19 @@ _setup_clear_fb(struct vdp1_cmdt_list *cmdt_list, const color_rgb555_t color, bo
 {
         struct vdp1_cmdt_polygon polygon;
 
-        polygon.cp_mode.raw = 0x0000;
-        polygon.cp_color = color;
-        polygon.cp_vertex.a.x = 0;
-        polygon.cp_vertex.a.y = SCREEN_HEIGHT - 1;
+        polygon.draw_mode.raw = 0x0000;
+        polygon.color = color;
+        polygon.vertex.a.x = 0;
+        polygon.vertex.a.y = SCREEN_HEIGHT - 1;
 
-        polygon.cp_vertex.b.x = SCREEN_WIDTH - 1;
-        polygon.cp_vertex.b.y = SCREEN_HEIGHT - 1;
+        polygon.vertex.b.x = SCREEN_WIDTH - 1;
+        polygon.vertex.b.y = SCREEN_HEIGHT - 1;
 
-        polygon.cp_vertex.c.x = SCREEN_WIDTH - 1;
-        polygon.cp_vertex.c.y = 0;
+        polygon.vertex.c.x = SCREEN_WIDTH - 1;
+        polygon.vertex.c.y = 0;
 
-        polygon.cp_vertex.d.x = 0;
-        polygon.cp_vertex.d.y = 0;
+        polygon.vertex.d.x = 0;
+        polygon.vertex.d.y = 0;
 
         vdp1_cmdt_polygon_add(cmdt_list, &polygon);
 

@@ -95,12 +95,12 @@ main(void)
         struct scu_dma_level_cfg scu_dma_level_cfg;
         struct scu_dma_reg_buffer reg_buffer;
 
-        scu_dma_level_cfg.dlc_xfer.direct.len = sizeof(struct vdp2_scrn_rotation_table);
-        scu_dma_level_cfg.dlc_xfer.direct.dst = RBG0_ROTATION_TABLE;
-        scu_dma_level_cfg.dlc_xfer.direct.src = (uint32_t)&rot_tbl;
-        scu_dma_level_cfg.dlc_mode = SCU_DMA_MODE_DIRECT;
-        scu_dma_level_cfg.dlc_stride = SCU_DMA_STRIDE_2_BYTES;
-        scu_dma_level_cfg.dlc_update = SCU_DMA_UPDATE_NONE;
+        scu_dma_level_cfg.xfer.direct.len = sizeof(struct vdp2_scrn_rotation_table);
+        scu_dma_level_cfg.xfer.direct.dst = RBG0_ROTATION_TABLE;
+        scu_dma_level_cfg.xfer.direct.src = (uint32_t)&rot_tbl;
+        scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
+        scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;
+        scu_dma_level_cfg.update = SCU_DMA_UPDATE_NONE;
 
         scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
 
@@ -128,20 +128,20 @@ static void
 _hardware_init(void)
 {
         const struct vdp2_scrn_bitmap_format format = {
-                .sbf_scroll_screen = VDP2_SCRN_RBG0,
-                .sbf_cc_count = VDP2_SCRN_CCC_RGB_32768,
-                .sbf_bitmap_size = {
+                .scroll_screen = VDP2_SCRN_RBG0,
+                .cc_count = VDP2_SCRN_CCC_RGB_32768,
+                .bitmap_size = {
                         512,
                         256
                 },
-                .sbf_color_palette = 0x00000000,
-                .sbf_bitmap_pattern = RBG0_BPD,
-                .sbf_rp_mode = 0,
-                .sbf_sf_type = VDP2_SCRN_SF_TYPE_NONE,
-                .sbf_sf_code = VDP2_SCRN_SF_CODE_A,
-                .sbf_sf_mode = 0,
-                .sbf_rotation_table = RBG0_ROTATION_TABLE,
-                .sbf_usage_banks = {
+                .color_palette = 0x00000000,
+                .bitmap_pattern = RBG0_BPD,
+                .rp_mode = 0,
+                .sf_type = VDP2_SCRN_SF_TYPE_NONE,
+                .sf_code = VDP2_SCRN_SF_CODE_A,
+                .sf_mode = 0,
+                .rotation_table_base = RBG0_ROTATION_TABLE,
+                .usage_banks = {
                         .a0 = VDP2_VRAM_USAGE_TYPE_BPD,
                         .a1 = VDP2_VRAM_USAGE_TYPE_BPD,
                         .b0 = VDP2_VRAM_USAGE_TYPE_NONE,

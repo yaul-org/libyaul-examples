@@ -462,20 +462,20 @@ main(void)
                         color_rgb555_t color;
                         color = COLOR_RGB555(r, g, b);
 
-                        polygon.cp_color = color;
+                        polygon.color = color;
 
-                        polygon.cp_mode.raw = 0x0000;
+                        polygon.draw_mode.raw = 0x0000;
 
-                        polygon.cp_vertex.a.x = _all_points[_faces[j].p0].x;
-                        polygon.cp_vertex.a.y = _all_points[_faces[j].p0].y;
-                        polygon.cp_vertex.b.x = _all_points[_faces[j].p3].x;
-                        polygon.cp_vertex.b.y = _all_points[_faces[j].p3].y;
-                        polygon.cp_vertex.c.x = _all_points[_faces[j].p2].x;
-                        polygon.cp_vertex.c.y = _all_points[_faces[j].p2].y;
-                        polygon.cp_vertex.d.x = _all_points[_faces[j].p1].x;
-                        polygon.cp_vertex.d.y = _all_points[_faces[j].p1].y;
+                        polygon.vertex.a.x = _all_points[_faces[j].p0].x;
+                        polygon.vertex.a.y = _all_points[_faces[j].p0].y;
+                        polygon.vertex.b.x = _all_points[_faces[j].p3].x;
+                        polygon.vertex.b.y = _all_points[_faces[j].p3].y;
+                        polygon.vertex.c.x = _all_points[_faces[j].p2].x;
+                        polygon.vertex.c.y = _all_points[_faces[j].p2].y;
+                        polygon.vertex.d.x = _all_points[_faces[j].p1].x;
+                        polygon.vertex.d.y = _all_points[_faces[j].p1].y;
 
-                        polygon.cp_grad = 0x00000000;
+                        polygon.grad_base = 0x00000000;
 
                         vdp1_cmdt_polygon_add(cmdt_lists[1], &polygon);
                 }
@@ -601,21 +601,21 @@ static void
 _setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
 {
         struct vdp1_cmdt_local_coord local_coord = {
-                .lc_coord = {
+                .coord = {
                         .x = 0,
                         .y = 0
                 }
         };
 
         struct vdp1_cmdt_system_clip_coord system_clip = {
-                .scc_coord = {
+                .coord = {
                         .x = SCREEN_WIDTH - 1,
                         .y = SCREEN_HEIGHT - 1
                 }
         };
 
         struct vdp1_cmdt_user_clip_coord user_clip = {
-                .ucc_coords = {
+                .coords = {
                         {
                                 .x = 0,
                                 .y = 0
@@ -641,19 +641,19 @@ _setup_clear_fb(struct vdp1_cmdt_list *cmdt_list, const color_rgb555_t color, bo
 {
         struct vdp1_cmdt_polygon polygon;
 
-        polygon.cp_mode.raw = 0x0000;
-        polygon.cp_color = color;
-        polygon.cp_vertex.a.x = 0;
-        polygon.cp_vertex.a.y = SCREEN_HEIGHT - 1;
+        polygon.draw_mode.raw = 0x0000;
+        polygon.color = color;
+        polygon.vertex.a.x = 0;
+        polygon.vertex.a.y = SCREEN_HEIGHT - 1;
 
-        polygon.cp_vertex.b.x = SCREEN_WIDTH - 1;
-        polygon.cp_vertex.b.y = SCREEN_HEIGHT - 1;
+        polygon.vertex.b.x = SCREEN_WIDTH - 1;
+        polygon.vertex.b.y = SCREEN_HEIGHT - 1;
 
-        polygon.cp_vertex.c.x = SCREEN_WIDTH - 1;
-        polygon.cp_vertex.c.y = 0;
+        polygon.vertex.c.x = SCREEN_WIDTH - 1;
+        polygon.vertex.c.y = 0;
 
-        polygon.cp_vertex.d.x = 0;
-        polygon.cp_vertex.d.y = 0;
+        polygon.vertex.d.x = 0;
+        polygon.vertex.d.y = 0;
 
         vdp1_cmdt_polygon_add(cmdt_list, &polygon);
 

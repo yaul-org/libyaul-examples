@@ -17,16 +17,16 @@ main(void)
         struct vdp2_scrn_bitmap_format format;
         memset(&format, 0x00, sizeof(format));
 
-        format.sbf_scroll_screen = VDP2_SCRN_NBG0;
-        format.sbf_cc_count = VDP2_SCRN_CCC_RGB_16770000;
-        format.sbf_bitmap_size.width = 512;
-        format.sbf_bitmap_size.height = 256;
-        format.sbf_color_palette = 0x00000000;
-        format.sbf_bitmap_pattern = VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
-        format.sbf_rp_mode = 0;
-        format.sbf_sf_type = VDP2_SCRN_SF_TYPE_NONE;
-        format.sbf_sf_code = VDP2_SCRN_SF_CODE_A;
-        format.sbf_sf_mode = 0;
+        format.scroll_screen = VDP2_SCRN_NBG0;
+        format.cc_count = VDP2_SCRN_CCC_RGB_16770000;
+        format.bitmap_size.width = 512;
+        format.bitmap_size.height = 256;
+        format.color_palette = 0x00000000;
+        format.bitmap_pattern = VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
+        format.rp_mode = 0;
+        format.sf_type = VDP2_SCRN_SF_TYPE_NONE;
+        format.sf_code = VDP2_SCRN_SF_CODE_A;
+        format.sf_mode = 0;
 
         vdp2_scrn_bitmap_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);

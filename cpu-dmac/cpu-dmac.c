@@ -42,16 +42,16 @@ main(void)
         uint32_t ch;
         ch = 0;
 
-        struct dmac_ch_cfg cfg __unused = {
-                .dcc_ch = ch,
-                .dcc_src_mode = DMAC_SOURCE_INCREMENT,
-                .dcc_dst = 0x20000000,
-                .dcc_dst_mode = DMAC_DESTINATION_INCREMENT,
-                .dcc_src = 0x26000000,
-                .dcc_len = 0x00100000,
-                .dcc_stride = DMAC_STRIDE_1_BYTE,
-                .dcc_bus_mode = DMAC_BUS_MODE_BURST,
-                .dcc_ihr = _dmac_handler
+        struct cpu_dmac_cfg cfg __unused = {
+                .channel= ch,
+                .src_mode = CPU_DMAC_SOURCE_INCREMENT,
+                .dst = 0x20000000,
+                .dst_mode = CPU_DMAC_DESTINATION_INCREMENT,
+                .src = 0x26000000,
+                .len = 0x00100000,
+                .stride = CPU_DMAC_STRIDE_1_BYTE,
+                .bus_mode = CPU_DMAC_BUS_MODE_BURST,
+                .ihr = _dmac_handler
         };
 
         while (true) {
@@ -59,7 +59,7 @@ main(void)
 
                 uint32_t xfer;
                 for (xfer = 0; xfer < 3; xfer++) {
-                        cfg.dcc_stride = xfer;
+                        cfg.stride = xfer;
 
                         while ((xfer > 0) && !_done);
                         _done = false;
@@ -109,7 +109,7 @@ main(void)
                 /* Switch over to the next channel */
                 ch ^= 1;
 
-                cfg.dcc_ch = ch;
+                cfg.channel= ch;
         }
 
         return 0;

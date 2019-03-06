@@ -20,18 +20,18 @@ main(void)
 
         struct vdp2_scrn_cell_format format;
 
-        format.scf_scroll_screen = VDP2_SCRN_NBG0;
-        format.scf_cc_count = VDP2_SCRN_CCC_PALETTE_16;
-        format.scf_character_size = 1 * 1;
-        format.scf_pnd_size = 1;
-        format.scf_auxiliary_mode = 1;
-        format.scf_plane_size = 2 * 2;
-        format.scf_cp_table = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
-        format.scf_color_palette = (uint32_t)VDP2_CRAM_MODE_0_OFFSET(0, 0, 0);
-        format.scf_map.plane_a = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x08000);
-        format.scf_map.plane_b = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x08000);
-        format.scf_map.plane_c = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x08000);
-        format.scf_map.plane_d = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x08000);
+        format.scroll_screen = VDP2_SCRN_NBG0;
+        format.cc_count = VDP2_SCRN_CCC_PALETTE_16;
+        format.character_size = 1 * 1;
+        format.pnd_size = 1;
+        format.auxiliary_mode = 1;
+        format.plane_size = 2 * 2;
+        format.cp_table = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
+        format.color_palette = (uint32_t)VDP2_CRAM_MODE_0_OFFSET(0, 0, 0);
+        format.map_bases.plane_a = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x08000);
+        format.map_bases.plane_b = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x08000);
+        format.map_bases.plane_c = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x08000);
+        format.map_bases.plane_d = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x08000);
 
         struct vdp2_vram_cycp vram_cycp;
 
@@ -106,7 +106,7 @@ static void
 _copy_character_pattern_data(const struct vdp2_scrn_cell_format *format)
 {
         uint8_t *cpd;
-        cpd = (uint8_t *)format->scf_cp_table;
+        cpd = (uint8_t *)format->cp_table;
 
         memset(cpd + 0x00, 0x00, 0x20);
         memset(cpd + 0x20, 0x11, 0x20);
@@ -116,7 +116,7 @@ static void
 _copy_color_palette(const struct vdp2_scrn_cell_format *format)
 {
         uint16_t *color_palette;
-        color_palette = (uint16_t *)format->scf_color_palette;
+        color_palette = (uint16_t *)format->color_palette;
 
         color_palette[0] = COLOR_RGB_DATA | COLOR_RGB888_TO_RGB555(255, 255, 255);
         color_palette[1] = COLOR_RGB_DATA | COLOR_RGB888_TO_RGB555(255,   0,   0);
@@ -133,10 +133,10 @@ _copy_map(const struct vdp2_scrn_cell_format *format)
         page_size = VDP2_SCRN_CALCULATE_PAGE_SIZE(format);
 
         uint16_t *planes[4];
-        planes[0] = (uint16_t *)format->scf_map.plane_a;
-        planes[1] = (uint16_t *)format->scf_map.plane_b;
-        planes[2] = (uint16_t *)format->scf_map.plane_c;
-        planes[3] = (uint16_t *)format->scf_map.plane_d;
+        planes[0] = (uint16_t *)format->map_bases.plane_a;
+        planes[1] = (uint16_t *)format->map_bases.plane_b;
+        planes[2] = (uint16_t *)format->map_bases.plane_c;
+        planes[3] = (uint16_t *)format->map_bases.plane_d;
 
         uint16_t *a_pages[4];
         a_pages[0] = &planes[0][0];
@@ -155,8 +155,8 @@ _copy_map(const struct vdp2_scrn_cell_format *format)
                         page_idx = page_x + (page_width * page_y);
 
                         uint16_t pnd;
-                        pnd = VDP2_SCRN_PND_CONFIG_1((uint32_t)format->scf_cp_table,
-                            (uint32_t)format->scf_color_palette);
+                        pnd = VDP2_SCRN_PND_CONFIG_1((uint32_t)format->cp_table,
+                            (uint32_t)format->color_palette);
 
                         a_pages[0][page_idx] = pnd | num;
 
