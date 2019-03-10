@@ -89,7 +89,6 @@ static void _polygon_pointer_config(void);
 static void _dma_upload(void *, void *, size_t, uint8_t);
 
 static void _vblank_out_handler(void);
-static void _frt_oca_handler(void);
 static void _frt_ovi_handler(void);
 
 int
@@ -113,7 +112,7 @@ main(void)
         frt_frame_b = 0;
 
         while (true) {
-                frt_frame_a = _frt_count;
+                frt_frame_a = 0;
 
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
@@ -134,7 +133,7 @@ main(void)
 
                 vdp_sync(0);
 
-                frt_frame_b = _frt_count;
+                frt_frame_b = cpu_frt_count_get();
 
                 char buf[128];
 
@@ -170,7 +169,6 @@ _hardware_init(void)
         vdp_sync_vblank_out_set(_vblank_out_handler);
 
         cpu_frt_init(FRT_CLOCK_DIV_32);
-        cpu_frt_oca_set(FRT_NTSC_320_32_COUNT_1MS, _frt_oca_handler);
         cpu_frt_ovi_set(_frt_ovi_handler);
 }
 
@@ -609,14 +607,6 @@ static void
 _vblank_out_handler(void)
 {
         smpc_peripheral_intback_issue();
-}
-
-static void
-_frt_oca_handler(void)
-{
-        _frt_count += cpu_frt_count_get();
-
-        cpu_frt_count_set(0);
 }
 
 static void
