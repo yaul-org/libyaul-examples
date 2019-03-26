@@ -20,42 +20,23 @@ main(void)
         dbgio_dev_default_init(DBGIO_DEV_VDP2);
         dbgio_dev_set(DBGIO_DEV_VDP2);
 
-        /* Shift dividend by 16 bits (32-bit to 64-bit value)
-         *
-         * r0 = 0x7FFE8000      -> 0x00007FFE:0x80000000
-         *
-         * r1 = swap.w(r0)      -> 0x80007FFE
-         * r1 = exts.w(r1)      -> 0xFFFF7FFE
-         * Write r1 to DVDNTH
-         * r0 = r0 << 16        -> 0x80000000
-         * Write r0 to DVDNTL
-         */
-
-        uint32_t dividend;
-        dividend = 0x7FFFFFFF;
-        uint32_t divisor;
-        divisor = 0x00010000;
-
-        uint32_t dh;
-        dh = cpu_instr_swapw(dividend);
-        uint32_t dl;
-        dl = dividend << 16;
-
-        cpu_divu_64_32_set(dh, dl, divisor);
+        cpu_divu_fix16_set(F16(-2000.0f), F16(0.5f));
 
         /* Do something that takes up at least CPU 39 cycles */
         char *text;
         text = malloc(512);
 
-        uint32_t quotient;
+        fix16_t quotient;
         quotient = cpu_divu_quotient_get();
 
-        fix16_to_str((fix16_t)quotient, text, 7);
+        fix16_to_str(quotient, text, 7);
         dbgio_buffer(text);
         dbgio_buffer("\n");
 
         dbgio_flush();
         vdp_sync(0);
+
+        free(text);
 
         while (true) {
         }
