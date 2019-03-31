@@ -36,7 +36,7 @@ main(void)
         cpu_dmac_init();
         cpu_dmac_interrupt_priority_set(8);
 
-        cpu_frt_init(FRT_CLOCK_DIV_8);
+        cpu_frt_init(CPU_FRT_CLOCK_DIV_8);
         cpu_frt_ovi_set(_frt_ovi_handler);
 
         uint32_t ch;

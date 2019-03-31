@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define FRT_INTERRUPT_PRIORITY_LEVEL 8
+#define CPU_FRT_INTERRUPT_PRIORITY_LEVEL 8
 
 #define TIMER_MAX_TIMERS_COUNT 16
 
@@ -147,7 +147,7 @@ _frt_compare_output_handler(void)
         frt_count = cpu_frt_count_get();
 
         int32_t count_diff __unused;
-        count_diff = frt_count - FRT_NTSC_320_8_COUNT_1MS;
+        count_diff = frt_count - CPU_FRT_NTSC_320_8_COUNT_1MS;
 
         if (count_diff >= 0) {
                 cpu_frt_count_set(count_diff);
@@ -198,13 +198,13 @@ _timer_init(void)
                 _timer_states[timer].valid = false;
         }
 
-        cpu_frt_init(FRT_CLOCK_DIV_8);
-        cpu_frt_oca_set(FRT_NTSC_320_8_COUNT_1MS, _frt_compare_output_handler);
+        cpu_frt_init(CPU_FRT_CLOCK_DIV_8);
+        cpu_frt_oca_set(CPU_FRT_NTSC_320_8_COUNT_1MS, _frt_compare_output_handler);
         /* Match every 9.525μs */
         cpu_frt_ocb_set(32, _frt_ocb_handler);
         cpu_frt_count_set(0);
         cpu_frt_ovi_set(_frt_ovi_handler);
-        cpu_frt_interrupt_priority_set(FRT_INTERRUPT_PRIORITY_LEVEL);
+        cpu_frt_interrupt_priority_set(CPU_FRT_INTERRUPT_PRIORITY_LEVEL);
 }
 
 static int32_t

@@ -89,7 +89,7 @@ static void _polygon_pointer_config(void);
 static void _dma_upload(void *, void *, size_t, uint8_t);
 
 static void _vblank_out_handler(void);
-static void _frt_ovi_handler(void);
+static void _cpu_frt_ovi_handler(void);
 
 int
 main(void)
@@ -168,8 +168,8 @@ _hardware_init(void)
 
         vdp_sync_vblank_out_set(_vblank_out_handler);
 
-        cpu_frt_init(FRT_CLOCK_DIV_32);
-        cpu_frt_ovi_set(_frt_ovi_handler);
+        cpu_frt_init(CPU_FRT_CLOCK_DIV_32);
+        cpu_frt_ovi_set(_cpu_frt_ovi_handler);
 }
 
 static void
@@ -610,7 +610,7 @@ _vblank_out_handler(void)
 }
 
 static void
-_frt_ovi_handler(void)
+_cpu_frt_ovi_handler(void)
 {
         assert(false);
 }
