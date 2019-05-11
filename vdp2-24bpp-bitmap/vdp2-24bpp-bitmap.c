@@ -22,7 +22,7 @@ main(void)
         format.bitmap_size.width = 512;
         format.bitmap_size.height = 256;
         format.color_palette = 0x00000000;
-        format.bitmap_pattern = VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
+        format.bitmap_pattern = VDP2_VRAM_ADDR(0, 0x00000);
         format.rp_mode = 0;
         format.sf_type = VDP2_SCRN_SF_TYPE_NONE;
         format.sf_code = VDP2_SCRN_SF_CODE_A;
@@ -73,7 +73,7 @@ main(void)
         vdp2_vram_cycp_set(&vram_cycp);
 
         uint32_t *vram;
-        vram = (uint32_t *)VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
+        vram = (uint32_t *)VDP2_VRAM_ADDR(0, 0x00000);
 
         cpu_intc_mask_set (15); {
                 uint32_t y;

@@ -35,7 +35,7 @@ main(void)
         format.bitmap_size.width = 1024;
         format.bitmap_size.height = 512;
         format.color_palette = VDP2_CRAM_ADDR(0x300);
-        format.bitmap_pattern = VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
+        format.bitmap_pattern = VDP2_VRAM_ADDR(0, 0x00000);
         format.sf_type = VDP2_SCRN_SF_TYPE_NONE;
         format.sf_code = VDP2_SCRN_SF_CODE_A;
         format.sf_mode = 0;
@@ -122,7 +122,7 @@ main(void)
         p = romdisk_direct(fh[1]);
 
         scu_dma_level_cfg.xfer.direct.len = romdisk_total(fh[1]);
-        scu_dma_level_cfg.xfer.direct.dst = VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
+        scu_dma_level_cfg.xfer.direct.dst = VDP2_VRAM_ADDR(0, 0x00000);
         scu_dma_level_cfg.xfer.direct.src = (uint32_t)p;
 
         scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
@@ -146,7 +146,7 @@ _hardware_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);
 
-        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR_4MBIT(3, 0x01FFFE),
+        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB555(0, 3, 15));
 
         cpu_intc_mask_set(0);

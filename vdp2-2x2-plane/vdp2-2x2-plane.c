@@ -31,12 +31,12 @@ main(void)
         color_palette = (uint16_t *)VDP2_CRAM_MODE_1_OFFSET(0, 0, 0);
 
         uint16_t *planes[4];
-        planes[0] = (uint16_t *)VDP2_VRAM_ADDR_4MBIT(1, 0x00000);
-        planes[1] = (uint16_t *)VDP2_VRAM_ADDR_4MBIT(1, 0x08000);
-        planes[2] = (uint16_t *)VDP2_VRAM_ADDR_4MBIT(1, 0x10000);
-        planes[3] = (uint16_t *)VDP2_VRAM_ADDR_4MBIT(1, 0x18000);
+        planes[0] = (uint16_t *)VDP2_VRAM_ADDR(1, 0x00000);
+        planes[1] = (uint16_t *)VDP2_VRAM_ADDR(1, 0x08000);
+        planes[2] = (uint16_t *)VDP2_VRAM_ADDR(1, 0x10000);
+        planes[3] = (uint16_t *)VDP2_VRAM_ADDR(1, 0x18000);
         uint16_t *cpd;
-        cpd = (uint16_t *)VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
+        cpd = (uint16_t *)VDP2_VRAM_ADDR(0, 0x00000);
 
         format.scroll_screen = VDP2_SCRN_NBG1;
         format.cc_count = VDP2_SCRN_CCC_PALETTE_256;
@@ -198,7 +198,7 @@ _hardware_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);
 
-        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR_4MBIT(3, 0x01FFFE),
+        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB555(0, 3, 15));
 
         cpu_intc_mask_set(0);

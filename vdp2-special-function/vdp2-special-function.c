@@ -16,12 +16,12 @@
 #define SCREEN_WIDTH    320
 #define SCREEN_HEIGHT   240
 
-#define NBG0_CPD                VDP2_VRAM_ADDR_4MBIT(0, 0x00000)
+#define NBG0_CPD                VDP2_VRAM_ADDR(0, 0x00000)
 #define NBG0_PAL                VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
-#define NBG0_MAP_PLANE_A        VDP2_VRAM_ADDR_4MBIT(3, 0x00000)
-#define NBG0_MAP_PLANE_B        VDP2_VRAM_ADDR_4MBIT(3, 0x00000)
-#define NBG0_MAP_PLANE_C        VDP2_VRAM_ADDR_4MBIT(3, 0x00000)
-#define NBG0_MAP_PLANE_D        VDP2_VRAM_ADDR_4MBIT(3, 0x00000)
+#define NBG0_MAP_PLANE_A        VDP2_VRAM_ADDR(3, 0x00000)
+#define NBG0_MAP_PLANE_B        VDP2_VRAM_ADDR(3, 0x00000)
+#define NBG0_MAP_PLANE_C        VDP2_VRAM_ADDR(3, 0x00000)
+#define NBG0_MAP_PLANE_D        VDP2_VRAM_ADDR(3, 0x00000)
 
 extern uint8_t root_romdisk[];
 
@@ -148,7 +148,7 @@ _hardware_init(void)
 {
         vdp2_tvmd_display_clear();
 
-        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR_4MBIT(3, 0x01FFFE),
+        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB555(0, 0, 7));
 
         const struct vdp2_scrn_cell_format format = {
@@ -208,7 +208,6 @@ _hardware_init(void)
          * (set at 4-Mbit) is 0x20000 bytes. Without going across bank
          * boundaries, we need to not part a bank into two */
         const struct vdp2_vram_ctl vram_ctl = {
-                .vram_size = VDP2_VRAM_CTL_SIZE_4MBIT,
                 .vram_mode = VDP2_VRAM_CTL_MODE_NO_PART_BANK_A | VDP2_VRAM_CTL_MODE_PART_BANK_B
         };
 

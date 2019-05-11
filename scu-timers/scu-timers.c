@@ -25,7 +25,7 @@ static color_rgb555_t _colors[] __unused = {
         COLOR_RGB555(15, 31,  0)
 };
 
-static uint16_t *_back_screen = (uint16_t *)VDP2_VRAM_ADDR_4MBIT(3, 0x01FFFE);
+static uint16_t *_back_screen = (uint16_t *)VDP2_VRAM_ADDR(3, 0x01FFFE);
 static uint16_t _line = 0;
 
 int

@@ -28,7 +28,7 @@ main(void)
         format.bitmap_size.width = 512;
         format.bitmap_size.height = 256;
         format.color_palette = 0x00000000;
-        format.bitmap_pattern = VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
+        format.bitmap_pattern = VDP2_VRAM_ADDR(0, 0x00000);
         format.rp_mode = 0;
         format.sf_type = VDP2_SCRN_SF_TYPE_NONE;
         format.sf_code = VDP2_SCRN_SF_CODE_A;
@@ -103,12 +103,12 @@ main(void)
         ret = tga_read(&tga, tga_file);
         assert(ret == TGA_FILE_OK);
 
-        tga_image_decode(&tga, (void *)VDP2_VRAM_ADDR_4MBIT(0, 0x00000));
+        tga_image_decode(&tga, (void *)VDP2_VRAM_ADDR(0, 0x00000));
 
         color_rgb555_t bs_color;
         bs_color = COLOR_RGB555(5, 5, 7);
 
-        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR_4MBIT(3, 0x01FFFE),
+        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             bs_color);
 
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,

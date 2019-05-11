@@ -26,12 +26,12 @@ main(void)
         format.pnd_size = 1;
         format.auxiliary_mode = 1;
         format.plane_size = 2 * 2;
-        format.cp_table = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x00000);
+        format.cp_table = (uint32_t)VDP2_VRAM_ADDR(0, 0x00000);
         format.color_palette = (uint32_t)VDP2_CRAM_MODE_0_OFFSET(0, 0, 0);
-        format.map_bases.plane_a = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x08000);
-        format.map_bases.plane_b = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x08000);
-        format.map_bases.plane_c = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x08000);
-        format.map_bases.plane_d = (uint32_t)VDP2_VRAM_ADDR_4MBIT(0, 0x08000);
+        format.map_bases.plane_a = (uint32_t)VDP2_VRAM_ADDR(0, 0x08000);
+        format.map_bases.plane_b = (uint32_t)VDP2_VRAM_ADDR(0, 0x08000);
+        format.map_bases.plane_c = (uint32_t)VDP2_VRAM_ADDR(0, 0x08000);
+        format.map_bases.plane_d = (uint32_t)VDP2_VRAM_ADDR(0, 0x08000);
 
         struct vdp2_vram_cycp vram_cycp;
 
@@ -94,7 +94,7 @@ main(void)
 static void
 _hardware_init(void)
 {
-        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR_4MBIT(2, 0x01FFFE),
+        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(2, 0x01FFFE),
             COLOR_RGB555(0, 0, 7));
 
         cpu_intc_mask_set(0);

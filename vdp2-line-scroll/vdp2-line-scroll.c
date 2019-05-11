@@ -4,12 +4,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define NBG0_CPD                VDP2_VRAM_ADDR_4MBIT(0, 0x00000)
-#define NBG0_PND                VDP2_VRAM_ADDR_4MBIT(2, 0x00000)
+#define NBG0_CPD                VDP2_VRAM_ADDR(0, 0x00000)
+#define NBG0_PND                VDP2_VRAM_ADDR(2, 0x00000)
 #define NBG0_PAL                VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
-#define NBG0_LINE_SCROLL        VDP2_VRAM_ADDR_4MBIT(1, 0x00000)
+#define NBG0_LINE_SCROLL        VDP2_VRAM_ADDR(1, 0x00000)
 
-#define BACK_SCREEN             VDP2_VRAM_ADDR_4MBIT(3, 0x1FFFE)
+#define BACK_SCREEN             VDP2_VRAM_ADDR(3, 0x1FFFE)
 
 extern uint8_t root_romdisk[];
 

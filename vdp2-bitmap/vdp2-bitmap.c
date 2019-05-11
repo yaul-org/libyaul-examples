@@ -9,10 +9,10 @@
 
 #include <tga.h>
 
-#define RBG0_BPD                VDP2_VRAM_ADDR_4MBIT(0, 0x00000)
-#define RBG0_ROTATION_TABLE     VDP2_VRAM_ADDR_4MBIT(2, 0x00000)
+#define RBG0_BPD                VDP2_VRAM_ADDR(0, 0x00000)
+#define RBG0_ROTATION_TABLE     VDP2_VRAM_ADDR(2, 0x00000)
 
-#define BACK_SCREEN             VDP2_VRAM_ADDR_4MBIT(3, 0x1FFFE)
+#define BACK_SCREEN             VDP2_VRAM_ADDR(3, 0x1FFFE)
 
 extern uint8_t root_romdisk[];
 

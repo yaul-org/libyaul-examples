@@ -4,12 +4,12 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define RBG0_CPD                VDP2_VRAM_ADDR_4MBIT(0, 0x10000)
+#define RBG0_CPD                VDP2_VRAM_ADDR(0, 0x10000)
 #define RBG0_PAL                VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
-#define RBG0_PND                VDP2_VRAM_ADDR_4MBIT(1, 0x00000)
-#define RBG0_ROTATION_TABLE     VDP2_VRAM_ADDR_4MBIT(2, 0x00000)
+#define RBG0_PND                VDP2_VRAM_ADDR(1, 0x00000)
+#define RBG0_ROTATION_TABLE     VDP2_VRAM_ADDR(2, 0x00000)
 
-#define BACK_SCREEN             VDP2_VRAM_ADDR_4MBIT(3, 0x1FFFE)
+#define BACK_SCREEN             VDP2_VRAM_ADDR(3, 0x1FFFE)
 
 extern uint8_t root_romdisk[];
 
@@ -154,7 +154,7 @@ _hardware_init(void)
                                 RBG0_PND
                         }
                 },
-                .rotation_table = VDP2_VRAM_ADDR_4MBIT(2, 0x00000),
+                .rotation_table = VDP2_VRAM_ADDR(2, 0x00000),
                 .usage_banks = {
                         .a0 = VDP2_VRAM_USAGE_TYPE_CPD,
                         .a1 = VDP2_VRAM_USAGE_TYPE_PND,

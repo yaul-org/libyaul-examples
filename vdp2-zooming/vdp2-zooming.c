@@ -12,12 +12,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define NBG1_CPD                VDP2_VRAM_ADDR_4MBIT(2, 0x00000)
+#define NBG1_CPD                VDP2_VRAM_ADDR(2, 0x00000)
 #define NBG1_PAL                VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
-#define NBG1_MAP_PLANE_A        VDP2_VRAM_ADDR_4MBIT(0, 0x00000)
-#define NBG1_MAP_PLANE_B        VDP2_VRAM_ADDR_4MBIT(0, 0x08000)
-#define NBG1_MAP_PLANE_C        VDP2_VRAM_ADDR_4MBIT(0, 0x10000)
-#define NBG1_MAP_PLANE_D        VDP2_VRAM_ADDR_4MBIT(0, 0x18000)
+#define NBG1_MAP_PLANE_A        VDP2_VRAM_ADDR(0, 0x00000)
+#define NBG1_MAP_PLANE_B        VDP2_VRAM_ADDR(0, 0x08000)
+#define NBG1_MAP_PLANE_C        VDP2_VRAM_ADDR(0, 0x10000)
+#define NBG1_MAP_PLANE_D        VDP2_VRAM_ADDR(0, 0x18000)
 
 static void _hardware_init(void);
 
@@ -92,7 +92,7 @@ _hardware_init(void)
 {
         vdp2_tvmd_display_clear();
 
-        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR_4MBIT(2, 0x01FFFE),
+        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(2, 0x01FFFE),
             COLOR_RGB555(0, 0, 7));
 
         const struct vdp2_scrn_cell_format format = {
