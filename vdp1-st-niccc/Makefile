@@ -11,7 +11,7 @@ SH_OBJECTS:= \
 	scene.o
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -I. -Wno-error=unused-variable -Wno-error
+SH_CFLAGS+= -I.
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

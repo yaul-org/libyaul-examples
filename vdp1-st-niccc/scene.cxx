@@ -75,7 +75,7 @@ static uint8_t _vertex_buffer_get(const polygon_descriptor polygon_descriptor);
 
 template<typename T>
 static inline const T _read(void) {
-    auto buffer_ptr = &_buffer[_offset];
+    const auto buffer_ptr = &_buffer[_offset];
     const T* ptr_value = reinterpret_cast<const T*>(buffer_ptr);
 
     _offset++;
@@ -96,7 +96,7 @@ void scene::init(const uint8_t*& buffer, const callbacks& callbacks) {
 
     _on_update_palette = ((callbacks.on_update_palette != nullptr)
                           ? callbacks.on_update_palette
-                          : [](uint8_t, const rgb444) { });
+                          : [] (uint8_t, const rgb444) { });
 
     _on_clear_screen = ((callbacks.on_clear_screen != nullptr)
                         ? callbacks.on_clear_screen
@@ -104,7 +104,7 @@ void scene::init(const uint8_t*& buffer, const callbacks& callbacks) {
 
     _on_draw = ((callbacks.on_draw != nullptr)
                 ? callbacks.on_draw
-                : [](int16_vector2_t const*, size_t, uint8_t) { });
+                : [] (int16_vector2_t const*, size_t, uint8_t) { });
 
     _palette_init();
     _vertex_buffer_init();
