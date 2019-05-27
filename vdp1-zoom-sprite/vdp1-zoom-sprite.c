@@ -264,7 +264,8 @@ _sprite_init(void)
         _sprite.sprite.draw_mode.pre_clipping_disable = true;
         _sprite.sprite.draw_mode.end_code_disable = true;
         _sprite.sprite.zoom_point.enable = true;
-        _sprite.sprite.sprite_type.type_0.dc = 0x0100;
+        _sprite.sprite.sprite_type.raw = 0x0000;
+        _sprite.sprite.sprite_type.type_0.data.dc = 0x0100;
         _sprite.sprite.width = ZOOM_POINT_WIDTH;
         _sprite.sprite.height = ZOOM_POINT_HEIGHT;
 
