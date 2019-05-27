@@ -10,7 +10,7 @@ SH_OBJECTS:= \
 	vdp1-zoom-sprite.o
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -I. -Wno-error=unused-variable
+SH_CFLAGS+= -I.
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
