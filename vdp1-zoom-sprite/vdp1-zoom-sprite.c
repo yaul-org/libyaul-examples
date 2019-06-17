@@ -175,8 +175,7 @@ _hardware_init(void)
 static void
 _init(void)
 {
-        dbgio_dev_default_init(DBGIO_DEV_VDP2);
-        dbgio_dev_set(DBGIO_DEV_VDP2);
+        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
 
         romdisk_init();
 

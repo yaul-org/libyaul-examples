@@ -26,8 +26,7 @@ main(void)
 
         _hardware_init();
 
-        dbgio_dev_default_init(DBGIO_DEV_VDP2);
-        dbgio_dev_set(DBGIO_DEV_VDP2);
+        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
 
         dbgio_buffer("Using f/8 CPU FRT divisor\n\n");
 

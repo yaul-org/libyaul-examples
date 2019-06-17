@@ -17,8 +17,7 @@ main(void)
 {
         _hardware_init();
 
-        dbgio_dev_default_init(DBGIO_DEV_VDP2);
-        dbgio_dev_set(DBGIO_DEV_VDP2);
+        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
 
         cpu_divu_fix16_set(F16(-2000.0f), F16(0.5f));
 

@@ -31,8 +31,7 @@ main(void)
         cpu_wdt_timer_mode_set(CPU_WDT_TIMER_MODE_INTERVAL, _cpu_wdt_handler);
         cpu_wdt_enable();
 
-        dbgio_dev_default_init(DBGIO_DEV_VDP2);
-        dbgio_dev_set(DBGIO_DEV_VDP2);
+        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
 
         dbgio_flush();
         vdp_sync(0);
