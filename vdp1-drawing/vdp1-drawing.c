@@ -30,7 +30,7 @@ main(void)
         _setup_drawing_env(cmdt_lists[0], false);
         _setup_clear_fb(cmdt_lists[0], COLOR_RGB555(31, 0, 0), true);
 
-        vdp1_sync_draw(cmdt_lists[0]);
+        vdp1_sync_draw(cmdt_lists[0], NULL, NULL);
 
         /* Process another list while drawing */
 
@@ -55,7 +55,7 @@ main(void)
         vdp1_cmdt_polygon_add(cmdt_lists[1], &polygon);
         vdp1_cmdt_end(cmdt_lists[1]);
 
-        vdp1_sync_draw(cmdt_lists[1]);
+        vdp1_sync_draw(cmdt_lists[1], NULL, NULL);
 
         vdp_sync(0);
 

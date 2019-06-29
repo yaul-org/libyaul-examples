@@ -55,7 +55,7 @@ main(void)
                 _palette[0].g = (_palette[0].g + 1) & 31;
                 _palette[0].b = (_palette[0].b + 1) & 31;
 
-                vdp1_sync_draw(_cmdt_list);
+                vdp1_sync_draw(_cmdt_list, NULL, NULL);
                 vdp_sync(0);
         }
 }

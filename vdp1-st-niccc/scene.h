@@ -1,7 +1,7 @@
 #ifndef SCENE_H_
 #define SCENE_H_
 
-#include <inttypes.h>
+#include <stdint.h>
 
 namespace scene {
     union rgb444 {

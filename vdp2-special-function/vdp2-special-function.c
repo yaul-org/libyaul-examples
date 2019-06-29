@@ -112,7 +112,7 @@ main(void)
         vdp1_cmdt_polygon_add(cmdt_list_polygon, &polygon);
         vdp1_cmdt_end(cmdt_list_polygon);
 
-        vdp1_sync_draw(cmdt_list);
+        vdp1_sync_draw(cmdt_list, NULL, NULL);
         vdp_sync(0);
 
         romdisk_close(fh[0]);
@@ -126,10 +126,10 @@ main(void)
         count_frames = 0;
 
         while (true) {
-                vdp1_sync_draw(cmdt_list);
+                vdp1_sync_draw(cmdt_list, NULL, NULL);
 
                 if (show_polygon) {
-                        vdp1_sync_draw(cmdt_list_polygon);
+                        vdp1_sync_draw(cmdt_list_polygon, NULL, NULL);
                 }
 
                 vdp_sync(0);

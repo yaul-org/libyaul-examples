@@ -409,7 +409,7 @@ main(void)
         int32_t theta = 0;
 
         while (true) {
-                vdp1_sync_draw(cmdt_lists[0]);
+                vdp1_sync_draw(cmdt_lists[0], NULL, NULL);
 
                 _rotate(_points_m, _rotated_m, theta, 28);
                 _rotate(_points_i, _rotated_i, theta, 10);
@@ -482,7 +482,7 @@ main(void)
 
                 vdp1_cmdt_end(cmdt_lists[1]);
 
-                vdp1_sync_draw(cmdt_lists[1]);
+                vdp1_sync_draw(cmdt_lists[1], NULL, NULL);
 
                 vdp_sync(0);
         }

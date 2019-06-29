@@ -72,7 +72,7 @@ void main(void) {
     while (true) {
         scene::process_frame();
 
-        vdp1_sync_draw(_scene_cmdt_list);
+        vdp1_sync_draw(_scene_cmdt_list, NULL, NULL);
         vdp_sync(0);
     }
 
@@ -184,7 +184,7 @@ static void _on_clear_screen(bool clear_screen) {
         vdp1_cmdt_jump_skip_next(_env_cmdt_list, _clear_polygon_index);
     }
 
-    vdp1_sync_draw(_env_cmdt_list);
+    vdp1_sync_draw(_env_cmdt_list, NULL, NULL);
 }
 
 static void _on_draw(int16_vector2_t const * vertex_buffer, size_t count, uint8_t palette_index) {

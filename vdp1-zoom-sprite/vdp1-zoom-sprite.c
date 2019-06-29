@@ -119,14 +119,14 @@ main(void)
 
                 _state_zoom_funcs[_state_zoom]();
 
-                vdp1_sync_draw(_env_cmdt_list);
+                vdp1_sync_draw(_env_cmdt_list, NULL, NULL);
 
                 vdp1_cmdt_list_reset(_cmdt_list);
                 _sprite_config();
                 _polygon_pointer_config();
                 vdp1_cmdt_end(_cmdt_list);
 
-                vdp1_sync_draw(_cmdt_list);
+                vdp1_sync_draw(_cmdt_list, NULL, NULL);
                 vdp1_sync_draw_wait();
 
                 dbgio_flush();
