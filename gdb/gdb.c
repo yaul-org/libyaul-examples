@@ -7,25 +7,56 @@
 
 #include <yaul.h>
 
-#include <assert.h>
-
 static void _hardware_init(void);
 
 int
 main(void)
 {
+        static const uint32_t _columns = 40;
+
         _hardware_init();
 
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
 
-        dbgio_buffer("Initializing GDB...\n");
-
+        dbgio_buffer("gdb_init()\n");
         dbgio_flush();
         vdp_sync(0);
 
+        /* Unmask all interrupts just to be sure GDB works */
+        cpu_intc_mask_set(0);
         gdb_init();
 
+        char buffer[_columns + 1];
+
+        fix16_t x;
+        x = F16(0.0f);
+
+        int32_t dir;
+        dir = 1;
+
         while (true) {
+                (void)memset(buffer, ' ', sizeof(buffer));
+                buffer[_columns] = '\0';
+
+                buffer[fix16_to_int(x)] = 'o';
+
+                x += F16(0.25f) * dir;
+
+                if (x <= F16(0.0f)) {
+                        x = F16(0.0f);
+
+                        dir *= -1;
+                } else if (x >= F16((float)_columns - 0.5f)) {
+                        x = F16((float)_columns - 1.0f);
+
+                        dir *= -1;
+                }
+
+                dbgio_buffer("[H[2J[14;1H");
+                dbgio_buffer(buffer);
+
+                dbgio_flush();
+                vdp_sync(0);
         }
 }
 
