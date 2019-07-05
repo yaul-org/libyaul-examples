@@ -26,7 +26,7 @@ main(void)
 
         vdp_sync_vblank_in_set(_vblank_in_handler);
 
-        cpu_wdt_init(WDT_CLOCK_DIV_4096);
+        cpu_wdt_init(CPU_WDT_CLOCK_DIV_4096);
         cpu_wdt_interrupt_priority_set(8);
         cpu_wdt_timer_mode_set(CPU_WDT_TIMER_MODE_INTERVAL, _cpu_wdt_handler);
         cpu_wdt_enable();

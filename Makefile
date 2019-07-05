@@ -4,18 +4,23 @@ EXAMPLES:= \
 	cpu-dmac \
 	cpu-dual \
 	cpu-frt \
+	cpu-wdt \
 	dram-cart \
+	gdb \
 	romdisk \
 	scu-dma \
 	scu-dsp \
 	scu-dsp-test \
+	usb-cart \
 	vdp1-double-interlace \
 	vdp1-drawing \
 	vdp1-mic3d \
+	vdp1-st-niccc \
 	vdp1-zoom-sprite \
 	vdp2-24bpp-bitmap \
 	vdp2-2x2-plane \
 	vdp2-bitmap \
+	vdp2-dbgio \
 	vdp2-line-scroll \
 	vdp2-nbg0 \
 	vdp2-normal-bitmap \
@@ -25,8 +30,9 @@ EXAMPLES:= \
 	vdp2-zooming
 
 # Following examples are broken:
-#   1. vdp1-cube
-#   2. scu-timers
+#   1. arp-comm
+#   2. vdp1-cube
+#   3. scu-timers
 
 ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),$(filter $(YAUL_OPTION_DEV_CARTRIDGE),1 2))
 EXAMPLES+= \
