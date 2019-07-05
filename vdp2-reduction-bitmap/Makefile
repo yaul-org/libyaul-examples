@@ -8,7 +8,9 @@ SH_PROGRAM:= vdp2-reduction-bitmap
 SH_OBJECTS:= \
 	root.romdisk.o \
 	vdp2-reduction-bitmap.o
+
 SH_LIBRARIES:= tga
+SH_CFLAGS+= -O2 -I. -save-temps
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
@@ -19,7 +21,7 @@ IP_MASTER_STACK_ADDR:= 0x06004000
 IP_SLAVE_STACK_ADDR:= 0x06001000
 IP_1ST_READ_ADDR:= 0x06004000
 
-M68K_PROGRAM:= 
+M68K_PROGRAM:=
 M68K_OBJECTS:=
 
 include $(YAUL_INSTALL_ROOT)/share/post.common.mk
