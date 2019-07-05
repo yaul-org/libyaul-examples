@@ -11,4 +11,6 @@
 # is going on at the target level of GDB, as it happens. The default is off (0).
 # set debug target off
 
+set disassemble-next-line on
+
 target remote :1234
