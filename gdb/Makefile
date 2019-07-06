@@ -9,8 +9,7 @@ ifneq ($(OPTION_DEV_CARTRIDGE),$(filter $(OPTION_DEV_CARTRIDGE),1 2))
 endif
 
 SH_PROGRAM:= gdb
-SH_OBJECTS:= gdb.o \
-	test_routines.o
+SH_OBJECTS:= gdb.o
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps

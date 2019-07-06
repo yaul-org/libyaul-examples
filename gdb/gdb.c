@@ -18,7 +18,7 @@ main(void)
 
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
 
-        dbgio_buffer("gdb_init()\n");
+        dbgio_buffer("Waiting to establish a connection with GDB\n");
         dbgio_flush();
         vdp_sync(0);
 
