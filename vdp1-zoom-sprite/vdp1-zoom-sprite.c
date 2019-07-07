@@ -119,6 +119,8 @@ main(void)
 
                 _state_zoom_funcs[_state_zoom]();
 
+                cpu_frt_count_set(0);
+
                 vdp1_sync_draw(_env_cmdt_list, NULL, NULL);
 
                 vdp1_cmdt_list_reset(_cmdt_list);
@@ -134,6 +136,7 @@ main(void)
                 vdp_sync(0);
 
                 frt_frame_b = cpu_frt_count_get();
+                cpu_frt_count_set(0);
 
                 char buf[128];
 
