@@ -11,9 +11,13 @@
 
 static void _hardware_init(void);
 
-int
+static void _vblank_out_handler(void);
+
+void
 main(void)
 {
+        struct smpc_peripheral_digital digital;
+
         _hardware_init();
 
         uint16_t width __unused;
@@ -22,23 +26,41 @@ main(void)
 
         color_rgb555_t *buffer;
         buffer = malloc(sizeof(color_rgb555_t) * height);
+        assert(buffer != NULL);
 
-        vdp2_scrn_back_screen_buffer_set(VDP2_VRAM_ADDR(0, 0x00000), buffer, height);
-
+        uint16_t buffer_count;
+        buffer_count = 0;
         uint16_t count;
         count = 0;
+        bool switch_buffer_count;
+        switch_buffer_count = false;
 
         while (true) {
+                smpc_peripheral_process();
+                smpc_peripheral_digital_port(1, &digital);
+
+                if (digital.held.button.a) {
+                        switch_buffer_count ^= true;
+                }
+
+                if (switch_buffer_count) {
+                        buffer_count = height;
+                } else {
+                        buffer_count = 1;
+                }
+
+                vdp2_scrn_back_screen_buffer_set(VDP2_VRAM_ADDR(0, 0x00000), buffer,
+                    buffer_count);
+
                 uint16_t i;
-                for (i = 0; i < height; i++) {
+                for (i = 0; i < buffer_count; i++) {
                         buffer[i] = COLOR_RGB555(i + count, i + count, i + count);
                 }
+
                 count++;
 
                 vdp_sync(0);
         }
-
-        return 0;
 }
 
 static void
@@ -57,8 +79,16 @@ _hardware_init(void)
         vdp2_sprite_priority_set(6, 0);
         vdp2_sprite_priority_set(7, 0);
 
+        vdp_sync_vblank_out_set(_vblank_out_handler);
+
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);
 
         vdp2_tvmd_display_set();
+}
+
+static void
+_vblank_out_handler(void)
+{
+        smpc_peripheral_intback_issue();
 }
