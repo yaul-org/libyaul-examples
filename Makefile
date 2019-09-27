@@ -6,12 +6,10 @@ EXAMPLES:= \
 	cpu-frt \
 	cpu-wdt \
 	dram-cart \
-	gdb \
 	romdisk \
 	scu-dma \
 	scu-dsp \
 	scu-dsp-test \
-	usb-cart \
 	vdp1-double-interlace \
 	vdp1-drawing \
 	vdp1-mic3d \
