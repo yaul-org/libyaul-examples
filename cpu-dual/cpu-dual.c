@@ -34,6 +34,16 @@ main(void)
 
         cpu_intc_mask_set(0);
 
+        assert((cpu_dual_executor_get()) == CPU_MASTER);
+
+        char buffer[128];
+
+        (void)sprintf(buffer, "Master stack address: 0x%08lX\n", (uint32_t)cpu_dual_master_stack_get());
+        dbgio_buffer(buffer);
+
+        (void)sprintf(buffer, "Slave stack address: 0x%08lX\n", (uint32_t)cpu_dual_slave_stack_get());
+        dbgio_buffer(buffer);
+
         dbgio_buffer("Ping ponging between master and slave\n");
 
         uint32_t counter;
@@ -45,8 +55,6 @@ main(void)
                         counter = _slave_counter;
                 } cpu_sync_spinlock_clear(0);
         } while (counter < 10);
-
-        char buffer[64];
 
         (void)sprintf(buffer,
             "[3;1H[0J"
@@ -90,6 +98,8 @@ _master_entry(void)
 static void
 _slave_entry(void)
 {
+        assert((cpu_dual_executor_get()) == CPU_SLAVE);
+
         cpu_sync_spinlock(0); {
                 if (_slave_counter >= 10) {
                         cpu_sync_spinlock_clear(0);
