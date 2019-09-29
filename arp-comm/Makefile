@@ -4,7 +4,7 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
-ifneq ($(strip $(OPTION_DEV_CARTRIDGE)),2)
+ifneq ($(strip $(YAUL_OPTION_DEV_CARTRIDGE)),2)
   $(error Wrong development cartridge value (see `OPTION_DEV_CARTRIDGE'))
 endif
 
