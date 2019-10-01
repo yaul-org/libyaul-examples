@@ -50,10 +50,15 @@ static void _timer_init(void);
 static int32_t _timer_add(const struct timer *);
 static int32_t _timer_remove(uint32_t) __unused;
 
+/* Master */
 static void _frt_compare_output_handler(void);
 static void _frt_ovi_handler(void);
 static void _frt_ocb_handler(void);
 static void _timer_handler(struct timer_event *);
+
+/* Slave */
+static void _slave_entry(void);
+static void _slave_frt_ovi_handler(void);
 
 static void _hardware_init(void);
 
@@ -63,6 +68,8 @@ static volatile uint32_t _counter_1 = 0;
 static volatile uint32_t _counter_2 = 0;
 static volatile uint32_t _counter_3 = 0;
 static volatile uint32_t _counter_4 = 0;
+
+static volatile uint32_t _slave_ovi_counter __section(".uncached") = 0;
 
 void
 main(void)
@@ -102,22 +109,27 @@ main(void)
         _timer_add(&match3);
         _timer_add(&match4);
 
+        cpu_dual_slave_notify();
+
         while (true) {
                 dbgio_buffer("[1;1H[2J");
 
                 (void)sprintf(_buffer, "\n"
-                    " counter_1: %10lu (1s)\n"
-                    " counter_2: %10lu (2s)\n"
-                    " counter_3: %10lu (3ms)\n"
-                    " counter_4: %10lu (.5s)\n"
-                    " ovi_count: %10lu\n"
-                    " ocb_count: %10lu\n",
+                    " counter_1: %18lu (1s)\n"
+                    " counter_2: %18lu (2s)\n"
+                    " counter_3: %18lu (3ms)\n"
+                    " counter_4: %18lu (.5s)\n"
+                    " ovi_count: %18lu\n"
+                    " ocb_count: %18lu\n"
+                    "\n"
+                    " slave_ovi_counter: %10lu\n",
                     _counter_1,
                     _counter_2,
                     _counter_3,
                     _counter_4,
                     _ovi_count,
-                    _ocb_count);
+                    _ocb_count,
+                    _slave_ovi_counter);
                 dbgio_buffer(_buffer);
 
                 dbgio_flush();
@@ -136,7 +148,30 @@ _hardware_init(void)
 
         cpu_intc_mask_set(0);
 
+        cpu_dual_init(CPU_DUAL_ENTRY_POLLING);
+        cpu_dual_slave_set(_slave_entry);
+
         vdp2_tvmd_display_set();
+}
+
+static void
+_slave_entry(void)
+{
+        assert((cpu_dual_executor_get()) == CPU_SLAVE);
+
+        cpu_frt_init(CPU_FRT_CLOCK_DIV_128);
+        cpu_frt_count_set(0);
+        cpu_frt_ovi_set(_slave_frt_ovi_handler);
+        cpu_frt_interrupt_priority_set(CPU_FRT_INTERRUPT_PRIORITY_LEVEL);
+        cpu_intc_mask_set(0);
+
+        _slave_ovi_counter = 0;
+}
+
+static void
+_slave_frt_ovi_handler(void)
+{
+        _slave_ovi_counter++;
 }
 
 static void
