@@ -6,6 +6,9 @@ include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= c++
 SH_OBJECTS:= \
+	file-ext-1.o \
+	file-ext-2.o \
+	file-ext-3.o \
 	c++.o
 
 SH_LIBRARIES:=
