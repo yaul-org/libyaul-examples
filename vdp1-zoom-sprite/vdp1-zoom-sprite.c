@@ -615,5 +615,4 @@ _vblank_out_handler(void)
 static void
 _cpu_frt_ovi_handler(void)
 {
-        assert(false);
 }
