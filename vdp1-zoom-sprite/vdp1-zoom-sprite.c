@@ -96,6 +96,8 @@ static void _polygon_pointer_config(void);
 
 static void _dma_upload(void *, void *, size_t, uint8_t);
 
+static uint32_t _frame_time_calculate(void);
+
 static void _vblank_out_handler(void);
 static void _cpu_frt_ovi_handler(void);
 
@@ -113,24 +115,16 @@ main(void)
         _hardware_init();
         _init();
 
-        uint32_t frt_frame_a;
-        frt_frame_a = 0;
-
-        uint32_t frt_frame_b;
-        frt_frame_b = 0;
-
         _sprite_config();
         _polygon_pointer_config();
 
-        while (true) {
-                frt_frame_a = 0;
+        cpu_frt_count_set(0);
 
+        while (true) {
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
 
                 _state_zoom_funcs[_state_zoom]();
-
-                cpu_frt_count_set(0);
 
                 _sprite_config();
                 _polygon_pointer_config();
@@ -142,17 +136,15 @@ main(void)
 
                 vdp_sync(0);
 
-                frt_frame_b = cpu_frt_count_get();
-                cpu_frt_count_set(0);
+                uint32_t result;
+                result = _frame_time_calculate();
 
-                char buf[128];
+                char fixed[16];
+                fix16_to_str(result, fixed, 7);
 
-                uint32_t frt_delta;
-                frt_delta = frt_frame_b - frt_frame_a;
-
-                (void)sprintf(buf, "[H[2J"
-                    "a,b: %lu,%lu = %lu\n", frt_frame_a, frt_frame_b, frt_delta);
-                dbgio_buffer(buf);
+                char buffer[64];
+                (void)sprintf(buffer, "[H[2J%sms\n", fixed);
+                dbgio_buffer(buffer);
         }
 
         return 0;
@@ -274,6 +266,38 @@ _dma_upload(void *dst, void *src, size_t len, uint8_t tag)
         int8_t ret;
         ret = dma_queue_enqueue(&reg_buffer, tag, NULL, NULL);
         assert(ret == 0);
+}
+
+static uint32_t
+_frame_time_calculate(void)
+{
+        uint16_t frt;
+        frt = cpu_frt_count_get();
+
+        cpu_frt_count_set(0);
+
+        uint32_t delta_fix;
+        delta_fix = frt << 4;
+
+        uint32_t divisor_fix;
+        divisor_fix = CPU_FRT_NTSC_320_32_COUNT_1MS << 4;
+
+        cpu_divu_32_32_set(delta_fix << 4, divisor_fix);
+
+        /* Remember to wait ~40 cycles */
+        for (uint32_t i = 0; i < 8; i++) {
+                cpu_instr_nop();
+                cpu_instr_nop();
+                cpu_instr_nop();
+                cpu_instr_nop();
+                cpu_instr_nop();
+        }
+
+        uint32_t result;
+        result = cpu_divu_quotient_get();
+        result <<= 12;
+
+        return result;
 }
 
 static void
