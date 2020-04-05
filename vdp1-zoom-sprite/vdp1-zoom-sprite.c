@@ -30,6 +30,15 @@
 #define ZOOM_POINT_COLOR_WAIT           COLOR_RGB555(31,  0,  0)
 #define ZOOM_POINT_COLOR_HIGHLIGHT      COLOR_RGB555( 0, 31,  0)
 
+#define ORDER_SYSTEM_CLIP_COORDS_INDEX      0
+#define ORDER_CLEAR_LOCAL_COORDS_INDEX      1
+#define ORDER_CLEAR_POLYGON_INDEX           2
+#define ORDER_LOCAL_COORDS_INDEX            3
+#define ORDER_SPRITE_INDEX                  4
+#define ORDER_POLYGON_POINTER_INDEX         5
+#define ORDER_DRAW_END_INDEX                6
+#define ORDER_COUNT                         7
+
 extern uint8_t root_romdisk[];
 
 /* Zoom state */
@@ -44,7 +53,7 @@ static struct {
         int16_vector2_t position;
         color_rgb555_t color;
 
-        struct vdp1_cmdt_polygon polygon;
+        struct vdp1_cmdt *cmdt;
 } _polygon_pointer;
 
 static struct {
@@ -54,12 +63,11 @@ static struct {
         uint16_t *tex_base;
         uint16_t *pal_base;
 
-        struct vdp1_cmdt_scaled_sprite sprite;
+        struct vdp1_cmdt *cmdt;
 } _sprite;
 
 static void *_romdisk = NULL;
 
-static struct vdp1_cmdt_list *_env_cmdt_list = NULL;
 static struct vdp1_cmdt_list *_cmdt_list = NULL;
 
 static volatile uint32_t _frt_count = 0;
@@ -73,7 +81,7 @@ _digital_dirs_pressed(void)
 static void _hardware_init(void);
 static void _init(void);
 
-static void _env_cmdt_list_config(void);
+static void _cmdt_list_init(void);
 
 static void _state_zoom_move_origin(void);
 static void _state_zoom_wait(void);
@@ -111,6 +119,9 @@ main(void)
         uint32_t frt_frame_b;
         frt_frame_b = 0;
 
+        _sprite_config();
+        _polygon_pointer_config();
+
         while (true) {
                 frt_frame_a = 0;
 
@@ -121,12 +132,8 @@ main(void)
 
                 cpu_frt_count_set(0);
 
-                vdp1_sync_draw(_env_cmdt_list, NULL, NULL);
-
-                vdp1_cmdt_list_reset(_cmdt_list);
                 _sprite_config();
                 _polygon_pointer_config();
-                vdp1_cmdt_end(_cmdt_list);
 
                 vdp1_sync_draw(_cmdt_list, NULL, NULL);
                 vdp1_sync_draw_wait();
@@ -185,51 +192,68 @@ _init(void)
         _romdisk = romdisk_mount("/", root_romdisk);
         assert(_romdisk != NULL);
 
-        _env_cmdt_list_config();
-
-        _cmdt_list = vdp1_cmdt_list_alloc(3);
-
-        _polygon_pointer_init();
-        _sprite_init();
+        _cmdt_list_init();
 }
 
 static void
-_env_cmdt_list_config(void)
+_cmdt_list_init(void)
 {
-        const struct vdp1_cmdt_system_clip_coord system_clip = {
-                .coord.x = SCREEN_WIDTH - 1,
-                .coord.y = SCREEN_HEIGHT - 1
+        static const int16_vector2_t system_clip_coord =
+            INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1,
+                                     SCREEN_HEIGHT - 1);
+
+        static const int16_vector2_t local_coord_ul =
+            INT16_VECTOR2_INITIALIZER(0,
+                                      0);
+
+        static const int16_vector2_t local_coord_center =
+            INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH / 2,
+                                      SCREEN_HEIGHT / 2);
+
+        static const vdp1_cmdt_draw_mode polygon_draw_mode = {
+                .raw = 0x0000,
+                .bits.pre_clipping_disable = true
         };
 
-        const struct vdp1_cmdt_local_coord polygon_local_coord = {
-                .coord.x = 0,
-                .coord.y = 0
+        static const int16_vector2_t polygon_points[] = {
+                INT16_VECTOR2_INITIALIZER(0, SCREEN_HEIGHT - 1),
+                INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1),
+                INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1,                 0),
+                INT16_VECTOR2_INITIALIZER(               0,                 0)
         };
 
-        const struct vdp1_cmdt_polygon polygon = {
-                .draw_mode.raw = 0x0000,
-                .draw_mode.pre_clipping_disable = true,
-                .color.raw = 0x0000,
-                .vertices = {
-                        {               0, SCREEN_HEIGHT - 1},
-                        {SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1},
-                        {SCREEN_WIDTH - 1,                 0},
-                        {               0,                 0}
-                }
-        };
+        _cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
 
-        const struct vdp1_cmdt_local_coord local_coord = {
-                .coord.x = SCREEN_WIDTH / 2,
-                .coord.y = SCREEN_HEIGHT / 2
-        };
+        (void)memset(&_cmdt_list->cmdts[0], 0x00, sizeof(struct vdp1_cmdt) * ORDER_COUNT);
 
-        _env_cmdt_list = vdp1_cmdt_list_alloc(7);
+        _cmdt_list->count = ORDER_COUNT;
 
-        vdp1_cmdt_system_clip_coord_add(_env_cmdt_list, &system_clip);
-        vdp1_cmdt_local_coord_add(_env_cmdt_list, &polygon_local_coord);
-        vdp1_cmdt_polygon_add(_env_cmdt_list, &polygon);
-        vdp1_cmdt_local_coord_add(_env_cmdt_list, &local_coord);
-        vdp1_cmdt_end(_env_cmdt_list);
+        struct vdp1_cmdt *cmdts;
+        cmdts = &_cmdt_list->cmdts[0];
+
+        _sprite.cmdt = &cmdts[ORDER_SPRITE_INDEX];
+        _polygon_pointer.cmdt = &cmdts[ORDER_POLYGON_POINTER_INDEX];
+
+        _polygon_pointer_init();
+        _sprite_init();
+
+        vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX], CMDT_VTX_SYSTEM_CLIP, &system_clip_coord);
+
+        vdp1_cmdt_local_coord_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+
+        vdp1_cmdt_polygon_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX]);
+        vdp1_cmdt_param_draw_mode_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], polygon_draw_mode);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_A, &polygon_points[0]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_B, &polygon_points[1]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_C, &polygon_points[2]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_D, &polygon_points[3]);
+
+        vdp1_cmdt_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_center);
+
+        vdp1_cmdt_end_set(&cmdts[ORDER_DRAW_END_INDEX]);
 }
 
 static void
@@ -261,15 +285,21 @@ _sprite_init(void)
         _sprite.tex_base = vdp1_vram_texture_base_get();
         _sprite.pal_base = (void *)VDP2_CRAM_MODE_1_OFFSET(1, 0, 0x0000);
 
-        _sprite.sprite.draw_mode.color_mode = 4;
-        _sprite.sprite.draw_mode.trans_pixel_disable = true;
-        _sprite.sprite.draw_mode.pre_clipping_disable = true;
-        _sprite.sprite.draw_mode.end_code_disable = true;
-        _sprite.sprite.zoom_point.enable = true;
-        _sprite.sprite.sprite_type.raw = 0x0000;
-        _sprite.sprite.sprite_type.type_0.data.dc = 0x0100;
-        _sprite.sprite.width = ZOOM_POINT_WIDTH;
-        _sprite.sprite.height = ZOOM_POINT_HEIGHT;
+        const vdp1_cmdt_draw_mode draw_mode = {
+                .bits.trans_pixel_disable = true,
+                .bits.pre_clipping_disable = true,
+                .bits.end_code_disable = true
+        };
+
+        const vdp1_cmdt_color_bank color_bank = {
+                .type_0.data.dc = 0x0100
+        };
+
+        vdp1_cmdt_scaled_sprite_set(_sprite.cmdt);
+        vdp1_cmdt_param_draw_mode_set(_sprite.cmdt, draw_mode);
+        vdp1_cmdt_param_color_mode4_set(_sprite.cmdt, color_bank);
+
+        vdp1_cmdt_param_size_set(_sprite.cmdt, ZOOM_POINT_WIDTH, ZOOM_POINT_HEIGHT);
 
         void *fh[2];
         void *p;
@@ -297,15 +327,14 @@ _sprite_init(void)
 static void
 _sprite_config(void)
 {
-        uint32_t offset;
+        uint32_t offset __unused;
         offset = fix16_to_int(_sprite.anim_rate) * (ZOOM_POINT_WIDTH * ZOOM_POINT_HEIGHT);
 
-        _sprite.sprite.char_base = (uint32_t)_sprite.tex_base + offset;
-        _sprite.sprite.zoom_point.raw = _zoom_point_value;
-        _sprite.sprite.zoom.point.x = _zoom_point.x;
-        _sprite.sprite.zoom.point.y = _zoom_point.y;
-        _sprite.sprite.zoom.display.x = _display.x;
-        _sprite.sprite.zoom.display.y = _display.y;
+        vdp1_cmdt_param_char_base_set(_sprite.cmdt, (uint32_t)_sprite.tex_base + offset);
+
+        vdp1_cmdt_param_zoom_set(_sprite.cmdt, _zoom_point_value);
+        vdp1_cmdt_param_vertex_set(_sprite.cmdt, CMDT_VTX_ZOOM_SPRITE_POINT, &_zoom_point);
+        vdp1_cmdt_param_vertex_set(_sprite.cmdt, CMDT_VTX_ZOOM_SPRITE_DISPLAY, &_display);
 
         _sprite.anim_rate += fix16_mul(_sprite.anim_rate_dir, F16(0.25f));
 
@@ -316,36 +345,40 @@ _sprite_config(void)
                 _sprite.anim_rate_dir = -_sprite.anim_rate_dir;
                 _sprite.anim_rate = F16(12.0f);
         }
-
-        vdp1_cmdt_scaled_sprite_add(_cmdt_list, &_sprite.sprite);
 }
 
 static void
 _polygon_pointer_init(void)
 {
-        (void)memset(&_polygon_pointer.polygon, 0x00, sizeof(_polygon_pointer.polygon));
+        static const vdp1_cmdt_draw_mode draw_mode = {
+                .raw = 0x0000,
+                .bits.pre_clipping_disable = true
+        };
 
-        _polygon_pointer.polygon.draw_mode.raw = 0x0000;
-        _polygon_pointer.polygon.draw_mode.pre_clipping_disable = true;
-        _polygon_pointer.polygon.draw_mode.cc_mode = 0;
-        _polygon_pointer.polygon.draw_mode.mesh_enable = false;
+        vdp1_cmdt_polygon_set(_polygon_pointer.cmdt);
+        vdp1_cmdt_param_draw_mode_set(_polygon_pointer.cmdt, draw_mode);
 }
 
 static void
 _polygon_pointer_config(void)
 {
-        _polygon_pointer.polygon.color = _polygon_pointer.color;
-        _polygon_pointer.polygon.vertex.a.x = ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x - 1;
-        _polygon_pointer.polygon.vertex.a.y = -ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y;
-        _polygon_pointer.polygon.vertex.b.x = ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x - 1;
-        _polygon_pointer.polygon.vertex.b.y = ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y - 1;
-        _polygon_pointer.polygon.vertex.c.x = -ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x;
-        _polygon_pointer.polygon.vertex.c.y = ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y - 1;
-        _polygon_pointer.polygon.vertex.d.x = -ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x;
-        _polygon_pointer.polygon.vertex.d.y = -ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y;
-        _polygon_pointer.polygon.grad_base = 0x00000000;
+        int16_vector2_t points[4];
 
-        vdp1_cmdt_polygon_add(_cmdt_list, &_polygon_pointer.polygon);
+        points[0].x = ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x - 1;
+        points[0].y = -ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y;
+        points[1].x = ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x - 1;
+        points[1].y = ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y - 1;
+        points[2].x = -ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x;
+        points[2].y = ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y - 1;
+        points[3].x = -ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x;
+        points[3].y = -ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y;
+
+        vdp1_cmdt_param_color_set(_polygon_pointer.cmdt, _polygon_pointer.color);
+
+        vdp1_cmdt_param_vertex_set(_polygon_pointer.cmdt, CMDT_VTX_POLYGON_A, &points[0]);
+        vdp1_cmdt_param_vertex_set(_polygon_pointer.cmdt, CMDT_VTX_POLYGON_B, &points[1]);
+        vdp1_cmdt_param_vertex_set(_polygon_pointer.cmdt, CMDT_VTX_POLYGON_C, &points[2]);
+        vdp1_cmdt_param_vertex_set(_polygon_pointer.cmdt, CMDT_VTX_POLYGON_D, &points[3]);
 }
 
 static void
@@ -426,14 +459,14 @@ _state_zoom_move_anchor(void)
         if (x_center && y_up) {
                 _zoom_point_value = CMDT_ZOOM_POINT_UPPER_CENTER;
                 _zoom_point.x = 0;
-                _zoom_point.y = -ZOOM_POINT_HEIGHT / 2;
+                _zoom_point.y = -((ZOOM_POINT_HEIGHT / 2) - 1);
         } else if (x_center && y_down) {
                 _zoom_point_value = CMDT_ZOOM_POINT_LOWER_CENTER;
                 _zoom_point.x = 0;
                 _zoom_point.y = ZOOM_POINT_HEIGHT / 2;
         } else if (y_center && x_left) {
                 _zoom_point_value = CMDT_ZOOM_POINT_CENTER_LEFT;
-                _zoom_point.x = -ZOOM_POINT_WIDTH / 2;
+                _zoom_point.x = -((ZOOM_POINT_WIDTH / 2) - 1);
                 _zoom_point.y = 0;
         } else if (y_center && x_right) {
                 _zoom_point_value = CMDT_ZOOM_POINT_CENTER_RIGHT;
@@ -441,15 +474,15 @@ _state_zoom_move_anchor(void)
                 _zoom_point.y = 0;
         } else if (y_up && x_left) {
                 _zoom_point_value = CMDT_ZOOM_POINT_UPPER_LEFT;
-                _zoom_point.x = -ZOOM_POINT_WIDTH / 2;
-                _zoom_point.y = -ZOOM_POINT_HEIGHT / 2;
+                _zoom_point.x = -((ZOOM_POINT_WIDTH / 2) - 1);
+                _zoom_point.y = -((ZOOM_POINT_HEIGHT / 2) - 1);
         } else if (y_up && x_right) {
                 _zoom_point_value = CMDT_ZOOM_POINT_UPPER_RIGHT;
                 _zoom_point.x = ZOOM_POINT_WIDTH / 2;
-                _zoom_point.y = -ZOOM_POINT_HEIGHT / 2;
+                _zoom_point.y = -((ZOOM_POINT_HEIGHT / 2) - 1);
         } else if (y_down && x_left) {
                 _zoom_point_value = CMDT_ZOOM_POINT_LOWER_LEFT;
-                _zoom_point.x = -ZOOM_POINT_WIDTH / 2;
+                _zoom_point.x = -((ZOOM_POINT_WIDTH / 2) - 1);
                 _zoom_point.y = ZOOM_POINT_HEIGHT / 2;
         } else if (y_down && x_right) {
                 _zoom_point_value = CMDT_ZOOM_POINT_LOWER_RIGHT;
@@ -562,7 +595,7 @@ _state_zoom_select_anchor(void)
         _polygon_pointer.color = ZOOM_POINT_COLOR_HIGHLIGHT;
 
         uint32_t zp_idx;
-        zp_idx = dlog2(_zoom_point_value) - 5;
+        zp_idx = _zoom_point_value - 5;
 
         const struct zoom_point_boundary *zp_boundary;
         zp_boundary = &_zoom_point_boundaries[zp_idx];
