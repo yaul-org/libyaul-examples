@@ -13,10 +13,17 @@
 #define SCREEN_WIDTH    640
 #define SCREEN_HEIGHT   480
 
+#define ORDER_SYSTEM_CLIP_COORDS_INDEX  0
+#define ORDER_LOCAL_COORDS_INDEX        1
+#define ORDER_POLYGON_INDEX             2
+#define ORDER_DRAW_END_INDEX            3
+#define ORDER_COUNT                     4
+
 static void _hardware_init(void);
 
 static void _vblank_out_handler(void);
 
+static void _vdp1_drawing_list_init(struct vdp1_cmdt_list *);
 static void _vdp1_drawing_list_set(const uint8_t, struct vdp1_cmdt_list *);
 static void _vdp1_drawing_env_toggle(const uint8_t);
 static void _vdp2_resolution_toggle(const uint8_t);
@@ -62,7 +69,8 @@ main(void)
 
         struct vdp1_cmdt_list *cmdt_list;
         cmdt_list = vdp1_cmdt_list_alloc(5);
-        assert(cmdt_list != NULL);
+
+        _vdp1_drawing_list_init(cmdt_list);
 
         while (true) {
                 smpc_peripheral_process();
@@ -99,16 +107,17 @@ main(void)
                 speed = (speed >= F16(31.0f)) ? F16(0.0f) : (speed + F16(0.5f));
 
                 if (switched) {
-                        _vdp1_drawing_list_set(switch_env, cmdt_list);
                         _vdp1_drawing_env_toggle(switch_env);
                         _vdp2_resolution_toggle(switch_env);
 
                         switched = false;
                 }
 
+                _vdp1_drawing_list_set(switch_env, cmdt_list);
+
                 dbgio_flush();
 
-                vdp1_sync_draw(cmdt_list, NULL, NULL);
+                vdp1_sync_cmdt_list_put(cmdt_list, NULL, NULL);
                 vdp_sync();
         }
 }
@@ -148,69 +157,96 @@ _vblank_out_handler(void)
 }
 
 static void
-_vdp1_drawing_list_set(const uint8_t switch_env, struct vdp1_cmdt_list *cmdt_list)
+_vdp1_drawing_list_init(struct vdp1_cmdt_list *cmdt_list)
 {
-        static const struct vdp1_cmdt_local_coord local_coord = {
-                .coord = {
-                        .x = 0,
-                        .y = 0
-                }
+        static const int16_vector2_t local_coord_ul =
+            INT16_VECTOR2_INITIALIZER(0,
+                                      0);
+
+        static const vdp1_cmdt_draw_mode polygon_draw_mode = {
+                .raw = 0x0000,
+                .bits.pre_clipping_disable = true
         };
-
-        static struct vdp1_cmdt_system_clip_coord system_clip = {
-                .coord = {
-                        .x = SCREEN_WIDTH - 1,
-                        .y = SCREEN_HEIGHT - 1
-                }
-        };
-
-        static struct vdp1_cmdt_polygon polygon = {
-                .draw_mode.raw = 0x0000,
-                .draw_mode.pre_clipping_disable = true,
-                .sprite_type.type_8.data.dc = 16,
-                .vertex.a.x = 0,
-                .vertex.a.y = SCREEN_HEIGHT - 1,
-
-                .vertex.b.x = SCREEN_WIDTH - 1,
-                .vertex.b.y = SCREEN_HEIGHT - 1,
-
-                .vertex.c.x = SCREEN_WIDTH - 1,
-                .vertex.c.y = 0,
-
-                .vertex.d.x = 0,
-                .vertex.d.y = 0
-        };
-
-        switch (switch_env & 0x01) {
-        case 0:
-                system_clip.coord.x = SCREEN_WIDTH - 1;
-                system_clip.coord.y = SCREEN_HEIGHT - 1;
-
-                polygon.sprite_type.type_8.data.dc = 16;
-                polygon.vertex.a.y = SCREEN_HEIGHT - 1;
-                polygon.vertex.b.x = SCREEN_WIDTH - 1;
-                polygon.vertex.b.y = SCREEN_HEIGHT - 1;
-                polygon.vertex.c.x = SCREEN_WIDTH - 1;
-                break;
-        case 1:
-                system_clip.coord.x = (SCREEN_WIDTH / 2) - 1;
-                system_clip.coord.y = (SCREEN_HEIGHT / 2) - 1;
-
-                polygon.sprite_type.type_0.data.dc = 16;
-                polygon.vertex.a.y = (SCREEN_HEIGHT / 2) - 1;
-                polygon.vertex.b.x = (SCREEN_WIDTH / 2) - 1;
-                polygon.vertex.b.y = (SCREEN_HEIGHT / 2) - 1;
-                polygon.vertex.c.x = (SCREEN_WIDTH / 2) - 1;
-                break;
-        }
 
         assert(cmdt_list != NULL);
 
-        vdp1_cmdt_list_reset(cmdt_list);
-        vdp1_cmdt_system_clip_coord_add(cmdt_list, &system_clip);
-        vdp1_cmdt_local_coord_add(cmdt_list, &local_coord);
-        vdp1_cmdt_polygon_add(cmdt_list, &polygon);
-        vdp1_cmdt_end(cmdt_list);
+        struct vdp1_cmdt *cmdts;
+        cmdts = &cmdt_list->cmdts[0];
+
+        (void)memset(&cmdts[0], 0x00, sizeof(struct vdp1_cmdt) * ORDER_COUNT);
+
+        cmdt_list->count = ORDER_COUNT;
+
+        vdp1_cmdt_polygon_set(&cmdts[ORDER_POLYGON_INDEX]);
+        vdp1_cmdt_param_draw_mode_set(&cmdts[ORDER_POLYGON_INDEX], polygon_draw_mode);
+
+        vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
+
+        vdp1_cmdt_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_LOCAL_COORDS_INDEX],
+            CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+
+        vdp1_cmdt_end_set(&cmdts[ORDER_DRAW_END_INDEX]);
+}
+
+static void
+_vdp1_drawing_list_set(const uint8_t switch_env, struct vdp1_cmdt_list *cmdt_list)
+{
+        static vdp1_cmdt_color_bank polygon_color_bank = {
+                .type_0.data.dc = 16
+        };
+
+        assert(cmdt_list != NULL);
+
+        struct vdp1_cmdt *cmdts;
+        cmdts = &cmdt_list->cmdts[0];
+
+        struct vdp1_cmdt *cmdt_polygon;
+        cmdt_polygon = &cmdts[ORDER_POLYGON_INDEX];
+
+        struct vdp1_cmdt *cmdt_system_clip_coords;
+        cmdt_system_clip_coords = &cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX];
+
+        switch (switch_env & 0x01) {
+        case 0:
+                cmdt_system_clip_coords->cmd_xc = SCREEN_WIDTH - 1;
+                cmdt_system_clip_coords->cmd_yc = SCREEN_HEIGHT - 1;
+
+                polygon_color_bank.type_8.data.dc = 16;
+
+                cmdt_polygon->cmd_xa = 0;
+                cmdt_polygon->cmd_ya = SCREEN_HEIGHT - 1;
+
+                cmdt_polygon->cmd_xb = SCREEN_WIDTH - 1;
+                cmdt_polygon->cmd_yb = SCREEN_HEIGHT - 1;
+
+                cmdt_polygon->cmd_xc = SCREEN_WIDTH - 1;
+                cmdt_polygon->cmd_yc = 0;
+
+                cmdt_polygon->cmd_xd = 0;
+                cmdt_polygon->cmd_yd = 0;
+                break;
+        case 1:
+                cmdt_system_clip_coords->cmd_xc = (SCREEN_WIDTH / 2) - 1;
+                cmdt_system_clip_coords->cmd_yc = (SCREEN_HEIGHT / 2) - 1;
+
+                polygon_color_bank.type_0.data.dc = 16;
+
+                cmdt_polygon->cmd_xa = 0;
+                cmdt_polygon->cmd_ya = (SCREEN_HEIGHT / 2) - 1;
+
+                cmdt_polygon->cmd_xb = (SCREEN_WIDTH / 2) - 1;
+                cmdt_polygon->cmd_yb = (SCREEN_HEIGHT / 2) - 1;
+
+                cmdt_polygon->cmd_xc = (SCREEN_WIDTH / 2) - 1;
+                cmdt_polygon->cmd_yc = 0;
+
+                cmdt_polygon->cmd_xd = 0;
+                cmdt_polygon->cmd_yd = 0;
+                break;
+        }
+
+        vdp1_cmdt_param_color_bank_set(cmdt_polygon, polygon_color_bank);
 }
 
 static void
