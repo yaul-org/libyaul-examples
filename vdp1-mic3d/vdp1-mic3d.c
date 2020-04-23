@@ -15,6 +15,12 @@
 #define SCREEN_WIDTH    320
 #define SCREEN_HEIGHT   224
 
+#define ORDER_SYSTEM_CLIP_COORDS_INDEX  0
+#define ORDER_CLEAR_LOCAL_COORDS_INDEX  1
+#define ORDER_BUFFER_STARTING_INDEX     2
+#define ORDER_DRAW_END_INDEX            49
+#define ORDER_COUNT                     50
+
 #define ELEMENT_COUNT(n) (sizeof((n)) / sizeof(*(n)))
 
 #define INT2FIX(a) (((int32_t)(a))<<10)
@@ -24,7 +30,7 @@ typedef struct {
         int32_t x;
         int32_t y;
         int32_t z;
-} __packed point;
+} __packed __aligned(4) point;
 
 typedef struct {
         int32_t p0;
@@ -341,21 +347,33 @@ static void _transform(point *, point *, int32_t, int32_t, int32_t, int32_t);
 static void _project(point *, point *, int32_t);
 static void _sort_quads(quad *, point *, int32_t *, int32_t);
 
-static void _setup_drawing_env(struct vdp1_cmdt_list *, bool);
-static void _setup_clear_fb(struct vdp1_cmdt_list *, const color_rgb555_t, bool);
-
 void
 main(void)
 {
+        static const int16_vector2_t system_clip_coord =
+            INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1,
+                                     SCREEN_HEIGHT - 1);
+
+        static const int16_vector2_t local_coord_center =
+            INT16_VECTOR2_INITIALIZER(0, 0);
+
         _hardware_init();
 
-        struct vdp1_cmdt_list *cmdt_lists[2];
+        struct vdp1_cmdt_list *cmdt_list;
+        cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
 
-        cmdt_lists[0] = vdp1_cmdt_list_alloc(5);
-        cmdt_lists[1] = vdp1_cmdt_list_alloc(50);
+        (void)memset(&cmdt_list->cmdts[0], 0x00, sizeof(struct vdp1_cmdt) * ORDER_COUNT);
 
-        _setup_drawing_env(cmdt_lists[0], false);
-        _setup_clear_fb(cmdt_lists[0], COLOR_RGB555(0, 15, 0), true);
+        struct vdp1_cmdt *cmdts;
+        cmdts = &cmdt_list->cmdts[0];
+
+        vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX],
+            CMDT_VTX_SYSTEM_CLIP, &system_clip_coord);
+
+        vdp1_cmdt_local_coord_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX],
+            CMDT_VTX_LOCAL_COORD, &local_coord_center);
 
         uint32_t i;
         uint32_t j;
@@ -409,7 +427,7 @@ main(void)
         int32_t theta = 0;
 
         while (true) {
-                vdp1_sync_draw(cmdt_lists[0], NULL, NULL);
+                vdp1_sync_cmdt_list_put(cmdt_list, NULL, NULL);
 
                 _rotate(_points_m, _rotated_m, theta, 28);
                 _rotate(_points_i, _rotated_i, theta, 10);
@@ -440,11 +458,7 @@ main(void)
 
                 _sort_quads(_faces, _all_points, _face_order, MODEL_FACE_COUNT);
 
-                vdp1_cmdt_list_reset(cmdt_lists[1]);
-
                 for (i = 0; i < 47; i++) {
-                        struct vdp1_cmdt_polygon polygon;
-
                         j = _face_order[i];
 
                         /* Check which direction this quad is facing */
@@ -462,27 +476,38 @@ main(void)
                         color_rgb555_t color;
                         color = COLOR_RGB555(r, g, b);
 
-                        polygon.color = color;
+                        vdp1_cmdt_draw_mode draw_mode = {
+                                .raw = 0x0000
+                        };
 
-                        polygon.draw_mode.raw = 0x0000;
+                        struct vdp1_cmdt *cmdt;
+                        cmdt = &cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + i];
 
-                        polygon.vertex.a.x = _all_points[_faces[j].p0].x;
-                        polygon.vertex.a.y = _all_points[_faces[j].p0].y;
-                        polygon.vertex.b.x = _all_points[_faces[j].p3].x;
-                        polygon.vertex.b.y = _all_points[_faces[j].p3].y;
-                        polygon.vertex.c.x = _all_points[_faces[j].p2].x;
-                        polygon.vertex.c.y = _all_points[_faces[j].p2].y;
-                        polygon.vertex.d.x = _all_points[_faces[j].p1].x;
-                        polygon.vertex.d.y = _all_points[_faces[j].p1].y;
+                        /* Set the vertices directly as we have to cast from
+                         * int32_t to int16_t */
 
-                        polygon.grad_base = 0x00000000;
+                        cmdt->cmd_xa = _all_points[_faces[j].p0].x;
+                        cmdt->cmd_ya = _all_points[_faces[j].p0].y;
 
-                        vdp1_cmdt_polygon_add(cmdt_lists[1], &polygon);
+                        cmdt->cmd_xb = _all_points[_faces[j].p3].x;
+                        cmdt->cmd_yb = _all_points[_faces[j].p3].y;
+
+                        cmdt->cmd_xc = _all_points[_faces[j].p2].x;
+                        cmdt->cmd_yc = _all_points[_faces[j].p2].y;
+
+                        cmdt->cmd_xd = _all_points[_faces[j].p1].x;
+                        cmdt->cmd_yd = _all_points[_faces[j].p1].y;
+
+                        vdp1_cmdt_polygon_set(cmdt);
+                        vdp1_cmdt_param_draw_mode_set(cmdt, draw_mode);
+                        vdp1_cmdt_param_color_set(cmdt, color);
                 }
 
-                vdp1_cmdt_end(cmdt_lists[1]);
+                vdp1_cmdt_end_set(&cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + 47]);
 
-                vdp1_sync_draw(cmdt_lists[1], NULL, NULL);
+                cmdt_list->count = ORDER_COUNT;
+
+                vdp1_sync_cmdt_list_put(cmdt_list, NULL, NULL);
 
                 vdp_sync();
         }
@@ -566,8 +591,8 @@ _sort_quads(quad *f, point *p, int32_t *order, int32_t n)
         }
 
 
-        /* Bubble-sort the whole lot.. yeehaw! */
-        for (i = 0; i < n - 1; i++) {
+        /* Bubble-sort the whole lot... yeehaw! */
+        for (i = 0; i < (n - 1); i++) {
                 for (j = i + 1; j < n; j++) {
                         if (_avg_z[j] > _avg_z[i]) {
                                 tmp = _avg_z[i];
@@ -592,72 +617,14 @@ _hardware_init(void)
 
         vdp2_sprite_priority_set(0, 6);
 
+        struct vdp1_env env;
+        vdp1_env_default_init(&env);
+
+        env.erase_color = COLOR_RGB555(0, 3, 15);
+
+        vdp1_env_set(&env);
+
         cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
-}
-
-static void
-_setup_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
-{
-        struct vdp1_cmdt_local_coord local_coord = {
-                .coord = {
-                        .x = 0,
-                        .y = 0
-                }
-        };
-
-        struct vdp1_cmdt_system_clip_coord system_clip = {
-                .coord = {
-                        .x = SCREEN_WIDTH - 1,
-                        .y = SCREEN_HEIGHT - 1
-                }
-        };
-
-        struct vdp1_cmdt_user_clip_coord user_clip = {
-                .coords = {
-                        {
-                                .x = 0,
-                                .y = 0
-                        },
-                        {
-                                .x = SCREEN_WIDTH - 1,
-                                .y = SCREEN_HEIGHT - 1
-                        }
-                }
-        };
-
-        vdp1_cmdt_system_clip_coord_add(cmdt_list, &system_clip);
-        vdp1_cmdt_user_clip_coord_add(cmdt_list, &user_clip);
-        vdp1_cmdt_local_coord_add(cmdt_list, &local_coord);
-
-        if (end) {
-                vdp1_cmdt_end(cmdt_list);
-        }
-}
-
-static void
-_setup_clear_fb(struct vdp1_cmdt_list *cmdt_list, const color_rgb555_t color, bool end)
-{
-        struct vdp1_cmdt_polygon polygon;
-
-        polygon.draw_mode.raw = 0x0000;
-        polygon.color = color;
-        polygon.vertex.a.x = 0;
-        polygon.vertex.a.y = SCREEN_HEIGHT - 1;
-
-        polygon.vertex.b.x = SCREEN_WIDTH - 1;
-        polygon.vertex.b.y = SCREEN_HEIGHT - 1;
-
-        polygon.vertex.c.x = SCREEN_WIDTH - 1;
-        polygon.vertex.c.y = 0;
-
-        polygon.vertex.d.x = 0;
-        polygon.vertex.d.y = 0;
-
-        vdp1_cmdt_polygon_add(cmdt_list, &polygon);
-
-        if (end) {
-                vdp1_cmdt_end(cmdt_list);
-        }
 }
