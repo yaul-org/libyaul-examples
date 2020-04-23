@@ -13,7 +13,6 @@ EXAMPLES:= \
 	vdp1-double-interlace \
 	vdp1-drawing \
 	vdp1-mic3d \
-	vdp1-st-niccc \
 	vdp1-zoom-sprite \
 	vdp2-24bpp-bitmap \
 	vdp2-2x2-plane \
@@ -28,9 +27,10 @@ EXAMPLES:= \
 	vdp2-zooming
 
 # Following examples are broken:
-#   1. arp-comm
-#   2. vdp1-cube
-#   3. scu-timers
+#   arp-comm
+#   scu-timers
+#   vdp1-cube
+#   vdp1-st-niccc
 
 ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),$(filter $(YAUL_OPTION_DEV_CARTRIDGE),1 2))
 EXAMPLES+= \

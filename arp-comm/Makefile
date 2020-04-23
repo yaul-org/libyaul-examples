@@ -1,3 +1,5 @@
+$(error This example is disabled)
+
 ifeq ($(strip $(YAUL_INSTALL_ROOT)),)
   $(error Undefined YAUL_INSTALL_ROOT (install root directory))
 endif
