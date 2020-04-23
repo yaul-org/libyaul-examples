@@ -83,7 +83,7 @@ static void _hardware_init(void) {
     vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
                               VDP2_TVMD_VERT_240);
 
-    vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE), COLOR_RGB555(0, 0, 0));
+    vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE), COLOR_RGB1555(0, 0, 0));
 
     vdp2_sprite_priority_set(0, 6);
 
@@ -95,7 +95,7 @@ static void _hardware_init(void) {
 
     struct vdp1_env vdp1_env;
 
-    vdp1_env.erase_color = COLOR_RGB555(0, 0, 0);
+    vdp1_env.erase_color = COLOR_RGB1555(0, 0, 0);
     vdp1_env.erase_points[0].x = 0;
     vdp1_env.erase_points[0].y = 0;
     vdp1_env.erase_points[1].x = _screen_width - 1;
@@ -170,7 +170,7 @@ static void _on_update_palette(uint8_t palette_index, const scene::rgb444 color)
     uint8_t scaled_g = color.g << 2;
     uint8_t scaled_b = color.b << 2;
 
-    color_rgb555_t rgb555_color = COLOR_RGB555(scaled_r, scaled_g, scaled_b);
+    color_rgb555_t rgb555_color = COLOR_RGB1555(scaled_r, scaled_g, scaled_b);
 
     _palette[palette_index] = rgb555_color;
 

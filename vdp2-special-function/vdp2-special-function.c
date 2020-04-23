@@ -119,7 +119,7 @@ _hardware_init(void)
         vdp2_tvmd_display_clear();
 
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB555(1, 0, 0, 7));
+            COLOR_RGB1555(1, 0, 0, 7));
 
         const struct vdp2_scrn_cell_format format = {
                 .scroll_screen = VDP2_SCRN_NBG0,
@@ -213,7 +213,7 @@ _hardware_init(void)
         vdp2_vram_cycp_bank_set(3, &vram_cycp_bank[1]);
 
         const struct vdp1_env vdp1_env = {
-                .erase_color = COLOR_RGB555_CLEAR,
+                .erase_color = COLOR_RGB1555_CLEAR,
                 .erase_points = {
                         INT16_VECTOR2_INITIALIZER(0, 0),
                         INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1)
@@ -284,7 +284,7 @@ _cmdt_list_init(struct vdp1_cmdt_list *cmdt_list)
 
         vdp1_cmdt_polygon_set(&cmdts[ORDER_POLYGON_INDEX]);
         vdp1_cmdt_param_draw_mode_set(&cmdts[ORDER_POLYGON_INDEX], polygon_draw_mode);
-        vdp1_cmdt_param_color_set(&cmdts[ORDER_POLYGON_INDEX], COLOR_RGB555(1, 15, 7, 7));
+        vdp1_cmdt_param_color_set(&cmdts[ORDER_POLYGON_INDEX], COLOR_RGB1555(1, 15, 7, 7));
         vdp1_cmdt_param_vertex_set(&cmdts[ORDER_POLYGON_INDEX], CMDT_VTX_POLYGON_A, &polygon_points[0]);
         vdp1_cmdt_param_vertex_set(&cmdts[ORDER_POLYGON_INDEX], CMDT_VTX_POLYGON_B, &polygon_points[1]);
         vdp1_cmdt_param_vertex_set(&cmdts[ORDER_POLYGON_INDEX], CMDT_VTX_POLYGON_C, &polygon_points[2]);

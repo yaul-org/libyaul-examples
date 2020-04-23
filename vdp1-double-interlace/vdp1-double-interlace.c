@@ -29,25 +29,25 @@ static void _vdp1_drawing_env_toggle(const uint8_t);
 static void _vdp2_resolution_toggle(const uint8_t);
 
 static color_rgb555_t _palette[16] = {
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
 
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
 
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
 
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0),
-        COLOR_RGB555_INITIALIZER(1, 0, 0, 0)
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
+        COLOR_RGB1555_INITIALIZER(1, 0, 0, 0)
 };
 
 void
@@ -132,7 +132,7 @@ _hardware_init(void)
             VDP2_TVMD_VERT_240);
 
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB555(1, 0, 0, 0));
+            COLOR_RGB1555(1, 0, 0, 0));
 
         vdp2_sprite_priority_set(0, 6);
         vdp2_sprite_priority_set(1, 6);
@@ -253,7 +253,7 @@ static void
 _vdp1_drawing_env_toggle(const uint8_t switch_env)
 {
         static struct vdp1_env vdp1_env = {
-                .erase_color = COLOR_RGB555(1, 0, 0, 0),
+                .erase_color = COLOR_RGB1555(1, 0, 0, 0),
                 .erase_points[0] = {
                         .x = 0,
                         .y = 0

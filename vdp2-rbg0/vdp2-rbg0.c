@@ -166,7 +166,7 @@ _hardware_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);
 
-        vdp2_scrn_back_screen_color_set(BACK_SCREEN, COLOR_RGB555(1, 5, 5, 7));
+        vdp2_scrn_back_screen_color_set(BACK_SCREEN, COLOR_RGB1555(1, 5, 5, 7));
 
         vdp2_tvmd_display_clear();
 

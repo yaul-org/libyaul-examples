@@ -54,7 +54,7 @@ main(void)
 
                 uint16_t i;
                 for (i = 0; i < buffer_count; i++) {
-                        buffer[i] = COLOR_RGB555(i + count, i + count, i + count);
+                        buffer[i] = COLOR_RGB1555(i + count, i + count, i + count);
                 }
 
                 count++;

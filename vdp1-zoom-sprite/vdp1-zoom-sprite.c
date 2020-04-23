@@ -26,9 +26,9 @@
 #define ZOOM_POINT_WIDTH                (64)
 #define ZOOM_POINT_HEIGHT               (102)
 #define ZOOM_POINT_POINTER_SIZE         (3)
-#define ZOOM_POINT_COLOR_SELECT         COLOR_RGB555(1,  0,  0, 31)
-#define ZOOM_POINT_COLOR_WAIT           COLOR_RGB555(1, 31,  0,  0)
-#define ZOOM_POINT_COLOR_HIGHLIGHT      COLOR_RGB555(1,  0, 31,  0)
+#define ZOOM_POINT_COLOR_SELECT         COLOR_RGB1555(1,  0,  0, 31)
+#define ZOOM_POINT_COLOR_WAIT           COLOR_RGB1555(1, 31,  0,  0)
+#define ZOOM_POINT_COLOR_HIGHLIGHT      COLOR_RGB1555(1,  0, 31,  0)
 
 #define ORDER_SYSTEM_CLIP_COORDS_INDEX      0
 #define ORDER_CLEAR_LOCAL_COORDS_INDEX      1
@@ -156,7 +156,7 @@ _hardware_init(void)
             VDP2_TVMD_VERT_240);
 
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB555(1, 0, 3, 15));
+            COLOR_RGB1555(1, 0, 3, 15));
 
         vdp2_sprite_priority_set(0, 6);
 
