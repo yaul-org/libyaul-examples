@@ -106,7 +106,7 @@ main(void)
         tga_image_decode(&tga, (void *)VDP2_VRAM_ADDR(0, 0x00000));
 
         color_rgb555_t bs_color;
-        bs_color = COLOR_RGB555(5, 5, 7);
+        bs_color = COLOR_RGB555(1, 5, 5, 7);
 
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             bs_color);

@@ -19,10 +19,10 @@ static void _timer0_handler(void);
 static void _timer1_handler(void);
 
 static color_rgb555_t _colors[] __unused = {
-        COLOR_RGB555(15,  3,  0),
-        COLOR_RGB555( 0,  3, 15),
-        COLOR_RGB555(31,  3, 15),
-        COLOR_RGB555(15, 31,  0)
+        COLOR_RGB555(1, 15,  3,  0),
+        COLOR_RGB555(1,  0,  3, 15),
+        COLOR_RGB555(1, 31,  3, 15),
+        COLOR_RGB555(1, 15, 31,  0)
 };
 
 static uint16_t *_back_screen = (uint16_t *)VDP2_VRAM_ADDR(3, 0x01FFFE);
@@ -74,7 +74,7 @@ _hardware_init(void)
         vdp2_sprite_priority_set(6, 0);
         vdp2_sprite_priority_set(7, 0);
 
-        vdp2_scrn_back_screen_color_set((uint32_t)_back_screen, COLOR_RGB555(0, 3, 15));
+        vdp2_scrn_back_screen_color_set((uint32_t)_back_screen, COLOR_RGB555(1, 0, 3, 15));
 
         uint32_t scu_mask;
         scu_mask = IC_MASK_VBLANK_IN | IC_MASK_VBLANK_OUT | IC_MASK_HBLANK_IN;

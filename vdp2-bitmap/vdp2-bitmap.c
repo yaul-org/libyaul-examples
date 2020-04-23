@@ -155,7 +155,7 @@ _hardware_init(void)
 
         vdp2_vram_cycp_clear();
 
-        vdp2_scrn_back_screen_color_set(BACK_SCREEN, COLOR_RGB555(5, 5, 7));
+        vdp2_scrn_back_screen_color_set(BACK_SCREEN, COLOR_RGB555(1, 5, 5, 7));
 
         vdp2_sprite_priority_set(0, 0);
         vdp2_sprite_priority_set(1, 0);

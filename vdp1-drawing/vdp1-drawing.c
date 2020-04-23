@@ -38,7 +38,7 @@
 #define PRIMITIVE_HALF_WIDTH      (PRIMITIVE_WIDTH / 2)
 #define PRIMITIVE_HALF_HEIGHT     (PRIMITIVE_HEIGHT / 2)
 
-#define PRIMITIVE_COLOR           COLOR_RGB555(31, 0, 31)
+#define PRIMITIVE_COLOR           COLOR_RGB555(1, 31, 0, 31)
 
 #define ORDER_SYSTEM_CLIP_COORDS_INDEX  0
 #define ORDER_LOCAL_COORDS_INDEX        1
@@ -262,13 +262,13 @@ _hardware_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB555(0, 3, 15));
+            COLOR_RGB555(1, 0, 3, 15));
         vdp2_sprite_priority_set(0, 6);
 
         struct vdp1_env env;
         vdp1_env_default_init(&env);
 
-        env.erase_color = COLOR_RGB555(0, 3, 15);
+        env.erase_color = COLOR_RGB555(1, 0, 3, 15);
 
         vdp1_env_set(&env);
 
@@ -341,10 +341,10 @@ _primitive_init(void)
         color_rgb555_t *gouraud_base =
             (color_rgb555_t *)vdp1_vram_gouraud_base_get();
 
-        gouraud_base[0] = COLOR_RGB555(31,  0,  0);
-        gouraud_base[1] = COLOR_RGB555( 0, 31,  0);
-        gouraud_base[2] = COLOR_RGB555( 0,  0, 31);
-        gouraud_base[3] = COLOR_RGB555(31, 31, 31);
+        gouraud_base[0] = COLOR_RGB555(1, 31,  0,  0);
+        gouraud_base[1] = COLOR_RGB555(1,  0, 31,  0);
+        gouraud_base[2] = COLOR_RGB555(1,  0,  0, 31);
+        gouraud_base[3] = COLOR_RGB555(1, 31, 31, 31);
 
         vdp1_cmdt_polyline_set(cmdt_polygon);
         vdp1_cmdt_param_color_set(cmdt_polygon, _primitive.color);

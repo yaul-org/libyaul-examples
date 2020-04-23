@@ -28,22 +28,22 @@ static void _transfer_pnd(const struct vdp2_scrn_cell_format *);
 static void _fill_map_pnd(uint16_t *, uint16_t, uint16_t, uint16_t);
 
 static const color_rgb555_t _palette[] __unused = {
-        COLOR_RGB888_RGB555(  0,   0,   0),
-        COLOR_RGB888_RGB555(  0,   0, 170),
-        COLOR_RGB888_RGB555(  0, 170,   0),
-        COLOR_RGB888_RGB555(  0, 170, 170),
-        COLOR_RGB888_RGB555( 85,  85,  85),
-        COLOR_RGB888_RGB555( 85,  85, 255),
-        COLOR_RGB888_RGB555( 85, 255,  85),
-        COLOR_RGB888_RGB555( 85, 255, 255),
-        COLOR_RGB888_RGB555(170,   0,   0),
-        COLOR_RGB888_RGB555(170,   0, 170),
-        COLOR_RGB888_RGB555(170,  85,   0),
-        COLOR_RGB888_RGB555(170, 170, 170),
-        COLOR_RGB888_RGB555(255,  85,  85),
-        COLOR_RGB888_RGB555(255,  85, 255),
-        COLOR_RGB888_RGB555(255, 255,  85),
-        COLOR_RGB888_RGB555(255, 255, 255)
+        COLOR_RGB888_RGB555(1,   0,   0,   0),
+        COLOR_RGB888_RGB555(1,   0,   0, 170),
+        COLOR_RGB888_RGB555(1,   0, 170,   0),
+        COLOR_RGB888_RGB555(1,   0, 170, 170),
+        COLOR_RGB888_RGB555(1,  85,  85,  85),
+        COLOR_RGB888_RGB555(1,  85,  85, 255),
+        COLOR_RGB888_RGB555(1,  85, 255,  85),
+        COLOR_RGB888_RGB555(1,  85, 255, 255),
+        COLOR_RGB888_RGB555(1, 170,   0,   0),
+        COLOR_RGB888_RGB555(1, 170,   0, 170),
+        COLOR_RGB888_RGB555(1, 170,  85,   0),
+        COLOR_RGB888_RGB555(1, 170, 170, 170),
+        COLOR_RGB888_RGB555(1, 255,  85,  85),
+        COLOR_RGB888_RGB555(1, 255,  85, 255),
+        COLOR_RGB888_RGB555(1, 255, 255,  85),
+        COLOR_RGB888_RGB555(1, 255, 255, 255)
 };
 
 int
@@ -93,7 +93,7 @@ _hardware_init(void)
         vdp2_tvmd_display_clear();
 
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(2, 0x01FFFE),
-            COLOR_RGB555(0, 0, 7));
+            COLOR_RGB555(1, 0, 0, 7));
 
         const struct vdp2_scrn_cell_format format = {
                 .scroll_screen = VDP2_SCRN_NBG1,
