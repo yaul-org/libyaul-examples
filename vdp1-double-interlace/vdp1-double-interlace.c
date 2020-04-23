@@ -109,7 +109,7 @@ main(void)
                 dbgio_flush();
 
                 vdp1_sync_draw(cmdt_list, NULL, NULL);
-                vdp_sync(0);
+                vdp_sync();
         }
 }
 

@@ -59,7 +59,7 @@ main(void)
 
                 count++;
 
-                vdp_sync(0);
+                vdp_sync();
         }
 }
 

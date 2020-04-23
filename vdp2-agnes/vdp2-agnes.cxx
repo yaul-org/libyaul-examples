@@ -56,7 +56,7 @@ main(void) {
             }
         }
 
-        vdp_sync(0);
+        vdp_sync();
     }
 
     return 0;

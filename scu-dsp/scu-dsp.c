@@ -70,7 +70,7 @@ main(void)
                 dbgio_buffer(buffer);
                 /* dbgio_flush() needs to be called during VBLANK-IN */
                 dbgio_flush();
-                vdp_sync(0);
+                vdp_sync();
         } while (!(scu_dsp_program_end()));
 
         _dsp_end();
@@ -99,7 +99,7 @@ main(void)
         dbgio_buffer(buffer);
 
         dbgio_flush();
-        vdp_sync(0);
+        vdp_sync();
 
         while (true) {
         }

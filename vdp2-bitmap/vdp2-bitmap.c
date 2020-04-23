@@ -118,7 +118,7 @@ main(void)
                     NULL, NULL);
                 assert(ret == 0);
 
-                vdp_sync(0);
+                vdp_sync();
         }
 
         return 0;

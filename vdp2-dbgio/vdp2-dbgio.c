@@ -54,7 +54,7 @@ _test_csi_action_h(void)
 
         while (true) {
                 dbgio_flush();
-                vdp_sync(0);
+                vdp_sync();
         }
 }
 
@@ -87,7 +87,7 @@ _test_buffer_overflow(void)
 
         while (true) {
                 dbgio_flush();
-                vdp_sync(0);
+                vdp_sync();
         }
 }
 
@@ -109,7 +109,7 @@ _test_cursor_position(void)
 
         while (true) {
                 dbgio_flush();
-                vdp_sync(0);
+                vdp_sync();
         }
 }
 

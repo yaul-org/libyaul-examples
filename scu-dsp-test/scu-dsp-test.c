@@ -57,7 +57,7 @@ main(void)
         dbgio_buffer("Passed");
 
         dbgio_flush();
-        vdp_sync(0);
+        vdp_sync();
 
         while (true) {
         }
@@ -136,7 +136,7 @@ _test_dsp_program(uint32_t program_id)
         dbgio_buffer(_buffer);
 
         dbgio_flush();
-        vdp_sync(0);
+        vdp_sync();
 
         scu_dsp_program_start();
         scu_dsp_program_end_wait();
@@ -171,7 +171,7 @@ _test_dsp_program(uint32_t program_id)
         dbgio_buffer(_buffer);
 
         dbgio_flush();
-        vdp_sync(0);
+        vdp_sync();
 
         abort();
 }

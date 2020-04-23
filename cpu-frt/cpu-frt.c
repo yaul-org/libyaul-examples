@@ -133,7 +133,7 @@ main(void)
                 dbgio_buffer(_buffer);
 
                 dbgio_flush();
-                vdp_sync(0);
+                vdp_sync();
         }
 }
 

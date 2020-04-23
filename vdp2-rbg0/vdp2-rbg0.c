@@ -109,7 +109,7 @@ main(void)
             NULL, NULL);
         assert(ret == 0);
 
-        vdp_sync(0);
+        vdp_sync();
 
         romdisk_close(fh[2]);
         romdisk_close(fh[1]);

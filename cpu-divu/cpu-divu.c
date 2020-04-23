@@ -33,7 +33,7 @@ main(void)
         dbgio_buffer("\n");
 
         dbgio_flush();
-        vdp_sync(0);
+        vdp_sync();
 
         free(text);
 

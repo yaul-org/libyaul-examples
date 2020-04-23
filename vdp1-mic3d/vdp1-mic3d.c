@@ -484,7 +484,7 @@ main(void)
 
                 vdp1_sync_draw(cmdt_lists[1], NULL, NULL);
 
-                vdp_sync(0);
+                vdp_sync();
         }
 }
 

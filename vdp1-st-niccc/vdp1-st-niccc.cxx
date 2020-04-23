@@ -73,7 +73,7 @@ void main(void) {
         scene::process_frame();
 
         vdp1_sync_draw(_scene_cmdt_list, NULL, NULL);
-        vdp_sync(0);
+        vdp_sync();
     }
 
     __builtin_unreachable();

@@ -91,7 +91,7 @@ main(void)
                         cpu_frt_count_set(0);
 
                         dbgio_flush();
-                        vdp_sync(0);
+                        vdp_sync();
 
                         while (!_done);
 
@@ -102,7 +102,7 @@ main(void)
                         dbgio_buffer(buffer);
 
                         dbgio_flush();
-                        vdp_sync(0);
+                        vdp_sync();
                 }
 
                 /* Switch over to the next channel */

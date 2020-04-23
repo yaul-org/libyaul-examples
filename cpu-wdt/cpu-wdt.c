@@ -34,7 +34,7 @@ main(void)
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
 
         dbgio_flush();
-        vdp_sync(0);
+        vdp_sync();
 
         while (true) {
                 char buf[32];
@@ -45,7 +45,7 @@ main(void)
                 (void)sprintf(buf, "[H[2Jcpu_wdt_count_get(): %i\n", count);
                 dbgio_buffer(buf);
                 dbgio_flush();
-                vdp_sync(0);
+                vdp_sync();
         }
 }
 
