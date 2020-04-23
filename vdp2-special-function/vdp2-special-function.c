@@ -16,6 +16,12 @@
 #define SCREEN_WIDTH    320
 #define SCREEN_HEIGHT   240
 
+#define ORDER_SYSTEM_CLIP_COORDS_INDEX  0
+#define ORDER_LOCAL_COORDS_INDEX        1
+#define ORDER_POLYGON_INDEX             2
+#define ORDER_DRAW_END_INDEX            3
+#define ORDER_COUNT                     4
+
 #define NBG0_CPD                VDP2_VRAM_ADDR(0, 0x00000)
 #define NBG0_PAL                VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
 #define NBG0_MAP_PLANE_A        VDP2_VRAM_ADDR(3, 0x00000)
@@ -27,7 +33,7 @@ extern uint8_t root_romdisk[];
 
 static void _hardware_init(void);
 
-static void _create_drawing_env(struct vdp1_cmdt_list *, bool);
+static void _cmdt_list_init(struct vdp1_cmdt_list *);
 
 static void _dma_upload(void *, void *, size_t);
 
@@ -67,52 +73,11 @@ main(void)
         vdp2_tvmd_display_set();
 
         struct vdp1_cmdt_list *cmdt_list;
-        cmdt_list = vdp1_cmdt_list_alloc(6);
+        cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
 
-        _create_drawing_env(cmdt_list, false);
+        _cmdt_list_init(cmdt_list);
 
-        struct vdp1_cmdt_polygon clear_polygon;
-
-        clear_polygon.draw_mode.raw = 0x0000;
-        clear_polygon.color.raw = 0x00000;
-        clear_polygon.vertex.a.x = 0;
-        clear_polygon.vertex.a.y = SCREEN_HEIGHT - 1;
-
-        clear_polygon.vertex.b.x = SCREEN_WIDTH - 1;
-        clear_polygon.vertex.b.y = SCREEN_HEIGHT - 1;
-
-        clear_polygon.vertex.c.x = SCREEN_WIDTH - 1;
-        clear_polygon.vertex.c.y = 0;
-
-        clear_polygon.vertex.d.x = 0;
-        clear_polygon.vertex.d.y = 0;
-
-        vdp1_cmdt_polygon_add(cmdt_list, &clear_polygon);
-        vdp1_cmdt_end(cmdt_list);
-
-        struct vdp1_cmdt_list *cmdt_list_polygon;
-        cmdt_list_polygon = vdp1_cmdt_list_alloc(2);
-
-        struct vdp1_cmdt_polygon polygon;
-
-        polygon.draw_mode.raw = 0x0000;
-        polygon.color = COLOR_RGB555(31, 0, 0);
-        polygon.vertex.a.x = 0;
-        polygon.vertex.a.y = SCREEN_HEIGHT - 1;
-
-        polygon.vertex.b.x = SCREEN_WIDTH - 1;
-        polygon.vertex.b.y = SCREEN_HEIGHT - 1;
-
-        polygon.vertex.c.x = SCREEN_WIDTH - 1;
-        polygon.vertex.c.y = 0;
-
-        polygon.vertex.d.x = 0;
-        polygon.vertex.d.y = 0;
-
-        vdp1_cmdt_polygon_add(cmdt_list_polygon, &polygon);
-        vdp1_cmdt_end(cmdt_list_polygon);
-
-        vdp1_sync_draw(cmdt_list, NULL, NULL);
+        vdp1_sync_cmdt_list_put(cmdt_list, NULL, NULL);
         vdp_sync();
 
         romdisk_close(fh[0]);
@@ -126,11 +91,16 @@ main(void)
         count_frames = 0;
 
         while (true) {
-                vdp1_sync_draw(cmdt_list, NULL, NULL);
+                struct vdp1_cmdt *cmdt_polygon;
+                cmdt_polygon = &cmdt_list->cmdts[ORDER_POLYGON_INDEX];
 
                 if (show_polygon) {
-                        vdp1_sync_draw(cmdt_list_polygon, NULL, NULL);
+                        vdp1_cmdt_jump_clear(cmdt_polygon);
+                } else {
+                        vdp1_cmdt_jump_skip_next(cmdt_polygon);
                 }
+
+                vdp1_sync_cmdt_list_put(cmdt_list, NULL, NULL);
 
                 vdp_sync();
 
@@ -149,7 +119,7 @@ _hardware_init(void)
         vdp2_tvmd_display_clear();
 
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB555(0, 0, 7));
+            COLOR_RGB555(1, 0, 0, 7));
 
         const struct vdp2_scrn_cell_format format = {
                 .scroll_screen = VDP2_SCRN_NBG0,
@@ -243,7 +213,7 @@ _hardware_init(void)
         vdp2_vram_cycp_bank_set(3, &vram_cycp_bank[1]);
 
         const struct vdp1_env vdp1_env = {
-                .erase_color = COLOR_RGB555(0, 0, 0),
+                .erase_color = COLOR_RGB555_CLEAR,
                 .erase_points = {
                         INT16_VECTOR2_INITIALIZER(0, 0),
                         INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1)
@@ -274,42 +244,53 @@ _hardware_init(void)
 }
 
 static void
-_create_drawing_env(struct vdp1_cmdt_list *cmdt_list, bool end)
+_cmdt_list_init(struct vdp1_cmdt_list *cmdt_list)
 {
-        struct vdp1_cmdt_local_coord local_coord = {
-                .coord = {
-                        .x = 0,
-                        .y = 0
-                }
+        static const int16_vector2_t system_clip_coord =
+            INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1,
+                                      SCREEN_HEIGHT - 1);
+
+        static const int16_vector2_t local_coord_ul =
+            INT16_VECTOR2_INITIALIZER(0,
+                                      0);
+
+        static const vdp1_cmdt_draw_mode polygon_draw_mode = {
+                .raw = 0x0000,
+                .bits.pre_clipping_disable = true
         };
 
-        struct vdp1_cmdt_system_clip_coord system_clip = {
-                .coord = {
-                        .x = SCREEN_WIDTH - 1,
-                        .y = SCREEN_HEIGHT - 1
-                }
+        static const int16_vector2_t polygon_points[] = {
+                INT16_VECTOR2_INITIALIZER(0, SCREEN_HEIGHT - 1),
+                INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1),
+                INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1,                 0),
+                INT16_VECTOR2_INITIALIZER(               0,                 0)
         };
 
-        struct vdp1_cmdt_user_clip_coord user_clip = {
-                .coords = {
-                        {
-                                .x = 0,
-                                .y = 0
-                        },
-                        {
-                                .x = SCREEN_WIDTH - 1,
-                                .y = SCREEN_HEIGHT - 1
-                        }
-                }
-        };
+        struct vdp1_cmdt *cmdts;
+        cmdts = &cmdt_list->cmdts[0];
 
-        vdp1_cmdt_system_clip_coord_add(cmdt_list, &system_clip);
-        vdp1_cmdt_user_clip_coord_add(cmdt_list, &user_clip);
-        vdp1_cmdt_local_coord_add(cmdt_list, &local_coord);
+        (void)memset(&cmdts[0], 0x00, sizeof(struct vdp1_cmdt) * ORDER_COUNT);
 
-        if (end) {
-                vdp1_cmdt_end(cmdt_list);
-        }
+        cmdt_list->count = ORDER_COUNT;
+
+        vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX],
+            CMDT_VTX_SYSTEM_CLIP,
+            &system_clip_coord);
+
+        vdp1_cmdt_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_LOCAL_COORDS_INDEX],
+            CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+
+        vdp1_cmdt_polygon_set(&cmdts[ORDER_POLYGON_INDEX]);
+        vdp1_cmdt_param_draw_mode_set(&cmdts[ORDER_POLYGON_INDEX], polygon_draw_mode);
+        vdp1_cmdt_param_color_set(&cmdts[ORDER_POLYGON_INDEX], COLOR_RGB555(1, 15, 7, 7));
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_POLYGON_INDEX], CMDT_VTX_POLYGON_A, &polygon_points[0]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_POLYGON_INDEX], CMDT_VTX_POLYGON_B, &polygon_points[1]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_POLYGON_INDEX], CMDT_VTX_POLYGON_C, &polygon_points[2]);
+        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_POLYGON_INDEX], CMDT_VTX_POLYGON_D, &polygon_points[3]);
+
+        vdp1_cmdt_end_set(&cmdts[ORDER_DRAW_END_INDEX]);
 }
 
 static void
