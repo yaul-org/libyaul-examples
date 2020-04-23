@@ -129,12 +129,11 @@ main(void)
                 _sprite_config();
                 _polygon_pointer_config();
 
-                vdp1_sync_draw(_cmdt_list, NULL, NULL);
-                vdp1_sync_draw_wait();
+                vdp1_sync_cmdt_list_put(_cmdt_list, NULL, NULL);
 
                 dbgio_flush();
 
-                vdp_sync(0);
+                vdp_sync();
 
                 uint32_t result;
                 result = _frame_time_calculate();
@@ -160,6 +159,9 @@ _hardware_init(void)
             COLOR_RGB555(0, 3, 15));
 
         vdp2_sprite_priority_set(0, 6);
+
+        /* Setup default VDP1 environment */
+        vdp1_env_default_set();
 
         cpu_intc_mask_set(0);
 
@@ -241,6 +243,7 @@ _cmdt_list_init(void)
         vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_B, &polygon_points[1]);
         vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_C, &polygon_points[2]);
         vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_D, &polygon_points[3]);
+        vdp1_cmdt_jump_skip_next(&cmdts[ORDER_CLEAR_POLYGON_INDEX]);
 
         vdp1_cmdt_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX]);
         vdp1_cmdt_param_vertex_set(&cmdts[ORDER_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_center);
