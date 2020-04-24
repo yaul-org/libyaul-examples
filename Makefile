@@ -43,8 +43,6 @@ EXAMPLES+= \
 endif
 
 ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),2)
-EXAMPLES+= \
-	arp-comm
 endif
 
 ifeq ($(strip $(YAUL_INSTALL_ROOT)),)
