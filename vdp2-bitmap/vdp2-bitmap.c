@@ -93,7 +93,7 @@ main(void)
         };
 
         scu_dma_level_cfg_t scu_dma_level_cfg;
-        scu_dma_reg_buffer_t reg_buffer;
+        scu_dma_handle_t handle;
 
         scu_dma_level_cfg.xfer.direct.len = sizeof(vdp2_scrn_rotation_table_t);
         scu_dma_level_cfg.xfer.direct.dst = RBG0_ROTATION_TABLE;
@@ -102,7 +102,7 @@ main(void)
         scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;
         scu_dma_level_cfg.update = SCU_DMA_UPDATE_NONE;
 
-        scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
+        scu_dma_config_buffer(&handle, &scu_dma_level_cfg);
 
         while (true) {
                 /* Scale */
@@ -114,7 +114,7 @@ main(void)
                 rot_tbl.my += 0x00010000;
 
                 int8_t ret;
-                ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN,
+                ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN,
                     NULL, NULL);
                 assert(ret == 0);
 

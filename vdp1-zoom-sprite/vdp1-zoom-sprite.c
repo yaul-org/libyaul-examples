@@ -263,11 +263,11 @@ _dma_upload(void *dst, void *src, size_t len, uint8_t tag)
                 .xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src
         };
 
-        scu_dma_reg_buffer_t reg_buffer;
-        scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
+        scu_dma_handle_t handle;
+        scu_dma_config_buffer(&handle, &scu_dma_level_cfg);
 
         int8_t ret;
-        ret = dma_queue_enqueue(&reg_buffer, tag, NULL, NULL);
+        ret = dma_queue_enqueue(&handle, tag, NULL, NULL);
         assert(ret == 0);
 }
 

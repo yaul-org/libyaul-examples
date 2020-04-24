@@ -93,7 +93,7 @@ main(void)
         /* Set up and enqueue two DMA transfers tagged as VBLANK-IN */
 
         scu_dma_level_cfg_t scu_dma_level_cfg;
-        scu_dma_reg_buffer_t reg_buffer;
+        scu_dma_handle_t handle;
 
         scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
         scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;
@@ -112,8 +112,8 @@ main(void)
         scu_dma_level_cfg.xfer.direct.dst = VDP2_CRAM_ADDR(0x0000);
         scu_dma_level_cfg.xfer.direct.src = (uint32_t)p;
 
-        scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
-        ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
+        scu_dma_config_buffer(&handle, &scu_dma_level_cfg);
+        ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
         assert(ret == 0);
 
         fh[1] = romdisk_open(romdisk, "/BITMAP.CPD");
@@ -125,8 +125,8 @@ main(void)
         scu_dma_level_cfg.xfer.direct.dst = VDP2_VRAM_ADDR(0, 0x00000);
         scu_dma_level_cfg.xfer.direct.src = (uint32_t)p;
 
-        scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
-        ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
+        scu_dma_config_buffer(&handle, &scu_dma_level_cfg);
+        ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
         assert(ret == 0);
 
         vdp_sync();

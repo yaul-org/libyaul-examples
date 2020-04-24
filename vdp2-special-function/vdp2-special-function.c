@@ -297,7 +297,7 @@ static void
 _dma_upload(void *dst, void *src, size_t len)
 {
         scu_dma_level_cfg_t scu_dma_level_cfg;
-        scu_dma_reg_buffer_t reg_buffer;
+        scu_dma_handle_t handle;
 
         scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
         scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;
@@ -306,9 +306,9 @@ _dma_upload(void *dst, void *src, size_t len)
         scu_dma_level_cfg.xfer.direct.dst = (uint32_t)dst;
         scu_dma_level_cfg.xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src;
 
-        scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
+        scu_dma_config_buffer(&handle, &scu_dma_level_cfg);
 
         int8_t ret;
-        ret = dma_queue_enqueue(&reg_buffer, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
+        ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
         assert(ret == 0);
 }

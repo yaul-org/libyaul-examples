@@ -198,7 +198,7 @@ _transfer_pnd(const vdp2_scrn_cell_format_t *format)
         uint32_t page_size;
         page_size = VDP2_SCRN_CALCULATE_PAGE_SIZE(format);
 
-        scu_dma_reg_buffer_t scu_dma_reg_buffer;
+        scu_dma_handle_t scu_dma_handle;
 
         /* XXX: WA until memalign() is implemented { */
         void *p;
@@ -219,7 +219,7 @@ _transfer_pnd(const vdp2_scrn_cell_format_t *format)
                 .xfer.indirect = xfer_table
         };
 
-        scu_dma_config_buffer(&scu_dma_reg_buffer, &scu_dma_level_cfg);
+        scu_dma_config_buffer(&scu_dma_handle, &scu_dma_level_cfg);
 
         uint16_t *map[2];
         map[0] = malloc(page_size / 2);
@@ -251,7 +251,7 @@ _transfer_pnd(const vdp2_scrn_cell_format_t *format)
                 xfer_table[1].src = SCU_DMA_INDIRECT_TBL_END | CPU_CACHE_THROUGH | (uint32_t)map_p;
 
                 int8_t ret;
-                ret = dma_queue_enqueue(&scu_dma_reg_buffer, DMA_QUEUE_TAG_IMMEDIATE, NULL, NULL);
+                ret = dma_queue_enqueue(&scu_dma_handle, DMA_QUEUE_TAG_IMMEDIATE, NULL, NULL);
                 assert(ret == 0);
 
                 dma_queue_flush(DMA_QUEUE_TAG_IMMEDIATE);
