@@ -49,10 +49,10 @@ ifeq ($(strip $(YAUL_INSTALL_ROOT)),)
   $(error Undefined YAUL_INSTALL_ROOT (install root directory))
 endif
 
-ifeq ($(strip $(SILENT)),1)
-  ECHO=@
-else
+ifeq ($(strip $(SILENT)),)
   ECHO=
+else
+  ECHO=@
 endif
 export ECHO
 
