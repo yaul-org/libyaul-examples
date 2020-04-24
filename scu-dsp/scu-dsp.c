@@ -75,7 +75,7 @@ main(void)
 
         _dsp_end();
 
-        struct dsp_status status;
+        scu_dsp_status_t status;
         scu_dsp_status_get(&status);
 
         sprintf(buffer,

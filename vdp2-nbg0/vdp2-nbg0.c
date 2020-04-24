@@ -9,16 +9,16 @@
 
 static void _hardware_init(void);
 
-static void _copy_character_pattern_data(const struct vdp2_scrn_cell_format *);
-static void _copy_color_palette(const struct vdp2_scrn_cell_format *);
-static void _copy_map(const struct vdp2_scrn_cell_format *);
+static void _copy_character_pattern_data(const vdp2_scrn_cell_format_t *);
+static void _copy_color_palette(const vdp2_scrn_cell_format_t *);
+static void _copy_map(const vdp2_scrn_cell_format_t *);
 
 int
 main(void)
 {
         _hardware_init();
 
-        struct vdp2_scrn_cell_format format;
+        vdp2_scrn_cell_format_t format;
 
         format.scroll_screen = VDP2_SCRN_NBG0;
         format.cc_count = VDP2_SCRN_CCC_PALETTE_16;
@@ -33,7 +33,7 @@ main(void)
         format.map_bases.plane_c = (uint32_t)VDP2_VRAM_ADDR(0, 0x08000);
         format.map_bases.plane_d = (uint32_t)VDP2_VRAM_ADDR(0, 0x08000);
 
-        struct vdp2_vram_cycp vram_cycp;
+        vdp2_vram_cycp_t vram_cycp;
 
         vram_cycp.pt[0].t0 = VDP2_VRAM_CYCP_PNDR_NBG0;
         vram_cycp.pt[0].t1 = VDP2_VRAM_CYCP_NO_ACCESS;
@@ -103,7 +103,7 @@ _hardware_init(void)
 }
 
 static void
-_copy_character_pattern_data(const struct vdp2_scrn_cell_format *format)
+_copy_character_pattern_data(const vdp2_scrn_cell_format_t *format)
 {
         uint8_t *cpd;
         cpd = (uint8_t *)format->cp_table;
@@ -113,7 +113,7 @@ _copy_character_pattern_data(const struct vdp2_scrn_cell_format *format)
 }
 
 static void
-_copy_color_palette(const struct vdp2_scrn_cell_format *format)
+_copy_color_palette(const vdp2_scrn_cell_format_t *format)
 {
         uint16_t *color_palette;
         color_palette = (uint16_t *)format->color_palette;
@@ -123,7 +123,7 @@ _copy_color_palette(const struct vdp2_scrn_cell_format *format)
 }
 
 static void
-_copy_map(const struct vdp2_scrn_cell_format *format)
+_copy_map(const vdp2_scrn_cell_format_t *format)
 {
         uint32_t page_width;
         page_width = VDP2_SCRN_CALCULATE_PAGE_WIDTH(format);

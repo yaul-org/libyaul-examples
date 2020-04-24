@@ -18,7 +18,7 @@ static void _hardware_init(void);
 void
 main(void)
 {
-        static struct scu_dma_xfer _xfer_table[4] __aligned(4 * 16);
+        static scu_dma_xfer_t _xfer_table[4] __aligned(4 * 16);
 
         _hardware_init();
 
@@ -32,14 +32,14 @@ main(void)
 
         void *fh[3];
 
-        const struct scu_dma_level_cfg scu_dma_level_cfg = {
+        const scu_dma_level_cfg_t scu_dma_level_cfg = {
                 .xfer.indirect = &_xfer_table[0],
                 .mode = SCU_DMA_MODE_INDIRECT,
                 .stride = SCU_DMA_STRIDE_2_BYTES,
                 .update = SCU_DMA_UPDATE_NONE
         };
 
-        struct scu_dma_reg_buffer reg_buffer;
+        scu_dma_reg_buffer_t reg_buffer;
         scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
 
         fh[0] = romdisk_open(romdisk, "/VF.CPD");
@@ -66,7 +66,7 @@ main(void)
         _xfer_table[3].dst = NBG0_LINE_SCROLL;
         _xfer_table[3].src = SCU_DMA_INDIRECT_TBL_END | (uint32_t)romdisk_direct(fh[3]);
 
-        struct vdp2_scrn_ls_format ls_format = {
+        vdp2_scrn_ls_format_t ls_format = {
                 .enable = VDP2_SCRN_LS_N0SCX,
                 .interlace_mode = 0,
                 .line_scroll_table = NBG0_LINE_SCROLL
@@ -104,7 +104,7 @@ main(void)
 static void
 _hardware_init(void)
 {
-        const struct vdp2_scrn_cell_format format = {
+        const vdp2_scrn_cell_format_t format = {
                 .scroll_screen = VDP2_SCRN_NBG0,
                 .cc_count = VDP2_SCRN_CCC_PALETTE_256,
                 .character_size = 2 * 2,
@@ -140,7 +140,7 @@ _hardware_init(void)
         vdp2_sprite_priority_set(6, 0);
         vdp2_sprite_priority_set(7, 0);
 
-        struct vdp2_vram_cycp_bank vram_cycp_bank;
+        vdp2_vram_cycp_bank_t vram_cycp_bank;
 
         vram_cycp_bank.t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
         vram_cycp_bank.t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;

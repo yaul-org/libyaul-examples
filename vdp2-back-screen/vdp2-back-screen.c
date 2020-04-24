@@ -16,7 +16,7 @@ static void _vblank_out_handler(void);
 void
 main(void)
 {
-        struct smpc_peripheral_digital digital;
+        smpc_peripheral_digital_t digital;
 
         _hardware_init();
 

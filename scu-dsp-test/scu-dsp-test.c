@@ -141,8 +141,8 @@ _test_dsp_program(uint32_t program_id)
         scu_dsp_program_start();
         scu_dsp_program_end_wait();
 
-        struct dsp_status status;
-        memset(&status, 0, sizeof(struct dsp_status));
+        scu_dsp_status_t status;
+        memset(&status, 0, sizeof(scu_dsp_status_t));
 
         scu_dsp_status_get(&status);
 

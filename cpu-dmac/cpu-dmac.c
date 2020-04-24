@@ -41,7 +41,7 @@ main(void)
         uint32_t ch;
         ch = 0;
 
-        struct cpu_dmac_cfg cfg __unused = {
+        cpu_dmac_cfg_t cfg __unused = {
                 .channel= ch,
                 .src_mode = CPU_DMAC_SOURCE_INCREMENT,
                 .dst = 0x20000000,

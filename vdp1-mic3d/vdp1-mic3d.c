@@ -359,12 +359,12 @@ main(void)
 
         _hardware_init();
 
-        struct vdp1_cmdt_list *cmdt_list;
+        vdp1_cmdt_list_t *cmdt_list;
         cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
 
-        (void)memset(&cmdt_list->cmdts[0], 0x00, sizeof(struct vdp1_cmdt) * ORDER_COUNT);
+        (void)memset(&cmdt_list->cmdts[0], 0x00, sizeof(vdp1_cmdt_t) * ORDER_COUNT);
 
-        struct vdp1_cmdt *cmdts;
+        vdp1_cmdt_t *cmdts;
         cmdts = &cmdt_list->cmdts[0];
 
         vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
@@ -476,11 +476,11 @@ main(void)
                         color_rgb555_t color;
                         color = COLOR_RGB1555(1, r, g, b);
 
-                        vdp1_cmdt_draw_mode draw_mode = {
+                        vdp1_cmdt_draw_mode_t draw_mode = {
                                 .raw = 0x0000
                         };
 
-                        struct vdp1_cmdt *cmdt;
+                        vdp1_cmdt_t *cmdt;
                         cmdt = &cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + i];
 
                         /* Set the vertices directly as we have to cast from
@@ -617,7 +617,7 @@ _hardware_init(void)
 
         vdp2_sprite_priority_set(0, 6);
 
-        struct vdp1_env env;
+        vdp1_env_t env;
         vdp1_env_default_init(&env);
 
         env.erase_color = COLOR_RGB1555(1, 0, 3, 15);

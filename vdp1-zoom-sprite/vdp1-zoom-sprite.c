@@ -47,13 +47,13 @@ static int16_vector2_t _display = INT16_VECTOR2_INITIALIZER(ZOOM_POINT_WIDTH, ZO
 static int16_vector2_t _zoom_point = INT16_VECTOR2_INITIALIZER(0, 0);
 static uint16_t _zoom_point_value = CMDT_ZOOM_POINT_CENTER;
 static uint32_t _delay_frames = 0;
-static struct smpc_peripheral_digital _digital;
+static smpc_peripheral_digital_t _digital;
 
 static struct {
         int16_vector2_t position;
         color_rgb555_t color;
 
-        struct vdp1_cmdt *cmdt;
+        vdp1_cmdt_t *cmdt;
 } _polygon_pointer;
 
 static struct {
@@ -63,12 +63,12 @@ static struct {
         uint16_t *tex_base;
         uint16_t *pal_base;
 
-        struct vdp1_cmdt *cmdt;
+        vdp1_cmdt_t *cmdt;
 } _sprite;
 
 static void *_romdisk = NULL;
 
-static struct vdp1_cmdt_list *_cmdt_list = NULL;
+static vdp1_cmdt_list_t *_cmdt_list = NULL;
 
 static volatile uint32_t _frt_count = 0;
 
@@ -98,7 +98,7 @@ static void _dma_upload(void *, void *, size_t, uint8_t);
 
 static uint32_t _frame_time_calculate(void);
 
-static void _vblank_out_handler(void);
+static void _vblank_out_handler(void *);
 static void _cpu_frt_ovi_handler(void);
 
 int
@@ -204,7 +204,7 @@ _cmdt_list_init(void)
             INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH / 2,
                                       SCREEN_HEIGHT / 2);
 
-        static const vdp1_cmdt_draw_mode polygon_draw_mode = {
+        static const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
                 .raw = 0x0000,
                 .bits.pre_clipping_disable = true
         };
@@ -218,11 +218,11 @@ _cmdt_list_init(void)
 
         _cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
 
-        (void)memset(&_cmdt_list->cmdts[0], 0x00, sizeof(struct vdp1_cmdt) * ORDER_COUNT);
+        (void)memset(&_cmdt_list->cmdts[0], 0x00, sizeof(vdp1_cmdt_t) * ORDER_COUNT);
 
         _cmdt_list->count = ORDER_COUNT;
 
-        struct vdp1_cmdt *cmdts;
+        vdp1_cmdt_t *cmdts;
         cmdts = &_cmdt_list->cmdts[0];
 
         _sprite.cmdt = &cmdts[ORDER_SPRITE_INDEX];
@@ -254,7 +254,7 @@ _cmdt_list_init(void)
 static void
 _dma_upload(void *dst, void *src, size_t len, uint8_t tag)
 {
-        const struct scu_dma_level_cfg scu_dma_level_cfg = {
+        const scu_dma_level_cfg_t scu_dma_level_cfg = {
                 .mode = SCU_DMA_MODE_DIRECT,
                 .stride = SCU_DMA_STRIDE_2_BYTES,
                 .update = SCU_DMA_UPDATE_NONE,
@@ -263,7 +263,7 @@ _dma_upload(void *dst, void *src, size_t len, uint8_t tag)
                 .xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src
         };
 
-        struct scu_dma_reg_buffer reg_buffer;
+        scu_dma_reg_buffer_t reg_buffer;
         scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
 
         int8_t ret;
@@ -312,13 +312,13 @@ _sprite_init(void)
         _sprite.tex_base = vdp1_vram_texture_base_get();
         _sprite.pal_base = (void *)VDP2_CRAM_MODE_1_OFFSET(1, 0, 0x0000);
 
-        const vdp1_cmdt_draw_mode draw_mode = {
+        const vdp1_cmdt_draw_mode_t draw_mode = {
                 .bits.trans_pixel_disable = true,
                 .bits.pre_clipping_disable = true,
                 .bits.end_code_disable = true
         };
 
-        const vdp1_cmdt_color_bank color_bank = {
+        const vdp1_cmdt_color_bank_t color_bank = {
                 .type_0.data.dc = 0x0100
         };
 
@@ -377,7 +377,7 @@ _sprite_config(void)
 static void
 _polygon_pointer_init(void)
 {
-        static const vdp1_cmdt_draw_mode draw_mode = {
+        static const vdp1_cmdt_draw_mode_t draw_mode = {
                 .raw = 0x0000,
                 .bits.pre_clipping_disable = true
         };
@@ -667,7 +667,7 @@ _state_zoom_select_anchor(void)
 }
 
 static void
-_vblank_out_handler(void)
+_vblank_out_handler(void *work __unused)
 {
         smpc_peripheral_intback_issue();
 }

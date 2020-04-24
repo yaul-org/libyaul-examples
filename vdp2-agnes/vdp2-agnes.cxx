@@ -65,7 +65,7 @@ main(void) {
 static void _hardware_init(void) {
     vdp2_tvmd_display_clear();
 
-    struct vdp2_scrn_bitmap_format format;
+    vdp2_scrn_bitmap_format_t format;
     memset(&format, 0x00, sizeof(format));
 
     format.scroll_screen = VDP2_SCRN_NBG0;
@@ -83,7 +83,7 @@ static void _hardware_init(void) {
     vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
     vdp2_scrn_display_set(VDP2_SCRN_NBG0, /* no_trans = */ false);
 
-    struct vdp2_vram_cycp vram_cycp;
+    vdp2_vram_cycp_t vram_cycp;
 
     vram_cycp.pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
     vram_cycp.pt[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
@@ -138,7 +138,7 @@ static void _vblank_out_handler(void) {
 }
 
 static void _input_process(agnes_input_t *out_input) {
-     struct smpc_peripheral_digital digital;
+     smpc_peripheral_digital_t digital;
 
      smpc_peripheral_process();
      smpc_peripheral_digital_port(1, &digital);

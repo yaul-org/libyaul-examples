@@ -46,9 +46,9 @@
 #define ORDER_DRAW_END_INDEX            3
 #define ORDER_COUNT                     4
 
-static struct smpc_peripheral_digital _digital;
+static smpc_peripheral_digital_t _digital;
 
-static struct vdp1_cmdt_list *_cmdt_list = NULL;
+static vdp1_cmdt_list_t *_cmdt_list = NULL;
 
 static struct {
         int8_t type;
@@ -59,7 +59,7 @@ static struct {
 
 static uint32_t _state = STATE_IDLE;
 
-static vdp1_cmdt_draw_mode _primitive_draw_modes[] = {
+static vdp1_cmdt_draw_mode_t _primitive_draw_modes[] = {
         {
                 .raw = 0x0000
         },
@@ -114,7 +114,7 @@ static void _hardware_init(void);
 static void _cmdt_list_init(void);
 static void _primitive_init(void);
 
-static void _vblank_out_handler(void);
+static void _vblank_out_handler(void *);
 
 void
 main(void)
@@ -220,7 +220,7 @@ main(void)
                         break;
                 }
 
-                struct vdp1_cmdt *cmdt_polygon;
+                vdp1_cmdt_t *cmdt_polygon;
                 cmdt_polygon = &_cmdt_list->cmdts[ORDER_POLYGON_INDEX];
 
                 switch (_primitive.type) {
@@ -265,7 +265,7 @@ _hardware_init(void)
             COLOR_RGB1555(1, 0, 3, 15));
         vdp2_sprite_priority_set(0, 6);
 
-        struct vdp1_env env;
+        vdp1_env_t env;
         vdp1_env_default_init(&env);
 
         env.erase_color = COLOR_RGB1555(1, 0, 3, 15);
@@ -289,11 +289,11 @@ _cmdt_list_init(void)
         _cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
 
         (void)memset(&_cmdt_list->cmdts[0], 0x00,
-            sizeof(struct vdp1_cmdt) * ORDER_COUNT);
+            sizeof(vdp1_cmdt_t) * ORDER_COUNT);
 
         _cmdt_list->count = ORDER_COUNT;
 
-        struct vdp1_cmdt *cmdts;
+        vdp1_cmdt_t *cmdts;
         cmdts = &_cmdt_list->cmdts[0];
 
         vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
@@ -328,14 +328,14 @@ _primitive_init(void)
         _primitive.points[3].x = 0;
         _primitive.points[3].y = 0;
 
-        struct vdp1_cmdt *cmdt_local_coords;
+        vdp1_cmdt_t *cmdt_local_coords;
         cmdt_local_coords = &_cmdt_list->cmdts[ORDER_LOCAL_COORDS_INDEX];
 
         vdp1_cmdt_local_coord_set(cmdt_local_coords);
         vdp1_cmdt_param_vertex_set(cmdt_local_coords, CMDT_VTX_LOCAL_COORD,
             &local_coord_center);
 
-        struct vdp1_cmdt *cmdt_polygon;
+        vdp1_cmdt_t *cmdt_polygon;
         cmdt_polygon = &_cmdt_list->cmdts[ORDER_POLYGON_INDEX];
 
         color_rgb555_t *gouraud_base =
@@ -356,7 +356,7 @@ _primitive_init(void)
 }
 
 static void
-_vblank_out_handler(void)
+_vblank_out_handler(void *work __unused)
 {
         smpc_peripheral_intback_issue();
 }

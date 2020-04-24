@@ -23,7 +23,7 @@ static void _hardware_init(void);
 
 static void _transfer_cpd(void);
 static void _transfer_pal(void);
-static void _transfer_pnd(const struct vdp2_scrn_cell_format *);
+static void _transfer_pnd(const vdp2_scrn_cell_format_t *);
 
 static void _fill_map_pnd(uint16_t *, uint16_t, uint16_t, uint16_t);
 
@@ -95,7 +95,7 @@ _hardware_init(void)
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(2, 0x01FFFE),
             COLOR_RGB1555(1, 0, 0, 7));
 
-        const struct vdp2_scrn_cell_format format = {
+        const vdp2_scrn_cell_format_t format = {
                 .scroll_screen = VDP2_SCRN_NBG1,
                 .cc_count = VDP2_SCRN_CCC_PALETTE_16,
                 .character_size = 1 * 1,
@@ -118,7 +118,7 @@ _hardware_init(void)
         vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 6);
         vdp2_scrn_display_set(VDP2_SCRN_NBG1, /* transparent = */ false);
 
-        struct vdp2_vram_cycp_bank vram_cycp_bank[2];
+        vdp2_vram_cycp_bank_t vram_cycp_bank[2];
 
         vram_cycp_bank[0].t0 = VDP2_VRAM_CYCP_PNDR_NBG1;
         vram_cycp_bank[0].t1 = VDP2_VRAM_CYCP_PNDR_NBG1;
@@ -178,7 +178,7 @@ _transfer_pal(void)
 }
 
 static void
-_transfer_pnd(const struct vdp2_scrn_cell_format *format)
+_transfer_pnd(const vdp2_scrn_cell_format_t *format)
 {
         /* The scroll screen is set up to have 16 64x64 cell pages (4 planes
          * total), each 4 KiB, resulting in 64 KiB.
@@ -198,21 +198,21 @@ _transfer_pnd(const struct vdp2_scrn_cell_format *format)
         uint32_t page_size;
         page_size = VDP2_SCRN_CALCULATE_PAGE_SIZE(format);
 
-        struct scu_dma_reg_buffer scu_dma_reg_buffer;
+        scu_dma_reg_buffer_t scu_dma_reg_buffer;
 
         /* XXX: WA until memalign() is implemented { */
         void *p;
-        p = malloc(32 + (2 * sizeof(struct scu_dma_xfer)));
+        p = malloc(32 + (2 * sizeof(scu_dma_xfer_t)));
         assert(p != NULL);
 
         uint32_t aligned_offset;
         aligned_offset = (((uint32_t)p + 0x0000001F) & ~0x0000001F) - (uint32_t)p;
 
-        struct scu_dma_xfer *xfer_table;
-        xfer_table = (struct scu_dma_xfer *)((uint32_t)p + aligned_offset);
+        scu_dma_xfer_t *xfer_table;
+        xfer_table = (scu_dma_xfer_t *)((uint32_t)p + aligned_offset);
         /* } */
 
-        struct scu_dma_level_cfg scu_dma_level_cfg = {
+        scu_dma_level_cfg_t scu_dma_level_cfg = {
                 .mode = SCU_DMA_MODE_INDIRECT,
                 .stride = SCU_DMA_STRIDE_2_BYTES,
                 .update = SCU_DMA_UPDATE_NONE,

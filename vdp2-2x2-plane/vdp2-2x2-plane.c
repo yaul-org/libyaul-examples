@@ -25,7 +25,7 @@ main(void)
         romdisk = romdisk_mount("/", root_romdisk);
         assert(romdisk != NULL);
 
-        struct vdp2_scrn_cell_format format;
+        vdp2_scrn_cell_format_t format;
 
         uint16_t *color_palette;
         color_palette = (uint16_t *)VDP2_CRAM_MODE_1_OFFSET(0, 0, 0);
@@ -51,7 +51,7 @@ main(void)
         format.map_bases.plane_c = (uint32_t)planes[2];
         format.map_bases.plane_d = (uint32_t)planes[3];
 
-        struct vdp2_vram_cycp vram_cycp;
+        vdp2_vram_cycp_t vram_cycp;
 
         vram_cycp.pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
         vram_cycp.pt[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG1;
@@ -94,8 +94,8 @@ main(void)
         uint16_t page_size;
         page_size = VDP2_SCRN_CALCULATE_PAGE_SIZE(&format);
 
-        struct scu_dma_level_cfg scu_dma_level_cfg;
-        struct scu_dma_reg_buffer reg_buffer;
+        scu_dma_level_cfg_t scu_dma_level_cfg;
+        scu_dma_reg_buffer_t reg_buffer;
 
         scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
         scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;
@@ -152,7 +152,7 @@ main(void)
 
                         uint32_t i;
                         for (i = 0; i < (2 * 2); i++) {
-                                struct scu_dma_xfer *xfer;
+                                scu_dma_xfer_t *xfer;
                                 xfer = &scu_dma_level_cfg.xfer.direct;
 
                                 xfer->len = len;

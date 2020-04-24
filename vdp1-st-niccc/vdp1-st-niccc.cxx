@@ -24,8 +24,8 @@ static const char* _scene_file_path = "SCENE.BIN";
 
 static void* _romdisk;
 
-static struct vdp1_cmdt_list* _env_cmdt_list;
-static struct vdp1_cmdt_list* _scene_cmdt_list;
+static vdp1_cmdt_list_t* _env_cmdt_list;
+static vdp1_cmdt_list_t* _scene_cmdt_list;
 static uint32_t _clear_polygon_index;
 
 static color_rgb555_t _palette[16] __aligned(32);
@@ -93,7 +93,7 @@ static void _hardware_init(void) {
 
     smpc_init();
 
-    struct vdp1_env vdp1_env;
+    vdp1_env_t vdp1_env;
 
     vdp1_env.erase_color = COLOR_RGB1555(0, 0, 0);
     vdp1_env.erase_points[0].x = 0;
@@ -123,15 +123,15 @@ static void _draw_init(void) {
 
     _env_cmdt_list = vdp1_cmdt_list_alloc(4);
 
-    struct vdp1_cmdt_system_clip_coord cmdt_system_clip;
+    vdp1_cmdt_t_system_clip_coord cmdt_system_clip;
     cmdt_system_clip.coord.x = _screen_width - 1;
     cmdt_system_clip.coord.y = _screen_height - 1;
 
-    struct vdp1_cmdt_local_coord cmdt_local_coord;
+    vdp1_cmdt_t_local_coord cmdt_local_coord;
     cmdt_local_coord.coord.x = 0;
     cmdt_local_coord.coord.y = 0;
 
-    struct vdp1_cmdt_polygon cmdt_polygon;
+    vdp1_cmdt_t_polygon cmdt_polygon;
     cmdt_polygon.draw_mode.raw = 0x0000;
     cmdt_polygon.draw_mode.pre_clipping_disable = true;
     cmdt_polygon.color.raw = 0x0000;
@@ -286,7 +286,7 @@ static void _scene_cmdt_polygon_add(const int16_vector2_t& p0,
                                     const int16_vector2_t& p2,
                                     const int16_vector2_t& p3,
                                     uint8_t palette_index) {
-    struct vdp1_cmdt_polygon polygon;
+    vdp1_cmdt_t_polygon polygon;
     polygon.draw_mode.raw = 0x0000;
     polygon.draw_mode.pre_clipping_disable = true;
 

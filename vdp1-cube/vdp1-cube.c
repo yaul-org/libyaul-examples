@@ -78,7 +78,7 @@ main(void)
         matrix_stack_translate(F16(0.0f), F16(0.0f), F16(-10.0f));
 
         vdp1_cmdt_list_begin(0); {
-                struct vdp1_cmdt_local_coord local_coord;
+                vdp1_cmdt_t_local_coord local_coord;
 
                 local_coord.coord.x = SCREEN_WIDTH / 2;
                 local_coord.coord.y = SCREEN_HEIGHT / 2;
@@ -87,7 +87,7 @@ main(void)
                 vdp1_cmdt_end();
         } vdp1_cmdt_list_end(0);
 
-        struct vdp1_cmdt_polygon polygon;
+        vdp1_cmdt_t_polygon polygon;
 
         memset(&polygon, 0x00, sizeof(polygon));
 

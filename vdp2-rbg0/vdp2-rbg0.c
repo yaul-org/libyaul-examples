@@ -13,7 +13,7 @@
 
 extern uint8_t root_romdisk[];
 
-static const struct vdp2_scrn_rotation_table _rot_tbl __used = {
+static const vdp2_scrn_rotation_table_t _rot_tbl __used = {
         .xst = 0,
         .yst = 0,
         .zst = 0,
@@ -54,7 +54,7 @@ static const struct vdp2_scrn_rotation_table _rot_tbl __used = {
         .delta_kax = 0,
 };
 
-static struct scu_dma_xfer _xfer_table[4] __aligned(4 * 16);
+static scu_dma_xfer_t _xfer_table[4] __aligned(4 * 16);
 
 static void _hardware_init(void);
 
@@ -71,14 +71,14 @@ main(void)
 
         void *fh[3];
 
-        struct scu_dma_level_cfg scu_dma_level_cfg = {
+        scu_dma_level_cfg_t scu_dma_level_cfg = {
                 .xfer.indirect = &_xfer_table[0],
                 .mode = SCU_DMA_MODE_INDIRECT,
                 .stride = SCU_DMA_STRIDE_2_BYTES,
                 .update = SCU_DMA_UPDATE_NONE
         };
 
-        struct scu_dma_reg_buffer reg_buffer;
+        scu_dma_reg_buffer_t reg_buffer;
 
         scu_dma_config_buffer(&reg_buffer, &scu_dma_level_cfg);
 
@@ -122,7 +122,7 @@ main(void)
 static void
 _hardware_init(void)
 {
-        const struct vdp2_scrn_cell_format format = {
+        const vdp2_scrn_cell_format_t format = {
                 .scroll_screen = VDP2_SCRN_RBG0,
                 .cc_count = VDP2_SCRN_CCC_PALETTE_256,
                 .character_size = 2 * 2,

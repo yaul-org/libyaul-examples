@@ -33,7 +33,7 @@ extern uint8_t root_romdisk[];
 
 static void _hardware_init(void);
 
-static void _cmdt_list_init(struct vdp1_cmdt_list *);
+static void _cmdt_list_init(vdp1_cmdt_list_t *);
 
 static void _dma_upload(void *, void *, size_t);
 
@@ -72,7 +72,7 @@ main(void)
 
         vdp2_tvmd_display_set();
 
-        struct vdp1_cmdt_list *cmdt_list;
+        vdp1_cmdt_list_t *cmdt_list;
         cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
 
         _cmdt_list_init(cmdt_list);
@@ -91,7 +91,7 @@ main(void)
         count_frames = 0;
 
         while (true) {
-                struct vdp1_cmdt *cmdt_polygon;
+                vdp1_cmdt_t *cmdt_polygon;
                 cmdt_polygon = &cmdt_list->cmdts[ORDER_POLYGON_INDEX];
 
                 if (show_polygon) {
@@ -121,7 +121,7 @@ _hardware_init(void)
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB1555(1, 0, 0, 7));
 
-        const struct vdp2_scrn_cell_format format = {
+        const vdp2_scrn_cell_format_t format = {
                 .scroll_screen = VDP2_SCRN_NBG0,
                 .cc_count = VDP2_SCRN_CCC_PALETTE_2048,
                 .character_size = 1 * 1,
@@ -177,7 +177,7 @@ _hardware_init(void)
          * 40x30 cell background, 0x25800 bytes is needed. A single VRAM bank
          * (set at 4-Mbit) is 0x20000 bytes. Without going across bank
          * boundaries, we need to not part a bank into two */
-        const struct vdp2_vram_ctl vram_ctl = {
+        const vdp2_vram_ctl_t vram_ctl = {
                 .vram_mode = VDP2_VRAM_CTL_MODE_NO_PART_BANK_A | VDP2_VRAM_CTL_MODE_PART_BANK_B
         };
 
@@ -185,7 +185,7 @@ _hardware_init(void)
 
         vdp2_cram_mode_set(1);
 
-        struct vdp2_vram_cycp_bank vram_cycp_bank[2];
+        vdp2_vram_cycp_bank_t vram_cycp_bank[2];
 
         vram_cycp_bank[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
         vram_cycp_bank[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
@@ -212,7 +212,7 @@ _hardware_init(void)
         vdp2_vram_cycp_bank_clear(2);
         vdp2_vram_cycp_bank_set(3, &vram_cycp_bank[1]);
 
-        const struct vdp1_env vdp1_env = {
+        const vdp1_env_t vdp1_env = {
                 .erase_color = COLOR_RGB1555_CLEAR,
                 .erase_points = {
                         INT16_VECTOR2_INITIALIZER(0, 0),
@@ -244,7 +244,7 @@ _hardware_init(void)
 }
 
 static void
-_cmdt_list_init(struct vdp1_cmdt_list *cmdt_list)
+_cmdt_list_init(vdp1_cmdt_list_t *cmdt_list)
 {
         static const int16_vector2_t system_clip_coord =
             INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1,
@@ -254,7 +254,7 @@ _cmdt_list_init(struct vdp1_cmdt_list *cmdt_list)
             INT16_VECTOR2_INITIALIZER(0,
                                       0);
 
-        static const vdp1_cmdt_draw_mode polygon_draw_mode = {
+        static const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
                 .raw = 0x0000,
                 .bits.pre_clipping_disable = true
         };
@@ -266,10 +266,10 @@ _cmdt_list_init(struct vdp1_cmdt_list *cmdt_list)
                 INT16_VECTOR2_INITIALIZER(               0,                 0)
         };
 
-        struct vdp1_cmdt *cmdts;
+        vdp1_cmdt_t *cmdts;
         cmdts = &cmdt_list->cmdts[0];
 
-        (void)memset(&cmdts[0], 0x00, sizeof(struct vdp1_cmdt) * ORDER_COUNT);
+        (void)memset(&cmdts[0], 0x00, sizeof(vdp1_cmdt_t) * ORDER_COUNT);
 
         cmdt_list->count = ORDER_COUNT;
 
@@ -296,8 +296,8 @@ _cmdt_list_init(struct vdp1_cmdt_list *cmdt_list)
 static void
 _dma_upload(void *dst, void *src, size_t len)
 {
-        struct scu_dma_level_cfg scu_dma_level_cfg;
-        struct scu_dma_reg_buffer reg_buffer;
+        scu_dma_level_cfg_t scu_dma_level_cfg;
+        scu_dma_reg_buffer_t reg_buffer;
 
         scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
         scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;

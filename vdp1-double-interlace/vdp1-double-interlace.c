@@ -21,10 +21,10 @@
 
 static void _hardware_init(void);
 
-static void _vblank_out_handler(void);
+static void _vblank_out_handler(void *);
 
-static void _vdp1_drawing_list_init(struct vdp1_cmdt_list *);
-static void _vdp1_drawing_list_set(const uint8_t, struct vdp1_cmdt_list *);
+static void _vdp1_drawing_list_init(vdp1_cmdt_list_t *);
+static void _vdp1_drawing_list_set(const uint8_t, vdp1_cmdt_list_t *);
 static void _vdp1_drawing_env_toggle(const uint8_t);
 static void _vdp2_resolution_toggle(const uint8_t);
 
@@ -65,9 +65,9 @@ main(void)
         fix16_t speed;
         speed = F16(0.0f);
 
-        struct smpc_peripheral_digital digital;
+        smpc_peripheral_digital_t digital;
 
-        struct vdp1_cmdt_list *cmdt_list;
+        vdp1_cmdt_list_t *cmdt_list;
         cmdt_list = vdp1_cmdt_list_alloc(5);
 
         _vdp1_drawing_list_init(cmdt_list);
@@ -151,29 +151,29 @@ _hardware_init(void)
 }
 
 static void
-_vblank_out_handler(void)
+_vblank_out_handler(void *work __unused)
 {
         smpc_peripheral_intback_issue();
 }
 
 static void
-_vdp1_drawing_list_init(struct vdp1_cmdt_list *cmdt_list)
+_vdp1_drawing_list_init(vdp1_cmdt_list_t *cmdt_list)
 {
         static const int16_vector2_t local_coord_ul =
             INT16_VECTOR2_INITIALIZER(0,
                                       0);
 
-        static const vdp1_cmdt_draw_mode polygon_draw_mode = {
+        static const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
                 .raw = 0x0000,
                 .bits.pre_clipping_disable = true
         };
 
         assert(cmdt_list != NULL);
 
-        struct vdp1_cmdt *cmdts;
+        vdp1_cmdt_t *cmdts;
         cmdts = &cmdt_list->cmdts[0];
 
-        (void)memset(&cmdts[0], 0x00, sizeof(struct vdp1_cmdt) * ORDER_COUNT);
+        (void)memset(&cmdts[0], 0x00, sizeof(vdp1_cmdt_t) * ORDER_COUNT);
 
         cmdt_list->count = ORDER_COUNT;
 
@@ -190,21 +190,21 @@ _vdp1_drawing_list_init(struct vdp1_cmdt_list *cmdt_list)
 }
 
 static void
-_vdp1_drawing_list_set(const uint8_t switch_env, struct vdp1_cmdt_list *cmdt_list)
+_vdp1_drawing_list_set(const uint8_t switch_env, vdp1_cmdt_list_t *cmdt_list)
 {
-        static vdp1_cmdt_color_bank polygon_color_bank = {
+        static vdp1_cmdt_color_bank_t polygon_color_bank = {
                 .type_0.data.dc = 16
         };
 
         assert(cmdt_list != NULL);
 
-        struct vdp1_cmdt *cmdts;
+        vdp1_cmdt_t *cmdts;
         cmdts = &cmdt_list->cmdts[0];
 
-        struct vdp1_cmdt *cmdt_polygon;
+        vdp1_cmdt_t *cmdt_polygon;
         cmdt_polygon = &cmdts[ORDER_POLYGON_INDEX];
 
-        struct vdp1_cmdt *cmdt_system_clip_coords;
+        vdp1_cmdt_t *cmdt_system_clip_coords;
         cmdt_system_clip_coords = &cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX];
 
         switch (switch_env & 0x01) {
@@ -252,7 +252,7 @@ _vdp1_drawing_list_set(const uint8_t switch_env, struct vdp1_cmdt_list *cmdt_lis
 static void
 _vdp1_drawing_env_toggle(const uint8_t switch_env)
 {
-        static struct vdp1_env vdp1_env = {
+        static vdp1_env_t vdp1_env = {
                 .erase_color = COLOR_RGB1555(1, 0, 0, 0),
                 .erase_points[0] = {
                         .x = 0,

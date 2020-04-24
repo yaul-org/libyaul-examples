@@ -40,7 +40,7 @@ main(void)
 
         (void)tga_image_decode(&tga, (void *)RBG0_BPD);
 
-        struct vdp2_scrn_rotation_table rot_tbl = {
+        vdp2_scrn_rotation_table_t rot_tbl = {
                 /* Screen start coordinates */
                 .xst = 0,
                 .yst = 0,
@@ -92,10 +92,10 @@ main(void)
                 .delta_kax = 0
         };
 
-        struct scu_dma_level_cfg scu_dma_level_cfg;
-        struct scu_dma_reg_buffer reg_buffer;
+        scu_dma_level_cfg_t scu_dma_level_cfg;
+        scu_dma_reg_buffer_t reg_buffer;
 
-        scu_dma_level_cfg.xfer.direct.len = sizeof(struct vdp2_scrn_rotation_table);
+        scu_dma_level_cfg.xfer.direct.len = sizeof(vdp2_scrn_rotation_table_t);
         scu_dma_level_cfg.xfer.direct.dst = RBG0_ROTATION_TABLE;
         scu_dma_level_cfg.xfer.direct.src = (uint32_t)&rot_tbl;
         scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
@@ -127,7 +127,7 @@ main(void)
 static void
 _hardware_init(void)
 {
-        const struct vdp2_scrn_bitmap_format format = {
+        const vdp2_scrn_bitmap_format_t format = {
                 .scroll_screen = VDP2_SCRN_RBG0,
                 .cc_count = VDP2_SCRN_CCC_RGB_32768,
                 .bitmap_size = {

@@ -13,7 +13,7 @@
 #define CPU_WDT_INTERRUPT_PRIORITY_LEVEL 8
 
 static void _cpu_wdt_handler(void);
-static void _vblank_in_handler(void);
+static void _vblank_in_handler(void *);
 
 static void _hardware_init(void);
 
@@ -70,7 +70,7 @@ _cpu_wdt_handler(void)
 }
 
 static void
-_vblank_in_handler(void)
+_vblank_in_handler(void *work __unused)
 {
         cpu_wdt_count_set(0);
 }

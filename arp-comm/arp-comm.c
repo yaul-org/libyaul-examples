@@ -14,7 +14,7 @@
 
 static void _hardware_init(void);
 
-static void _local_arp_cb(const struct arp_callback *);
+static void _local_arp_cb(const arp_callback_t *);
 
 int
 main(void)

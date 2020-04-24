@@ -27,7 +27,7 @@ main(void)
         romdisk = romdisk_mount("/", root_romdisk);
         assert(romdisk != NULL);
 
-        struct vdp2_scrn_bitmap_format format;
+        vdp2_scrn_bitmap_format_t format;
         memset(&format, 0x00, sizeof(format));
 
         format.scroll_screen = VDP2_SCRN_NBG0;
@@ -47,7 +47,7 @@ main(void)
         vdp2_scrn_reduction_y_set(VDP2_SCRN_NBG0, Q0_3_8(1.0f / (1.0f - (240.0f / 512.0f))));
         vdp2_scrn_display_set(VDP2_SCRN_NBG0, /* no_trans = */ false);
 
-        struct vdp2_vram_cycp vram_cycp;
+        vdp2_vram_cycp_t vram_cycp;
 
         vram_cycp.pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
         vram_cycp.pt[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
@@ -92,8 +92,8 @@ main(void)
 
         /* Set up and enqueue two DMA transfers tagged as VBLANK-IN */
 
-        struct scu_dma_level_cfg scu_dma_level_cfg;
-        struct scu_dma_reg_buffer reg_buffer;
+        scu_dma_level_cfg_t scu_dma_level_cfg;
+        scu_dma_reg_buffer_t reg_buffer;
 
         scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
         scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;
