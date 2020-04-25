@@ -167,9 +167,6 @@ _hardware_init(void)
 
         vdp2_tvmd_display_set();
 
-        smpc_init();
-        smpc_peripheral_init();
-
         vdp_sync_vblank_out_set(_vblank_out_handler);
 
         cpu_frt_init(CPU_FRT_CLOCK_DIV_32);

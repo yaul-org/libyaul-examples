@@ -32,7 +32,6 @@ main(void)
         buffer = malloc(1024);
         assert(buffer != NULL);
 
-        cpu_dmac_init();
         cpu_dmac_interrupt_priority_set(8);
 
         cpu_frt_init(CPU_FRT_CLOCK_DIV_8);

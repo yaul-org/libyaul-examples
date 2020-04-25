@@ -125,9 +125,6 @@ main(void)
 static void
 _hardware_init(void)
 {
-        smpc_init();
-        smpc_peripheral_init();
-
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_DOUBLE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);
 
