@@ -22,7 +22,8 @@ struct balls_handle {
         int8_t load_count;
 };
 
-static void _dma_upload(balls_handle_t handle, const void *dst, const void *src, size_t len);
+static void _dma_upload(balls_handle_t handle, const void *dst,
+    const void *src, size_t len);
 static void _dma_upload_handler(const dma_queue_transfer_t *transfer);
 
 balls_handle_t
@@ -122,11 +123,14 @@ balls_cmdt_list_init(balls_handle_t handle, vdp1_cmdt_t *cmdts, const uint16_t c
                 .bits.end_code_disable = true
         };
 
-        static const vdp1_cmdt_color_bank_t color_bank = {
-                .raw = 0x0000,
-                /* XXX: Determine what the offset is */
-                .type_0.data.dc = 0x0010
-        };
+        vdp1_cmdt_color_bank_t color_bank;
+
+        const uint16_t offset =
+            (uint32_t)handle->config.sprite_pal_base & (VDP2_CRAM_SIZE - 1);
+        const uint16_t palette_number = offset >> 1;
+
+        color_bank.raw = 0x0000;
+        color_bank.type_0.data.dc = palette_number & VDP2_SPRITE_TYPE_0_DC_MASK;
 
         for (uint16_t i = 0; i < count; i++) {
                 vdp1_cmdt_t *cmdt;
@@ -180,7 +184,8 @@ _dma_upload(balls_handle_t handle, const void *dst, const void *src, size_t len)
         scu_dma_config_buffer(&dma_handle, &scu_dma_level_cfg);
 
         int8_t ret;
-        ret = dma_queue_enqueue(&dma_handle, handle->config.dma_tag, _dma_upload_handler, handle);
+        ret = dma_queue_enqueue(&dma_handle, handle->config.dma_tag,
+            _dma_upload_handler, handle);
         assert(ret == 0);
 }
 
@@ -197,4 +202,3 @@ _dma_upload_handler(const dma_queue_transfer_t *transfer)
                 }
         }
 }
-////////////////////////////////////////////////////////////////////////////////
