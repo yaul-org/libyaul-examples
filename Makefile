@@ -10,6 +10,7 @@ EXAMPLES:= \
 	scu-dma \
 	scu-dsp \
 	scu-dsp-test \
+	vdp1-balls \
 	vdp1-double-interlace \
 	vdp1-drawing \
 	vdp1-mic3d \
