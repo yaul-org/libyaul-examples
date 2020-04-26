@@ -11,21 +11,21 @@
 
 static void _hardware_init(void);
 
-static void _vblank_out_handler(void);
+static void _vblank_out_handler(void *);
+
+static smpc_peripheral_digital_t _digital;
 
 void
 main(void)
 {
-        smpc_peripheral_digital_t digital;
-
         _hardware_init();
 
         uint16_t width __unused;
         uint16_t height;
         vdp2_tvmd_display_res_get(&width, &height);
 
-        color_rgb555_t *buffer;
-        buffer = malloc(sizeof(color_rgb555_t) * height);
+        color_rgb1555_t *buffer;
+        buffer = malloc(sizeof(color_rgb1555_t) * height);
         assert(buffer != NULL);
 
         uint16_t buffer_count;
@@ -37,9 +37,9 @@ main(void)
 
         while (true) {
                 smpc_peripheral_process();
-                smpc_peripheral_digital_port(1, &digital);
+                smpc_peripheral_digital_port(1, &_digital);
 
-                if (digital.held.button.a) {
+                if (_digital.held.button.a) {
                         switch_buffer_count ^= true;
                 }
 
@@ -54,7 +54,7 @@ main(void)
 
                 uint16_t i;
                 for (i = 0; i < buffer_count; i++) {
-                        buffer[i] = COLOR_RGB1555(i + count, i + count, i + count);
+                        buffer[i] = COLOR_RGB1555(1, i + count, i + count, i + count);
                 }
 
                 count++;
@@ -88,7 +88,7 @@ _hardware_init(void)
 }
 
 static void
-_vblank_out_handler(void)
+_vblank_out_handler(void *work __unused)
 {
         smpc_peripheral_intback_issue();
 }

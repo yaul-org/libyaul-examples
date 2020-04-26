@@ -18,7 +18,7 @@ static void _hblank_in_handler(void);
 static void _timer0_handler(void);
 static void _timer1_handler(void);
 
-static color_rgb555_t _colors[] __unused = {
+static color_rgb1555_t _colors[] __unused = {
         COLOR_RGB1555(1, 15,  3,  0),
         COLOR_RGB1555(1,  0,  3, 15),
         COLOR_RGB1555(1, 31,  3, 15),

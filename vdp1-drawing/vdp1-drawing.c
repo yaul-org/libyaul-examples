@@ -49,11 +49,12 @@
 static smpc_peripheral_digital_t _digital;
 
 static vdp1_cmdt_list_t *_cmdt_list = NULL;
+static vdp1_vram_partitions_t _vdp1_vram_partitions;
 
 static struct {
         int8_t type;
         int8_t draw_mode;
-        color_rgb555_t color;
+        color_rgb1555_t color;
         int16_vector2_t points[4];
 } _primitive;
 
@@ -274,6 +275,8 @@ _hardware_init(void)
         cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
+
+        vdp1_vram_partitions_get(&_vdp1_vram_partitions);
 }
 
 static void
@@ -335,13 +338,13 @@ _primitive_init(void)
         vdp1_cmdt_t *cmdt_polygon;
         cmdt_polygon = &_cmdt_list->cmdts[ORDER_POLYGON_INDEX];
 
-        color_rgb555_t *gouraud_base =
-            (color_rgb555_t *)vdp1_vram_gouraud_base_get();
+        vdp1_gouraud_table_t *gouraud_base;
+        gouraud_base = _vdp1_vram_partitions.gouraud_base;
 
-        gouraud_base[0] = COLOR_RGB1555(1, 31,  0,  0);
-        gouraud_base[1] = COLOR_RGB1555(1,  0, 31,  0);
-        gouraud_base[2] = COLOR_RGB1555(1,  0,  0, 31);
-        gouraud_base[3] = COLOR_RGB1555(1, 31, 31, 31);
+        gouraud_base->colors[0] = COLOR_RGB1555(1, 31,  0,  0);
+        gouraud_base->colors[1] = COLOR_RGB1555(1,  0, 31,  0);
+        gouraud_base->colors[2] = COLOR_RGB1555(1,  0,  0, 31);
+        gouraud_base->colors[3] = COLOR_RGB1555(1, 31, 31, 31);
 
         vdp1_cmdt_polyline_set(cmdt_polygon);
         vdp1_cmdt_param_color_set(cmdt_polygon, _primitive.color);

@@ -473,7 +473,7 @@ main(void)
                         uint8_t b;
                         b = 30 * k / 90 + 10;
 
-                        color_rgb555_t color;
+                        color_rgb1555_t color;
                         color = COLOR_RGB1555(1, r, g, b);
 
                         vdp1_cmdt_draw_mode_t draw_mode = {

@@ -28,7 +28,7 @@ static void _vdp1_drawing_list_set(const uint8_t, vdp1_cmdt_list_t *);
 static void _vdp1_drawing_env_toggle(const uint8_t);
 static void _vdp2_resolution_toggle(const uint8_t);
 
-static color_rgb555_t _palette[16] = {
+static color_rgb1555_t _palette[16] = {
         COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
         COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
         COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
@@ -89,7 +89,7 @@ main(void)
                 uint32_t speed_int;
                 speed_int = fix16_to_int(speed);
 
-                volatile color_rgb555_t *palette_ptr;
+                volatile color_rgb1555_t *palette_ptr;
                 palette_ptr = &_palette[0];
 
                 palette_ptr->r = speed_int;

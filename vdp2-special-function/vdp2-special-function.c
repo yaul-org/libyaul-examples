@@ -213,7 +213,7 @@ _hardware_init(void)
         vdp2_vram_cycp_bank_set(3, &vram_cycp_bank[1]);
 
         const vdp1_env_t vdp1_env = {
-                .erase_color = COLOR_RGB1555_CLEAR,
+                .erase_color = COLOR_RGB1555_INITIALIZER(0, 0, 0, 0),
                 .erase_points = {
                         INT16_VECTOR2_INITIALIZER(0, 0),
                         INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1)

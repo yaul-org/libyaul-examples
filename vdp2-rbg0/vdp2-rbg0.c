@@ -102,7 +102,7 @@ main(void)
 
         _xfer_table[3].len = sizeof(_rot_tbl);
         _xfer_table[3].dst = RBG0_ROTATION_TABLE;
-        _xfer_table[3].src = SCU_DMA_INDIRECT_TBL_END | (uint32_t)&_rot_tbl;
+        _xfer_table[3].src = SCU_DMA_INDIRECT_TABLE_END | (uint32_t)&_rot_tbl;
 
         int8_t ret;
         ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN,

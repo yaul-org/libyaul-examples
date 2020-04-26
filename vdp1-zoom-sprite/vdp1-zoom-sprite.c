@@ -51,7 +51,7 @@ static smpc_peripheral_digital_t _digital;
 
 static struct {
         int16_vector2_t position;
-        color_rgb555_t color;
+        color_rgb1555_t color;
 
         vdp1_cmdt_t *cmdt;
 } _polygon_pointer;
@@ -69,6 +69,7 @@ static struct {
 static void *_romdisk = NULL;
 
 static vdp1_cmdt_list_t *_cmdt_list = NULL;
+static vdp1_vram_partitions_t _vdp1_vram_partitions;
 
 static volatile uint32_t _frt_count = 0;
 
@@ -171,6 +172,8 @@ _hardware_init(void)
 
         cpu_frt_init(CPU_FRT_CLOCK_DIV_32);
         cpu_frt_ovi_set(_cpu_frt_ovi_handler);
+
+        vdp1_vram_partitions_get(&_vdp1_vram_partitions);
 }
 
 static void
@@ -306,7 +309,7 @@ _sprite_init(void)
         _sprite.anim_rate = F16(0.0f);
         _sprite.anim_rate_dir = F16(1.0f);
 
-        _sprite.tex_base = vdp1_vram_texture_base_get();
+        _sprite.tex_base = _vdp1_vram_partitions.texture_base;
         _sprite.pal_base = (void *)VDP2_CRAM_MODE_1_OFFSET(1, 0, 0x0000);
 
         const vdp1_cmdt_draw_mode_t draw_mode = {

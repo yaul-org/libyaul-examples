@@ -43,7 +43,7 @@ main(void) {
             for (uint32_t x = 0; x < AGNES_SCREEN_WIDTH; x++) {
                 const agnes_color_t nes_rgb = agnes_get_screen_pixel(&_agnes, x, y);
 
-                color_rgb555_t color;
+                color_rgb1555_t color;
                 color.r = nes_rgb.r;
                 color.g = nes_rgb.g;
                 color.b = nes_rgb.b;

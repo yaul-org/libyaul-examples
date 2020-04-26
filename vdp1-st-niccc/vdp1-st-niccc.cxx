@@ -28,7 +28,7 @@ static vdp1_cmdt_list_t* _env_cmdt_list;
 static vdp1_cmdt_list_t* _scene_cmdt_list;
 static uint32_t _clear_polygon_index;
 
-static color_rgb555_t _palette[16] __aligned(32);
+static color_rgb1555_t _palette[16] __aligned(32);
 
 static void _hardware_init(void);
 static void _romdisk_init(void);
@@ -170,9 +170,9 @@ static void _on_update_palette(uint8_t palette_index, const scene::rgb444 color)
     uint8_t scaled_g = color.g << 2;
     uint8_t scaled_b = color.b << 2;
 
-    color_rgb555_t rgb555_color = COLOR_RGB1555(scaled_r, scaled_g, scaled_b);
+    color_rgb1555_t rgb1555_color = COLOR_RGB1555(scaled_r, scaled_g, scaled_b);
 
-    _palette[palette_index] = rgb555_color;
+    _palette[palette_index] = rgb1555_color;
 
     (void)memcpy((void*)VDP2_CRAM_ADDR(0x10), &_palette[0], sizeof(_palette));
 }

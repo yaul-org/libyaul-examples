@@ -27,23 +27,23 @@ static void _transfer_pnd(const vdp2_scrn_cell_format_t *);
 
 static void _fill_map_pnd(uint16_t *, uint16_t, uint16_t, uint16_t);
 
-static const color_rgb555_t _palette[] __unused = {
-        COLOR_RGB1888_RGB1555(1,   0,   0,   0),
-        COLOR_RGB1888_RGB1555(1,   0,   0, 170),
-        COLOR_RGB1888_RGB1555(1,   0, 170,   0),
-        COLOR_RGB1888_RGB1555(1,   0, 170, 170),
-        COLOR_RGB1888_RGB1555(1,  85,  85,  85),
-        COLOR_RGB1888_RGB1555(1,  85,  85, 255),
-        COLOR_RGB1888_RGB1555(1,  85, 255,  85),
-        COLOR_RGB1888_RGB1555(1,  85, 255, 255),
-        COLOR_RGB1888_RGB1555(1, 170,   0,   0),
-        COLOR_RGB1888_RGB1555(1, 170,   0, 170),
-        COLOR_RGB1888_RGB1555(1, 170,  85,   0),
-        COLOR_RGB1888_RGB1555(1, 170, 170, 170),
-        COLOR_RGB1888_RGB1555(1, 255,  85,  85),
-        COLOR_RGB1888_RGB1555(1, 255,  85, 255),
-        COLOR_RGB1888_RGB1555(1, 255, 255,  85),
-        COLOR_RGB1888_RGB1555(1, 255, 255, 255)
+static const color_rgb1555_t _palette[] __unused = {
+        COLOR_RGB1888_RGB1555_INITIALIZER(1,   0,   0,   0),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1,   0,   0, 170),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1,   0, 170,   0),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1,   0, 170, 170),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1,  85,  85,  85),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1,  85,  85, 255),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1,  85, 255,  85),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1,  85, 255, 255),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1, 170,   0,   0),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1, 170,   0, 170),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1, 170,  85,   0),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1, 170, 170, 170),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1, 255,  85,  85),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1, 255,  85, 255),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1, 255, 255,  85),
+        COLOR_RGB1888_RGB1555_INITIALIZER(1, 255, 255, 255)
 };
 
 int
@@ -248,7 +248,7 @@ _transfer_pnd(const vdp2_scrn_cell_format_t *format)
 
                 xfer_table[1].len = page_size / 2;
                 xfer_table[1].dst = (uint32_t)pnd | (page_size / 2);
-                xfer_table[1].src = SCU_DMA_INDIRECT_TBL_END | CPU_CACHE_THROUGH | (uint32_t)map_p;
+                xfer_table[1].src = SCU_DMA_INDIRECT_TABLE_END | CPU_CACHE_THROUGH | (uint32_t)map_p;
 
                 int8_t ret;
                 ret = dma_queue_enqueue(&scu_dma_handle, DMA_QUEUE_TAG_IMMEDIATE, NULL, NULL);

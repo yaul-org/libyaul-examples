@@ -71,8 +71,12 @@ main(void)
         vdp1_cmdt_t *cmdts;
         cmdts = &_cmdt_list->cmdts[ORDER_BALL_START_INDEX];
 
+        vdp1_vram_partitions_t vdp1_vram_partitions;
+
+        vdp1_vram_partitions_get(&vdp1_vram_partitions);
+
         void *tex_base;
-        tex_base = vdp1_vram_texture_base_get();
+        tex_base = vdp1_vram_partitions.texture_base;
         void *pal_base;
         pal_base = (void *)VDP2_CRAM_MODE_1_OFFSET(0, 1, 0x0000);
 
@@ -137,6 +141,7 @@ main(void)
 
                 dbgio_flush();
 
+                vdp2_tvmd_vblank_in_wait();
                 vdp_sync();
         }
 

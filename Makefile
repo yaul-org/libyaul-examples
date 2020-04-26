@@ -17,6 +17,7 @@ EXAMPLES:= \
 	vdp1-zoom-sprite \
 	vdp2-24bpp-bitmap \
 	vdp2-2x2-plane \
+	vdp2-back-screen \
 	vdp2-bitmap \
 	vdp2-dbgio \
 	vdp2-line-scroll \

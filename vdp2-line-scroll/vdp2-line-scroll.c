@@ -64,7 +64,7 @@ main(void)
         assert(fh[3] != NULL);
         _xfer_table[3].len = romdisk_total(fh[3]);
         _xfer_table[3].dst = NBG0_LINE_SCROLL;
-        _xfer_table[3].src = SCU_DMA_INDIRECT_TBL_END | (uint32_t)romdisk_direct(fh[3]);
+        _xfer_table[3].src = SCU_DMA_INDIRECT_TABLE_END | (uint32_t)romdisk_direct(fh[3]);
 
         vdp2_scrn_ls_format_t ls_format = {
                 .enable = VDP2_SCRN_LS_N0SCX,
