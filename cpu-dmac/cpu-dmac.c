@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void _dmac_handler(void);
+static void _dmac_handler(void *);
 static void _frt_ovi_handler(void);
 
 static void _hardware_init(void);
@@ -51,7 +51,8 @@ main(void)
                 .len = 0x00100000,
                 .stride = CPU_DMAC_STRIDE_1_BYTE,
                 .bus_mode = CPU_DMAC_BUS_MODE_BURST,
-                .ihr = _dmac_handler
+                .ihr = _dmac_handler,
+                .ihr_work = NULL
         };
 
         while (true) {
@@ -130,7 +131,7 @@ _hardware_init(void)
 }
 
 static void
-_dmac_handler(void)
+_dmac_handler(void *work __unused)
 {
         _frt = cpu_frt_count_get();
         _done = true;

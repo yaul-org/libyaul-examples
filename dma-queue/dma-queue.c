@@ -145,10 +145,7 @@ main(void)
 
                 vdp2_scrn_bitmap_format_set(&_format);
 
-                for (uint32_t i = 0; i < 15; i++) {
-                        vdp2_tvmd_vblank_out_wait();
-                        vdp2_tvmd_vblank_in_wait();
-                }
+                vdp2_tvmd_vblank_in_next_wait(15);
 
                 vdp2_sync_commit();
 
@@ -185,8 +182,7 @@ _hardware_init(void)
 
         vdp2_tvmd_display_set();
 
-        vdp2_tvmd_vblank_out_wait();
-        vdp2_tvmd_vblank_in_wait();        
+        vdp2_tvmd_vblank_in_next_wait(1);
 
         vdp2_sync_commit();
 }
@@ -253,5 +249,5 @@ _dma_queue_enqueue(void *dst, void *src, const uint32_t size)
 static void
 _dma_handler(const dma_queue_transfer_t *transfer)
 {
-        assert(transfer->status == DMA_QUEUE_STATUS_COMPLETE);
+        assert((transfer->status & DMA_QUEUE_STATUS_COMPLETE) != 0x00);
 }
