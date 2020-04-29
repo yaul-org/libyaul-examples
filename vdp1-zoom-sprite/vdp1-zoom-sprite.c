@@ -363,7 +363,7 @@ _sprite_config(void)
         vdp1_cmdt_param_vertex_set(_sprite.cmdt, CMDT_VTX_ZOOM_SPRITE_POINT, &_zoom_point);
         vdp1_cmdt_param_vertex_set(_sprite.cmdt, CMDT_VTX_ZOOM_SPRITE_DISPLAY, &_display);
 
-        _sprite.anim_rate += fix16_mul(_sprite.anim_rate_dir, FIX16(0.25f));
+        _sprite.anim_rate += _sprite.anim_rate_dir * FIX16(0.25f);
 
         if (_sprite.anim_rate <= FIX16(0.0f)) {
                 _sprite.anim_rate_dir = -_sprite.anim_rate_dir;

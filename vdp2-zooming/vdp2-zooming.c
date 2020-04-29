@@ -70,8 +70,8 @@ main(void)
                 vdp2_scrn_reduction_x_set(VDP2_SCRN_NBG1, zoom);
                 vdp2_scrn_reduction_y_set(VDP2_SCRN_NBG1, zoom);
 
-                scroll_x = fix16_add(scroll_x, FIX16(16.0f));
-                scroll_y = fix16_add(scroll_y, FIX16(16.0f));
+                scroll_x = scroll_x + FIX16(16.0f);
+                scroll_y = scroll_y + FIX16(16.0f);
 
                 zoom = zoom + (zoom_dir * Q0_3_8(0.125f));
 
