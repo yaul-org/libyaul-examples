@@ -104,6 +104,14 @@ main(void)
 
         dma_queue_flush_wait();
 
+        const uint8_t sync_modes[] = {
+                VDP1_SYNC_MODE_ERASE_CHANGE,
+                VDP1_SYNC_MODE_CHANGE_ONLY
+        };
+
+        uint8_t sync_mode;
+        sync_mode = 0;
+
         uint32_t ball_count;
         ball_count = 1;
 
@@ -119,6 +127,12 @@ main(void)
                         if (ball_count >= BALL_MAX_COUNT) {
                                 ball_count = BALL_MAX_COUNT;
                         }
+                }
+
+                if ((_digital.held.button.x) != 0) {
+                        sync_mode ^= 1;
+
+                        vdp1_sync_mode_set(sync_modes[sync_mode]);
                 }
 
                 if ((_digital.held.button.c) != 0) {
