@@ -17,8 +17,8 @@ static constexpr uint32_t _screen_height = 240;
 static constexpr uint32_t _render_width = 256;
 static constexpr uint32_t _render_height = 200;
 
-static constexpr fix16_t _scale_width = F16(_screen_width / static_cast<float>(_render_width));
-static constexpr fix16_t _scale_height = F16(_screen_height / static_cast<float>(_render_height));
+static constexpr fix16_t _scale_width = FIX16(_screen_width / static_cast<float>(_render_width));
+static constexpr fix16_t _scale_height = FIX16(_screen_height / static_cast<float>(_render_height));
 
 static const char* _scene_file_path = "SCENE.BIN";
 
@@ -39,12 +39,12 @@ static void _on_start(uint32_t, bool);
 static void _on_end(uint32_t, bool);
 static void _on_clear_screen(bool);
 static void _on_update_palette(uint8_t, const scene::rgb444);
-static void _on_draw(int16_vector2_t const *, size_t, uint8_t);
+static void _on_draw(int16_vec2_t const *, size_t, uint8_t);
 
-static void _scene_cmdt_polygon_add(const int16_vector2_t&,
-                                    const int16_vector2_t&,
-                                    const int16_vector2_t&,
-                                    const int16_vector2_t&,
+static void _scene_cmdt_polygon_add(const int16_vec2_t&,
+                                    const int16_vec2_t&,
+                                    const int16_vec2_t&,
+                                    const int16_vec2_t&,
                                     const uint8_t);
 
 void main(void) {
@@ -189,7 +189,7 @@ static void _on_clear_screen(bool clear_screen) {
     vdp1_sync_draw(_env_cmdt_list, NULL, NULL);
 }
 
-static void _on_draw(int16_vector2_t const * vertex_buffer, size_t count, uint8_t palette_index) {
+static void _on_draw(int16_vec2_t const * vertex_buffer, size_t count, uint8_t palette_index) {
     switch (count) {
         case 3:
             _scene_cmdt_polygon_add(vertex_buffer[0],
@@ -283,10 +283,10 @@ static void _on_draw(int16_vector2_t const * vertex_buffer, size_t count, uint8_
     }
 }
 
-static void _scene_cmdt_polygon_add(const int16_vector2_t& p0,
-                                    const int16_vector2_t& p1,
-                                    const int16_vector2_t& p2,
-                                    const int16_vector2_t& p3,
+static void _scene_cmdt_polygon_add(const int16_vec2_t& p0,
+                                    const int16_vec2_t& p1,
+                                    const int16_vec2_t& p2,
+                                    const int16_vec2_t& p3,
                                     uint8_t palette_index) {
     vdp1_cmdt_t_polygon polygon;
     polygon.draw_mode.raw = 0x0000;

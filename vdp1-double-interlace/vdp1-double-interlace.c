@@ -65,7 +65,7 @@ main(void)
         switched = true;
 
         fix16_t speed;
-        speed = F16(0.0f);
+        speed = FIX16(0.0f);
 
         smpc_peripheral_digital_t digital;
 
@@ -89,7 +89,7 @@ main(void)
                 }
 
                 uint32_t speed_int;
-                speed_int = fix16_to_int(speed);
+                speed_int = fix16_int32_to(speed);
 
                 volatile color_rgb1555_t *palette_ptr;
                 palette_ptr = &_palette[0];
@@ -106,7 +106,7 @@ main(void)
                 dbgio_puts(buffer);
                 dbgio_puts("\n");
 
-                speed = (speed >= F16(31.0f)) ? F16(0.0f) : (speed + F16(0.5f));
+                speed = (speed >= FIX16(31.0f)) ? FIX16(0.0f) : (speed + FIX16(0.5f));
 
                 if (switched) {
                         _vdp1_drawing_env_toggle(switch_env);
@@ -158,8 +158,8 @@ _vblank_out_handler(void *work __unused)
 static void
 _vdp1_drawing_list_init(vdp1_cmdt_list_t *cmdt_list)
 {
-        static const int16_vector2_t local_coord_ul =
-            INT16_VECTOR2_INITIALIZER(0,
+        static const int16_vec2_t local_coord_ul =
+            INT16_VEC2_INITIALIZER(0,
                                       0);
 
         static const vdp1_cmdt_draw_mode_t polygon_draw_mode = {

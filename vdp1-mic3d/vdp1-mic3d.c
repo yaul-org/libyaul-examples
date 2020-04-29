@@ -350,12 +350,12 @@ static void _sort_quads(quad *, point *, int32_t *, int32_t);
 void
 main(void)
 {
-        static const int16_vector2_t system_clip_coord =
-            INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1,
+        static const int16_vec2_t system_clip_coord =
+            INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,
                                      SCREEN_HEIGHT - 1);
 
-        static const int16_vector2_t local_coord_center =
-            INT16_VECTOR2_INITIALIZER(0, 0);
+        static const int16_vec2_t local_coord_center =
+            INT16_VEC2_INITIALIZER(0, 0);
 
         _hardware_init();
 

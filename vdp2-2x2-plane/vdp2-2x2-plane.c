@@ -175,8 +175,8 @@ main(void)
 
         vdp2_scrn_cell_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 7);
-        vdp2_scrn_scroll_x_set(VDP2_SCRN_NBG1, F16(0.0f));
-        vdp2_scrn_scroll_y_set(VDP2_SCRN_NBG1, F16(0.0f));
+        vdp2_scrn_scroll_x_set(VDP2_SCRN_NBG1, FIX16(0.0f));
+        vdp2_scrn_scroll_y_set(VDP2_SCRN_NBG1, FIX16(0.0f));
 
         vdp2_scrn_display_set(VDP2_SCRN_NBG1, /* transparent = */ true);
 
@@ -185,8 +185,8 @@ main(void)
         vdp2_tvmd_display_set();
 
         while (true) {
-                vdp2_scrn_scroll_x_update(VDP2_SCRN_NBG1, F16(4.0f));
-                vdp2_scrn_scroll_y_update(VDP2_SCRN_NBG1, F16(4.0f));
+                vdp2_scrn_scroll_x_update(VDP2_SCRN_NBG1, FIX16(4.0f));
+                vdp2_scrn_scroll_y_update(VDP2_SCRN_NBG1, FIX16(4.0f));
 
                 vdp_sync();
         }

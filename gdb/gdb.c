@@ -31,7 +31,7 @@ main(void)
         char buffer[_columns + 1];
 
         fix16_t x;
-        x = F16(0.0f);
+        x = FIX16(0.0f);
 
         int32_t dir;
         dir = 1;
@@ -40,16 +40,16 @@ main(void)
                 (void)memset(buffer, ' ', sizeof(buffer));
                 buffer[_columns] = '\0';
 
-                buffer[fix16_to_int(x)] = 'o';
+                buffer[fix16_int32_to(x)] = 'o';
 
-                x += F16(0.25f) * dir;
+                x += FIX16(0.25f) * dir;
 
-                if (x <= F16(0.0f)) {
-                        x = F16(0.0f);
+                if (x <= FIX16(0.0f)) {
+                        x = FIX16(0.0f);
 
                         dir *= -1;
-                } else if (x >= F16((float)_columns - 0.5f)) {
-                        x = F16((float)_columns - 1.0f);
+                } else if (x >= FIX16((float)_columns - 0.5f)) {
+                        x = FIX16((float)_columns - 1.0f);
 
                         dir *= -1;
                 }

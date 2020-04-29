@@ -52,10 +52,10 @@ main(void)
         _hardware_init();
 
         fix16_t scroll_x;
-        scroll_x = F16(0.0f);
+        scroll_x = FIX16(0.0f);
 
         fix16_t scroll_y;
-        scroll_y = F16(0.0f);
+        scroll_y = FIX16(0.0f);
 
         q0_3_8_t zoom;
         zoom = VDP2_SCRN_REDUCTION_MIN;
@@ -70,8 +70,8 @@ main(void)
                 vdp2_scrn_reduction_x_set(VDP2_SCRN_NBG1, zoom);
                 vdp2_scrn_reduction_y_set(VDP2_SCRN_NBG1, zoom);
 
-                scroll_x = fix16_add(scroll_x, F16(16.0f));
-                scroll_y = fix16_add(scroll_y, F16(16.0f));
+                scroll_x = fix16_add(scroll_x, FIX16(16.0f));
+                scroll_y = fix16_add(scroll_y, FIX16(16.0f));
 
                 zoom = zoom + (zoom_dir * Q0_3_8(0.125f));
 

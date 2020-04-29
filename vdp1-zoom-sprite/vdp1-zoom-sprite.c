@@ -43,14 +43,14 @@ extern uint8_t root_romdisk[];
 
 /* Zoom state */
 static int32_t _state_zoom = STATE_ZOOM_MOVE_ORIGIN;
-static int16_vector2_t _display = INT16_VECTOR2_INITIALIZER(ZOOM_POINT_WIDTH, ZOOM_POINT_HEIGHT);
-static int16_vector2_t _zoom_point = INT16_VECTOR2_INITIALIZER(0, 0);
+static int16_vec2_t _display = INT16_VEC2_INITIALIZER(ZOOM_POINT_WIDTH, ZOOM_POINT_HEIGHT);
+static int16_vec2_t _zoom_point = INT16_VEC2_INITIALIZER(0, 0);
 static uint16_t _zoom_point_value = CMDT_ZOOM_POINT_CENTER;
 static uint32_t _delay_frames = 0;
 static smpc_peripheral_digital_t _digital;
 
 static struct {
-        int16_vector2_t position;
+        int16_vec2_t position;
         color_rgb1555_t color;
 
         vdp1_cmdt_t *cmdt;
@@ -192,16 +192,16 @@ _init(void)
 static void
 _cmdt_list_init(void)
 {
-        static const int16_vector2_t system_clip_coord =
-            INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1,
+        static const int16_vec2_t system_clip_coord =
+            INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,
                                      SCREEN_HEIGHT - 1);
 
-        static const int16_vector2_t local_coord_ul =
-            INT16_VECTOR2_INITIALIZER(0,
+        static const int16_vec2_t local_coord_ul =
+            INT16_VEC2_INITIALIZER(0,
                                       0);
 
-        static const int16_vector2_t local_coord_center =
-            INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH / 2,
+        static const int16_vec2_t local_coord_center =
+            INT16_VEC2_INITIALIZER(SCREEN_WIDTH / 2,
                                       SCREEN_HEIGHT / 2);
 
         static const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
@@ -209,11 +209,11 @@ _cmdt_list_init(void)
                 .bits.pre_clipping_disable = true
         };
 
-        static const int16_vector2_t polygon_points[] = {
-                INT16_VECTOR2_INITIALIZER(0, SCREEN_HEIGHT - 1),
-                INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1),
-                INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1,                 0),
-                INT16_VECTOR2_INITIALIZER(               0,                 0)
+        static const int16_vec2_t polygon_points[] = {
+                INT16_VEC2_INITIALIZER(0, SCREEN_HEIGHT - 1),
+                INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1),
+                INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,                 0),
+                INT16_VEC2_INITIALIZER(               0,                 0)
         };
 
         _cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
@@ -306,8 +306,8 @@ _frame_time_calculate(void)
 static void
 _sprite_init(void)
 {
-        _sprite.anim_rate = F16(0.0f);
-        _sprite.anim_rate_dir = F16(1.0f);
+        _sprite.anim_rate = FIX16(0.0f);
+        _sprite.anim_rate_dir = FIX16(1.0f);
 
         _sprite.tex_base = _vdp1_vram_partitions.texture_base;
         _sprite.pal_base = (void *)VDP2_CRAM_MODE_1_OFFSET(1, 0, 0x0000);
@@ -355,7 +355,7 @@ static void
 _sprite_config(void)
 {
         uint32_t offset __unused;
-        offset = fix16_to_int(_sprite.anim_rate) * (ZOOM_POINT_WIDTH * ZOOM_POINT_HEIGHT);
+        offset = fix16_int32_to(_sprite.anim_rate) * (ZOOM_POINT_WIDTH * ZOOM_POINT_HEIGHT);
 
         vdp1_cmdt_param_char_base_set(_sprite.cmdt, (uint32_t)_sprite.tex_base + offset);
 
@@ -363,14 +363,14 @@ _sprite_config(void)
         vdp1_cmdt_param_vertex_set(_sprite.cmdt, CMDT_VTX_ZOOM_SPRITE_POINT, &_zoom_point);
         vdp1_cmdt_param_vertex_set(_sprite.cmdt, CMDT_VTX_ZOOM_SPRITE_DISPLAY, &_display);
 
-        _sprite.anim_rate += fix16_mul(_sprite.anim_rate_dir, F16(0.25f));
+        _sprite.anim_rate += fix16_mul(_sprite.anim_rate_dir, FIX16(0.25f));
 
-        if (_sprite.anim_rate <= F16(0.0f)) {
+        if (_sprite.anim_rate <= FIX16(0.0f)) {
                 _sprite.anim_rate_dir = -_sprite.anim_rate_dir;
-                _sprite.anim_rate = F16(1.0f);
-        } else if (fix16_abs(_sprite.anim_rate) >= F16(13.0f)) {
+                _sprite.anim_rate = FIX16(1.0f);
+        } else if (fix16_abs(_sprite.anim_rate) >= FIX16(13.0f)) {
                 _sprite.anim_rate_dir = -_sprite.anim_rate_dir;
-                _sprite.anim_rate = F16(12.0f);
+                _sprite.anim_rate = FIX16(12.0f);
         }
 }
 
@@ -389,7 +389,7 @@ _polygon_pointer_init(void)
 static void
 _polygon_pointer_config(void)
 {
-        int16_vector2_t points[4];
+        int16_vec2_t points[4];
 
         points[0].x = ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x - 1;
         points[0].y = -ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y;

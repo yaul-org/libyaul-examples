@@ -55,7 +55,7 @@ static struct {
         int8_t type;
         int8_t draw_mode;
         color_rgb1555_t color;
-        int16_vector2_t points[4];
+        int16_vec2_t points[4];
 } _primitive;
 
 static uint32_t _state = STATE_IDLE;
@@ -280,8 +280,8 @@ _hardware_init(void)
 static void
 _cmdt_list_init(void)
 {
-        static const int16_vector2_t system_clip_coord =
-            INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1,
+        static const int16_vec2_t system_clip_coord =
+            INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,
                                       SCREEN_HEIGHT - 1);
 
         _cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
@@ -305,8 +305,8 @@ _cmdt_list_init(void)
 static void
 _primitive_init(void)
 {
-        static const int16_vector2_t local_coord_center =
-            INT16_VECTOR2_INITIALIZER((SCREEN_WIDTH / 2) - PRIMITIVE_HALF_WIDTH - 1,
+        static const int16_vec2_t local_coord_center =
+            INT16_VEC2_INITIALIZER((SCREEN_WIDTH / 2) - PRIMITIVE_HALF_WIDTH - 1,
                                       (SCREEN_HEIGHT / 2) - PRIMITIVE_HALF_HEIGHT - 1);
 
         _primitive.type = PRIMITIVE_TYPE_POLYLINE;
