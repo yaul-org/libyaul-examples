@@ -31,9 +31,9 @@ main(void)
         while (true) {
                 vdp2_tvmd_vblank_out_wait();
 
-                dbgio_buffer("[1;1H");
+                dbgio_puts("[1;1H");
 
-                dbgio_buffer(buffer);
+                dbgio_puts(buffer);
 
                 memset(buffer, ' ', sizeof(buffer));
                 buffer[40] = '\0';

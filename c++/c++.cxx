@@ -19,7 +19,7 @@ static char* _dtor = &_dtor_buffer[0];
 
 namespace Foo {
     void bar() {
-        dbgio_buffer("Foo::bar()\n");
+        dbgio_puts("Foo::bar()\n");
     }
 }
 
@@ -70,11 +70,11 @@ public:
 class T {
 public:
     ~T() {
-        dbgio_buffer("T::~T()\n");
+        dbgio_puts("T::~T()\n");
     }
 
     void call() {
-        dbgio_buffer("T::call(), dynamically allocated object\n");
+        dbgio_puts("T::call(), dynamically allocated object\n");
     }
 };
 
@@ -103,9 +103,9 @@ int main(void) {
     dbgio_dev_font_load();
     dbgio_dev_font_load_wait();
 
-    dbgio_buffer("Global constructor order: ");
-    dbgio_buffer(_ctor_buffer);
-    dbgio_buffer("\n");
+    dbgio_puts("Global constructor order: ");
+    dbgio_puts(_ctor_buffer);
+    dbgio_puts("\n");
 
     dbgio_printf("_max<T> template: %i, %lu, '%c'\n",
                  _max<int>(-2, -1),

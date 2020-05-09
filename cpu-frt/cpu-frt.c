@@ -112,7 +112,7 @@ main(void)
         cpu_dual_slave_notify();
 
         while (true) {
-                dbgio_buffer("[1;1H[2J");
+                dbgio_puts("[1;1H[2J");
 
                 dbgio_printf("\n"
                              " counter_1: %18lu (1s)\n"

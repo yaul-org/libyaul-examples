@@ -37,7 +37,7 @@ main(void)
         id = dram_cart_id_get();
 
         if ((id != DRAM_CART_ID_1MIB) && (id != DRAM_CART_ID_4MIB)) {
-                dbgio_buffer(_error_message);
+                dbgio_puts(_error_message);
                 dbgio_flush();
                 vdp_sync();
                 abort();

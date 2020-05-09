@@ -25,7 +25,7 @@ main(void)
         arp_ver = arp_version_get();
 
         if (*arp_ver == '\0') {
-                dbgio_buffer("No ARP cartridge detected!\n");
+                dbgio_puts("No ARP cartridge detected!\n");
                 abort();
         }
 
@@ -34,7 +34,7 @@ main(void)
         /* Register callback */
         arp_function_callback_set(&_local_arp_cb);
 
-        dbgio_buffer("Ready...\n");
+        dbgio_puts("Ready...\n");
 
         while (true) {
                 arp_function_nonblock();

@@ -20,7 +20,7 @@ main(void)
         dbgio_dev_font_load();
         dbgio_dev_font_load_wait();
 
-        dbgio_buffer("Waiting to establish a connection with GDB\n");
+        dbgio_puts("Waiting to establish a connection with GDB\n");
         dbgio_flush();
         vdp_sync();
 
@@ -54,8 +54,8 @@ main(void)
                         dir *= -1;
                 }
 
-                dbgio_buffer("[H[2J[14;1H");
-                dbgio_buffer(buffer);
+                dbgio_puts("[H[2J[14;1H");
+                dbgio_puts(buffer);
 
                 dbgio_flush();
                 vdp_sync();

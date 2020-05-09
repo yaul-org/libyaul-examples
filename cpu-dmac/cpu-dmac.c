@@ -52,7 +52,7 @@ main(void)
         };
 
         while (true) {
-                dbgio_buffer("[H");
+                dbgio_puts("[H");
 
                 uint32_t xfer;
                 for (xfer = 0; xfer < 3; xfer++) {

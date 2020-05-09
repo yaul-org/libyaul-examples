@@ -90,7 +90,7 @@ main(void)
         uint16_t i;
         i = 0;
 
-        dbgio_buffer("Line scroll\n");
+        dbgio_puts("Line scroll\n");
 
         while (true) {
                 ls_format.line_scroll_table = NBG0_LINE_SCROLL + (i << 2);

@@ -53,7 +53,7 @@ main(void)
                 _test_dsp_program(program_id);
         }
 
-        dbgio_buffer("Passed");
+        dbgio_puts("Passed");
 
         dbgio_flush();
         vdp_sync();

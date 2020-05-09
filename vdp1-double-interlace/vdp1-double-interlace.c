@@ -101,10 +101,10 @@ main(void)
                 MEMORY_WRITE(16, VDP2_CRAM(0x20), _palette[0].raw);
 
                 char buffer[64];
-                dbgio_buffer("[H[2Jspeed: ");
+                dbgio_puts("[H[2Jspeed: ");
                 fix16_to_str(speed, buffer, 7);
-                dbgio_buffer(buffer);
-                dbgio_buffer("\n");
+                dbgio_puts(buffer);
+                dbgio_puts("\n");
 
                 speed = (speed >= F16(31.0f)) ? F16(0.0f) : (speed + F16(0.5f));
 

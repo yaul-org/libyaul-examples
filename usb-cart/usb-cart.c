@@ -30,7 +30,7 @@ main(void)
         dbgio_dev_font_load();
         dbgio_dev_font_load_wait();
 
-        dbgio_buffer("Using f/8 CPU FRT divisor\n\n");
+        dbgio_puts("Using f/8 CPU FRT divisor\n\n");
 
         uint16_t before;
         uint16_t after;
@@ -60,7 +60,7 @@ main(void)
 
         dbgio_printf("Using CPU-DMAC:\n%16lu FRT ticks\n", count);
 
-        dbgio_buffer(".\n");
+        dbgio_puts(".\n");
 
         dbgio_flush();
         vdp_sync();

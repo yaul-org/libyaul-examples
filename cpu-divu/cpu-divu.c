@@ -31,8 +31,8 @@ main(void)
         quotient = cpu_divu_quotient_get();
 
         fix16_to_str(quotient, text, 7);
-        dbgio_buffer(text);
-        dbgio_buffer("\n");
+        dbgio_puts(text);
+        dbgio_puts("\n");
 
         dbgio_flush();
         vdp_sync();

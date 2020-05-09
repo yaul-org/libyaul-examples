@@ -45,7 +45,7 @@ main(void)
                 0xF8000000
         };
 
-        dbgio_buffer("Running DSP\n");
+        dbgio_puts("Running DSP\n");
 
         memset(_ram0, 0xAA, DSP_RAM_PAGE_SIZE);
         memset(_ram1, 0xBB, DSP_RAM_PAGE_SIZE);

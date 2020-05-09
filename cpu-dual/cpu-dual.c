@@ -44,7 +44,7 @@ main(void)
         dbgio_printf("Slave stack address: 0x%08lX\n",
             (uint32_t)cpu_dual_slave_stack_get());
 
-        dbgio_buffer("Ping ponging between master and slave\n");
+        dbgio_puts("Ping ponging between master and slave\n");
 
         uint32_t counter;
 

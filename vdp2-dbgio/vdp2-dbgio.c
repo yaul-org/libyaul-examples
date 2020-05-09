@@ -52,7 +52,7 @@ _hardware_init(void)
 static void
 _test_csi_action_h(void)
 {
-        dbgio_buffer("[28;36HHello, World!\n");
+        dbgio_puts("[28;36HHello, World!\n");
 
         while (true) {
                 dbgio_flush();
@@ -81,9 +81,9 @@ _test_buffer_overflow(void)
         large_buffer[2047] = '\0';
 
         /* Completely overflow the screen */
-        dbgio_buffer(large_buffer);
+        dbgio_puts(large_buffer);
         /* Test if we can move the cursor back to the top left */
-        dbgio_buffer("[1;1HBuffer overflow averted\n");
+        dbgio_puts("[1;1HBuffer overflow averted\n");
 
         free(large_buffer);
 
@@ -97,17 +97,17 @@ static void
 _test_cursor_position(void)
 {
         /* Move the cursor back to the top left and move the cursor down */
-        dbgio_buffer("[H\n");
+        dbgio_puts("[H\n");
         for (uint32_t i = 0; i < 1024; i++) {
-                dbgio_buffer("\n");
+                dbgio_puts("\n");
         }
-        dbgio_buffer("Exceeded screen bounds\n");
-        dbgio_buffer("[1;1HCursor out of bounds averted\n");
+        dbgio_puts("Exceeded screen bounds\n");
+        dbgio_puts("[1;1HCursor out of bounds averted\n");
 
         /* Allow setting the cursor beyond the bounds of the screen */
-        dbgio_buffer("[50;50H");
-        dbgio_buffer("Exceeded cons screen bounds\n");
-        dbgio_buffer("[2;1HCursor out of bounds averted\n");
+        dbgio_puts("[50;50H");
+        dbgio_puts("Exceeded cons screen bounds\n");
+        dbgio_puts("[2;1HCursor out of bounds averted\n");
 
         while (true) {
                 dbgio_flush();

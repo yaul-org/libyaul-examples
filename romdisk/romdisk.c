@@ -49,7 +49,7 @@ main(void)
 
         romdisk_close(fh);
 
-        dbgio_buffer(msg);
+        dbgio_puts(msg);
 
         free(msg);
 

@@ -115,8 +115,6 @@ main(void)
         uint32_t ball_count;
         ball_count = 1;
 
-        static char buffer[128];
-
         while (true) {
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
