@@ -235,16 +235,12 @@ main(void)
                         break;
                 }
 
-                char buffer[128];
+                dbgio_printf("[H[2J"
+                             "     type: %s\n"
+                             "draw_mode: %s\n",
+                             _primitive_type_strings[_primitive.type],
+                             _primitive_draw_mode_strings[_primitive.draw_mode]);
 
-                (void)sprintf(buffer,
-                    "[H[2J"
-                    "     type: %s\n"
-                    "draw_mode: %s\n",
-                    _primitive_type_strings[_primitive.type],
-                    _primitive_draw_mode_strings[_primitive.draw_mode]);
-
-                dbgio_buffer(buffer);
                 dbgio_flush();
 
                 vdp1_cmdt_param_draw_mode_set(cmdt_polygon,

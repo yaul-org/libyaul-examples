@@ -30,10 +30,6 @@ main(void)
         dbgio_dev_font_load();
         dbgio_dev_font_load_wait();
 
-        char *buffer;
-        buffer = malloc(1024);
-        assert(buffer != NULL);
-
         cpu_dmac_interrupt_priority_set(8);
 
         cpu_frt_init(CPU_FRT_CLOCK_DIV_8);
@@ -67,25 +63,23 @@ main(void)
 
                         cpu_dmac_channel_config_set(&cfg);
 
-                        (void)sprintf(buffer, "\n DAR%lu:  0x%08lX\n"
-                            " SAR%lu:  0x%08lX\n"
-                            " TCR%lu:  0x%08lX\n"
-                            " DRCR%lu: 0x%08X\n"
-                            " CHCR%lu: 0x%08lX\n"
-                            " DMAOR: 0x%08lX\n",
-                            ch,
-                            MEMORY_READ(32, CPU(DAR0 | (ch << 4))),
-                            ch,
-                            MEMORY_READ(32, CPU(SAR0 | (ch << 4))),
-                            ch,
-                            MEMORY_READ(32, CPU(TCR0 | (ch << 4))),
-                            ch,
-                            MEMORY_READ(8, CPU(DRCR0 | (ch << 4))),
-                            ch,
-                            MEMORY_READ(32, CPU(CHCR0 | (ch << 4))),
-                            MEMORY_READ(32, CPU(DMAOR)));
-
-                        dbgio_buffer(buffer);
+                        dbgio_printf("\n DAR%lu:  0x%08lX\n"
+                                     " SAR%lu:  0x%08lX\n"
+                                     " TCR%lu:  0x%08lX\n"
+                                     " DRCR%lu: 0x%08X\n"
+                                     " CHCR%lu: 0x%08lX\n"
+                                     " DMAOR: 0x%08lX\n",
+                                     ch,
+                                     MEMORY_READ(32, CPU(DAR0 | (ch << 4))),
+                                     ch,
+                                     MEMORY_READ(32, CPU(SAR0 | (ch << 4))),
+                                     ch,
+                                     MEMORY_READ(32, CPU(TCR0 | (ch << 4))),
+                                     ch,
+                                     MEMORY_READ(8, CPU(DRCR0 | (ch << 4))),
+                                     ch,
+                                     MEMORY_READ(32, CPU(CHCR0 | (ch << 4))),
+                                     MEMORY_READ(32, CPU(DMAOR)));
 
                         cpu_dmac_channel_start(ch);
                         _frt = 0;
@@ -100,8 +94,7 @@ main(void)
                         uint32_t ticks;
                         ticks = (uint32_t)(_frt + ((0xFFFF + 1) * _ovf));
 
-                        sprintf(buffer, " Completed in %lu ticks\n", ticks);
-                        dbgio_buffer(buffer);
+                        dbgio_printf(" Completed in %lu ticks\n", ticks);
 
                         dbgio_flush();
                         vdp_sync();

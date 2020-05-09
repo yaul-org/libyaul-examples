@@ -84,17 +84,11 @@ inline T _max(T a, T b) {
 }
 
 static inline void _function_overload(int a) {
-    char buffer[32];
-
-    (void)sprintf(buffer, "%s(), type int: %i\n", __FUNCTION__, a);
-    dbgio_buffer(buffer);
+    dbgio_printf("%s(), type int: %i\n", __FUNCTION__, a);
 }
 
 static inline void _function_overload(char a) {
-    char buffer[32];
-
-    (void)sprintf(buffer, "%s(), type char: '%c'\n", __FUNCTION__, a);
-    dbgio_buffer(buffer);
+    dbgio_printf("%s(), type char: '%c'\n", __FUNCTION__, a);
 }
 
 static A a;
@@ -113,12 +107,10 @@ int main(void) {
     dbgio_buffer(_ctor_buffer);
     dbgio_buffer("\n");
 
-    char *buffer;
-    buffer = (char *)malloc(1024);
-    assert(buffer != NULL);
-
-    (void)sprintf(buffer, "_max<T> template: %i, %lu, '%c'\n", _max<int>(-2, -1), _max<uint32_t>(0, -1), _max<char>('A', 'Z'));
-    dbgio_buffer(buffer);
+    dbgio_printf("_max<T> template: %i, %lu, '%c'\n",
+                 _max<int>(-2, -1),
+                 _max<uint32_t>(0, -1),
+                 _max<char>('A', 'Z'));
 
     _function_overload(1);
     _function_overload('A');
@@ -131,8 +123,6 @@ int main(void) {
     t->call();
 
     delete t;
-
-    free(buffer);
 
     dbgio_flush();
     vdp_sync();

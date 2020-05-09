@@ -62,8 +62,6 @@ static void _slave_frt_ovi_handler(void);
 
 static void _hardware_init(void);
 
-static char _buffer[256];
-
 static volatile uint32_t _counter_1 = 0;
 static volatile uint32_t _counter_2 = 0;
 static volatile uint32_t _counter_3 = 0;
@@ -116,23 +114,22 @@ main(void)
         while (true) {
                 dbgio_buffer("[1;1H[2J");
 
-                (void)sprintf(_buffer, "\n"
-                    " counter_1: %18lu (1s)\n"
-                    " counter_2: %18lu (2s)\n"
-                    " counter_3: %18lu (3ms)\n"
-                    " counter_4: %18lu (.5s)\n"
-                    " ovi_count: %18lu\n"
-                    " ocb_count: %18lu\n"
-                    "\n"
-                    " slave_ovi_counter: %10lu\n",
-                    _counter_1,
-                    _counter_2,
-                    _counter_3,
-                    _counter_4,
-                    _ovi_count,
-                    _ocb_count,
-                    _slave_ovi_counter);
-                dbgio_buffer(_buffer);
+                dbgio_printf("\n"
+                             " counter_1: %18lu (1s)\n"
+                             " counter_2: %18lu (2s)\n"
+                             " counter_3: %18lu (3ms)\n"
+                             " counter_4: %18lu (.5s)\n"
+                             " ovi_count: %18lu\n"
+                             " ocb_count: %18lu\n"
+                             "\n"
+                             " slave_ovi_counter: %10lu\n",
+                             _counter_1,
+                             _counter_2,
+                             _counter_3,
+                             _counter_4,
+                             _ovi_count,
+                             _ocb_count,
+                             _slave_ovi_counter);
 
                 dbgio_flush();
                 vdp_sync();

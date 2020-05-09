@@ -29,10 +29,7 @@ main(void)
                 abort();
         }
 
-        char buffer[64];
-
-        (void)sprintf(buffer, "ARP version \"%s\" detected!\n", arp_ver);
-        dbgio_buffer(buffer);
+        dbgio_printf("ARP version \"%s\" detected!\n", arp_ver);
 
         /* Register callback */
         arp_function_callback_set(&_local_arp_cb);
@@ -66,17 +63,13 @@ _hardware_init(void)
 static void
 _local_arp_cb(const struct arp_callback *arp_cb)
 {
-        char buffer[256];
-
-        (void)sprintf(buffer, "[2;1H[1JCallback\n"
-            "ptr: %p\n"
-            "len: 0x%04X\n"
-            "function: 0x%02X\n"
-            "execute: %s[5;1H;",
-            arp_cb->ptr,
-            arp_cb->len,
-            arp_cb->function,
-            (arp_cb->exec ? "yes" : "no"));
-
-        dbgio_buffer(buffer);
+        dbgio_printf("[2;1H[1JCallback\n"
+                     "ptr: %p\n"
+                     "len: 0x%04X\n"
+                     "function: 0x%02X\n"
+                     "execute: %s[5;1H;",
+                     arp_cb->ptr,
+                     arp_cb->len,
+                     arp_cb->function,
+                     (arp_cb->exec ? "yes" : "no"));
 }

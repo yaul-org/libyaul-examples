@@ -43,8 +43,6 @@ main(void)
                 abort();
         }
 
-        char buffer[64];
-
         uint32_t *cart_area __unused;
         cart_area = (uint32_t *)dram_cart_area_get();
 
@@ -55,9 +53,10 @@ main(void)
             ? "8-Mbit"
             : "32-Mbit");
 
-        (void)sprintf(buffer, "%s DRAM Cartridge detected (%i bytes)\n",
-            type_str, cart_len);
-        dbgio_buffer(buffer);
+        dbgio_printf("%s DRAM Cartridge detected (%i bytes)\n",
+                     type_str,
+                     cart_len);
+        dbgio_flush();
 
         vdp_sync();
 

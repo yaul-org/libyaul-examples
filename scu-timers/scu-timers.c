@@ -42,13 +42,10 @@ main(void)
         scu_timer_t0_set(_timer0_handler);
         scu_timer_t1_set(_timer1_handler);
 
-        char buffer[64];
-
         while (true) {
                 vdp2_tvmd_vblank_out_wait();
 
-                (void)sprintf(buffer, "[10;1H[2J%i\n", _line);
-                cons_buffer(buffer);
+                dbgio_printf("[10;1H[2J%i\n", _line);
 
                 vdp2_tvmd_vblank_in_wait();
                 cons_flush();

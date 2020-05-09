@@ -150,10 +150,9 @@ main(void)
 
                 vdp1_sync_cmdt_list_put(_cmdt_list, NULL, NULL);
 
-                (void)sprintf(buffer, "[H[2J"
-                    "ball_count: %lu\n",
-                    ball_count);
-                dbgio_buffer(buffer);
+                dbgio_printf("[H[2J"
+                             "ball_count: %lu\n",
+                             ball_count);
 
                 dbgio_flush();
 

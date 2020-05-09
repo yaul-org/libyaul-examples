@@ -62,14 +62,11 @@ main(void)
         scu_dsp_data_write(2, 0, _ram2, DSP_RAM_PAGE_WORD_COUNT);
         scu_dsp_data_write(3, 0, _ram3, DSP_RAM_PAGE_WORD_COUNT);
 
-        char buffer[128];
-
         do {
                 uint8_t pc;
                 pc = scu_dsp_program_step();
 
-                sprintf(buffer, "PC: %02X\n", pc);
-                dbgio_buffer(buffer);
+                dbgio_printf("PC: %02X\n", pc);
                 /* dbgio_flush() needs to be called during VBLANK-IN */
                 dbgio_flush();
                 vdp_sync();
@@ -80,25 +77,23 @@ main(void)
         scu_dsp_status_t status;
         scu_dsp_status_get(&status);
 
-        sprintf(buffer,
-            "\nT0 S Z C V E EX PC\n"
-            " %X"
-            " %X"
-            " %X"
-            " %X"
-            " %X"
-            " %X"
-            "  %X"
-            " %02X\n",
-            status.t0,
-            status.s,
-            status.z,
-            status.c,
-            status.v,
-            status.e,
-            status.ex,
-            status.pc);
-        dbgio_buffer(buffer);
+        dbgio_printf("\nT0 S Z C V E EX PC\n"
+                     " %X"
+                     " %X"
+                     " %X"
+                     " %X"
+                     " %X"
+                     " %X"
+                     "  %X"
+                     " %02X\n",
+                     status.t0,
+                     status.s,
+                     status.z,
+                     status.c,
+                     status.v,
+                     status.e,
+                     status.ex,
+                     status.pc);
 
         dbgio_flush();
         vdp_sync();
@@ -126,8 +121,6 @@ _hardware_init(void)
 static void
 _dsp_end(void)
 {
-        char buffer[32];
-
         uint32_t a;
         uint32_t b;
         uint32_t c;
@@ -136,7 +129,5 @@ _dsp_end(void)
         scu_dsp_data_read(1, 0, &b, 1);
         scu_dsp_data_read(2, 0, &c, 1);
 
-        sprintf(buffer, "Result: %lu * %lu = %lu\n", a, b, c);
-
-        dbgio_buffer(buffer);
+        dbgio_printf("Result: %lu * %lu = %lu\n", a, b, c);
 }

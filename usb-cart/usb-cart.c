@@ -32,8 +32,6 @@ main(void)
 
         dbgio_buffer("Using f/8 CPU FRT divisor\n\n");
 
-        char buffer[256];
-
         uint16_t before;
         uint16_t after;
         uint32_t count;
@@ -50,8 +48,7 @@ main(void)
         after = cpu_frt_count_get();
         count = (after - before) + (65535 * _ovf_count);
 
-        (void)sprintf(buffer, "Using CPU byte transfer:\n%16lu FRT ticks\n", count);
-        dbgio_buffer(buffer);
+        dbgio_printf("Using CPU byte transfer:\n%16lu FRT ticks\n", count);
 
         cpu_frt_count_set(0);
         _ovf_count = 0;
@@ -61,8 +58,7 @@ main(void)
         after = cpu_frt_count_get();
         count = (after - before) + (65535 * _ovf_count);
 
-        (void)sprintf(buffer, "Using CPU-DMAC:\n%16lu FRT ticks\n", count);
-        dbgio_buffer(buffer);
+        dbgio_printf("Using CPU-DMAC:\n%16lu FRT ticks\n", count);
 
         dbgio_buffer(".\n");
 

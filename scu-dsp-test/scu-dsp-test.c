@@ -23,8 +23,6 @@ static uint32_t _ram3[DSP_RAM_PAGE_WORD_COUNT];
 
 static void *_romdisk = NULL;
 
-static char _buffer[256];
-
 int
 main(void)
 {
@@ -48,8 +46,7 @@ main(void)
         romdisk_read(fh, &program_count, sizeof(program_count));
         romdisk_close(fh);
 
-        (void)sprintf(_buffer, "Running %lu DSP programs\n", program_count);
-        dbgio_buffer(_buffer);
+        dbgio_printf("Running %lu DSP programs\n", program_count);
 
         uint32_t program_id;
         for (program_id = 1; program_id <= program_count; program_id++) {
@@ -129,13 +126,11 @@ _test_dsp_program(uint32_t program_id)
         scu_dsp_program_load(&program[0], program_size / 4);
         scu_dsp_program_pc_set(start_pc);
 
-        (void)sprintf(_buffer,
-            "[2;1H[0J"
-            "program ID: %lu\n"
-            "%s\n",
-            program_id,
-            mnemonic);
-        dbgio_buffer(_buffer);
+        dbgio_printf("[2;1H[0J"
+                     "program ID: %lu\n"
+                     "%s\n",
+                     program_id,
+                     mnemonic);
 
         dbgio_flush();
         vdp_sync();
@@ -152,25 +147,23 @@ _test_dsp_program(uint32_t program_id)
                 return;
         }
 
-        (void)sprintf(_buffer,
-            "\nT0 S Z C V E EX PC\n"
-            " %X"
-            " %X"
-            " %X"
-            " %X"
-            " %X"
-            " %X"
-            "  %X"
-            " %02X\n",
-            status.t0,
-            status.s,
-            status.z,
-            status.c,
-            status.v,
-            status.e,
-            status.ex,
-            status.pc);
-        dbgio_buffer(_buffer);
+        dbgio_printf("\nT0 S Z C V E EX PC\n"
+                     " %X"
+                     " %X"
+                     " %X"
+                     " %X"
+                     " %X"
+                     " %X"
+                     "  %X"
+                     " %02X\n",
+                     status.t0,
+                     status.s,
+                     status.z,
+                     status.c,
+                     status.v,
+                     status.e,
+                     status.ex,
+                     status.pc);
 
         dbgio_flush();
         vdp_sync();

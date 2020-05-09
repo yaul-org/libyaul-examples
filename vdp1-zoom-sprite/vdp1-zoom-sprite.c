@@ -142,9 +142,7 @@ main(void)
                 char fixed[16];
                 fix16_to_str(result, fixed, 7);
 
-                char buffer[64];
-                (void)sprintf(buffer, "[H[2J%sms\n", fixed);
-                dbgio_buffer(buffer);
+                dbgio_printf("[H[2J%sms\n", fixed);
         }
 
         return 0;

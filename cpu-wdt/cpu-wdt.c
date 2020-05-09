@@ -39,13 +39,10 @@ main(void)
         vdp_sync();
 
         while (true) {
-                char buf[32];
-
                 uint8_t count;
                 count = cpu_wdt_count_get();
 
-                (void)sprintf(buf, "[H[2Jcpu_wdt_count_get(): %i\n", count);
-                dbgio_buffer(buf);
+                dbgio_printf("[H[2Jcpu_wdt_count_get(): %i\n", count);
                 dbgio_flush();
                 vdp_sync();
         }
