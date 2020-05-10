@@ -21,7 +21,7 @@ namespace scene {
     typedef void (*end_handler)(uint32_t frame_index, bool last_frame);
     typedef void (*update_palette_handler)(uint8_t palette_index, const rgb444 color);
     typedef void (*clear_screen_handler)(bool clear_screen);
-    typedef void (*draw_handler)(int16_vector2_t const* vertex_buffer, size_t count, uint8_t palette_index);
+    typedef void (*draw_handler)(int16_vec2_t const* vertex_buffer, size_t count, uint8_t palette_index);
 
     struct callbacks {
         start_handler on_start;

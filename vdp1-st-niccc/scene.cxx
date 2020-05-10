@@ -54,7 +54,7 @@ static uint32_t _offset = 0;
 static uint32_t _chunk_index = 0;
 static uint32_t _frame_index = 0;
 static uint8_vector* _indexed_vertex_buffer;
-static int16_vector2_t* _vertex_buffer;
+static int16_vec2_t* _vertex_buffer;
 
 static scene::start_handler _on_start;
 static scene::end_handler _on_end;
@@ -104,7 +104,7 @@ void scene::init(const uint8_t*& buffer, const callbacks& callbacks) {
 
     _on_draw = ((callbacks.on_draw != nullptr)
                 ? callbacks.on_draw
-                : [] (int16_vector2_t const*, size_t, uint8_t) { });
+                : [] (int16_vec2_t const*, size_t, uint8_t) { });
 
     _palette_init();
     _vertex_buffer_init();
@@ -223,7 +223,7 @@ static void _vertex_buffer_init(void) {
     _indexed_vertex_buffer =  new uint8_vector[_vertex_buffer_size];
     assert(_indexed_vertex_buffer != nullptr);
 
-    _vertex_buffer = new int16_vector2_t[_polygon_vertex_buffer_size];
+    _vertex_buffer = new int16_vec2_t[_polygon_vertex_buffer_size];
     assert(_vertex_buffer != nullptr);
 }
 
