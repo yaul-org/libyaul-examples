@@ -9,10 +9,10 @@ ifneq ($(OPTION_DEV_CARTRIDGE),$(filter $(OPTION_DEV_CARTRIDGE),1 2))
 endif
 
 SH_PROGRAM:= vdp2-dbgio
-SH_OBJECTS:= vdp2-dbgio.o
+SH_OBJECTS:= vdp2-dbgio.o ../shared/menu/menu.o
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -save-temps
+SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

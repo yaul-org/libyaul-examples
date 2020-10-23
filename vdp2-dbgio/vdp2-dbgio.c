@@ -10,28 +10,55 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "menu.h"
+
+static void _vblank_out_handler(void *);
+
 static void _hardware_init(void);
 
-static void _test_csi_action(const char) __used;
-static void _test_buffer_overflow(void) __used;
-static void _test_cursor_position(void) __used;
-static void _test_clearing(void) __used;
+static void _menu_input(menu_state_t *);
+
+static void _input_1(menu_state_t *, menu_entry_t *);
+static void _input_2(menu_state_t *, menu_entry_t *);
+
+static smpc_peripheral_digital_t _digital;
 
 int
 main(void)
 {
+        static menu_entry_t _entries[] = {
+                MENU_ENTRY("Item 1", _input_1),
+                MENU_ENTRY("Item 2", _input_2),
+                MENU_ENTRY("Item 3", NULL),
+                MENU_ENTRY("Item 4", NULL),
+                MENU_ENTRY("Item 5", NULL),
+                MENU_END
+        };
+
         _hardware_init();
 
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
         dbgio_dev_font_load_wait();
 
-        /* _test_csi_action('H'); */
-        _test_buffer_overflow();
-        /* _test_cursor_position(); */
-        /* _test_clearing(); */
+        menu_state_t state;
+        state.entries = _entries;
+        state.input_fn = _menu_input;
+        state.data = NULL;
+
+        state.flags = MENU_STATE_ENABLED | MENU_STATE_INPUT_ENABLED;
+        state.cursor = 0;
 
         while (true) {
+                smpc_peripheral_process();
+                smpc_peripheral_digital_port(1, &_digital);
+
+                dbgio_printf("[H[2J");
+
+                menu_update(&state);
+
+                dbgio_flush();
+                vdp_sync();
         }
 }
 
@@ -44,78 +71,40 @@ _hardware_init(void)
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB1555(1, 0, 3, 15));
 
+        vdp_sync_vblank_out_set(_vblank_out_handler);
+
         cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
 }
 
 static void
-_test_csi_action_h(void)
+_vblank_out_handler(void *work __unused)
 {
-        dbgio_puts("[28;36HHello, World!\n");
+        smpc_peripheral_intback_issue();
+}
 
-        while (true) {
-                dbgio_flush();
-                vdp_sync();
+static void
+_menu_input(menu_state_t *menu_state)
+{
+        if ((_digital.held.button.down) != 0) {
+                menu_cursor_down(menu_state);
+        } else if ((_digital.held.button.up) != 0) {
+                menu_cursor_up(menu_state);
+        } else if ((_digital.held.button.a) != 0) {
+                menu_action_call(menu_state);
         }
 }
 
 static void
-_test_csi_action(const char ch)
+_input_1(menu_state_t *menu_state __unused, menu_entry_t *menu_entry __unused)
 {
-        switch (ch) {
-                case 'H':
-                        _test_csi_action_h();
-                        break;
-        }
+        dbgio_printf("Input 1 pressed\n");
 }
 
-static void
-_test_buffer_overflow(void)
-{
-        char *large_buffer;
-        large_buffer = malloc(2048);
-        assert(large_buffer != NULL);
-
-        (void)memset(large_buffer, 'x', 2048);
-        large_buffer[2047] = '\0';
-
-        /* Completely overflow the screen */
-        dbgio_puts(large_buffer);
-        /* Test if we can move the cursor back to the top left */
-        dbgio_puts("[1;1HBuffer overflow averted\n");
-
-        free(large_buffer);
-
-        while (true) {
-                dbgio_flush();
-                vdp_sync();
-        }
-}
 
 static void
-_test_cursor_position(void)
+_input_2(menu_state_t *menu_state __unused, menu_entry_t *menu_entry __unused)
 {
-        /* Move the cursor back to the top left and move the cursor down */
-        dbgio_puts("[H\n");
-        for (uint32_t i = 0; i < 1024; i++) {
-                dbgio_puts("\n");
-        }
-        dbgio_puts("Exceeded screen bounds\n");
-        dbgio_puts("[1;1HCursor out of bounds averted\n");
-
-        /* Allow setting the cursor beyond the bounds of the screen */
-        dbgio_puts("[50;50H");
-        dbgio_puts("Exceeded cons screen bounds\n");
-        dbgio_puts("[2;1HCursor out of bounds averted\n");
-
-        while (true) {
-                dbgio_flush();
-                vdp_sync();
-        }
-}
-
-static void
-_test_clearing(void)
-{
+        dbgio_printf("Input 2 pressed\n");
 }
