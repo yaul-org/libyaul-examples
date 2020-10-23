@@ -23,18 +23,18 @@ static void _input_2(menu_state_t *, menu_entry_t *);
 
 static smpc_peripheral_digital_t _digital;
 
+static menu_entry_t _entries[] = {
+        MENU_ENTRY("Item 1", _input_1),
+        MENU_ENTRY("Item 2", _input_2),
+        MENU_ENTRY("Item 3", NULL),
+        MENU_ENTRY("Item 4", NULL),
+        MENU_ENTRY("Item 5", NULL),
+        MENU_END
+};
+
 int
 main(void)
 {
-        static menu_entry_t _entries[] = {
-                MENU_ENTRY("Item 1", _input_1),
-                MENU_ENTRY("Item 2", _input_2),
-                MENU_ENTRY("Item 3", NULL),
-                MENU_ENTRY("Item 4", NULL),
-                MENU_ENTRY("Item 5", NULL),
-                MENU_END
-        };
-
         _hardware_init();
 
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
@@ -42,6 +42,7 @@ main(void)
         dbgio_dev_font_load_wait();
 
         menu_state_t state;
+
         state.entries = _entries;
         state.input_fn = _menu_input;
         state.data = NULL;

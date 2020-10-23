@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define MENU_ENTRY(_text, _action)                                              \
-{                                                                               \
-        .text = _text,                                                          \
-        .action = _action                                                       \
+#define MENU_ENTRY(_text, _action)                                             \
+{                                                                              \
+        .text = _text,                                                         \
+        .action = _action                                                      \
 }
 
 #define MENU_END MENU_ENTRY(NULL, NULL)
