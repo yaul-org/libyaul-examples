@@ -1,6 +1,6 @@
 EXAMPLES:= \
 	c++ \
-	cdblock \
+	cd-block \
 	cpu-divu \
 	cpu-dmac \
 	cpu-dual \

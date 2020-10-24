@@ -4,8 +4,8 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
-SH_PROGRAM:= block_demo
-SH_OBJECTS:= block.o main.o
+SH_PROGRAM:= cd-block
+SH_OBJECTS:= block.o cd-block.o
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps
