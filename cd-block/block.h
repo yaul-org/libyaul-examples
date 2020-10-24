@@ -68,7 +68,11 @@ typedef struct {
         uint8_t identifierLength;
 } __packed DirectoryRecord;
 
-static inline bool __always_inline isDirectory(DirectoryRecord* rec) { return rec->flags & FLAG_CDBLOCK_DIRECTORY; }
+static inline bool __always_inline
+isDirectory(DirectoryRecord *rec)
+{
+        return (rec->flags & FLAG_CDBLOCK_DIRECTORY);
+}
 
 typedef struct {
         DirectoryRecord root;
@@ -81,7 +85,11 @@ typedef struct {
         uint8_t version;
 } __packed VolumeDescriptorSetCommon;
 
-static inline bool __always_inline isTerminator(VolumeDescriptorSetCommon* sec) { return sec->type == VD_SET_TERMINATOR; }
+static inline bool __always_inline
+isTerminator(VolumeDescriptorSetCommon *sec)
+{
+        return (sec->type == VD_SET_TERMINATOR);
+}
 
 typedef struct {
         VolumeDescriptorSetCommon common;
@@ -126,7 +134,7 @@ typedef struct {
 
         int8_t fileStructureVersion;
         int8_t unused4;
-  
+
         uint8_t applicationUsed[512];
         uint8_t isoReserved[653];
 } __packed PrimaryVolumeDescriptor;
@@ -139,7 +147,7 @@ typedef struct {
         Sector rootSector;
 
         // Sector to operate temporary data.
-        Sector tempSector;  
+        Sector tempSector;
 } FilesystemData;
 
 /**
@@ -148,7 +156,7 @@ typedef struct {
 typedef struct {
         Sector sector;
         uint32_t lba;
-        uint8_t* cursor;
+        uint8_t *cursor;
 } FilesystemEntryCursor;
 
 /**
@@ -177,7 +185,7 @@ typedef struct {
  * are the directory entry first, navigation depth in filesystem and
  * and optional user data pointer that is passed to navigateDirectory.
  */
-typedef void (*RecordFunction)(DirectoryRecord*, int, void*);
+typedef void (*RecordFunction)(DirectoryRecord *, int, void *);
 
 /**
  * initializeCDBlock CDBlock subsystem.
@@ -205,7 +213,7 @@ extern int readFilesystem(FilesystemData *fsData);
  * @param userData Optinal user data pointer that can be passed to the
  *                 recordFunction.
  */
-extern void navigateFilesystem(FilesystemData *fsData, 
+extern void navigateFilesystem(FilesystemData *fsData,
     RecordFunction recordFunction, void *userData);
 
 /**
@@ -221,22 +229,22 @@ extern void printCdStructure(FilesystemData *fsData);
 extern uint32_t getHeaderTableSize(FilesystemData *fsData);
 
 /**
- * Fill the passed Filesystem Header Table. The allocated header table 
- * pointer must point to a memory location with at least 
+ * Fill the passed Filesystem Header Table. The allocated header table
+ * pointer must point to a memory location with at least
  * getHeaderTableSize() bytes available.
  */
-extern void fillHeaderTable(FilesystemData *fsData, 
+extern void fillHeaderTable(FilesystemData *fsData,
     FilesystemHeaderTable *headerTable);
 
 /**
  * Return file entry.
  * @param headerTable Filesystem header table.
- * @param filenameHash Hash of the file to be searched. Use 
+ * @param filenameHash Hash of the file to be searched. Use
  *                     getFilenameHash for this.
- * @param resultingEntry If file is found, the resulting entry point to 
+ * @param resultingEntry If file is found, the resulting entry point to
  *                       the file entry on the header table.
  */
-extern void getFileEntry(FilesystemHeaderTable *headerTable, 
+extern void getFileEntry(FilesystemHeaderTable *headerTable,
     uint32_t filenameHash, FilesystemEntry **resultingEntry);
 
 /**
@@ -254,7 +262,7 @@ extern int getFileContents(FilesystemEntry *entry, void *buffer);
  * @param cursor [Output] File entry cursor to be initialized.
  *
  */
-extern void initFileEntryCursor(FilesystemEntry* entry, FilesystemEntryCursor* cursor);
+extern void initFileEntryCursor(FilesystemEntry *entry, FilesystemEntryCursor *cursor);
 
 /**
  * Return file contents from the specified entry.
@@ -263,20 +271,22 @@ extern void initFileEntryCursor(FilesystemEntry* entry, FilesystemEntryCursor* c
  *
  * @return 0 If reading was successful.
  */
-extern int readFileCursor(FilesystemEntry* entry, FilesystemEntryCursor* fileCursor, void* buffer, uint32_t length);
+extern int readFileCursor(FilesystemEntry *entry, FilesystemEntryCursor *fileCursor,
+    void *buffer, uint32_t length);
 
 /**
  * Generate a hash based on passed parameters.
  *
  * @param filename Name of the file to generate the hash.
  * @param length Length of the filename string.
- * @param startingHash In case of appending to a hash, this is the 
+ * @param startingHash In case of appending to a hash, this is the
  *                     starting hash.
  * @param firstPrime The first prime to be used in the sequence.
  * @param primeFactor The number we will multiply the prime each iteration.
  * @param lastPrime If not NULL, returns the last prime used.
  */
-extern uint32_t generateHash(const char* filename, uint32_t length, uint32_t startingHash, uint32_t firstPrime, uint32_t primeFactor, uint32_t *lastPrime);
+extern uint32_t generateHash(const char *filename, uint32_t length, uint32_t startingHash,
+    uint32_t firstPrime, uint32_t primeFactor, uint32_t *lastPrime);
 
 /**
  * Generate a cdblock filename hash.

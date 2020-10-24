@@ -15,29 +15,29 @@
 /* #define DEBUG_CDBLOCK */
 
 char *
-identifierPtr(DirectoryRecord* rec)
-{ 
-        char* ptr = (char*) &rec->identifierLength;
+identifierPtr(DirectoryRecord *rec)
+{
+        char *ptr = (char *)&rec->identifierLength;
         ptr++;
 
         return ptr;
 }
 
-DirectoryRecord *nextDir(DirectoryRecord* rec)
+DirectoryRecord *nextDir(DirectoryRecord *rec)
 {
-        uint8_t *dirPtr = (uint8_t*) rec;
+        uint8_t *dirPtr = (uint8_t *)rec;
         dirPtr += rec->length;
 
-        return (DirectoryRecord*) dirPtr;
+        return (DirectoryRecord *)dirPtr;
 }
 
 void
-binarySearch(FilesystemEntry* entries, uint32_t entriesLength,
-    FilesystemEntry searchElement, FilesystemEntry** foundEntry)
+binarySearch(FilesystemEntry *entries, uint32_t entriesLength,
+             FilesystemEntry searchElement, FilesystemEntry **foundEntry)
 {
 
         const uint32_t pivotIndex = entriesLength / 2;
-        FilesystemEntry* pivot = &entries[pivotIndex];
+        FilesystemEntry *pivot = &entries[pivotIndex];
 
         if (pivot->filenameHash == searchElement.filenameHash) {
                 *foundEntry = pivot;
@@ -47,13 +47,13 @@ binarySearch(FilesystemEntry* entries, uint32_t entriesLength,
 
                 } else {
                         binarySearch(&entries[pivotIndex],
-                            entriesLength - pivotIndex, searchElement, foundEntry);
+                                     entriesLength - pivotIndex, searchElement, foundEntry);
                 }
         }
 }
 
 void
-quickSort(FilesystemEntry* entries, int32_t left, int32_t right)
+quickSort(FilesystemEntry *entries, int32_t left, int32_t right)
 {
         /* Already sorted */
         if (right <= left) {
@@ -63,13 +63,14 @@ quickSort(FilesystemEntry* entries, int32_t left, int32_t right)
         int32_t pivotIndex = left + (right - left) / 2;
         int32_t l = left - 1;
         int32_t r = right + 1;
-  
+
         const FilesystemEntry pivot = entries[pivotIndex];
+
         for (;;) {
                 do {
                         l++;
                 } while (entries[l].filenameHash < pivot.filenameHash);
-    
+
                 do {
                         r--;
                 } while (entries[r].filenameHash > pivot.filenameHash);
@@ -78,7 +79,7 @@ quickSort(FilesystemEntry* entries, int32_t left, int32_t right)
                         pivotIndex = r;
                         break;
                 }
-  
+
                 /* Swap */
                 const FilesystemEntry tmp = entries[r];
                 entries[r] = entries[l];
@@ -90,46 +91,51 @@ quickSort(FilesystemEntry* entries, int32_t left, int32_t right)
 }
 
 void
-navigateDirectory(DirectoryRecord* record, int level,
-    RecordFunction recordFunction, void *userData, bool continueReading) {
+navigateDirectory(DirectoryRecord *record, int level,
+                  RecordFunction recordFunction, void *userData, bool continueReading)
+{
         assert(record != NULL);
 
         /* Skip empty entries. */
         if (record->length == 0) {
                 return;
         }
-  
+
         /* Skip '.' */
-        DirectoryRecord* dir = record;
+        DirectoryRecord *dir = record;
+
         if (!continueReading) {
                 dir = nextDir(record);
                 assert(dir->length != 0);
-  
+
                 /* Skip '..' */
                 dir = nextDir(dir);
         }
-      
+
         /* Visit every entry on the directory. */
         while (dir->length != 0) {
-                if (recordFunction != NULL)
+                if (recordFunction != NULL) {
                         recordFunction(dir, level, userData);
+                }
 
                 /* Visit sub-directory recursively. */
                 if (isDirectory(dir)) {
                         uint32_t extraLevels = dir->extentLength.b / 2048;
-                        if (dir->extentLength.b % 2048)
+
+                        if (dir->extentLength.b % 2048) {
                                 extraLevels++;
+                        }
 
                         for (uint32_t level = 0; level < extraLevels; ++level) {
                                 Sector sector;
                                 const int stat = cd_block_read_data(LBA2FAD(dir->extentLocation.b) +
-                                    level, 2048, sector.data);
-        
+                                                                    level, 2048, sector.data);
+
                                 assert(stat == 0);
-  
+
                                 DirectoryRecord *newRecord = (DirectoryRecord *)sector.data;
-                                navigateDirectory(newRecord, level + 1, recordFunction, userData, 
-                                    level > 0);
+                                navigateDirectory(newRecord, level + 1, recordFunction, userData,
+                                                  level > 0);
                         }
                 }
 
@@ -142,8 +148,8 @@ navigateDirectory(DirectoryRecord* record, int level,
  * child, the parent hash will be passed to generate the child hash.
  */
 void fillHeaderTableEntry(DirectoryRecord *record, uint32_t parentHash,
-    uint32_t parentPrime, FilesystemEntry **entry, 
-    FilesystemHeaderTable *headerTable, bool continueReading)
+                          uint32_t parentPrime, FilesystemEntry **entry,
+                          FilesystemHeaderTable *headerTable, bool continueReading)
 {
         assert(record != NULL);
         assert(headerTable != NULL);
@@ -153,7 +159,8 @@ void fillHeaderTableEntry(DirectoryRecord *record, uint32_t parentHash,
                 return;
         }
 
-        DirectoryRecord* dir = record;
+        DirectoryRecord *dir = record;
+
         if (!continueReading) {
                 /* Skip '.' */
                 dir = nextDir(record);
@@ -162,7 +169,7 @@ void fillHeaderTableEntry(DirectoryRecord *record, uint32_t parentHash,
                 /* Skip '..' */
                 dir = nextDir(dir);
         }
-      
+
         /* Visit every entry on the directory */
         while (dir->length != 0) {
                 /* -2 takes into account ';1' */
@@ -173,9 +180,9 @@ void fillHeaderTableEntry(DirectoryRecord *record, uint32_t parentHash,
                 }
 
                 uint32_t lastPrime = 0;
-    
+
                 uint32_t hash = generateHash(identifierPtr(dir), identifierSize,
-                    parentHash, parentPrime, HASH_PRIME, &lastPrime);
+                                             parentHash, parentPrime, HASH_PRIME, &lastPrime);
 
 #ifdef DEBUG_CDBLOCK
                 char identifierName[256];
@@ -185,36 +192,38 @@ void fillHeaderTableEntry(DirectoryRecord *record, uint32_t parentHash,
                 dbgio_printf("Added %s (%lu) to header table\n", identifierName, hash);
                 dbgio_flush();
 #endif
+
                 if (isDirectory(dir)) {
-                         /* Add '/' */
+                        /* Add '/' */
                         hash += HASH_CHAR('/') * lastPrime;
                         hash %= HASH_CUT_NUMBER;
                         lastPrime *= HASH_PRIME;
 
                         /* Visit children */
                         uint32_t extraLevels = dir->extentLength.b / 2048;
+
                         if (dir->extentLength.b % 2048) {
                                 extraLevels++;
                         }
-      
+
                         for (uint32_t level = 0; level < extraLevels; ++level) {
                                 Sector sector;
 
-                                const int stat = cd_block_read_data(LBA2FAD(dir->extentLocation.b) + 
-                                    level, 2048, sector.data);
+                                const int stat = cd_block_read_data(LBA2FAD(dir->extentLocation.b) +
+                                                                    level, 2048, sector.data);
 
                                 assert(stat == 0);
 
-                                DirectoryRecord* newRecord = (DirectoryRecord*) sector.data;
-                                fillHeaderTableEntry(newRecord, hash, lastPrime, entry, 
-                                    headerTable, level > 0);
+                                DirectoryRecord *newRecord = (DirectoryRecord *)sector.data;
+                                fillHeaderTableEntry(newRecord, hash, lastPrime, entry,
+                                                     headerTable, level > 0);
                         }
                 } else {
                         /* Add file entry */
                         (*entry)->filenameHash = hash;
                         (*entry)->lba = dir->extentLocation.b;
                         (*entry)->size = dir->extentLength.b;
-      
+
                         if (dir->extentLength.b == 0) {
                                 char identifierName[256];
                                 memcpy(identifierName, identifierPtr(dir), identifierSize);
@@ -228,7 +237,7 @@ void fillHeaderTableEntry(DirectoryRecord *record, uint32_t parentHash,
 
                         headerTable->numEntries += 1;
                         (*entry) += 1;
-                } 
+                }
 
                 dir = nextDir(dir);
         }
@@ -241,6 +250,7 @@ initializeCDBlock()
         assert((sizeof(PrimaryVolumeDescriptor) == 2048) && "PrimaryVolumeDescriptor size mismatch.");
 
         int returnCode;
+
         if ((returnCode = cd_block_init(0x0002)) != 0) {
                 return returnCode;
         }
@@ -255,7 +265,7 @@ initializeCDBlock()
 }
 
 int
-readFilesystem(FilesystemData* fsData)
+readFilesystem(FilesystemData *fsData)
 {
         assert(fsData != NULL);
 
@@ -267,7 +277,7 @@ readFilesystem(FilesystemData* fsData)
         int cdBlockRet = 0;
 
         do {
-                cdBlockRet = cd_block_read_data(startFAD, 2048, (uint8_t*)&tempSet);
+                cdBlockRet = cd_block_read_data(startFAD, 2048, (uint8_t *)&tempSet);
 
                 if (cdBlockRet != 0) {
                         return cdBlockRet;
@@ -276,29 +286,29 @@ readFilesystem(FilesystemData* fsData)
                 }
         } while (tempSet.common.type != VD_PRIMARY);
 
-        PrimaryVolumeDescriptor* primaryDescriptor = (PrimaryVolumeDescriptor*)&tempSet;
+        PrimaryVolumeDescriptor *primaryDescriptor = (PrimaryVolumeDescriptor *)&tempSet;
 
         /* Jump to root sector and retrieve it */
         const int stat = cd_block_read_data(
-                LBA2FAD(primaryDescriptor->rootDirectoryRecord.root.extentLocation.b), 
-                2048, (uint8_t*) &fsData->rootSector);
+                                 LBA2FAD(primaryDescriptor->rootDirectoryRecord.root.extentLocation.b),
+                                 2048, (uint8_t *)&fsData->rootSector);
 
         assert(stat == 0);
         return 0;
 }
 
 void
-navigateFilesystem(FilesystemData* fsData,  RecordFunction recordFunction,
-    void *userData)
+navigateFilesystem(FilesystemData *fsData,  RecordFunction recordFunction,
+                   void *userData)
 {
         assert(fsData != NULL);
-        navigateDirectory((DirectoryRecord*)&fsData->rootSector, 0, recordFunction, userData, false);
+        navigateDirectory((DirectoryRecord *)&fsData->rootSector, 0, recordFunction, userData, false);
 }
 
 void
-tallyFiles(DirectoryRecord* dir, int unused __unused, void* length)
+tallyFiles(DirectoryRecord *dir, int unused __unused, void *length)
 {
-        uint32_t *lengthData = (uint32_t*) length;
+        uint32_t *lengthData = (uint32_t *)length;
 
         if (!isDirectory(dir)) {
                 (*lengthData)++;
@@ -306,18 +316,18 @@ tallyFiles(DirectoryRecord* dir, int unused __unused, void* length)
 }
 
 uint32_t
-getHeaderTableSize(FilesystemData* fsData)
+getHeaderTableSize(FilesystemData *fsData)
 {
         assert(fsData != NULL);
 
         uint32_t numEntries = 0;
-        navigateDirectory((DirectoryRecord*)&fsData->rootSector, 0, tallyFiles, &numEntries, false);
+        navigateDirectory((DirectoryRecord *)&fsData->rootSector, 0, tallyFiles, &numEntries, false);
 
         return (numEntries * sizeof(FilesystemEntry));
 }
 
 void
-fillHeaderTable(FilesystemData* fsData,  FilesystemHeaderTable* headerTable)
+fillHeaderTable(FilesystemData *fsData,  FilesystemHeaderTable *headerTable)
 {
         assert(fsData != NULL);
         assert(headerTable != NULL);
@@ -325,16 +335,16 @@ fillHeaderTable(FilesystemData* fsData,  FilesystemHeaderTable* headerTable)
 
         headerTable->numEntries = 0;
 
-        FilesystemEntry* iterEntry = headerTable->entries;
-        fillHeaderTableEntry((DirectoryRecord*)&fsData->rootSector, 0, HASH_PRIME, 
-            &iterEntry, headerTable, false);
+        FilesystemEntry *iterEntry = headerTable->entries;
+        fillHeaderTableEntry((DirectoryRecord *)&fsData->rootSector, 0, HASH_PRIME,
+                             &iterEntry, headerTable, false);
 
         quickSort(headerTable->entries, 0, headerTable->numEntries - 1);
 }
 
 void
-getFileEntry(FilesystemHeaderTable* headerTable, uint32_t filenameHash,
-    FilesystemEntry** resultingEntry)
+getFileEntry(FilesystemHeaderTable *headerTable, uint32_t filenameHash,
+             FilesystemEntry **resultingEntry)
 {
         assert(headerTable != NULL);
         assert(resultingEntry != NULL);
@@ -343,23 +353,23 @@ getFileEntry(FilesystemHeaderTable* headerTable, uint32_t filenameHash,
         searchEntry.lba = 0;
         searchEntry.size = 0;
 
-        binarySearch(headerTable->entries, headerTable->numEntries, 
-            searchEntry, resultingEntry);
+        binarySearch(headerTable->entries, headerTable->numEntries,
+                     searchEntry, resultingEntry);
 }
 
 int
-getFileContents(FilesystemEntry* entry, void* buffer)
+getFileContents(FilesystemEntry *entry, void *buffer)
 {
         FilesystemEntryCursor tmpFileCursor;
 
         tmpFileCursor.cursor = NULL;
         tmpFileCursor.lba = entry->lba;
 
-        return readFileCursor(entry, &tmpFileCursor, buffer, entry->size);  
+        return readFileCursor(entry, &tmpFileCursor, buffer, entry->size);
 }
 
 void
-initFileEntryCursor(FilesystemEntry* entry, FilesystemEntryCursor* cursor)
+initFileEntryCursor(FilesystemEntry *entry, FilesystemEntryCursor *cursor)
 {
         assert(entry != NULL);
         assert(cursor != NULL);
@@ -368,21 +378,21 @@ initFileEntryCursor(FilesystemEntry* entry, FilesystemEntryCursor* cursor)
         cursor->lba = entry->lba;
 }
 
-int readFileCursor(FilesystemEntry* entry, FilesystemEntryCursor* fileCursor,
-    void* buffer, uint32_t length)
+int readFileCursor(FilesystemEntry *entry, FilesystemEntryCursor *fileCursor,
+                   void *buffer, uint32_t length)
 {
         assert(entry != NULL);
         assert(fileCursor != NULL);
         assert(buffer != NULL);
 
-        uint8_t* dstBuffer = (uint8_t*) buffer;
+        uint8_t *dstBuffer = (uint8_t *) buffer;
         uint32_t missingBytes = length;
 
-        if(fileCursor->cursor) {
+        if (fileCursor->cursor) {
                 uint32_t remainingBuffer = fileCursor->cursor - fileCursor->sector.data;
                 remainingBuffer = sizeof(fileCursor->sector.data) - remainingBuffer;
-    
-                if(missingBytes <= remainingBuffer) {
+
+                if (missingBytes <= remainingBuffer) {
                         memcpy(dstBuffer, fileCursor->cursor, missingBytes);
                         fileCursor->cursor += missingBytes;
                         return 0;
@@ -397,11 +407,12 @@ int readFileCursor(FilesystemEntry* entry, FilesystemEntryCursor* fileCursor,
 
                         /* Jump to next LBA */
                         fileCursor->lba++;
-                }      
+                }
         }
 
         while (missingBytes > 0) {
                 int ret = cd_block_read_data(LBA2FAD(fileCursor->lba), 2048, fileCursor->sector.data);
+
                 if (ret != 0) {
                         return ret;
                 }
@@ -425,8 +436,8 @@ int readFileCursor(FilesystemEntry* entry, FilesystemEntryCursor* fileCursor,
 }
 
 uint32_t
-generateHash(const char* filename, uint32_t length, uint32_t startingHash,
-    uint32_t firstPrime, uint32_t primeFactor, uint32_t *lastPrime)
+generateHash(const char *filename, uint32_t length, uint32_t startingHash,
+             uint32_t firstPrime, uint32_t primeFactor, uint32_t *lastPrime)
 {
         assert(filename != NULL);
 
@@ -438,7 +449,7 @@ generateHash(const char* filename, uint32_t length, uint32_t startingHash,
                 hash %= HASH_CUT_NUMBER;
                 prime *= primeFactor;
         }
-    
+
         if (lastPrime != NULL) {
                 *lastPrime = prime;
         }

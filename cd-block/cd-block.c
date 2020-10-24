@@ -17,8 +17,8 @@
 static FilesystemData sCdFilesystemData;
 static FilesystemHeaderTable sCdHeaderTable;
 
-/* Wait for A button press. */
-void
+/* Wait for A button press */
+static void
 getinput()
 {
         static smpc_peripheral_digital_t _digital;
@@ -29,18 +29,18 @@ getinput()
 
         held = ((_digital.pressed.raw & PERIPHERAL_DIGITAL_A) != 0x0000);
 
-        while(true) {
+        while (true) {
                 dbgio_flush();
                 vdp_sync();
 
-                if(((_digital.pressed.raw & PERIPHERAL_DIGITAL_A) != 0x0000) && !held) {
+                if (((_digital.pressed.raw & PERIPHERAL_DIGITAL_A) != 0x0000) && !held) {
                         break;
                 }
 
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
 
-                if(held) {
+                if (held) {
                         held = ((_digital.pressed.raw & PERIPHERAL_DIGITAL_A) != 0x0000);
                 }
         }
@@ -65,7 +65,7 @@ initializeFilesystem()
         /* Create cd entries table (necessary for looking for files) */
         const uint32_t tableSize = getHeaderTableSize(&sCdFilesystemData);
 
-        sCdHeaderTable.entries = (FilesystemEntry*) malloc(tableSize);
+        sCdHeaderTable.entries = (FilesystemEntry *) malloc(tableSize);
 
         fillHeaderTable(&sCdFilesystemData, &sCdHeaderTable);
 }
@@ -82,15 +82,15 @@ hardwareInit()
         cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
-  
+
         vdp_sync_vblank_out_set(_vblank_out_handler);
 }
 
 void
-printFileContents(const char* filename)
+printFileContents(const char *filename)
 {
         char readbuffer[250];
-        FilesystemEntry* fsEntry = NULL;
+        FilesystemEntry *fsEntry = NULL;
         FilesystemEntryCursor fileCursor;
         getFileEntry(&sCdHeaderTable, getFilenameHash(filename, strlen(filename)), &fsEntry);
 
@@ -101,7 +101,7 @@ printFileContents(const char* filename)
         int remainder = fsEntry->size;
 
         do {
-                if(readAmount > remainder) {
+                if (readAmount > remainder) {
                         readAmount = remainder;
                 }
 
@@ -127,15 +127,14 @@ main(void)
         dbgio_dev_font_load();
         dbgio_dev_font_load_wait();
 
-        /* Start filesystem */
         initializeFilesystem();
-  
+
         /* Test a file in a directory */
         printFileContents("A_FOLDER/DIRTEST.TXT");
 
         /* Test a really big file */
         printFileContents("SHERLOCK.TXT");
-  
+
         clearscreen();
         dbgio_printf("All done!");
 
