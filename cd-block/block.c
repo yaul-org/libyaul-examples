@@ -182,9 +182,7 @@ void fillHeaderTableEntry(DirectoryRecord *record, uint32_t parentHash,
                 memcpy(identifierName, dir->identifierPtr(), identifierSize);
                 identifierName[identifierSize] = 0;
 
-                char tmpBuffer[1024];
-                sprintf(tmpBuffer, "Added %s (%lu) to header table\n", identifierName, hash);
-                dbgio_puts(tmpBuffer);
+                dbgio_printf("Added %s (%lu) to header table\n", identifierName, hash);
                 dbgio_flush();
 #endif
                 if (isDirectory(dir)) {
@@ -222,9 +220,7 @@ void fillHeaderTableEntry(DirectoryRecord *record, uint32_t parentHash,
                                 memcpy(identifierName, identifierPtr(dir), identifierSize);
                                 identifierName[identifierSize] = 0;
 
-                                char tmpBuffer[1024];
-                                sprintf(tmpBuffer, "Invalid 0 byte file detected: %s\n", identifierName);
-                                dbgio_puts(tmpBuffer);
+                                dbgio_printf("Invalid 0 byte file detected: %s\n", identifierName);
                                 dbgio_flush();
 
                                 assert(false);
