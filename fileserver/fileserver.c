@@ -113,25 +113,34 @@ main(void)
 
                 dbgio_printf("Reading buffer\n"); dbgio_flush(); vdp_sync();
 
-                uint8_t *long_buffer;
-                long_buffer = (uint8_t *)dst_buffer;
+                while (true) { 
+                        uint8_t *long_buffer;
+                        long_buffer = (uint8_t *)dst_buffer;
 
-                uint32_t i;
+                        uint32_t i;
 
-                for (i = 0; i < (2048 / sizeof(uint8_t)); i++) {
-                        long_buffer[i] = usb_cart_byte_read();
+                        for (i = 0; i < (2048 / sizeof(uint8_t)); i++) {
+                                long_buffer[i] = usb_cart_byte_read();
+                        }
+
+                        dbgio_printf("Read %lu bytes\n", i); dbgio_flush(); vdp_sync();
+
+                        crc_t crc;
+                        crc = _crc_calculate(dst_buffer, 2048);
+
+                        dbgio_printf("Calculating CRC: 0x%02X\n", crc); dbgio_flush(); vdp_sync();
+
+                        usb_cart_byte_send(crc);
+
+                        crc_t read_crc;
+                        read_crc = usb_cart_byte_read();
+
+                        if (read_crc == crc) {
+                                break;
+                        }
                 }
 
-                dbgio_printf("Read %lu bytes\n", i); dbgio_flush(); vdp_sync();
-
-                crc_t crc;
-                crc = _crc_calculate(dst_buffer, 2048);
-
-                dbgio_printf("Calculating CRC: 0x%02X\n", crc); dbgio_flush(); vdp_sync();
-
-                usb_cart_byte_send(crc);
-
-                dbgio_printf("Done\n"); dbgio_flush(); vdp_sync();
+                dbgio_printf("[H[2J\n"); dbgio_flush(); vdp_sync();
 
                 dbgio_puts(dst_buffer);
 
