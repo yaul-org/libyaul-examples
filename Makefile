@@ -5,6 +5,7 @@ EXAMPLES:= \
 	cpu-dual \
 	cpu-frt \
 	cpu-wdt \
+	dbgio-menu \
 	dram-cart \
 	romdisk \
 	scu-dma \
@@ -19,7 +20,6 @@ EXAMPLES:= \
 	vdp2-2x2-plane \
 	vdp2-back-screen \
 	vdp2-bitmap \
-	vdp2-dbgio \
 	vdp2-line-scroll \
 	vdp2-nbg0 \
 	vdp2-normal-bitmap \
@@ -34,16 +34,20 @@ EXAMPLES:= \
 #   vdp1-cube
 #   vdp1-st-niccc
 
+# Either type of dev cartridge
 ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),$(filter $(YAUL_OPTION_DEV_CARTRIDGE),1 2))
 EXAMPLES+= \
-	gdb
+	gdb \
+	fileserver
 endif
 
+# USB cartridge
 ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),1)
 EXAMPLES+= \
 	usb-cart
 endif
 
+# AR
 ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),2)
 endif
 

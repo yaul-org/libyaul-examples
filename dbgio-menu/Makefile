@@ -2,24 +2,19 @@ ifeq ($(strip $(YAUL_INSTALL_ROOT)),)
   $(error Undefined YAUL_INSTALL_ROOT (install root directory))
 endif
 
-ifneq ($(OPTION_DEV_CARTRIDGE),$(filter $(OPTION_DEV_CARTRIDGE),1 2))
-  $(error Wrong development cartridge value (see `OPTION_DEV_CARTRIDGE'))
-endif
-
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
-SH_PROGRAM:= fileserver
-SH_OBJECTS:= \
-	fileserver.o
+SH_PROGRAM:= dbgio-menu
+SH_OBJECTS:= dbgio-menu.o ../shared/menu/menu.o
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -save-temps
+SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
 IP_AREAS:= JTUBKAEL
 IP_PERIPHERALS:= JAMKST
-IP_TITLE:= File server
+IP_TITLE:= VDP2 DBGIO test
 IP_MASTER_STACK_ADDR:= 0x06004000
 IP_SLAVE_STACK_ADDR:= 0x06001000
 IP_1ST_READ_ADDR:= 0x06004000

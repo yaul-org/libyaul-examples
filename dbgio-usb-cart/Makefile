@@ -4,12 +4,8 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
-ifneq ($(OPTION_DEV_CARTRIDGE),$(filter $(OPTION_DEV_CARTRIDGE),1 2))
-  $(error Wrong development cartridge value (see `OPTION_DEV_CARTRIDGE'))
-endif
-
-SH_PROGRAM:= vdp2-dbgio
-SH_OBJECTS:= vdp2-dbgio.o ../shared/menu/menu.o
+SH_PROGRAM:= dbgio-usb-cart
+SH_OBJECTS:= dbgio-usb-cart.o
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps
@@ -18,7 +14,7 @@ IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
 IP_AREAS:= JTUBKAEL
 IP_PERIPHERALS:= JAMKST
-IP_TITLE:= VDP2 DBGIO test
+IP_TITLE:= USB dev cart DBGIO test
 IP_MASTER_STACK_ADDR:= 0x06004000
 IP_SLAVE_STACK_ADDR:= 0x06001000
 IP_1ST_READ_ADDR:= 0x06004000
