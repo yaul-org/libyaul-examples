@@ -16,7 +16,7 @@ static void _vblank_out_handler(void *);
 
 static void _hardware_init(void);
 
-static void _walk(const iso9660_toc_entry_t *, void *) __used;
+static void _walk(const iso9660_filelist_entry_t *, void *);
 
 static smpc_peripheral_digital_t _digital;
 
@@ -29,7 +29,7 @@ main(void)
         dbgio_dev_font_load();
         dbgio_dev_font_load_wait();
 
-        iso9660_toc_walk(_walk, NULL);
+        iso9660_filelist_walk(_walk, NULL);
 
         while (true) {
                 smpc_peripheral_process();
@@ -72,7 +72,7 @@ _vblank_out_handler(void *work __unused)
 }
 
 static void
-_walk(const iso9660_toc_entry_t *entry, void *args __unused)
+_walk(const iso9660_filelist_entry_t *entry, void *args __unused)
 {
-        dbgio_printf("\"%s\" ", entry->name);
+        dbgio_printf("%s ", entry->name);
 }
