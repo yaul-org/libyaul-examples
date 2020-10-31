@@ -5,7 +5,7 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= cd-block
-SH_OBJECTS:= cd-block.o
+SH_OBJECTS:= cd-block.o ../shared/menu/scroll_menu.o ../shared/menu/menu.o
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps

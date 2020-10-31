@@ -10,15 +10,23 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "menu.h"
+#include "scroll_menu.h"
+
+#define MENU_ENTRY_COUNT 16
 
 static void _vblank_out_handler(void *);
 
 static void _hardware_init(void);
 
-static void _walk(const iso9660_filelist_entry_t *, void *);
+static void _menu_input(scroll_menu_state_t *);
+static void _menu_update(scroll_menu_state_t *);
 
 static smpc_peripheral_digital_t _digital;
+
+static iso9660_filelist_t _filelist;
+static iso9660_filelist_entry_t _filelist_entries[ISO9660_FILELIST_ENTRIES_COUNT];
+
+static menu_entry_t _menu_entries[MENU_ENTRY_COUNT + 1];
 
 int
 main(void)
@@ -29,11 +37,35 @@ main(void)
         dbgio_dev_font_load();
         dbgio_dev_font_load_wait();
 
-        iso9660_filelist_walk(_walk, NULL);
+        _filelist.entries = _filelist_entries;
+        _filelist.entries_count = 0;
+        _filelist.entries_pooled_count = 0;
+
+        iso9660_filelist_read(&_filelist, -1);
+
+        scroll_menu_state_t menu_state;
+
+        scroll_menu_init(&menu_state);
+        scroll_menu_input_set(&menu_state, _menu_input);
+        scroll_menu_update_set(&menu_state, _menu_update);
+        scroll_menu_entries_set(&menu_state, _menu_entries);
+
+        menu_state.view_height = MENU_ENTRY_COUNT - 1;
+        menu_state.top_index = 0;
+        menu_state.bottom_index = _filelist.entries_count;
+
+        menu_state.flags = SCROLL_MENU_STATE_ENABLED | SCROLL_MENU_STATE_INPUT_ENABLED;
+
+        _menu_entries[MENU_ENTRY_COUNT].text = NULL;
+        _menu_entries[MENU_ENTRY_COUNT].action = NULL;
 
         while (true) {
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
+
+                dbgio_printf("[H[2J");
+
+                scroll_menu_update(&menu_state);
 
                 dbgio_flush();
                 vdp_sync();
@@ -72,7 +104,28 @@ _vblank_out_handler(void *work __unused)
 }
 
 static void
-_walk(const iso9660_filelist_entry_t *entry, void *args __unused)
+_menu_input(scroll_menu_state_t *menu_state)
 {
-        dbgio_printf("%s ", entry->name);
+        if ((_digital.held.button.down) != 0) {
+                scroll_menu_cursor_down(menu_state);
+        } else if ((_digital.held.button.up) != 0) {
+                scroll_menu_cursor_up(menu_state);
+        } else if ((_digital.held.button.a) != 0) {
+                scroll_menu_action_call(menu_state);
+        }
+}
+
+static void
+_menu_update(scroll_menu_state_t *menu_state)
+{
+        for (uint32_t i = 0; i <= (MENU_ENTRY_COUNT - 1); i++) {
+                menu_entry_t *menu_entry;
+                menu_entry = &_menu_entries[i];
+
+                uint32_t y;
+                y = scroll_menu_cursor(menu_state) + i;
+
+                menu_entry->text = _filelist.entries[y].name;
+                menu_entry->action = NULL;
+        }
 }

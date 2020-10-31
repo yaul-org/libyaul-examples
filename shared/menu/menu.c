@@ -16,7 +16,7 @@ static void _menu_render_update(menu_state_t *);
 static inline void __always_inline
 _menu_cursor_clamp(menu_state_t *menu_state, int8_t dir)
 {
-        int8_t cursor = menu_state->cursor + dir;
+        int8_t cursor = menu_state->_cursor + dir;
 
         if (cursor < 0) {
                 cursor = 0;
@@ -24,7 +24,31 @@ _menu_cursor_clamp(menu_state_t *menu_state, int8_t dir)
                 cursor = menu_state->_entries_count - 1;
         }
 
-        menu_state->cursor = cursor;
+        menu_state->_cursor = cursor;
+}
+
+void
+menu_init(menu_state_t *menu_state)
+{
+        menu_state->entries = NULL;
+        menu_state->flags = MENU_STATE_NONE;
+        menu_state->data = NULL;
+
+        menu_state->_cursor = 0;
+        menu_state->_entries_count = 0;
+        menu_state->_input_fn = NULL;
+}
+
+void
+menu_input_set(menu_state_t *menu_state, menu_fn_t input_fn)
+{
+        menu_state->_input_fn = input_fn;
+}
+
+void
+menu_entries_set(menu_state_t *menu_state, menu_entry_t *entries)
+{
+        menu_state->entries = entries;
 }
 
 void
@@ -36,9 +60,15 @@ menu_update(menu_state_t *menu_state)
 
         _menu_render_update(menu_state);
 
-        if (menu_state->input_fn != NULL) {
-                menu_state->input_fn(menu_state);                
+        if (menu_state->_input_fn != NULL) {
+                menu_state->_input_fn(menu_state);                
         }
+}
+
+menu_cursor_t
+menu_cursor(menu_state_t *menu_state)
+{
+        return menu_state->_cursor;
 }
 
 void
@@ -68,7 +98,7 @@ menu_action_call(menu_state_t *menu_state)
                 return;
         }
 
-        menu_entry_t *menu_entry = &menu_state->entries[menu_state->cursor];
+        menu_entry_t *menu_entry = &menu_state->entries[menu_state->_cursor];
         menu_action_t action = menu_entry->action;
 
         if (action != NULL) {
@@ -86,7 +116,7 @@ _menu_render_update(menu_state_t *menu_state)
         menu_state->_entries_count = 0;
 
         for (int8_t i = 0; entry_ptr->text != NULL; i++) {
-                const char cursor = (menu_state->cursor == i) ? '' : ' ';
+                const char cursor = (menu_state->_cursor == i) ? '' : ' ';
 
                 cursor_buffer[0] = cursor;
                 cursor_buffer[1] = '\0';
