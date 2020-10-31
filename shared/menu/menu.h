@@ -12,7 +12,7 @@
 
 #define MENU_END MENU_ENTRY(NULL, NULL)
 
-typedef uint8_t menu_cursor_t;
+typedef int8_t menu_cursor_t;
 
 typedef struct menu_state menu_state_t;
 
@@ -41,8 +41,8 @@ struct menu_state {
         void *data;
 
         /* Private */
-        int8_t _cursor;
-        int8_t _entries_count;
+        menu_cursor_t _cursor;
+        uint16_t _entries_count;
         menu_fn_t _input_fn;  
 };
 

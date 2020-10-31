@@ -1,5 +1,5 @@
-#ifndef _SHARED_MENU__SCROLL_MENU_H
-#define _SHARED_MENU__SCROLL_MENU_H
+#ifndef _SHARED_MENU_SCROLL_MENU_H
+#define _SHARED_MENU_SCROLL_MENU_H
 
 #include <stdint.h>
 #include <stddef.h>
@@ -31,8 +31,8 @@ struct scroll_menu_state {
         menu_state_t _menu_state;
         scroll_menu_fn_t _input_fn;
         scroll_menu_fn_t _update_fn;
-        int8_t _y;
-        int8_t _gp;
+        menu_cursor_t _y;
+        menu_cursor_t _gp;
 };
 
 void scroll_menu_init(scroll_menu_state_t *);
@@ -48,4 +48,4 @@ void scroll_menu_action_call(scroll_menu_state_t *);
 
 void scroll_menu_update(scroll_menu_state_t *);
 
-#endif /* _SHARED_MENU__SCROLL_MENU_H */
+#endif /* _SHARED_MENU_SCROLL_MENU_H */
