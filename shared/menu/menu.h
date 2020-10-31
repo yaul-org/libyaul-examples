@@ -32,7 +32,7 @@ struct menu_entry {
 typedef enum {
         MENU_STATE_NONE          = 0,
         MENU_STATE_ENABLED       = 1 << 0,
-        MENU_STATE_INPUT_ENABLED = 1 << 1,
+        MENU_STATE_INPUT_ENABLED = 1 << 1
 } menu_state_flags_t;
 
 struct menu_state {
@@ -47,8 +47,10 @@ struct menu_state {
 };
 
 void menu_init(menu_state_t *);
-void menu_input_set(menu_state_t *, menu_fn_t);
+
 void menu_entries_set(menu_state_t *, menu_entry_t *);
+void menu_input_set(menu_state_t *, menu_fn_t);
+
 void menu_update(menu_state_t *);
 
 menu_cursor_t menu_cursor(menu_state_t *);

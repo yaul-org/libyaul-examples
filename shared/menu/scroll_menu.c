@@ -22,6 +22,10 @@ scroll_menu_init(scroll_menu_state_t *scroll_menu_state)
         scroll_menu_state->top_index = 0;
         scroll_menu_state->bottom_index = 0;
 
+        scroll_menu_state->entries = NULL;
+        scroll_menu_state->flags = SCROLL_MENU_STATE_NONE;
+        scroll_menu_state->data = NULL;
+
         scroll_menu_state->_cursor = 0;
         scroll_menu_state->_y = 0;
         scroll_menu_state->_gp = 0;

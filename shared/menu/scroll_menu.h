@@ -15,7 +15,7 @@ typedef void (*scroll_menu_fn_t)(scroll_menu_state_t *);
 typedef enum {
         SCROLL_MENU_STATE_NONE          = 0,
         SCROLL_MENU_STATE_ENABLED       = 1 << 0,
-        SCROLL_MENU_STATE_INPUT_ENABLED = 1 << 1,
+        SCROLL_MENU_STATE_INPUT_ENABLED = 1 << 1
 } scroll_menu_state_flags_t;
 
 struct scroll_menu_state {
@@ -38,9 +38,10 @@ struct scroll_menu_state {
 
 void scroll_menu_init(scroll_menu_state_t *);
 
+void scroll_menu_entries_set(scroll_menu_state_t *, menu_entry_t *);
+
 void scroll_menu_input_set(scroll_menu_state_t *, scroll_menu_fn_t);
 void scroll_menu_update_set(scroll_menu_state_t *, scroll_menu_fn_t);
-void scroll_menu_entries_set(scroll_menu_state_t *, menu_entry_t *);
 
 menu_cursor_t scroll_menu_local_cursor(scroll_menu_state_t *);
 menu_cursor_t scroll_menu_cursor(scroll_menu_state_t *);
