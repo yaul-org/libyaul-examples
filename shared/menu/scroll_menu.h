@@ -31,6 +31,7 @@ struct scroll_menu_state {
         menu_state_t _menu_state;
         scroll_menu_fn_t _input_fn;
         scroll_menu_fn_t _update_fn;
+        menu_cursor_t _cursor;
         menu_cursor_t _y;
         menu_cursor_t _gp;
 };
@@ -41,6 +42,7 @@ void scroll_menu_input_set(scroll_menu_state_t *, scroll_menu_fn_t);
 void scroll_menu_update_set(scroll_menu_state_t *, scroll_menu_fn_t);
 void scroll_menu_entries_set(scroll_menu_state_t *, menu_entry_t *);
 
+menu_cursor_t scroll_menu_local_cursor(scroll_menu_state_t *);
 menu_cursor_t scroll_menu_cursor(scroll_menu_state_t *);
 void scroll_menu_cursor_down(scroll_menu_state_t *);
 void scroll_menu_cursor_up(scroll_menu_state_t *);

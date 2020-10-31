@@ -18,7 +18,7 @@ typedef struct menu_state menu_state_t;
 
 typedef struct menu_entry menu_entry_t;
 
-typedef void (*menu_action_t)(menu_state_t *, menu_entry_t *);
+typedef void (*menu_action_t)(void *, menu_entry_t *);
 
 typedef void (*menu_fn_t)(menu_state_t *);
 

@@ -22,6 +22,7 @@ scroll_menu_init(scroll_menu_state_t *scroll_menu_state)
         scroll_menu_state->top_index = 0;
         scroll_menu_state->bottom_index = 0;
 
+        scroll_menu_state->_cursor = 0;
         scroll_menu_state->_y = 0;
         scroll_menu_state->_gp = 0;
 
@@ -60,9 +61,15 @@ scroll_menu_entries_set(scroll_menu_state_t *scroll_menu_state, menu_entry_t *en
 }
 
 menu_cursor_t
-scroll_menu_cursor(scroll_menu_state_t *menu_state)
+scroll_menu_local_cursor(scroll_menu_state_t *menu_state)
 {
         return menu_state->_y;
+}
+
+menu_cursor_t
+scroll_menu_cursor(scroll_menu_state_t *menu_state)
+{
+        return menu_state->_cursor;
 }
 
 void
@@ -84,7 +91,19 @@ scroll_menu_cursor_down(scroll_menu_state_t *menu_state)
 void
 scroll_menu_action_call(scroll_menu_state_t *menu_state)
 {
-        menu_action_call(&menu_state->_menu_state);
+        if ((menu_state->flags & MENU_STATE_ENABLED) != MENU_STATE_ENABLED) {
+                return;
+        }
+
+        menu_cursor_t cursor;
+        cursor = menu_state->_gp;
+
+        menu_entry_t *menu_entry = &menu_state->entries[cursor];
+        menu_action_t action = menu_entry->action;
+
+        if (action != NULL) {
+                action(menu_state, menu_entry);
+        }
 }
 
 void
@@ -107,6 +126,14 @@ scroll_menu_update(scroll_menu_state_t *scroll_menu_state)
 static void
 _scroll(scroll_menu_state_t *menu_state, int8_t dir)
 {
+        menu_state->_cursor += dir;
+
+        if (menu_state->_cursor < 0) {
+                menu_state->_cursor = 0;
+        } else if (menu_state->_cursor > menu_state->bottom_index) {
+                menu_state->_cursor = menu_state->bottom_index;
+        }
+
         menu_state->_gp += dir;
 
         if (menu_state->_gp < 0) {
