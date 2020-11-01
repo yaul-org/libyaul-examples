@@ -90,15 +90,6 @@ _hardware_init(void)
         cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
-
-        int ret;
-        ret = cd_block_init(0x0002);
-        assert(ret == 0);
-
-        if ((cd_block_cmd_is_auth(NULL)) == 0) {
-                ret = cd_block_bypass_copy_protection();
-                assert(ret == 0);
-        }
 }
 
 static void
