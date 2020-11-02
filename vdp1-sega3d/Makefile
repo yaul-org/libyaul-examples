@@ -5,7 +5,7 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= vdp1-sega3d
-SH_OBJECTS:= vdp1-sega3d.o plane.s3d.o
+SH_OBJECTS:= vdp1-sega3d.o plane.s3d.o cube.s3d.o
 
 # Important, libsega3d must be included
 SH_LIBRARIES:= sega3d

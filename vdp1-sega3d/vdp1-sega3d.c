@@ -23,6 +23,7 @@
 #define ORDER_BASE_COUNT                (3)
 
 extern PDATA PD_PLANE1[];
+extern PDATA PD_CUBE1[];
 
 static void _vblank_out_handler(void *);
 
@@ -35,8 +36,11 @@ main(void)
 {
         sega3d_init();
 
+        PDATA *pdata;
+        pdata = PD_CUBE1;
+
         uint16_t polygon_count;
-        polygon_count = sega3d_polycount_get(PD_PLANE1);
+        polygon_count = sega3d_polycount_get(pdata);
 
         uint16_t cmdt_list_count;
         cmdt_list_count = ORDER_BASE_COUNT + polygon_count;
@@ -47,7 +51,7 @@ main(void)
 
         _cmdt_list_init(cmdt_list);
 
-        sega3d_cmdt_prepare(PD_PLANE1, cmdt_list, ORDER_SEGA3D_INDEX);
+        sega3d_cmdt_prepare(pdata, cmdt_list, ORDER_SEGA3D_INDEX);
 
         /* Be sure to terminate list */
         vdp1_cmdt_end_set(&cmdt_list->cmdts[cmdt_list_count - 1]);
@@ -55,23 +59,34 @@ main(void)
         /* Set the number of command tables to draw from the list */
         cmdt_list->count = cmdt_list_count;
 
-        FIXED x = toFIXED(0.0f);
-        FIXED s = toFIXED(0.0f);
+        MATRIX matrix;
+
+        matrix[0][0] = toFIXED(0.5000000); matrix[0][1] = toFIXED(-0.5000000); matrix[0][2] = toFIXED( 0.7071068);
+        matrix[1][0] = toFIXED(0.8535534); matrix[1][1] = toFIXED( 0.1464466); matrix[1][2] = toFIXED(-0.5000000);
+        matrix[2][0] = toFIXED(0.1464466); matrix[2][1] = toFIXED( 0.8535534); matrix[2][2] = toFIXED( 0.5000000);
+
+        sega3d_matrix_load(&matrix);
+
+        FIXED z;
+        z = toFIXED(0.0f);
 
         while (true) {
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
 
-                dbgio_printf("[H[2J"); 
+                dbgio_printf("[H[2J");
 
                 sega3d_matrix_push(MATRIX_TYPE_PUSH); {
-                        sega3d_matrix_translate(x, toFIXED(0.0f), toFIXED(0.0f));
-                        sega3d_matrix_scale(toFIXED(1.0f), s, toFIXED(0.0f)); 
-                        sega3d_cmdt_transform(PD_PLANE1, cmdt_list, ORDER_SEGA3D_INDEX);
+                        sega3d_matrix_translate(toFIXED(0.0f), toFIXED(0.0f), z);
+                        sega3d_matrix_scale(toFIXED(1.0f), toFIXED(1.0f), toFIXED(1.0f));
+                        sega3d_cmdt_transform(pdata, cmdt_list, ORDER_SEGA3D_INDEX);
                 } sega3d_matrix_pop();
 
-                x += toFIXED(1.0f);
-                s += toFIXED(0.125f);
+                if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_UP) != 0) {
+                        z += toFIXED(-1.0f);
+                } else if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_DOWN) != 0) {
+                        z += toFIXED( 1.0f);
+                }
 
                 vdp1_sync_cmdt_list_put(cmdt_list, NULL, NULL);
 
