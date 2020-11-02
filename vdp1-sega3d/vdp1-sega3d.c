@@ -31,6 +31,7 @@ extern PDATA PD_PLANE1[];
 extern PDATA PD_CUBE1[];
 extern PDATA PD_SONIC[];
 extern PDATA PD_QUAKE[];
+extern PDATA PD_TORUS[];
 
 extern Uint16 GR_SMS[];
 extern PDATA PD_SMS3[];
@@ -46,24 +47,24 @@ main(void)
 {
         sega3d_init();
 
-        sega3d_object_t object;
-
-        object.pdata = PD_SMS3;
-        object.cmdt_list = _cmdt_list;
-        object.offset = ORDER_SEGA3D_INDEX;
-        object.iterate_fn = NULL;
-        object.data = NULL;
-
-        uint16_t polygon_count;
-        polygon_count = sega3d_object_polycount_get(&object);
-
         /* Set up global command table list */
         _cmdt_list = vdp1_cmdt_list_alloc(VDP1_VRAM_CMDT_COUNT);
         assert(_cmdt_list != NULL);
         /* Set up the first few command tables */
         vdp1_env_preamble_populate(&_cmdt_list->cmdts[0], NULL);
 
+        sega3d_object_t object;
+
+        object.pdata = PD_SMS3;
+        object.cmdts = &_cmdt_list->cmdts[0];
+        object.offset = ORDER_SEGA3D_INDEX;
+        object.iterate_fn = NULL;
+        object.data = NULL;
+
         sega3d_object_prepare(&object);
+
+        uint16_t polygon_count;
+        polygon_count = sega3d_object_polycount_get(&object);
 
         (void)memcpy((uint16_t *)VDP1_VRAM(0x2BFE0),
             GR_SMS,
@@ -100,9 +101,9 @@ main(void)
                 }
 
                 /* Be sure to terminate list */
-                if (_cmdt_list->count > 0) {
-                        vdp1_cmdt_end_set(&_cmdt_list->cmdts[_cmdt_list->count - 1]);
-                }
+                _cmdt_list->count = ORDER_BASE_COUNT + object.count;
+
+                vdp1_cmdt_end_set(&_cmdt_list->cmdts[_cmdt_list->count - 1]);
 
                 vdp1_sync_cmdt_list_put(_cmdt_list, NULL, NULL);
 
