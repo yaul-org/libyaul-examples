@@ -75,11 +75,11 @@ main(void)
                 smpc_peripheral_digital_port(1, &_digital);
 
                 dbgio_printf("[H[2J");
+                dbgio_printf("z: %li\n", z);
 
                 sega3d_matrix_push(MATRIX_TYPE_PUSH); {
                         sega3d_matrix_translate(toFIXED(0.0f), toFIXED(0.0f), z);
-                        sega3d_matrix_scale(toFIXED(1.0f), toFIXED(1.0f), toFIXED(1.0f));
-                        sega3d_cmdt_transform(pdata, cmdt_list, ORDER_SEGA3D_INDEX);
+                        sega3d_cmdt_transform(pdata);
                 } sega3d_matrix_pop();
 
                 if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_UP) != 0) {
