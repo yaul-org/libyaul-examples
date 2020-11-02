@@ -26,7 +26,7 @@ static ATTR attribute_cube1[] = {
         ATTRIBUTE(Dual_Plane, SORT_CEN, No_Texture, C_RGB(31, 31, 31), No_Gouraud, MESHoff, sprPolygon, No_Option),
         ATTRIBUTE(Dual_Plane, SORT_CEN, No_Texture, C_RGB(31,  0,  0), No_Gouraud, MESHoff, sprPolygon, No_Option),
         ATTRIBUTE(Dual_Plane, SORT_CEN, No_Texture, C_RGB(31, 31,  0), No_Gouraud, MESHoff, sprPolygon, No_Option),
-        ATTRIBUTE(Dual_Plane, SORT_CEN, No_Texture, C_RGB(31, 31, 31), No_Gouraud, MESHoff, sprPolygon, No_Option),
+        ATTRIBUTE(Dual_Plane, SORT_CEN, No_Texture, C_RGB(31,  0, 31), No_Gouraud, MESHoff, sprPolygon, No_Option),
 };
 
 PDATA PD_CUBE1 = {

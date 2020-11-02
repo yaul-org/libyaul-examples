@@ -68,7 +68,7 @@ main(void)
         sega3d_matrix_load(&matrix);
 
         FIXED z;
-        z = toFIXED(0.0f);
+        z = toFIXED(200.0f);
 
         while (true) {
                 smpc_peripheral_process();
