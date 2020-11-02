@@ -26,11 +26,7 @@ extern PDATA PD_PLANE1[];
 extern PDATA PD_CUBE1[];
 extern PDATA PD_MODEL_3[];
 extern PDATA PD_SONIC[];
-extern PDATA PD_QUAKE0[];
-extern PDATA PD_QUAKE1[];
-extern PDATA PD_QUAKE2[];
-extern PDATA PD_QUAKE3[];
-extern PDATA PD_QUAKE4[];
+extern PDATA PD_QUAKE[];
 
 static void _vblank_out_handler(void *);
 
@@ -44,7 +40,7 @@ main(void)
         sega3d_init();
 
         PDATA *pdata;
-        pdata = PD_QUAKE2;
+        pdata = PD_QUAKE;
 
         uint16_t polygon_count;
         polygon_count = sega3d_polycount_get(pdata);
