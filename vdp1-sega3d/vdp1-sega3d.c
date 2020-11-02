@@ -24,6 +24,13 @@
 
 extern PDATA PD_PLANE1[];
 extern PDATA PD_CUBE1[];
+extern PDATA PD_MODEL_3[];
+extern PDATA PD_SONIC[];
+extern PDATA PD_QUAKE0[];
+extern PDATA PD_QUAKE1[];
+extern PDATA PD_QUAKE2[];
+extern PDATA PD_QUAKE3[];
+extern PDATA PD_QUAKE4[];
 
 static void _vblank_out_handler(void *);
 
@@ -37,7 +44,7 @@ main(void)
         sega3d_init();
 
         PDATA *pdata;
-        pdata = PD_CUBE1;
+        pdata = PD_QUAKE2;
 
         uint16_t polygon_count;
         polygon_count = sega3d_polycount_get(pdata);
@@ -59,16 +66,16 @@ main(void)
         /* Set the number of command tables to draw from the list */
         cmdt_list->count = cmdt_list_count;
 
-        MATRIX matrix;
+        /* MATRIX matrix; */
 
-        matrix[0][0] = toFIXED(0.5000000); matrix[0][1] = toFIXED(-0.5000000); matrix[0][2] = toFIXED( 0.7071068);
-        matrix[1][0] = toFIXED(0.8535534); matrix[1][1] = toFIXED( 0.1464466); matrix[1][2] = toFIXED(-0.5000000);
-        matrix[2][0] = toFIXED(0.1464466); matrix[2][1] = toFIXED( 0.8535534); matrix[2][2] = toFIXED( 0.5000000);
+        /* matrix[0][0] = toFIXED(0.5000000); matrix[0][1] = toFIXED(-0.5000000); matrix[0][2] = toFIXED( 0.7071068); */
+        /* matrix[1][0] = toFIXED(0.8535534); matrix[1][1] = toFIXED( 0.1464466); matrix[1][2] = toFIXED(-0.5000000); */
+        /* matrix[2][0] = toFIXED(0.1464466); matrix[2][1] = toFIXED( 0.8535534); matrix[2][2] = toFIXED( 0.5000000); */
 
-        sega3d_matrix_load(&matrix);
+        /* sega3d_matrix_load(&matrix); */
 
         FIXED z;
-        z = toFIXED(200.0f);
+        z = toFIXED(0.0f);
 
         while (true) {
                 smpc_peripheral_process();
@@ -79,6 +86,7 @@ main(void)
 
                 sega3d_matrix_push(MATRIX_TYPE_PUSH); {
                         sega3d_matrix_translate(toFIXED(0.0f), toFIXED(0.0f), z);
+                        /* sega3d_matrix_scale(toFIXED(20.0f), toFIXED(20.0f), toFIXED(20.0f)); */
                         sega3d_cmdt_transform(pdata);
                 } sega3d_matrix_pop();
 
