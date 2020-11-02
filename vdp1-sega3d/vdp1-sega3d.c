@@ -17,6 +17,11 @@
 #define SCREEN_WIDTH    (320)
 #define SCREEN_HEIGHT   (224)
 
+#define VDP1_VRAM_CMDT_COUNT    (8192)
+#define VDP1_VRAM_TEXTURE_SIZE  (0x3BFE0)
+#define VDP1_VRAM_GOURAUD_COUNT (1024)
+#define VDP1_VRAM_CLUT_COUNT    (256)
+
 #define ORDER_SYSTEM_CLIP_COORDS_INDEX  (0)
 #define ORDER_LOCAL_COORDS_INDEX        (1)
 #define ORDER_SEGA3D_INDEX              (2)
@@ -24,13 +29,13 @@
 
 extern PDATA PD_PLANE1[];
 extern PDATA PD_CUBE1[];
-extern PDATA PD_MODEL_3[];
 extern PDATA PD_SONIC[];
 extern PDATA PD_QUAKE[];
 
-static void _vblank_out_handler(void *);
+extern Uint16 GR_SMS[];
+extern PDATA PD_SMS3[];
 
-static void _cmdt_list_init(vdp1_cmdt_list_t *);
+static void _vblank_out_handler(void *);
 
 static smpc_peripheral_digital_t _digital;
 
@@ -39,8 +44,11 @@ main(void)
 {
         sega3d_init();
 
+        uint16_t *gouraud_tbl;
+        gouraud_tbl = (uint16_t *)VDP1_VRAM(0x2BFE0);
+
         PDATA *pdata;
-        pdata = PD_QUAKE;
+        pdata = PD_SMS3;
 
         uint16_t polygon_count;
         polygon_count = sega3d_polycount_get(pdata);
@@ -52,7 +60,8 @@ main(void)
         cmdt_list = vdp1_cmdt_list_alloc(cmdt_list_count);
         assert(cmdt_list != NULL);
 
-        _cmdt_list_init(cmdt_list);
+        /* Set up the first few command tables */
+        vdp1_env_preamble_populate(&cmdt_list->cmdts[0], NULL);
 
         sega3d_cmdt_prepare(pdata, cmdt_list, ORDER_SEGA3D_INDEX);
 
@@ -62,13 +71,13 @@ main(void)
         /* Set the number of command tables to draw from the list */
         cmdt_list->count = cmdt_list_count;
 
-        /* MATRIX matrix; */
+        (void)memcpy(gouraud_tbl, GR_SMS, sizeof(vdp1_gouraud_table_t) * polygon_count); 
 
-        /* matrix[0][0] = toFIXED(0.5000000); matrix[0][1] = toFIXED(-0.5000000); matrix[0][2] = toFIXED( 0.7071068); */
-        /* matrix[1][0] = toFIXED(0.8535534); matrix[1][1] = toFIXED( 0.1464466); matrix[1][2] = toFIXED(-0.5000000); */
-        /* matrix[2][0] = toFIXED(0.1464466); matrix[2][1] = toFIXED( 0.8535534); matrix[2][2] = toFIXED( 0.5000000); */
-
-        /* sega3d_matrix_load(&matrix); */
+        MATRIX matrix;
+        matrix[0][0] = toFIXED(0.5000000); matrix[0][1] = toFIXED(-0.5000000); matrix[0][2] = toFIXED( 0.7071068);
+        matrix[1][0] = toFIXED(0.8535534); matrix[1][1] = toFIXED( 0.1464466); matrix[1][2] = toFIXED(-0.5000000);
+        matrix[2][0] = toFIXED(0.1464466); matrix[2][1] = toFIXED( 0.8535534); matrix[2][2] = toFIXED( 0.5000000);
+        sega3d_matrix_load(&matrix);
 
         FIXED z;
         z = toFIXED(0.0f);
@@ -110,6 +119,11 @@ user_init(void)
 
         vdp_sync_vblank_out_set(_vblank_out_handler);
 
+        vdp1_vram_partitions_set(VDP1_VRAM_CMDT_COUNT,
+            VDP1_VRAM_TEXTURE_SIZE,
+            VDP1_VRAM_GOURAUD_COUNT,
+            VDP1_VRAM_CLUT_COUNT);
+
         vdp1_env_default_set();
         vdp2_sprite_priority_set(0, 6);
 
@@ -120,29 +134,6 @@ user_init(void)
         dbgio_dev_font_load_wait();
 
         vdp2_tvmd_display_set();
-}
-
-static void
-_cmdt_list_init(vdp1_cmdt_list_t *cmdt_list)
-{
-        vdp1_cmdt_t *cmdt;
-        cmdt = &cmdt_list->cmdts[0];
-
-        static const int16_vector2_t local_coords =
-            INT16_VECTOR2_INITIALIZER(RESOLUTION_WIDTH / 2,
-                RESOLUTION_HEIGHT / 2);
-
-        static const int16_vector2_t system_clip_coords =
-            INT16_VECTOR2_INITIALIZER(RESOLUTION_WIDTH,
-                RESOLUTION_HEIGHT);
-
-        vdp1_cmdt_system_clip_coord_set(&cmdt[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdt[ORDER_SYSTEM_CLIP_COORDS_INDEX],
-            CMDT_VTX_SYSTEM_CLIP, &system_clip_coords);
-
-        vdp1_cmdt_local_coord_set(&cmdt[ORDER_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdt[ORDER_LOCAL_COORDS_INDEX],
-            CMDT_VTX_LOCAL_COORD, &local_coords);
 }
 
 static void
