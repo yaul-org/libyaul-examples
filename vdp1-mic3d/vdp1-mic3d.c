@@ -568,9 +568,18 @@ _project(point *in, point *out, int32_t n)
         int32_t i;
 
         for (i = 0; i < n; i++) {
-                out[i].x = _camera.x + FIX2INT(((in[i].x * _camera.z) / (_camera.z - FIX2INT(in[i].z))));
-                out[i].y = _camera.y + FIX2INT(((in[i].y * _camera.z) / (_camera.z - FIX2INT(in[i].z))));
-                out[i].z = in[i].z;
+                const int32_t inx = in[i].x; 
+                const int32_t iny = in[i].y;
+                const int32_t inz = in[i].z;
+
+                const int32_t divisor = (_camera.z - FIX2INT(inz));
+
+                const int32_t scaled_x = inx * _camera.z;
+                const int32_t scaled_y = iny * _camera.z;
+
+                out[i].x = _camera.x + FIX2INT((scaled_x / divisor));
+                out[i].y = _camera.y + FIX2INT((scaled_y / divisor));
+                out[i].z = inz;
         }
 }
 
