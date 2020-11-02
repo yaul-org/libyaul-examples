@@ -44,20 +44,14 @@ main(void)
 {
         sega3d_init();
 
-        uint16_t *gouraud_tbl;
-        gouraud_tbl = (uint16_t *)VDP1_VRAM(0x2BFE0);
-
         PDATA *pdata;
         pdata = PD_SMS3;
 
         uint16_t polygon_count;
         polygon_count = sega3d_polycount_get(pdata);
 
-        uint16_t cmdt_list_count;
-        cmdt_list_count = ORDER_BASE_COUNT + polygon_count;
-
         vdp1_cmdt_list_t *cmdt_list;
-        cmdt_list = vdp1_cmdt_list_alloc(cmdt_list_count);
+        cmdt_list = vdp1_cmdt_list_alloc(ORDER_BASE_COUNT + polygon_count);
         assert(cmdt_list != NULL);
 
         /* Set up the first few command tables */
@@ -65,12 +59,8 @@ main(void)
 
         sega3d_cmdt_prepare(pdata, cmdt_list, ORDER_SEGA3D_INDEX);
 
-        /* Be sure to terminate list */
-        vdp1_cmdt_end_set(&cmdt_list->cmdts[cmdt_list_count - 1]);
-
-        /* Set the number of command tables to draw from the list */
-        cmdt_list->count = cmdt_list_count;
-
+        uint16_t *gouraud_tbl;
+        gouraud_tbl = (uint16_t *)VDP1_VRAM(0x2BFE0);
         (void)memcpy(gouraud_tbl, GR_SMS, sizeof(vdp1_gouraud_table_t) * polygon_count); 
 
         MATRIX matrix;
@@ -99,6 +89,11 @@ main(void)
                         z += toFIXED(-1.0f);
                 } else if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_DOWN) != 0) {
                         z += toFIXED( 1.0f);
+                }
+
+                /* Be sure to terminate list */
+                if (cmdt_list->count > 0) {
+                        vdp1_cmdt_end_set(&cmdt_list->cmdts[cmdt_list->count - 1]);
                 }
 
                 vdp1_sync_cmdt_list_put(cmdt_list, NULL, NULL);
