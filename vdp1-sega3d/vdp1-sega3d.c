@@ -39,29 +39,35 @@ static void _vblank_out_handler(void *);
 
 static smpc_peripheral_digital_t _digital;
 
+static vdp1_cmdt_list_t *_cmdt_list;
+
 int
 main(void)
 {
         sega3d_init();
 
-        PDATA *pdata;
-        pdata = PD_SMS3;
+        sega3d_object_t object;
+
+        object.pdata = PD_SMS3;
+        object.cmdt_list = _cmdt_list;
+        object.offset = ORDER_SEGA3D_INDEX;
+        object.iterate_fn = NULL;
+        object.data = NULL;
 
         uint16_t polygon_count;
-        polygon_count = sega3d_polycount_get(pdata);
+        polygon_count = sega3d_object_polycount_get(&object);
 
-        vdp1_cmdt_list_t *cmdt_list;
-        cmdt_list = vdp1_cmdt_list_alloc(ORDER_BASE_COUNT + polygon_count);
-        assert(cmdt_list != NULL);
-
+        /* Set up global command table list */
+        _cmdt_list = vdp1_cmdt_list_alloc(VDP1_VRAM_CMDT_COUNT);
+        assert(_cmdt_list != NULL);
         /* Set up the first few command tables */
-        vdp1_env_preamble_populate(&cmdt_list->cmdts[0], NULL);
+        vdp1_env_preamble_populate(&_cmdt_list->cmdts[0], NULL);
 
-        sega3d_cmdt_prepare(pdata, cmdt_list, ORDER_SEGA3D_INDEX);
+        sega3d_object_prepare(&object);
 
-        uint16_t *gouraud_tbl;
-        gouraud_tbl = (uint16_t *)VDP1_VRAM(0x2BFE0);
-        (void)memcpy(gouraud_tbl, GR_SMS, sizeof(vdp1_gouraud_table_t) * polygon_count); 
+        (void)memcpy((uint16_t *)VDP1_VRAM(0x2BFE0),
+            GR_SMS,
+            sizeof(vdp1_gouraud_table_t) * polygon_count); 
 
         MATRIX matrix;
         matrix[0][0] = toFIXED(0.5000000); matrix[0][1] = toFIXED(-0.5000000); matrix[0][2] = toFIXED( 0.7071068);
@@ -82,8 +88,10 @@ main(void)
                 sega3d_matrix_push(MATRIX_TYPE_PUSH); {
                         sega3d_matrix_translate(toFIXED(0.0f), toFIXED(0.0f), z);
                         /* sega3d_matrix_scale(toFIXED(20.0f), toFIXED(20.0f), toFIXED(20.0f)); */
-                        sega3d_cmdt_transform(pdata);
+                        sega3d_object_transform(&object);
                 } sega3d_matrix_pop();
+
+                sega3d_object_iterate(&object);
 
                 if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_UP) != 0) {
                         z += toFIXED(-1.0f);
@@ -92,11 +100,11 @@ main(void)
                 }
 
                 /* Be sure to terminate list */
-                if (cmdt_list->count > 0) {
-                        vdp1_cmdt_end_set(&cmdt_list->cmdts[cmdt_list->count - 1]);
+                if (_cmdt_list->count > 0) {
+                        vdp1_cmdt_end_set(&_cmdt_list->cmdts[_cmdt_list->count - 1]);
                 }
 
-                vdp1_sync_cmdt_list_put(cmdt_list, NULL, NULL);
+                vdp1_sync_cmdt_list_put(_cmdt_list, NULL, NULL);
 
                 dbgio_flush();
                 vdp_sync();
