@@ -1,5 +1,6 @@
 EXAMPLES:= \
 	c++ \
+	cd-block \
 	cpu-divu \
 	cpu-dmac \
 	cpu-dual \
@@ -15,6 +16,7 @@ EXAMPLES:= \
 	vdp1-double-interlace \
 	vdp1-drawing \
 	vdp1-mic3d \
+	vdp1-sega3d \
 	vdp1-zoom-sprite \
 	vdp2-24bpp-bitmap \
 	vdp2-2x2-plane \
@@ -31,7 +33,6 @@ EXAMPLES:= \
 # Following examples are broken:
 #   arp-comm
 #   scu-timers
-#   vdp1-cube
 #   vdp1-st-niccc
 
 # Either type of dev cartridge
