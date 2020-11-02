@@ -18,8 +18,8 @@ static void _hardware_init(void);
 
 static void _menu_input(menu_state_t *);
 
-static void _input_1(menu_state_t *, menu_entry_t *);
-static void _input_2(menu_state_t *, menu_entry_t *);
+static void _input_1(void *, menu_entry_t *);
+static void _input_2(void *, menu_entry_t *);
 
 static smpc_peripheral_digital_t _digital;
 
@@ -43,12 +43,13 @@ main(void)
 
         menu_state_t state;
 
-        state.entries = _entries;
-        state.input_fn = _menu_input;
+        menu_init(&state);
+        menu_entries_set(&state, _entries);
+        menu_input_set(&state, _menu_input);
+
         state.data = NULL;
 
         state.flags = MENU_STATE_ENABLED | MENU_STATE_INPUT_ENABLED;
-        state.cursor = 0;
 
         while (true) {
                 smpc_peripheral_process();
@@ -98,14 +99,14 @@ _menu_input(menu_state_t *menu_state)
 }
 
 static void
-_input_1(menu_state_t *menu_state __unused, menu_entry_t *menu_entry __unused)
+_input_1(void *state __unused, menu_entry_t *menu_entry __unused)
 {
         dbgio_printf("Input 1 pressed\n");
 }
 
 
 static void
-_input_2(menu_state_t *menu_state __unused, menu_entry_t *menu_entry __unused)
+_input_2(void *state __unused, menu_entry_t *menu_entry __unused)
 {
         dbgio_printf("Input 2 pressed\n");
 }
