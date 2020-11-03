@@ -55,7 +55,7 @@ main(void)
 
         sega3d_object_t object;
 
-        object.pdata = PD_TORUS;
+        object.pdata = PD_SONIC;
         object.cmdts = &_cmdt_list->cmdts[0];
         object.offset = ORDER_SEGA3D_INDEX;
         object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME;
@@ -71,34 +71,28 @@ main(void)
             GR_SMS,
             sizeof(vdp1_gouraud_table_t) * polygon_count); 
 
-        MATRIX matrix;
-        matrix[0][0] = toFIXED(0.5000000); matrix[0][1] = toFIXED(-0.5000000); matrix[0][2] = toFIXED( 0.7071068);
-        matrix[1][0] = toFIXED(0.8535534); matrix[1][1] = toFIXED( 0.1464466); matrix[1][2] = toFIXED(-0.5000000);
-        matrix[2][0] = toFIXED(0.1464466); matrix[2][1] = toFIXED( 0.8535534); matrix[2][2] = toFIXED( 0.5000000);
-        sega3d_matrix_load(&matrix);
-
-        FIXED z;
-        z = toFIXED(0.0f);
+        ANGLE z;
+        z = 0;
 
         while (true) {
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
 
-                dbgio_printf("[H[2J");
-                dbgio_printf("z: %li\n", z);
+                /* dbgio_printf("[H[2J"); */
 
                 sega3d_matrix_push(MATRIX_TYPE_PUSH); {
-                        sega3d_matrix_translate(toFIXED(0.0f), toFIXED(0.0f), z);
-                        /* sega3d_matrix_scale(toFIXED(20.0f), toFIXED(20.0f), toFIXED(20.0f)); */
+                        sega3d_matrix_rotate_z(z);
+                        sega3d_matrix_rotate_y(z);
+                        sega3d_matrix_translate(toFIXED(0.0f), toFIXED(0.0f), toFIXED(-100.0f));
                         sega3d_object_transform(&object);
                 } sega3d_matrix_pop();
 
                 sega3d_object_iterate(&object);
 
                 if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_UP) != 0) {
-                        z += toFIXED(-1.0f);
+                        z += DEGtoANG(1.0f);
                 } else if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_DOWN) != 0) {
-                        z += toFIXED( 1.0f);
+                        z -= DEGtoANG(1.0f);
                 }
 
                 /* Be sure to terminate list */
