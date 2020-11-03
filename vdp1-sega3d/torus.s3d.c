@@ -1549,6 +1549,41 @@ static ATTR attribute_torus[] = {
         ATTRIBUTE(Single_Plane, SORT_CEN, No_Texture, COLOR1, GRaddr+511, MESHoff|CL_Gouraud, sprPolygon, UseGouraud | 0),
 };
 
+Uint16 GR_TORUS[] = {
+        C_RGB( 0,  0,  0),
+        C_RGB( 1,  1,  1),
+        C_RGB( 2,  2,  2),
+        C_RGB( 3,  3,  3),
+        C_RGB( 4,  4,  4),
+        C_RGB( 5,  5,  5),
+        C_RGB( 6,  6,  6),
+        C_RGB( 7,  7,  7),
+        C_RGB( 8,  8,  8),
+        C_RGB( 9,  9,  9),
+        C_RGB(10, 10, 10),
+        C_RGB(11, 11, 11),
+        C_RGB(12, 12, 12),
+        C_RGB(13, 13, 13),
+        C_RGB(14, 14, 14),
+        C_RGB(15, 15, 15),
+        C_RGB(16, 16, 16),
+        C_RGB(17, 17, 17),
+        C_RGB(18, 18, 18),
+        C_RGB(19, 19, 19),
+        C_RGB(20, 20, 20),
+        C_RGB(21, 21, 21),
+        C_RGB(22, 22, 22),
+        C_RGB(23, 23, 23),
+        C_RGB(24, 24, 24),
+        C_RGB(25, 25, 25),
+        C_RGB(26, 26, 26),
+        C_RGB(27, 27, 27),
+        C_RGB(28, 28, 28),
+        C_RGB(29, 29, 29),
+        C_RGB(30, 30, 30),
+        C_RGB(31, 31, 31),
+};
+
 PDATA PD_TORUS = {
         point_torus,
         sizeof(point_torus) / sizeof(POINT),
@@ -1556,3 +1591,4 @@ PDATA PD_TORUS = {
         sizeof(polygon_torus) / sizeof(POLYGON),
         attribute_torus
 };
+

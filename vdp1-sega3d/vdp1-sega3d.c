@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2016 Israel Jacquez
+ * Copyright (c) 2012-2020 Israel Jacquez
  * See LICENSE for details.
  *
  * Israel Jacquez <mrkotfw@gmail.com>
@@ -55,9 +55,10 @@ main(void)
 
         sega3d_object_t object;
 
-        object.pdata = PD_SMS3;
+        object.pdata = PD_TORUS;
         object.cmdts = &_cmdt_list->cmdts[0];
         object.offset = ORDER_SEGA3D_INDEX;
+        object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME;
         object.iterate_fn = NULL;
         object.data = NULL;
 
