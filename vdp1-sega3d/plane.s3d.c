@@ -1,5 +1,8 @@
 #include <sega3d.h>
 
+#define PN_SONIC        0
+#define PN_AM2          1
+
 static POINT point_PLANE1[] = {
         POStoFIXED(-10.0, -10.0, 0.0),
         POStoFIXED( 10.0, -10.0, 0.0),
@@ -12,7 +15,7 @@ static POLYGON polygon_PLANE1[] = {
 };
 
 static ATTR attribute_PLANE1[] = {
-        ATTRIBUTE(Dual_Plane, SORT_CEN, No_Texture, C_RGB(31, 31, 31), No_Gouraud, MESHoff, sprPolygon, No_Option)
+        ATTRIBUTE(Dual_Plane, SORT_CEN, PN_AM2, No_Palet, No_Gouraud, CL32KRGB | MESHoff, sprNoflip, No_Option)
 };
 
 PDATA PD_PLANE1 = {

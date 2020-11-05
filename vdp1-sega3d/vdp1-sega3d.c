@@ -36,7 +36,12 @@ extern PDATA PD_TORUS[];
 extern Uint16 GR_SMS[];
 extern PDATA PD_SMS3[];
 
+extern TEXTURE TEX_SAMPLE[];
+extern PICTURE PIC_SAMPLE[];
+
 static void _vblank_out_handler(void *);
+
+static void _assets_copy(const sega3d_object_t *object);
 
 static smpc_peripheral_digital_t _digital;
 
@@ -55,21 +60,18 @@ main(void)
 
         sega3d_object_t object;
 
-        object.pdata = PD_SONIC;
+        object.pdata = PD_PLANE1;
         object.cmdts = &_cmdt_list->cmdts[0];
         object.offset = ORDER_SEGA3D_INDEX;
-        object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME;
+        object.flags = SEGA3D_OBJECT_FLAGS_NONE;
         object.iterate_fn = NULL;
         object.data = NULL;
 
+        sega3d_tlist_set(TEX_SAMPLE, 2);
+
         sega3d_object_prepare(&object);
 
-        uint16_t polygon_count;
-        polygon_count = sega3d_object_polycount_get(&object);
-
-        (void)memcpy((uint16_t *)VDP1_VRAM(0x2BFE0),
-            GR_SMS,
-            sizeof(vdp1_gouraud_table_t) * polygon_count); 
+        _assets_copy(&object);
 
         ANGLE z;
         z = 0;
@@ -139,4 +141,32 @@ static void
 _vblank_out_handler(void *work __unused)
 {
         smpc_peripheral_intback_issue();
+}
+
+static void
+_assets_copy(const sega3d_object_t *object)
+{
+        const uint16_t polygon_count =
+            sega3d_object_polycount_get(object);
+
+        (void)memcpy((uint16_t *)VDP1_VRAM(0x2BFE0),
+            GR_SMS,
+            sizeof(vdp1_gouraud_table_t) * polygon_count);
+
+        vdp1_vram_partitions_t vdp1_vram_parts;
+        vdp1_vram_partitions_get(&vdp1_vram_parts);
+        
+        for (uint32_t i = 0; i < 2; i++) {
+                const PICTURE *picture;
+                picture = &PIC_SAMPLE[i];
+                const TEXTURE *texture;
+                texture = &TEX_SAMPLE[picture->texno];
+
+                const uint32_t vram_ptr = VDP1_VRAM(texture->CGadr << 3);
+
+                const uint32_t size =
+                    (texture->Hsize * texture->Vsize * 4) >> picture->cmode;
+
+                (void)memcpy((void *)vram_ptr, picture->pcsrc, size);
+        }
 }
