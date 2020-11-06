@@ -56,18 +56,20 @@ main(void)
         _cmdt_list = vdp1_cmdt_list_alloc(VDP1_VRAM_CMDT_COUNT);
         assert(_cmdt_list != NULL);
         /* Set up the first few command tables */
+        int16_vec2_t p __unused;
+        int16_vec2_zero(&p);
         vdp1_env_preamble_populate(&_cmdt_list->cmdts[0], NULL);
 
         sega3d_object_t object;
 
-        object.pdata = PD_PLANE1;
+        object.pdata = PD_QUAKE;
         object.cmdts = &_cmdt_list->cmdts[0];
         object.offset = ORDER_SEGA3D_INDEX;
-        object.flags = SEGA3D_OBJECT_FLAGS_NONE;
+        object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME;
         object.iterate_fn = NULL;
         object.data = NULL;
 
-        sega3d_tlist_set(TEX_SAMPLE, 2);
+        /* sega3d_tlist_set(TEX_SAMPLE, 2); */
 
         sega3d_object_prepare(&object);
 
@@ -76,16 +78,19 @@ main(void)
         ANGLE z;
         z = 0;
 
+        FIXED zz = FIX16(100.0f);
+
         while (true) {
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
 
-                /* dbgio_printf("[H[2J"); */
+                dbgio_printf("[H[2J");
 
                 sega3d_matrix_push(MATRIX_TYPE_PUSH); {
-                        sega3d_matrix_rotate_z(z);
-                        sega3d_matrix_rotate_y(z);
-                        sega3d_matrix_translate(toFIXED(0.0f), toFIXED(0.0f), toFIXED(-100.0f));
+                        /* sega3d_matrix_rotate_z(z); */
+                        /* sega3d_matrix_rotate_y(z); */
+
+                        sega3d_matrix_translate(toFIXED(0.0f), toFIXED(0.0f), zz);
                         sega3d_object_transform(&object);
                 } sega3d_matrix_pop();
 
@@ -93,8 +98,10 @@ main(void)
 
                 if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_UP) != 0) {
                         z += DEGtoANG(1.0f);
+                        zz += FIX16(1.0f);
                 } else if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_DOWN) != 0) {
                         z -= DEGtoANG(1.0f);
+                        zz -= FIX16(1.0f);
                 }
 
                 /* Be sure to terminate list */
