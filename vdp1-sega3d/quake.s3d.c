@@ -9958,13 +9958,13 @@ static VECTOR normal_0[] = {
         POStoFIXED(0, 0, 1),
 };
 
-XPDATA PD_QUAKE[] = {
-        {
-                point_0, sizeof(point_0) / sizeof(POINT),
-                polygon_0, sizeof(polygon_0) / sizeof(POLYGON),
-                attribute_0,
-                normal_0
-        }
+XPDATA PD_QUAKE = {
+        point_0,
+        sizeof(point_0) / sizeof(POINT),
+        polygon_0,
+        sizeof(polygon_0) / sizeof(POLYGON),
+        attribute_0,
+        normal_0
 };
 
 /* TOTAL POINTS : 2681 */

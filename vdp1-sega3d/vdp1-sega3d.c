@@ -23,14 +23,20 @@
 #define VDP1_VRAM_CLUT_COUNT    (256)
 
 #define ORDER_SYSTEM_CLIP_COORDS_INDEX  (0)
-#define ORDER_LOCAL_COORDS_INDEX        (1)
-#define ORDER_SEGA3D_INDEX              (2)
+#define ORDER_USER_CLIP_INDEX           (1)
+#define ORDER_LOCAL_COORDS_INDEX        (2)
+#define ORDER_SEGA3D_INDEX              (3)
 #define ORDER_BASE_COUNT                (3)
 
 extern PDATA PD_PLANE1[];
 extern PDATA PD_CUBE1[];
 extern PDATA PD_SONIC[];
 extern PDATA PD_QUAKE[];
+extern PDATA PD_QUAKE_SINGLE_0[];
+extern PDATA PD_QUAKE_SINGLE_1[];
+extern PDATA PD_QUAKE_SINGLE_2[];
+extern PDATA PD_QUAKE_SINGLE_3[];
+extern PDATA PD_QUAKE_SINGLE_4[];
 extern PDATA PD_TORUS[];
 
 extern Uint16 GR_SMS[];
@@ -40,12 +46,18 @@ extern TEXTURE TEX_SAMPLE[];
 extern PICTURE PIC_SAMPLE[];
 
 static void _vblank_out_handler(void *);
+static void _frt_ovi_handler(void);
 
 static void _assets_copy(const sega3d_object_t *object);
 
 static smpc_peripheral_digital_t _digital;
 
-static vdp1_cmdt_list_t *_cmdt_list;
+static uint16_t _frt_ovf_count = 0;
+
+static vdp1_cmdt_orderlist_t _cmdt_orderlist[VDP1_VRAM_CMDT_COUNT] __aligned(0x20000);
+static vdp1_cmdt_t *_cmdts;
+
+static vdp1_vram_partitions_t _vram_partitions;
 
 int
 main(void)
@@ -53,66 +65,128 @@ main(void)
         sega3d_init();
 
         /* Set up global command table list */
-        _cmdt_list = vdp1_cmdt_list_alloc(VDP1_VRAM_CMDT_COUNT);
-        assert(_cmdt_list != NULL);
+        _cmdts = memalign(sizeof(vdp1_cmdt_t) * VDP1_VRAM_CMDT_COUNT, sizeof(vdp1_cmdt_t));
+        assert(_cmdts != NULL);
+
         /* Set up the first few command tables */
         int16_vec2_t p __unused;
         int16_vec2_zero(&p);
-        vdp1_env_preamble_populate(&_cmdt_list->cmdts[0], NULL);
+        vdp1_env_preamble_populate(&_cmdts[0], NULL);
+
+        vdp1_cmdt_orderlist_init(_cmdt_orderlist, VDP1_VRAM_CMDT_COUNT);
+
+        _cmdt_orderlist[0].cmdt = &_cmdts[0];
+        _cmdt_orderlist[1].cmdt = &_cmdts[1];
+        _cmdt_orderlist[2].cmdt = &_cmdts[2];
+        _cmdt_orderlist[3].cmdt = &_cmdts[3];
+
+        vdp1_cmdt_orderlist_vram_patch(_cmdt_orderlist,
+            VDP1_VRAM(0), VDP1_VRAM_CMDT_COUNT);
 
         sega3d_object_t object;
 
-        object.pdata = PD_QUAKE;
-        object.cmdts = &_cmdt_list->cmdts[0];
-        object.offset = ORDER_SEGA3D_INDEX;
-        object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME;
-        object.iterate_fn = NULL;
+        object.pdata = PD_QUAKE_SINGLE_2;
+        object.cmdt_orderlist = &_cmdt_orderlist[ORDER_SEGA3D_INDEX];
+        object.cmdts = &_cmdts[ORDER_SEGA3D_INDEX];
+        object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME | SEGA3D_OBJECT_FLAGS_CULL_VIEW;
         object.data = NULL;
 
         /* sega3d_tlist_set(TEX_SAMPLE, 2); */
 
-        sega3d_object_prepare(&object);
-
         _assets_copy(&object);
 
-        ANGLE z;
-        z = 0;
+        ANGLE rot[XYZ];
+        rot[X] = 0;
+        rot[Y] = 0;
+        rot[Z] = DEGtoANG(0.0f);
 
-        FIXED zz = FIX16(100.0f);
+        FIXED translate[XYZ];
+        translate[X] = 0;
+        translate[Y] = FIX16(15.0f);
+        translate[Z] = FIX16(150.0f);
 
         while (true) {
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
 
-                dbgio_printf("[H[2J");
+                cpu_frt_count_set(0);
+                _frt_ovf_count = 0;
+
+                sega3d_results_t results;
+
+                sega3d_start(_cmdt_orderlist);
 
                 sega3d_matrix_push(MATRIX_TYPE_PUSH); {
-                        /* sega3d_matrix_rotate_z(z); */
-                        /* sega3d_matrix_rotate_y(z); */
+                        sega3d_matrix_rotate_z(rot[Z]);
+                        sega3d_matrix_rotate_x(rot[X]);
+                        sega3d_matrix_rotate_y(rot[Y]);
 
-                        sega3d_matrix_translate(toFIXED(0.0f), toFIXED(0.0f), zz);
-                        sega3d_object_transform(&object);
+                        sega3d_matrix_translate(translate[X], translate[Y], translate[Z]);
+
+                        object.pdata = PD_QUAKE_SINGLE_0;
+                        object.cmdts = &_cmdts[ORDER_SEGA3D_INDEX];
+                        sega3d_object_transform(&object, &results);
+
+                        object.pdata = PD_QUAKE_SINGLE_1;
+                        object.cmdts = &_cmdts[ORDER_SEGA3D_INDEX + (results.count - 1)];
+                        sega3d_object_transform(&object, &results);
+
+                        object.pdata = PD_QUAKE_SINGLE_2;
+                        object.cmdts = &_cmdts[ORDER_SEGA3D_INDEX + (results.count - 1)];
+                        sega3d_object_transform(&object, &results);
+
+                        object.pdata = PD_QUAKE_SINGLE_3;
+                        object.cmdts = &_cmdts[ORDER_SEGA3D_INDEX + (results.count - 1)];
+                        sega3d_object_transform(&object, &results);
+
+                        object.pdata = PD_QUAKE_SINGLE_4;
+                        object.cmdts = &_cmdts[ORDER_SEGA3D_INDEX + (results.count - 1)];
+                        sega3d_object_transform(&object, &results);
                 } sega3d_matrix_pop();
 
-                sega3d_object_iterate(&object);
+                sega3d_finish();
 
-                if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_UP) != 0) {
-                        z += DEGtoANG(1.0f);
-                        zz += FIX16(1.0f);
-                } else if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_DOWN) != 0) {
-                        z -= DEGtoANG(1.0f);
-                        zz -= FIX16(1.0f);
+                int8_t dir;
+                dir = -1;
+
+                if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_X) != 0) {
+                        dir = X;
+                }
+                if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_Y) != 0) {
+                        dir = Y;
+                }
+                if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_Z) != 0) {
+                        dir = Z;
                 }
 
-                /* Be sure to terminate list */
-                _cmdt_list->count = ORDER_BASE_COUNT + object.count;
-
-                vdp1_cmdt_end_set(&_cmdt_list->cmdts[_cmdt_list->count - 1]);
-
-                vdp1_sync_cmdt_list_put(_cmdt_list, NULL, NULL);
+                if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_UP) != 0) {
+                        if (dir >= 0) {
+                                rot[dir] += DEGtoANG(10.0f);
+                        } else {
+                                translate[Z] += FIX16(5.0f);
+                        }
+                } else if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_DOWN) != 0) {
+                        if (dir >= 0) {
+                                rot[dir] -= DEGtoANG(10.0f);
+                        } else {
+                                translate[Z] -= FIX16(5.0f);
+                        }
+                }
 
                 dbgio_flush();
                 vdp_sync();
+
+                const uint32_t ticks_rem = cpu_frt_count_get();
+
+                const uint32_t overflow_count =
+                    ((65536 / CPU_FRT_NTSC_320_128_COUNT_1MS) * _frt_ovf_count);
+                const uint32_t total_ticks =
+                    (fix16_int32_from(overflow_count) + (fix16_int32_from(ticks_rem) / CPU_FRT_NTSC_320_128_COUNT_1MS));
+
+                const fix16_t time __unused = total_ticks;
+
+                dbgio_printf("[H[2J");
+                dbgio_printf("c: %lu, t: %fms, z: %f, count: %lu, angle: %f\n", time, time, translate[Z], results.count, rot[dir] * toFIXED(360.0f));
         }
 }
 
@@ -132,8 +206,16 @@ user_init(void)
             VDP1_VRAM_GOURAUD_COUNT,
             VDP1_VRAM_CLUT_COUNT);
 
+        vdp1_vram_partitions_get(&_vram_partitions);
+
+        /* Variable internal */
+        /* vdp1_sync_interval_set(-1); */
+
         vdp1_env_default_set();
         vdp2_sprite_priority_set(0, 6);
+
+        cpu_frt_init(CPU_FRT_CLOCK_DIV_128);
+        cpu_frt_ovi_set(_frt_ovi_handler);
 
         cpu_intc_mask_set(0);
 
@@ -151,14 +233,20 @@ _vblank_out_handler(void *work __unused)
 }
 
 static void
-_assets_copy(const sega3d_object_t *object)
+_frt_ovi_handler(void)
 {
-        const uint16_t polygon_count =
+        _frt_ovf_count++;
+}
+
+static void
+_assets_copy(const sega3d_object_t *object __unused)
+{
+        const uint16_t polygon_count __unused =
             sega3d_object_polycount_get(object);
 
-        (void)memcpy((uint16_t *)VDP1_VRAM(0x2BFE0),
-            GR_SMS,
-            sizeof(vdp1_gouraud_table_t) * polygon_count);
+        /* (void)memcpy((uint16_t *)VDP1_VRAM(0x2BFE0), */
+        /*     GR_SMS, */
+        /*     sizeof(vdp1_gouraud_table_t) * polygon_count); */
 
         vdp1_vram_partitions_t vdp1_vram_parts;
         vdp1_vram_partitions_get(&vdp1_vram_parts);

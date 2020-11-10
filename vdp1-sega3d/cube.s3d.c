@@ -12,12 +12,12 @@ static POINT point_cube1[] = {
 };
 
 static POLYGON polygon_cube1[] = {
-        NORMAL( 0.0,  0.0, 1.0), VERTICES(0, 1, 2, 3),
-        NORMAL(-1.0,  0.0, 0.0), VERTICES(4, 0, 3, 7),
-        NORMAL( 0.0,  0.0,-1.0), VERTICES(5, 4, 7, 6),
-        NORMAL( 1.0,  0.0, 0.0), VERTICES(1, 5, 6, 2),
-        NORMAL( 0.0, -1.0, 0.0), VERTICES(4, 5, 1, 0),
-        NORMAL( 0.0,  1.0, 0.0), VERTICES(3, 2, 6, 7)
+        NORMAL( 0.0,  0.0, 1.0), VERTICES(0, 1, 2, 3), /* Back */
+        NORMAL(-1.0,  0.0, 0.0), VERTICES(4, 0, 3, 7), /* Left */
+        NORMAL( 0.0,  0.0,-1.0), VERTICES(5, 4, 7, 6), /* Front */
+        NORMAL( 1.0,  0.0, 0.0), VERTICES(1, 5, 6, 2), /* Right */
+        NORMAL( 0.0, -1.0, 0.0), VERTICES(4, 5, 1, 0), /* Top */
+        NORMAL( 0.0,  1.0, 0.0), VERTICES(3, 2, 6, 7)  /* Bottom */
 };
 
 static ATTR attribute_cube1[] = {
