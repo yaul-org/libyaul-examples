@@ -45,6 +45,7 @@ extern PDATA PD_SMS3[];
 extern TEXTURE TEX_SAMPLE[];
 extern PICTURE PIC_SAMPLE[];
 
+static void _vblank_in_handler(void *);
 static void _vblank_out_handler(void *);
 static void _frt_ovi_handler(void);
 
@@ -52,12 +53,23 @@ static void _assets_copy(const sega3d_object_t *object);
 
 static smpc_peripheral_digital_t _digital;
 
-static uint16_t _frt_ovf_count = 0;
+static volatile uint16_t _vblanks = 0;
+static volatile uint16_t _frt_ovf_count = 0;
 
 static vdp1_cmdt_orderlist_t _cmdt_orderlist[VDP1_VRAM_CMDT_COUNT] __aligned(0x20000);
 static vdp1_cmdt_t *_cmdts;
 
 static vdp1_vram_partitions_t _vram_partitions;
+
+static void
+_divu_ovfi_handler(void)
+{
+}
+
+static void
+_dma_illegal_handler(void)
+{
+}
 
 int
 main(void)
@@ -86,9 +98,7 @@ main(void)
         sega3d_object_t object;
 
         object.pdata = PD_QUAKE_SINGLE_2;
-        object.cmdt_orderlist = &_cmdt_orderlist[ORDER_SEGA3D_INDEX];
-        object.cmdts = &_cmdts[ORDER_SEGA3D_INDEX];
-        object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME | SEGA3D_OBJECT_FLAGS_CULL_VIEW;
+        object.flags = SEGA3D_OBJECT_FLAGS_NON_TEXTURED | SEGA3D_OBJECT_FLAGS_CULL_SCREEN;
         object.data = NULL;
 
         /* sega3d_tlist_set(TEX_SAMPLE, 2); */
@@ -103,7 +113,9 @@ main(void)
         FIXED translate[XYZ];
         translate[X] = 0;
         translate[Y] = FIX16(15.0f);
-        translate[Z] = FIX16(150.0f);
+        translate[Z] = FIX16(-400.0f);
+
+        sega3d_results_t results;
 
         while (true) {
                 smpc_peripheral_process();
@@ -111,10 +123,9 @@ main(void)
 
                 cpu_frt_count_set(0);
                 _frt_ovf_count = 0;
+                _vblanks = 0;
 
-                sega3d_results_t results;
-
-                sega3d_start(_cmdt_orderlist);
+                sega3d_start(_cmdt_orderlist, ORDER_SEGA3D_INDEX, &_cmdts[ORDER_SEGA3D_INDEX]);
 
                 sega3d_matrix_push(MATRIX_TYPE_PUSH); {
                         sega3d_matrix_rotate_z(rot[Z]);
@@ -124,27 +135,22 @@ main(void)
                         sega3d_matrix_translate(translate[X], translate[Y], translate[Z]);
 
                         object.pdata = PD_QUAKE_SINGLE_0;
-                        object.cmdts = &_cmdts[ORDER_SEGA3D_INDEX];
-                        sega3d_object_transform(&object, &results);
+                        sega3d_object_transform(&object);
 
                         object.pdata = PD_QUAKE_SINGLE_1;
-                        object.cmdts = &_cmdts[ORDER_SEGA3D_INDEX + (results.count - 1)];
-                        sega3d_object_transform(&object, &results);
+                        sega3d_object_transform(&object);
 
                         object.pdata = PD_QUAKE_SINGLE_2;
-                        object.cmdts = &_cmdts[ORDER_SEGA3D_INDEX + (results.count - 1)];
-                        sega3d_object_transform(&object, &results);
+                        sega3d_object_transform(&object);
 
                         object.pdata = PD_QUAKE_SINGLE_3;
-                        object.cmdts = &_cmdts[ORDER_SEGA3D_INDEX + (results.count - 1)];
-                        sega3d_object_transform(&object, &results);
+                        sega3d_object_transform(&object);
 
                         object.pdata = PD_QUAKE_SINGLE_4;
-                        object.cmdts = &_cmdts[ORDER_SEGA3D_INDEX + (results.count - 1)];
-                        sega3d_object_transform(&object, &results);
+                        sega3d_object_transform(&object);
                 } sega3d_matrix_pop();
-
-                sega3d_finish();
+                
+                sega3d_finish(&results);
 
                 int8_t dir;
                 dir = -1;
@@ -176,17 +182,18 @@ main(void)
                 dbgio_flush();
                 vdp_sync();
 
-                const uint32_t ticks_rem = cpu_frt_count_get();
+                dbgio_printf("[H[2J");
+                dbgio_printf("_vblanks: %u, count: %lu, (%f,%f,%f)\n", _vblanks, results.count, translate[X], translate[Y], translate[Z]);
 
+#ifdef FRT_TIMING_TEST
+                const uint32_t ticks_rem = cpu_frt_count_get();
                 const uint32_t overflow_count =
                     ((65536 / CPU_FRT_NTSC_320_128_COUNT_1MS) * _frt_ovf_count);
                 const uint32_t total_ticks =
                     (fix16_int32_from(overflow_count) + (fix16_int32_from(ticks_rem) / CPU_FRT_NTSC_320_128_COUNT_1MS));
-
                 const fix16_t time __unused = total_ticks;
-
-                dbgio_printf("[H[2J");
                 dbgio_printf("c: %lu, t: %fms, z: %f, count: %lu, angle: %f\n", time, time, translate[Z], results.count, rot[dir] * toFIXED(360.0f));
+#endif /* FRT_TIMING_TEST */
         }
 }
 
@@ -199,6 +206,7 @@ user_init(void)
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB1555(1, 0, 3, 15));
 
+        vdp_sync_vblank_in_set(_vblank_in_handler);
         vdp_sync_vblank_out_set(_vblank_out_handler);
 
         vdp1_vram_partitions_set(VDP1_VRAM_CMDT_COUNT,
@@ -209,7 +217,7 @@ user_init(void)
         vdp1_vram_partitions_get(&_vram_partitions);
 
         /* Variable internal */
-        /* vdp1_sync_interval_set(-1); */
+        vdp1_sync_interval_set(-1);
 
         vdp1_env_default_set();
         vdp2_sprite_priority_set(0, 6);
@@ -217,19 +225,40 @@ user_init(void)
         cpu_frt_init(CPU_FRT_CLOCK_DIV_128);
         cpu_frt_ovi_set(_frt_ovi_handler);
 
+        cpu_divu_ovfi_set(_divu_ovfi_handler);
+        scu_dma_illegal_set(_dma_illegal_handler);
+
+        cpu_cache_purge();
+
         cpu_intc_mask_set(0);
 
-        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
+        dbgio_dev_default_init(DBGIO_DEV_USB_CART);
         dbgio_dev_font_load();
         dbgio_dev_font_load_wait();
 
         vdp2_tvmd_display_set();
 }
 
+void
+_vblank_in_handler(void *work __unused)
+{
+}
+
 static void
 _vblank_out_handler(void *work __unused)
 {
         smpc_peripheral_intback_issue();
+
+        _vblanks++;
+
+        if (_vblanks > 1024) {
+                cpu_intc_mask_set(0);
+                smpc_smc_resenab_call();
+                smpc_smc_sysres_call();
+
+                while (true) {
+                }
+        }
 }
 
 static void
