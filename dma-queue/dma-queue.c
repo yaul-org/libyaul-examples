@@ -147,9 +147,9 @@ main(void)
 
                 vdp2_tvmd_vblank_in_next_wait(15);
 
+                dma_queue_flush_wait();
                 vdp2_sync_commit();
 
-                dma_queue_flush_wait();
 
                 current_file++;
                 bank ^= 1;
@@ -249,5 +249,4 @@ _dma_queue_enqueue(void *dst, void *src, const uint32_t size)
 static void
 _dma_handler(const dma_queue_transfer_t *transfer)
 {
-        assert((transfer->status & DMA_QUEUE_STATUS_COMPLETE) != 0x00);
 }
