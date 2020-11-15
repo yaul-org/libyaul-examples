@@ -34,7 +34,7 @@ main(void)
         assert(fh != NULL);
 
         tga_t tga;
-        int32_t ret;
+        int32_t ret __unused;
         ret = tga_read(&tga, romdisk_direct(fh));
         assert(ret == TGA_FILE_OK);
 
@@ -113,7 +113,7 @@ main(void)
                 rot_tbl.mx += 0x00010000;
                 rot_tbl.my += 0x00010000;
 
-                int8_t ret;
+                int8_t ret __unused;
                 ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN,
                     NULL, NULL);
                 assert(ret == 0);

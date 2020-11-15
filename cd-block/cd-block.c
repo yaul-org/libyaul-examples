@@ -159,7 +159,7 @@ _menu_action(void *state_ptr, menu_entry_t *menu_entry __unused)
 
         /* Loop through and copy each sector, one at a time */
         for (uint32_t sector = 0; sector < file_entry->sector_count; sector++) { 
-                int ret;
+                int ret __unused;
                 ret = cd_block_sector_read(file_entry->starting_fad + sector, (void *)LWRAM(0));
                 assert(ret == 0);
         }

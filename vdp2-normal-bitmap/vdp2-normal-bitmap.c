@@ -91,8 +91,8 @@ main(void)
 
         uint8_t *tga_file;
         tga_t tga;
-        int ret;
-        size_t len;
+        int ret __unused;
+        size_t len __unused;
 
         tga_file = (uint8_t *)0x20200000;
         assert(tga_file != NULL);

@@ -146,7 +146,7 @@ main(void)
 
                 _cmdt_list->count = 2 + ball_count + 1;
 
-                vdp1_sync_cmdt_list_put(_cmdt_list, NULL, NULL);
+                vdp1_sync_cmdt_list_put(_cmdt_list, 0, NULL, NULL);
 
                 dbgio_printf("[H[2J"
                              "ball_count: %lu\n",
@@ -213,12 +213,12 @@ _cmdt_list_init(void)
         vdp1_cmdt_t *cmdt;
         cmdt = &_cmdt_list->cmdts[0];
 
-        static const int16_vector2_t local_coords =
-            INT16_VECTOR2_INITIALIZER(RESOLUTION_WIDTH / 2,
+        static const int16_vec2_t local_coords =
+            INT16_VEC2_INITIALIZER(RESOLUTION_WIDTH / 2,
                 RESOLUTION_HEIGHT / 2);
 
-        static const int16_vector2_t system_clip_coords =
-            INT16_VECTOR2_INITIALIZER(RESOLUTION_WIDTH,
+        static const int16_vec2_t system_clip_coords =
+            INT16_VEC2_INITIALIZER(RESOLUTION_WIDTH,
                 RESOLUTION_HEIGHT);
 
         vdp1_cmdt_system_clip_coord_set(&cmdt[ORDER_SYSTEM_CLIP_COORDS_INDEX]);

@@ -43,7 +43,7 @@ main(void)
         assert(msg != NULL);
         memset(msg, '\0', len + 1);
 
-        ssize_t read;
+        ssize_t read __unused;
         read = romdisk_read(fh, msg, len);
         assert(read == len);
 

@@ -28,7 +28,7 @@ main(void)
         assert(romdisk != NULL);
 
         vdp2_scrn_bitmap_format_t format;
-        memset(&format, 0x00, sizeof(format));
+        (void)memset(&format, 0x00, sizeof(format));
 
         format.scroll_screen = VDP2_SCRN_NBG0;
         format.cc_count = VDP2_SCRN_CCC_PALETTE_256;
@@ -101,7 +101,7 @@ main(void)
 
         void *fh[2];
         void *p;
-        int8_t ret;
+        int8_t ret __unused;
 
         fh[0] = romdisk_open(romdisk, "/BITMAP.PAL");
         assert(fh[0] != NULL);

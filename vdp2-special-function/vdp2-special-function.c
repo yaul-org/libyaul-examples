@@ -77,7 +77,7 @@ main(void)
 
         _cmdt_list_init(cmdt_list);
 
-        vdp1_sync_cmdt_list_put(cmdt_list, NULL, NULL);
+        vdp1_sync_cmdt_list_put(cmdt_list, 0, NULL, NULL);
         vdp_sync();
 
         romdisk_close(fh[0]);
@@ -100,7 +100,7 @@ main(void)
                         vdp1_cmdt_jump_skip_next(cmdt_polygon);
                 }
 
-                vdp1_sync_cmdt_list_put(cmdt_list, NULL, NULL);
+                vdp1_sync_cmdt_list_put(cmdt_list, 0, NULL, NULL);
 
                 vdp_sync();
 
@@ -215,8 +215,8 @@ _hardware_init(void)
         const vdp1_env_t vdp1_env = {
                 .erase_color = COLOR_RGB1555_INITIALIZER(0, 0, 0, 0),
                 .erase_points = {
-                        INT16_VECTOR2_INITIALIZER(0, 0),
-                        INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1)
+                        INT16_VEC2_INITIALIZER(0, 0),
+                        INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1)
                 },
                 .bpp = VDP1_ENV_BPP_16,
                 .rotation = VDP1_ENV_ROTATION_0,
@@ -246,12 +246,12 @@ _hardware_init(void)
 static void
 _cmdt_list_init(vdp1_cmdt_list_t *cmdt_list)
 {
-        static const int16_vector2_t system_clip_coord =
-            INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1,
+        static const int16_vec2_t system_clip_coord =
+            INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,
                                       SCREEN_HEIGHT - 1);
 
-        static const int16_vector2_t local_coord_ul =
-            INT16_VECTOR2_INITIALIZER(0,
+        static const int16_vec2_t local_coord_ul =
+            INT16_VEC2_INITIALIZER(0,
                                       0);
 
         static const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
@@ -259,11 +259,11 @@ _cmdt_list_init(vdp1_cmdt_list_t *cmdt_list)
                 .bits.pre_clipping_disable = true
         };
 
-        static const int16_vector2_t polygon_points[] = {
-                INT16_VECTOR2_INITIALIZER(0, SCREEN_HEIGHT - 1),
-                INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1),
-                INT16_VECTOR2_INITIALIZER(SCREEN_WIDTH - 1,                 0),
-                INT16_VECTOR2_INITIALIZER(               0,                 0)
+        static const int16_vec2_t polygon_points[] = {
+                INT16_VEC2_INITIALIZER(0, SCREEN_HEIGHT - 1),
+                INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1),
+                INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,                 0),
+                INT16_VEC2_INITIALIZER(               0,                 0)
         };
 
         vdp1_cmdt_t *cmdts;
@@ -308,7 +308,7 @@ _dma_upload(void *dst, void *src, size_t len)
 
         scu_dma_config_buffer(&handle, &scu_dma_level_cfg);
 
-        int8_t ret;
+        int8_t ret __unused;
         ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
         assert(ret == 0);
 }

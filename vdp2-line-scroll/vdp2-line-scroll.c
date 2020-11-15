@@ -76,7 +76,7 @@ main(void)
 
         vdp2_scrn_ls_set(&ls_format);
 
-        int8_t ret;
+        int8_t ret __unused;
         ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN,
             NULL, NULL);
         assert(ret == 0);

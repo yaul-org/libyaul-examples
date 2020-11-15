@@ -21,7 +21,7 @@ main(void)
         dbgio_dev_font_load();
         dbgio_dev_font_load_wait();
 
-        cpu_divu_fix16_set(F16(-2000.0f), F16(0.5f));
+        cpu_divu_fix16_set(FIX16(-2000.0f), FIX16(0.5f));
 
         /* Do something that takes up at least CPU 39 cycles */
         char *text;
@@ -30,7 +30,7 @@ main(void)
         fix16_t quotient;
         quotient = cpu_divu_quotient_get();
 
-        fix16_to_str(quotient, text, 7);
+        fix16_str(quotient, text, 7);
         dbgio_puts(text);
         dbgio_puts("\n");
 

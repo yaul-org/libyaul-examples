@@ -38,8 +38,12 @@ EXAMPLES:= \
 # Either type of dev cartridge
 ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),$(filter $(YAUL_OPTION_DEV_CARTRIDGE),1 2))
 EXAMPLES+= \
-	gdb \
 	fileserver
+
+ifeq ($(YAUL_OPTION_BUILD_GDB),1)
+EXAMPLES+= \
+	gdb
+endif
 endif
 
 # USB cartridge
