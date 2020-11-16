@@ -12,6 +12,8 @@ include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 # quake_split.s3d.o
 # sonic.s3d.o
 
+MODEL_SH_OBJECT?= quake_split
+
 SH_PROGRAM:= vdp1-sega3d
 SH_OBJECTS:= vdp1-sega3d.o textures.tex.o $(MODEL_SH_OBJECT).s3d.o
 

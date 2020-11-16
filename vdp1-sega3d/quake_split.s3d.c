@@ -10,7 +10,7 @@
 #endif
 
 /* MESH NO.0 : rdmobj00.004 */
-static POINT point_0[] = {
+static POINT point_0[] __aligned(16) = {
        POStoFIXED(-3136.09 / 10.0, -1809.57 / 10.0, 357.016 / 10.0),
        POStoFIXED(-2214.49 / 10.0, -1195.17 / 10.0, 1483.42 / 10.0),
        POStoFIXED(-2214.49 / 10.0, -1604.77 / 10.0, 1483.42 / 10.0),
@@ -1373,7 +1373,7 @@ static ATTR attribute_0[] = {
        ATTRIBUTE(Single_Plane, SORT_CEN, 23, LUTidx(23), No_Gouraud,Window_In|MESHoff|HSSon|ECdis | SPdis |CL16Look,sprNoflip,No_Option|UseNearClip),
 };
 
-static VECTOR normal_0[] = {
+static VECTOR normal_0[] __unused = {
        POStoFIXED(0.5, 0.5, 0),
        POStoFIXED(-0.5, 0, -0.5),
        POStoFIXED(-0.333328, 0.333328, -0.333328),
@@ -1882,15 +1882,14 @@ static VECTOR normal_0[] = {
        POStoFIXED(0.5, -0.5, 0),
 };
 
-XPDATA PD_QUAKE_SINGLE_0 = {
+PDATA PD_QUAKE_SINGLE_0 = {
         point_0, sizeof(point_0)/sizeof(POINT),
         polygon_0, sizeof(polygon_0)/sizeof(POLYGON),
-        attribute_0,
-        normal_0
+        attribute_0
 };
 
 /* MESH NO.1 : rdmobj00.003 */
-static POINT point_1[] = {
+static POINT point_1[] __aligned(16) = {
        POStoFIXED(3212.71 / 10.0, -990.367 / 10.0, 766.614 / 10.0),
        POStoFIXED(3212.71 / 10.0, -990.367 / 10.0, 357.013 / 10.0),
        POStoFIXED(3212.71 / 10.0, -1399.97 / 10.0, 357.013 / 10.0),
@@ -3418,7 +3417,7 @@ static ATTR attribute_1[] = {
        ATTRIBUTE(Single_Plane, SORT_CEN, 36, LUTidx(36), No_Gouraud,Window_In|MESHoff|HSSon|ECdis | SPdis |CL16Look,sprNoflip,No_Option|UseNearClip),
 };
 
-static VECTOR normal_1[] = {
+static VECTOR normal_1[] __unused = {
        POStoFIXED(-0.5, 0, -0.5),
        POStoFIXED(-1, 0, 0),
        POStoFIXED(-1, 0, 0),
@@ -3992,15 +3991,14 @@ static VECTOR normal_1[] = {
        POStoFIXED(0.333328, 0.333328, -0.333328),
 };
 
-XPDATA PD_QUAKE_SINGLE_1 = {
+PDATA PD_QUAKE_SINGLE_1 = {
        point_1, sizeof(point_1)/sizeof(POINT),
        polygon_1, sizeof(polygon_1)/sizeof(POLYGON),
-       attribute_1,
-       normal_1
+       attribute_1
 };
 
 /* MESH NO.2 : rdmobj00.002 */
-static POINT point_2[] = {
+static POINT point_2[] __aligned(16) = {
        POStoFIXED(1471.91 / 10.0, -87.9654 / 10.0, 3051.41 / 10.0),
        POStoFIXED(1062.31 / 10.0, 65.6346 / 10.0, 3160.21 / 10.0),
        POStoFIXED(1062.31 / 10.0, 33.6347 / 10.0, 3224.21 / 10.0),
@@ -5285,7 +5283,7 @@ static ATTR attribute_2[] = {
        ATTRIBUTE(Single_Plane, SORT_CEN, 38, LUTidx(38), No_Gouraud,Window_In|MESHoff|HSSon|ECdis | SPdis |CL16Look,sprNoflip,No_Option|UseNearClip),
 };
 
-static VECTOR normal_2[] = {
+static VECTOR normal_2[] __unused = {
        POStoFIXED(-0.410416, -0.813675, -0.411545),
        POStoFIXED(-0.407684, -0.813873, -0.413757),
        POStoFIXED(-0.45546, -0.408768, 0.0483398),
@@ -5756,15 +5754,14 @@ static VECTOR normal_2[] = {
        POStoFIXED(0, 0, -1),
 };
 
-XPDATA PD_QUAKE_SINGLE_2 = {
+PDATA PD_QUAKE_SINGLE_2 = {
        point_2, sizeof(point_2)/sizeof(POINT),
        polygon_2, sizeof(polygon_2)/sizeof(POLYGON),
-       attribute_2,
-       normal_2
+       attribute_2
 };
 
 /* MESH NO.3 : rdmobj00.001 */
-static POINT point_3[] = {
+static POINT point_3[] __aligned(16) = {
        POStoFIXED(447.91 / 10.0, -171.169 / 10.0, -3226.99 / 10.0),
        POStoFIXED(857.51 / 10.0, -580.769 / 10.0, -3226.99 / 10.0),
        POStoFIXED(857.51 / 10.0, -171.169 / 10.0, -3226.99 / 10.0),
@@ -7949,7 +7946,7 @@ static ATTR attribute_3[] = {
        ATTRIBUTE(Single_Plane, SORT_CEN, 55, LUTidx(55), No_Gouraud,Window_In|MESHoff|HSSon|ECdis | SPdis |CL16Look,sprNoflip,No_Option|UseNearClip),
 };
 
-static VECTOR normal_3[] = {
+static VECTOR normal_3[] __unused = {
        POStoFIXED(0, -0.5, 0.5),
        POStoFIXED(-0.5, 0, 0.5),
        POStoFIXED(-0.333328, -0.333328, 0.333328),
@@ -8750,15 +8747,14 @@ static VECTOR normal_3[] = {
        POStoFIXED(0, 0, 1),
 };
 
-XPDATA PD_QUAKE_SINGLE_3 = {
+PDATA PD_QUAKE_SINGLE_3 = {
        point_3, sizeof(point_3)/sizeof(POINT),
        polygon_3, sizeof(polygon_3)/sizeof(POLYGON),
-       attribute_3,
-       normal_3
+       attribute_3
 };
 
 /* MESH NO.4 : rdmobj00 */
-static POINT point_4[] = {
+static POINT point_4[] __aligned(16) = {
        POStoFIXED(1471.91 / 10.0, -2628.77 / 10.0, -1486.19 / 10.0),
        POStoFIXED(1471.91 / 10.0, -2423.97 / 10.0, -871.786 / 10.0),
        POStoFIXED(1471.91 / 10.0, -2423.97 / 10.0, -1281.39 / 10.0),
@@ -9811,7 +9807,7 @@ static ATTR attribute_4[] = {
        ATTRIBUTE(Single_Plane, SORT_CEN, 13, LUTidx(13), No_Gouraud,Window_In|MESHoff|HSSon|ECdis | SPdis |CL16Look,sprNoflip,No_Option|UseNearClip),
 };
 
-static VECTOR normal_4[] = {
+static VECTOR normal_4[] __unused = {
        POStoFIXED(-0.5, 0, 0.5),
        POStoFIXED(-0.5, 0.5, 0),
        POStoFIXED(-0.5, 0.5, 0),
@@ -10266,11 +10262,10 @@ static VECTOR normal_4[] = {
        POStoFIXED(0, -1, 0),
 };
 
-XPDATA PD_QUAKE_SINGLE_4 = {
+PDATA PD_QUAKE_SINGLE_4 = {
         point_4, sizeof(point_4)/sizeof(POINT),
         polygon_4, sizeof(polygon_4)/sizeof(POLYGON),
-        attribute_4,
-        normal_4
+        attribute_4
 };
 
 /* Total points : 2795 */

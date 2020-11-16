@@ -49,6 +49,9 @@ static void _vblank_in_handler(void *);
 static void _vblank_out_handler(void *);
 static void _frt_ovi_handler(void);
 
+static void _timing_start(void) __used;
+static fix16_t _timing_get(void) __used;
+static void _timing_print(const fix16_t time);
 static void _assets_copy(const sega3d_object_t *object);
 
 static smpc_peripheral_digital_t _digital;
@@ -98,7 +101,7 @@ main(void)
         sega3d_object_t object;
 
         object.pdata = PD_QUAKE_SINGLE_2;
-        object.flags = SEGA3D_OBJECT_FLAGS_NON_TEXTURED | SEGA3D_OBJECT_FLAGS_CULL_SCREEN;
+        object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME | SEGA3D_OBJECT_FLAGS_CULL_SCREEN;
         object.data = NULL;
 
         /* sega3d_tlist_set(TEX_SAMPLE, 2); */
@@ -115,14 +118,12 @@ main(void)
         translate[Y] = FIX16(15.0f);
         translate[Z] = FIX16(-400.0f);
 
-        sega3d_results_t results;
+        sega3d_results_t results __unused;
 
         while (true) {
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
 
-                cpu_frt_count_set(0);
-                _frt_ovf_count = 0;
                 _vblanks = 0;
 
                 sega3d_start(_cmdt_orderlist, ORDER_SEGA3D_INDEX, &_cmdts[ORDER_SEGA3D_INDEX]);
@@ -134,20 +135,39 @@ main(void)
 
                         sega3d_matrix_translate(translate[X], translate[Y], translate[Z]);
 
+                        fix16_t time[16];
+                        fix16_t total_time = 0;
+                        fix16_t *time_p = time;
+
+                        _timing_start();
                         object.pdata = PD_QUAKE_SINGLE_0;
                         sega3d_object_transform(&object);
+                        *time_p = _timing_get(); total_time += *time_p; time_p++;
 
+                        _timing_start();
                         object.pdata = PD_QUAKE_SINGLE_1;
                         sega3d_object_transform(&object);
+                        *time_p = _timing_get(); total_time += *time_p; time_p++;
 
+                        _timing_start();
                         object.pdata = PD_QUAKE_SINGLE_2;
                         sega3d_object_transform(&object);
+                        *time_p = _timing_get(); total_time += *time_p; time_p++;
 
+                        _timing_start();
                         object.pdata = PD_QUAKE_SINGLE_3;
                         sega3d_object_transform(&object);
+                        *time_p = _timing_get(); total_time += *time_p; time_p++;
 
+                        _timing_start();
                         object.pdata = PD_QUAKE_SINGLE_4;
                         sega3d_object_transform(&object);
+                        *time_p = _timing_get(); total_time += *time_p; time_p++;
+
+                        for (uint32_t i = 0; i < (uint32_t)(time_p - time); i++) {
+                                _timing_print(time[i]);
+                        }
+                        _timing_print(total_time);
                 } sega3d_matrix_pop();
                 
                 sega3d_finish(&results);
@@ -184,16 +204,6 @@ main(void)
 
                 dbgio_printf("[H[2J");
                 dbgio_printf("_vblanks: %u, count: %lu, (%f,%f,%f)\n", _vblanks, results.count, translate[X], translate[Y], translate[Z]);
-
-#ifdef FRT_TIMING_TEST
-                const uint32_t ticks_rem = cpu_frt_count_get();
-                const uint32_t overflow_count =
-                    ((65536 / CPU_FRT_NTSC_320_128_COUNT_1MS) * _frt_ovf_count);
-                const uint32_t total_ticks =
-                    (fix16_int32_from(overflow_count) + (fix16_int32_from(ticks_rem) / CPU_FRT_NTSC_320_128_COUNT_1MS));
-                const fix16_t time __unused = total_ticks;
-                dbgio_printf("c: %lu, t: %fms, z: %f, count: %lu, angle: %f\n", time, time, translate[Z], results.count, rot[dir] * toFIXED(360.0f));
-#endif /* FRT_TIMING_TEST */
         }
 }
 
@@ -265,6 +275,33 @@ static void
 _frt_ovi_handler(void)
 {
         _frt_ovf_count++;
+}
+
+static void
+_timing_start(void)
+{
+        cpu_frt_count_set(0);
+        _frt_ovf_count = 0;
+}
+
+static fix16_t
+_timing_get(void)
+{
+        const uint32_t ticks_rem = cpu_frt_count_get();
+
+        const uint32_t overflow_count =
+            ((65536 / CPU_FRT_NTSC_320_128_COUNT_1MS) * _frt_ovf_count);
+
+        const uint32_t total_ticks =
+            (fix16_int32_from(overflow_count) + (fix16_int32_from(ticks_rem) / CPU_FRT_NTSC_320_128_COUNT_1MS));
+
+        return total_ticks;
+}
+
+static void
+_timing_print(const fix16_t time)
+{
+        dbgio_printf("time: %fms, ticks: %li\n", time, time);
 }
 
 static void
