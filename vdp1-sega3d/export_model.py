@@ -1,32 +1,32 @@
 # 0000  4B S3D '\0'
 # 0004  2B Version number
 # 0006  4B Flags
-# 0010  2B XPDATA count                           XPDATA will always be at offset 64
-# 0012  2B (Picture) Texture list count
-# 0014  4B Texture file offset                    [0 if no texs] This gives us the ability to know how big the total XPDATA size is
-# 0018  4B Texture byte size
-# 0022  4B Palette file offset                    [0 if no pals]
-# 0026  4B Palette byte size
-# 0030  4B Gouraud table file offset
-# 0034  2B Gouraud table count
-# 0036 12B Origin (XYZ)
-# 0048 12B BB length (XYZ)                        <---------- May be a good idea to have a list for each XPDATA (or just one)
+# 0010  2B XPDATA count                                     XPDATA will always be at offset 64
+# 0012  2B PICTURE count
+# .
+# .
+# .
 # 0060  4B User offset to data
-# 0064 XPDATA 1 - Each has offsets to their data
+# 0064 XPDATA 0                                             Each has offsets to their data
+# .... XPDATA 1
 # .... XPDATA 2
-# .... XPDATA 3
-#
-#
-# PICTURE uses relative offsets to TEXTURE, which then points to actual texture offsets.
-#  If the PICTURE has a palette type, then the palette
-
+# ....
+# .... AUX 0
+# .... AUX 1
+# .... AUX 2
+# ....
+# .... PICTURE 0
+# .... PICTURE 1
+# .... PICTURE 2
+# ....
+# .... TEXTURE 0
+# .... TEXTURE 1
+# .... TEXTURE 2
 ################################################################################
-# 1. ATTRs are broken?
-# 2. Triangle normals are broken
-# 3. ColorData issue
-# 4. Gouraud table support
-
-
+# 1. Multiple XPDATAs with their own gouraud tables
+# 2. Triangle winding order is broken
+# 3. Bounding boxes are missing
+################################################################################
 import ctypes
 import math
 import os
@@ -44,9 +44,8 @@ import gpu
 from bpy.app.handlers import persistent
 
 bl_info = {"name": "Export Sega Saturn Model (.ssm)", "category": "Import-Export"}
-################################################################################
-VECTOR_BYTE_SIZE = 4 * 3
-POLYGON_BYTE_SIZE = VECTOR_BYTE_SIZE + (4 * 2)
+
+# SGL
 
 
 class SortType(Enum):
@@ -114,10 +113,10 @@ class FlipDir(IntFlag):
 
 class FaceData(object):
     def __init__(self):
-        self.indices = [-1] * 4
+        self.indices = []
         self.normal = mathutils.Vector((0.0, 0.0, 1.0))
-        self.colors = [mathutils.Color((0.0, 0.0, 0.0))] * 4
-        self.attribute = Attribute()
+        self.colors = []
+        self.attribute = Attribute(self)
 
 
 class VertexData(object):
@@ -134,7 +133,8 @@ class ColorData(object):
 class Attribute(object):
     BYTE_SIZE = 1 + 1 + (2 * 5)
 
-    def __init__(self):
+    def __init__(self, face_data):
+        self.face_data = face_data
         self.plane_type = PlaneType.SINGLE_PLANE
         self.sort_type = SortType.SORT_CEN
         self.texture_num = 0
@@ -146,6 +146,13 @@ class Attribute(object):
 
 
 class XPDATA(object):
+    # XPDATA -> 24B
+    #   POINT *   pntbl     4B offset
+    #   Uint32    nbPoint   4B
+    #   POLYGON * pltbl     4B offset
+    #   Uint32    nbPolygon 4B
+    #   ATTR *    attbl     4B offset
+    #   VECTOR *  vntbl     4B offset
     BYTE_SIZE = 6 * 4
 
     def __init__(self):
@@ -153,7 +160,25 @@ class XPDATA(object):
         self.face_datas = []
 
 
+class AUX(object):
+    # AUX -> 16B
+    #   void *   Gouraud table       4B offset
+    #   Uint16   Gouraud table count 4B
+    #   void *   CG                  4B offset
+    #   Uint32   CG size             4B
+    #   Uint16   ------------------- 2B padding
+    BYTE_SIZE = 4 + 2 + 4 + 4 + 2
+
+
 ################################################################################
+# Packing
+
+VECTOR_BYTE_SIZE = 4 * 3
+POLYGON_BYTE_SIZE = VECTOR_BYTE_SIZE + (4 * 2)
+
+
+class S3DFlags(IntFlag):
+    NONE = 0
 
 
 class PackedXPDATA(object):
@@ -163,43 +188,103 @@ class PackedXPDATA(object):
         self.packed_polygons = b""
         self.packed_attributes = b""
         self.packed_normals = b""
+        self.packed_gouraud_tables = b""
+
+
+class S3D(object):
+    BYTE_SIZE = 64
+
+    VERSION = 1
+
+    def __init__(self):
+        self.packed_xpdatas = []
+        self.packed_pictures = []
+        self.packed_textures = []
+        self.flags = S3DFlags.NONE
+
+    @property
+    def pools_offset(self):
+        return (
+            S3D.BYTE_SIZE
+            + s3d.total_xpdatas_size
+            + s3d.total_auxs_size
+            + s3d.total_pictures_size
+            + s3d.total_textures_size
+        )
+
+    @property
+    def total_xpdatas_size(self):
+        return len(s3d.packed_xpdatas) * XPDATA.BYTE_SIZE
+
+    @property
+    def total_auxs_size(self):
+        return len(s3d.packed_xpdatas) * AUX.BYTE_SIZE
+
+    @property
+    def total_pictures_size(self):
+        return 0
+
+    @property
+    def total_textures_size(self):
+        return 0
+
+    @property
+    def total_points_size(self):
+        return sum([len(p.packed_points) for p in self.packed_xpdatas])
+
+    @property
+    def total_polygons_size(self):
+        return sum([len(p.packed_polygons) for p in self.packed_xpdatas])
+
+    @property
+    def total_attributes_size(self):
+        return sum([len(p.packed_attributes) for p in self.packed_xpdatas])
+
+    @property
+    def total_normals_size(self):
+        return sum([len(p.packed_normals) for p in self.packed_xpdatas])
 
 
 ################################################################################
+# Utilities
 
-# Utility
+
+def to_fix16(value):
+    return int((value * 65536.0) + (0.5 if (value >= 0) else -0.5))
+
+
 def to_fix16_vector(vector):
     if not isinstance(vector, mathutils.Vector):
         raise TypeError("Expected mathutils.Vector, got %s", (type(vector)))
     return tuple([to_fix16(component) for component in vector])
 
 
-# Utility
 def to_rgb1555(color):
     def clamp_color_component(value):
         return min(value, 1.0)
 
-    r = ctypes.c_uint8(int(clamp_color_component(color[0]) * 255))
-    g = ctypes.c_uint8(int(clamp_color_component(color[1]) * 255))
-    b = ctypes.c_uint8(int(clamp_color_component(color[2]) * 255))
+    r = int(clamp_color_component(color[0]) * 255)
+    g = int(clamp_color_component(color[1]) * 255)
+    b = int(clamp_color_component(color[2]) * 255)
 
-    byte_r = (r.value >> 3) & 0x1F
-    byte_g = (g.value >> 3) & 0x1F
-    byte_b = (b.value >> 3) & 0x1F
+    byte_r = (r >> 3) & 0x1F
+    byte_g = (g >> 3) & 0x1F
+    byte_b = (b >> 3) & 0x1F
 
-    return ctypes.c_uint16(0x8000 | (byte_b << 10) | (byte_g << 5) | (byte_r)).value
-
-
-# Utility
-def to_fix16(value):
-    return int((value * 65536.0) + (0.5 if (value >= 0) else -0.5))
+    return 0x8000 | (byte_b << 10) | (byte_g << 5) | (byte_r)
 
 
 def flatten(lsts):
     return [item for sublist in lsts for item in sublist]
 
 
+def align_offset(offset, boundary_bit=2):
+    boundary_align = 1 << boundary_bit
+    return int(math.ceil(offset / float(boundary_align)) * boundary_align)
+
+
 ################################################################################
+# Mesh operations
 
 
 def extract_faces(obj, mesh):
@@ -211,7 +296,14 @@ def extract_faces(obj, mesh):
     mesh.faces.ensure_lookup_table()
     mesh.verts.ensure_lookup_table()
 
+    vertex_colors = []
+    if len(obj.data.vertex_colors) != 0:
+        color_layer = obj.data.vertex_colors[0]
+        vertex_colors = [value.color for value in color_layer.data]
+
     face_datas = []
+
+    gouraud_table_num = 0
 
     for face in mesh.faces:
         indices = []
@@ -219,9 +311,29 @@ def extract_faces(obj, mesh):
             indices = [loop.index for loop in face.loops[0:3]] + [face.loops[0].index]
         elif len(face.loops) == 4:
             indices = [loop.index for loop in face.loops[0:4]]
+            print("-" * 80)
+            for index in indices:
+                print(
+                    "%i -> %i -> %s"
+                    % (
+                        index,
+                        obj.data.loops[index].vertex_index,
+                        mesh.verts[obj.data.loops[index].vertex_index].co,
+                    )
+                )
+
         face_data = FaceData()
         face_data.indices = [obj.data.loops[index].vertex_index for index in indices]
         face_data.normal = face.normal.copy()
+
+        if vertex_colors:
+            face_data.colors = [vertex_colors[index] for index in indices]
+
+            # Update attribute
+            face_data.attribute.attribute_flags |= AttributeFlags.CL_GOURAUD
+            face_data.attribute.gouraud_table_num = gouraud_table_num
+
+            gouraud_table_num += 1
 
         # Perform a test to see if the winding is correct
         vertices = [mesh.verts[index].co for index in face_data.indices]
@@ -232,8 +344,7 @@ def extract_faces(obj, mesh):
         dir1 = face_data.normal.dot(n1)
 
         if not math.isclose(dir1, 1.0, abs_tol=0.001):
-            pass
-            # print("%s -> %s" % (face_data.normal, n1))
+            print("%s -> %s" % (face_data.normal, n1))
 
         face_datas.append(face_data)
 
@@ -257,10 +368,18 @@ def extract_vertices(mesh):
     return vertex_datas
 
 
+################################################################################
+# Packing
+
+
 def pack_points(vertex_datas):
-    points_bytes = flatten(
-        [to_fix16_vector(vertex_data.point) for vertex_data in vertex_datas]
-    )
+    points_bytes = []
+
+    for vertex_data in vertex_datas:
+        fix16_vector = to_fix16_vector(vertex_data.point)
+        points_bytes.append(fix16_vector[0])
+        points_bytes.append(fix16_vector[2])
+        points_bytes.append(fix16_vector[1])
 
     struct_format = ">%il" % (len(points_bytes))
 
@@ -322,7 +441,7 @@ def pack_attribute(attribute):
         attr_colno = to_rgb1555(attribute.color_data.data)
 
     # ATTR::gstb
-    attr_gstb = attribute.gouraud_table_num
+    attr_gstb = attribute.gouraud_table_num if attribute.face_data.colors else 0
 
     # ATTR::dir  -> (d) & 0x3F
     attr_dir = attribute.flip_dir.value | attribute.primitive_type.value
@@ -352,7 +471,7 @@ def pack_attribute(attribute):
         attr_dir,
     )
 
-    print("Attribute -> %s" % (packed))
+    # print("Attribute -> %s" % (packed))
 
     return packed
 
@@ -371,60 +490,178 @@ def pack_xpdata(xpdata):
 
     packed_xpdata = PackedXPDATA()
 
-    # normals_bytes = pack_normals(xpdata.face_datas)
     packed_xpdata.xpdata = xpdata
     packed_xpdata.packed_points = pack_points(xpdata.vertex_datas)
     packed_xpdata.packed_polygons = pack_polygons(xpdata.face_datas)
     packed_xpdata.packed_attributes = pack_attributes(xpdata.face_datas)
+    # XXX: Fix me
+    # normals_bytes = pack_normals(xpdata.face_datas)
     packed_xpdata.packed_normals = list(
         b"\x44" * (VECTOR_BYTE_SIZE * len(xpdata.face_datas))
     )
+    packed_xpdata.packed_gouraud_tables = pack_gouraud_tables(xpdata.face_datas)
 
     return packed_xpdata
 
 
+def pack_gouraud_tables(face_datas):
+    packed_gouraud_tables = flatten(
+        [
+            map(
+                to_rgb1555,
+                [
+                    face_data.colors[1],
+                    face_data.colors[0],
+                    face_data.colors[3],
+                    face_data.colors[2],
+                ],
+            )
+            for face_data in face_datas
+            if face_data.colors
+        ]
+    )
+    # We need to convert the 2-byte values to bytes
+    return struct.pack((">%iH" % (len(packed_gouraud_tables))), *packed_gouraud_tables)
+
+
+################################################################################
+# Writing
+
+
+def write_xpdata_headers(fp, s3d):
+    if not isinstance(s3d, S3D):
+        raise TypeError("Expected S3D, got %s" % (type(xpdata)))
+
+    points_offset = s3d.pools_offset
+    polygons_offset = points_offset + s3d.total_points_size
+    attributes_offset = polygons_offset + s3d.total_polygons_size
+    normals_offset = attributes_offset + s3d.total_attributes_size
+
+    for packed_xpdata in s3d.packed_xpdatas:
+        points_count = len(packed_xpdata.xpdata.vertex_datas)
+        points_size = points_count * VECTOR_BYTE_SIZE
+
+        polygons_count = len(packed_xpdata.xpdata.face_datas)
+        polygons_size = polygons_count * POLYGON_BYTE_SIZE
+
+        attributes_count = polygons_count
+        attributes_size = attributes_count * Attribute.BYTE_SIZE
+
+        normals_count = polygons_count
+        normals_size = VECTOR_BYTE_SIZE * normals_count
+
+        packed_header = struct.pack(
+            ">LLLLLL",
+            points_offset,
+            points_count,
+            polygons_offset,
+            polygons_count,
+            attributes_offset,
+            normals_offset,
+        )
+
+        fp.write(packed_header)
+
+        points_offset += points_size
+        polygons_offset += polygons_size
+        attributes_offset += attributes_size
+        normals_offset += normals_size
+
+
+def write_aux_headers(fp, s3d):
+    if not isinstance(s3d, S3D):
+        raise TypeError("Expected S3D, got %s" % (type(s3d)))
+
+    gouraud_tables_offset = (
+        s3d.pools_offset
+        + s3d.total_points_size
+        + s3d.total_polygons_size
+        + s3d.total_attributes_size
+        + s3d.total_normals_size
+    )
+
+    cg_offset = 0x0000000
+
+    for packed_xpdata in s3d.packed_xpdatas:
+        gouraud_tables_size = len(packed_xpdata.packed_gouraud_tables)
+        cg_size = 0x00000000
+
+        packed_header = struct.pack(
+            ">LHLL2x",
+            0 if (gouraud_tables_size == 0) else gouraud_tables_offset,
+            gouraud_tables_size,
+            0 if (cg_size == 0) else cg_offset,
+            cg_size,
+        )
+
+        gouraud_tables_offset += gouraud_tables_size
+
+        fp.write(packed_header)
+
+
+def write_picture_headers(fp, s3d):
+    if not isinstance(s3d, S3D):
+        raise TypeError("Expected S3D, got %s" % (type(s3d)))
+
+
+def write_texture_headers(fp, s3d):
+    if not isinstance(s3d, S3D):
+        raise TypeError("Expected S3D, got %s" % (type(s3d)))
+
+
+def write_pools(fp, s3d):
+    if not isinstance(s3d, S3D):
+        raise TypeError("Expected S3D, got %s" % (type(s3d)))
+
+    for packed_xpdata in s3d.packed_xpdatas:
+        fp.write(
+            struct.pack(
+                ("%iB" % len(packed_xpdata.packed_points)), *packed_xpdata.packed_points
+            )
+        )
+
+    for packed_xpdata in s3d.packed_xpdatas:
+        fp.write(
+            struct.pack(
+                ("%iB" % len(packed_xpdata.packed_polygons)),
+                *packed_xpdata.packed_polygons
+            )
+        )
+
+    for packed_xpdata in s3d.packed_xpdatas:
+        fp.write(
+            struct.pack(
+                ("%iB" % len(packed_xpdata.packed_attributes)),
+                *packed_xpdata.packed_attributes
+            )
+        )
+
+    for packed_xpdata in s3d.packed_xpdatas:
+        fp.write(
+            struct.pack(
+                ("%iB" % len(packed_xpdata.packed_normals)),
+                *packed_xpdata.packed_normals
+            )
+        )
+
+    for packed_xpdata in s3d.packed_xpdatas:
+        fp.write(
+            struct.pack(
+                ("%iB" % len(packed_xpdata.packed_gouraud_tables)),
+                *packed_xpdata.packed_gouraud_tables
+            )
+        )
+
+
 class ExportSegaSaturnModel(bpy.types.Operator):
-    """Export blender objects to Sega Saturn model"""
+    """
+    Export blender objects to Sega Saturn model.
+    """
 
     bl_idname = "export.to_saturn"
-    bl_label = "Export Saturn Model (.SSM)"
+    bl_label = "Export S3D (.S3D)"
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
-
-    checkForDuplicatedTextures: bpy.props.BoolProperty(
-        name="Check for duplicated textures",
-        description="Check for duplicated textures",
-        default=True,
-    )
-
-    useAO: bpy.props.BoolProperty(
-        name="Use AO", description="Use secondary texture/uv as AO", default=False
-    )
-
-    texturesSizeByArea: bpy.props.BoolProperty(
-        name="Use area to discover texture size",
-        description="Use area to discover texture size",
-        default=True,
-    )
-
-    minimumTextureSize: bpy.props.IntProperty(
-        name="Minimum Texture size",
-        description="Minimum texture size",
-        default=8,
-        max=128,
-        min=2,
-        step=2,
-    )
-
-    # Resolution of output textures.
-    outputTextureSize: bpy.props.IntProperty(
-        name="Texture Size (size x size)",
-        description="Texture Size (size x size)",
-        default=16,
-        max=128,
-        min=2,
-        step=2,
-    )
 
     @classmethod
     def poll(cls, context):
@@ -432,8 +669,6 @@ class ExportSegaSaturnModel(bpy.types.Operator):
 
     def execute(self, context):
         filepath = pathlib.Path(self.filepath)
-        with filepath.open("wb") as out_fp:
-            pass
 
         return {"FINISHED"}
 
@@ -446,15 +681,6 @@ class ExportSegaSaturnModel(bpy.types.Operator):
 def menu_func(self, context):
     self.layout.operator_context = "INVOKE_DEFAULT"
     self.layout.operator(ExportSegaSaturnModel.bl_idname, text="Export to Sega Saturn")
-
-
-def getActiveFaces(obj):
-    faces = []
-    for face in obj.faces:
-        if face.select:
-            faces.append(face)
-
-    return faces
 
 
 def register():
@@ -474,7 +700,7 @@ def unregister():
 if __name__ == "__main__":
     register()
 
-    packed_xpdatas = []
+    s3d = S3D()
 
     for obj in bpy.context.selected_objects:
         mesh = bmesh.new()
@@ -484,97 +710,31 @@ if __name__ == "__main__":
         xpdata.vertex_datas = extract_vertices(mesh)
         xpdata.face_datas = extract_faces(obj, mesh)
         packed_xpdata = pack_xpdata(xpdata)
-        packed_xpdatas.append(packed_xpdata)
+        s3d.packed_xpdatas.append(packed_xpdata)
 
     output_path = "C:/msys64/work/libyaul/repositories/private/libyaul-examples-private/vdp1-sega3d/romdisk/XPDATA.DAT"
 
     with open(output_path, "wb+") as fp:
-        total_points_size = sum(
-            [len(packed_xpdata.packed_points) for packed_xpdata in packed_xpdatas]
-        )
-        total_polygons_size = sum(
-            [len(packed_xpdata.packed_polygons) for packed_xpdata in packed_xpdatas]
-        )
-        total_attributes_size = sum(
-            [len(packed_xpdata.packed_attributes) for packed_xpdata in packed_xpdatas]
-        )
-        total_normals_size = sum(
-            [len(packed_xpdata.packed_normals) for packed_xpdata in packed_xpdatas]
+        xpdata_count = len(s3d.packed_xpdatas)
+        picture_count = len(s3d.packed_pictures)
+        pool_size = (
+            s3d.total_points_size
+            + s3d.total_polygons_size
+            + s3d.total_attributes_size
+            + s3d.total_normals_size
         )
 
-        total_xpdatas_size = len(packed_xpdatas) * XPDATA.BYTE_SIZE
+        fp.write(struct.pack(">3sB", b"S3D", 0))
+        fp.write(struct.pack(">H", S3D.VERSION))
+        fp.write(struct.pack(">L", s3d.flags.value))
+        fp.write(struct.pack(">H", xpdata_count))
+        fp.write(struct.pack(">H", picture_count))
+        diff = S3D.BYTE_SIZE - fp.tell()
+        # Pad out the header to 64 bytes
+        fp.write(struct.pack("%ix" % (diff)))
 
-        points_offset = total_xpdatas_size
-        polygons_offset = total_xpdatas_size + total_points_size
-        attributes_offset = polygons_offset + total_polygons_size
-        normals_offset = attributes_offset + total_attributes_size
-
-        for packed_xpdata in packed_xpdatas:
-            # XPDATA -> 24B
-            # POINT   *pntbl      4B offset
-            # Uint32   nbPoint    4B
-            # POLYGON *pltbl      4B offset
-            # Uint32   nbPolygon  4B
-            # ATTR    *attbl      4B offset
-            # VECTOR  *vntbl      4B offset
-
-            points_count = len(packed_xpdata.xpdata.vertex_datas)
-            points_size = points_count * VECTOR_BYTE_SIZE
-
-            polygons_count = len(packed_xpdata.xpdata.face_datas)
-            polygons_size = polygons_count * POLYGON_BYTE_SIZE
-
-            attributes_count = polygons_count
-            attributes_size = attributes_count * Attribute.BYTE_SIZE
-
-            normals_count = polygons_count
-            normals_size = VECTOR_BYTE_SIZE * normals_count
-
-            packed_header = struct.pack(
-                ">LLLLLL",
-                points_offset,
-                points_count,
-                polygons_offset,
-                polygons_count,
-                attributes_offset,
-                normals_offset,
-            )
-
-            fp.write(packed_header)
-
-            points_offset += points_size
-            polygons_offset += polygons_size
-            attributes_offset += attributes_size
-            normals_offset += normals_size
-
-        for packed_xpdata in packed_xpdatas:
-            fp.write(
-                struct.pack(
-                    ("%iB" % len(packed_xpdata.packed_points)),
-                    *packed_xpdata.packed_points
-                )
-            )
-
-        for packed_xpdata in packed_xpdatas:
-            fp.write(
-                struct.pack(
-                    ("%iB" % len(packed_xpdata.packed_polygons)),
-                    *packed_xpdata.packed_polygons
-                )
-            )
-
-        for packed_xpdata in packed_xpdatas:
-            fp.write(
-                struct.pack(
-                    ("%iB" % len(packed_xpdata.packed_attributes)),
-                    *packed_xpdata.packed_attributes
-                )
-            )
-
-        for packed_xpdata in packed_xpdatas:
-            fp.write(
-                struct.pack(
-                    ("%iB" % len(packed_xpdata.packed_normals)),
-                    *packed_xpdata.packed_normals
-                )
-            )
+        write_xpdata_headers(fp, s3d)
+        write_aux_headers(fp, s3d)
+        write_picture_headers(fp, s3d)
+        write_texture_headers(fp, s3d)
+        write_pools(fp, s3d)
