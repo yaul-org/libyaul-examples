@@ -36,6 +36,7 @@ import sys
 from enum import Enum, IntFlag
 
 import bpy
+import bpy_extras
 import bmesh
 import mathutils
 import pathlib
@@ -170,6 +171,18 @@ class AUX(object):
     BYTE_SIZE = 4 + 2 + 4 + 4 + 2
 
 
+class GouraudTable(object):
+    def __init__(self):
+        self._index = -1
+
+    @property
+    def index(self):
+        return self._index
+
+    def allocate_index(self):
+        self._index += 1
+
+
 ################################################################################
 # Packing
 
@@ -201,6 +214,7 @@ class S3D(object):
         self.packed_pictures = []
         self.packed_textures = []
         self.flags = S3DFlags.NONE
+        self.gouraud_table_num = 0
 
     @property
     def pools_offset(self):
@@ -287,7 +301,9 @@ def align_offset(offset, boundary_bit=2):
 # Mesh operations
 
 
-def extract_faces(obj, mesh):
+def extract_faces(gouraud_table, obj, mesh):
+    if not isinstance(gouraud_table, GouraudTable):
+        raise TypeError("Expected GouraudTable, got %s" % (type(gouraud_table)))
     if not isinstance(obj, bpy.types.Object):
         raise TypeError("Expected bpy.types.Object, got %s" % type(obj))
     if not isinstance(mesh, bmesh.types.BMesh):
@@ -298,53 +314,51 @@ def extract_faces(obj, mesh):
 
     vertex_colors = []
     if len(obj.data.vertex_colors) != 0:
+        print("len: %i" % (len(obj.data.vertex_colors)))
         color_layer = obj.data.vertex_colors[0]
         vertex_colors = [value.color for value in color_layer.data]
 
     face_datas = []
 
-    gouraud_table_num = 0
-
     for face in mesh.faces:
         indices = []
         if len(face.loops) == 3:
-            indices = [loop.index for loop in face.loops[0:3]] + [face.loops[0].index]
+            indices = [loop.index for loop in face.loops[0:3]] + [face.loops[2].index]
         elif len(face.loops) == 4:
             indices = [loop.index for loop in face.loops[0:4]]
-            print("-" * 80)
-            for index in indices:
-                print(
-                    "%i -> %i -> %s"
-                    % (
-                        index,
-                        obj.data.loops[index].vertex_index,
-                        mesh.verts[obj.data.loops[index].vertex_index].co,
-                    )
-                )
+        else:
+            assert False, "Invalid face vertex count: %i" % (len(face.loops))
 
         face_data = FaceData()
         face_data.indices = [obj.data.loops[index].vertex_index for index in indices]
         face_data.normal = face.normal.copy()
 
         if vertex_colors:
+            gouraud_table.allocate_index()
+
             face_data.colors = [vertex_colors[index] for index in indices]
 
             # Update attribute
             face_data.attribute.attribute_flags |= AttributeFlags.CL_GOURAUD
-            face_data.attribute.gouraud_table_num = gouraud_table_num
-
-            gouraud_table_num += 1
+            face_data.attribute.gouraud_table_num = gouraud_table.index
 
         # Perform a test to see if the winding is correct
         vertices = [mesh.verts[index].co for index in face_data.indices]
 
-        u1 = (vertices[1] - vertices[0]).normalized()
-        v1 = (vertices[3] - vertices[0]).normalized()
+        u1 = (vertices[3] - vertices[0]).normalized()
+        v1 = (vertices[1] - vertices[0]).normalized()
         n1 = u1.cross(v1)
         dir1 = face_data.normal.dot(n1)
 
-        if not math.isclose(dir1, 1.0, abs_tol=0.001):
-            print("%s -> %s" % (face_data.normal, n1))
+        u2 = (vertices[3] - vertices[2]).normalized()
+        v2 = (vertices[1] - vertices[2]).normalized()
+        n2 = u2.cross(v2)
+        dir2 = face_data.normal.dot(n2)
+
+        if (not math.isclose(dir1, 1.0, abs_tol=0.001)) and (
+            not math.isclose(dir2, 1.0, abs_tol=0.001)
+        ):
+            print("%s -> %s/%s" % (face_data.normal, n1, n2))
 
         face_datas.append(face_data)
 
@@ -378,8 +392,8 @@ def pack_points(vertex_datas):
     for vertex_data in vertex_datas:
         fix16_vector = to_fix16_vector(vertex_data.point)
         points_bytes.append(fix16_vector[0])
-        points_bytes.append(fix16_vector[2])
         points_bytes.append(fix16_vector[1])
+        points_bytes.append(fix16_vector[2])
 
     struct_format = ">%il" % (len(points_bytes))
 
@@ -510,10 +524,10 @@ def pack_gouraud_tables(face_datas):
             map(
                 to_rgb1555,
                 [
-                    face_data.colors[1],
                     face_data.colors[0],
-                    face_data.colors[3],
+                    face_data.colors[1],
                     face_data.colors[2],
+                    face_data.colors[3],
                 ],
             )
             for face_data in face_datas
@@ -530,7 +544,7 @@ def pack_gouraud_tables(face_datas):
 
 def write_xpdata_headers(fp, s3d):
     if not isinstance(s3d, S3D):
-        raise TypeError("Expected S3D, got %s" % (type(xpdata)))
+        raise TypeError("Expected S3D, got %s" % (type(s3d)))
 
     points_offset = s3d.pools_offset
     polygons_offset = points_offset + s3d.total_points_size
@@ -701,14 +715,34 @@ if __name__ == "__main__":
     register()
 
     s3d = S3D()
+    gouraud_table = GouraudTable()
+
+    saturn_rot = bpy_extras.io_utils.axis_conversion(
+        from_forward="Y", from_up="Z", to_forward="Z", to_up="-Y"
+    ).to_4x4()
 
     for obj in bpy.context.selected_objects:
+        _, obj_rot, obj_scale = obj.matrix_world.decompose()
+        obj_rot = obj_rot.to_matrix().to_4x4()
+        obj_scale = mathutils.Matrix.Diagonal(obj_scale).to_4x4()
+
+        matrix = saturn_rot
+
+        # XXX: Add a flag to apply rotation
+        if True:
+            matrix = matrix @ obj_rot
+
+        # XXX: Add a flag to apply scale
+        if False:
+            matrix = matrix @ obj_scale
+
         mesh = bmesh.new()
         mesh.from_mesh(obj.data)
+        bmesh.ops.transform(mesh, matrix=matrix, verts=mesh.verts)
 
         xpdata = XPDATA()
         xpdata.vertex_datas = extract_vertices(mesh)
-        xpdata.face_datas = extract_faces(obj, mesh)
+        xpdata.face_datas = extract_faces(gouraud_table, obj, mesh)
         packed_xpdata = pack_xpdata(xpdata)
         s3d.packed_xpdatas.append(packed_xpdata)
 

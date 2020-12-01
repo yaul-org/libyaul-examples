@@ -1,14 +1,14 @@
 #include <sega3d.h>
 
 static POINT point_cube1[] = {
-        POStoFIXED(-20.0, -20.0,  20.0),
-        POStoFIXED( 20.0, -20.0,  20.0),
-        POStoFIXED( 20.0,  20.0,  20.0),
-        POStoFIXED(-20.0,  20.0,  20.0),
-        POStoFIXED(-20.0, -20.0, -20.0),
-        POStoFIXED( 20.0, -20.0, -20.0),
-        POStoFIXED( 20.0,  20.0, -20.0),
-        POStoFIXED(-20.0,  20.0, -20.0)
+        POStoFIXED(-20.0, -20.0,  20.0), /* 0 */
+        POStoFIXED( 20.0, -20.0,  20.0), /* 1 */
+        POStoFIXED( 20.0,  20.0,  20.0), /* 2 */
+        POStoFIXED(-20.0,  20.0,  20.0), /* 3 */
+        POStoFIXED(-20.0, -20.0, -20.0), /* 4 */
+        POStoFIXED( 20.0, -20.0, -20.0), /* 5 */
+        POStoFIXED( 20.0,  20.0, -20.0), /* 6 */
+        POStoFIXED(-20.0,  20.0, -20.0)  /* 7 */
 };
 
 static POLYGON polygon_cube1[] = {
