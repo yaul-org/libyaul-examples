@@ -7,25 +7,26 @@
 # .
 # .
 # 0060  4B User offset to data
-# 0064 XPDATA 0                                             Each has offsets to their data
-# .... XPDATA 1
-# .... XPDATA 2
+# 0064     XPDATA 0                                         Each has offsets to their data
+# ....     XPDATA 1
+# ....     XPDATA 2
 # ....
-# .... AUX 0
-# .... AUX 1
-# .... AUX 2
+# ....     AUX 0
+# ....     AUX 1
+# ....     AUX 2
 # ....
-# .... PICTURE 0
-# .... PICTURE 1
-# .... PICTURE 2
+# ....     PICTURE 0
+# ....     PICTURE 1
+# ....     PICTURE 2
 # ....
-# .... TEXTURE 0
-# .... TEXTURE 1
-# .... TEXTURE 2
+# ....     TEXTURE 0
+# ....     TEXTURE 1
+# ....     TEXTURE 2
 ################################################################################
-# 1. Multiple XPDATAs with their own gouraud tables
-# 2. Triangle winding order is broken
-# 3. Bounding boxes are missing
+# 1. Bounding boxes are missing
+#    Allow flexibility for per object BB or entire BB
+# 2. ATTRIBUTE panel
+# 3. Refactor into multiple PY files
 ################################################################################
 import ctypes
 import math
@@ -44,7 +45,12 @@ import gpu
 
 from bpy.app.handlers import persistent
 
-bl_info = {"name": "Export Sega Saturn Model (.ssm)", "category": "Import-Export"}
+# fmt: off
+bl_info = {
+    "name": "Export Sega Saturn Model (.ssm)",
+    "category": "Import-Export"
+}
+# fmt: on
 
 # SGL
 
@@ -295,6 +301,19 @@ def flatten(lsts):
 def align_offset(offset, boundary_bit=2):
     boundary_align = 1 << boundary_bit
     return int(math.ceil(offset / float(boundary_align)) * boundary_align)
+
+
+################################################################################
+# Blender utilities
+
+
+def get_selected_faces(mesh):
+    if not isinstance(mesh, bmesh.types.BMesh):
+        raise TypeError("Expected bmesh.types.BMesh, got %s" % type(mesh))
+
+    mesh.faces.ensure_lookup_table()
+
+    return [face for face in mesh.faces if face.select]
 
 
 ################################################################################
@@ -674,6 +693,7 @@ class ExportSegaSaturnModel(bpy.types.Operator):
 
     bl_idname = "export.to_saturn"
     bl_label = "Export S3D (.S3D)"
+    bl_options = {"REGISTER", "UNDO"}
 
     filepath: bpy.props.StringProperty(subtype="FILE_PATH")
 
@@ -691,22 +711,236 @@ class ExportSegaSaturnModel(bpy.types.Operator):
         return {"RUNNING_MODAL"}
 
 
+################################################################################
+# Settings
+
+
+class SaturnObjectSettings(bpy.types.PropertyGroup):
+    # fmt: off
+    # (identifier, name, description, icon, number)
+    _ENUM_SORT_ITEMS = [
+        ("SORT_BFR", "Before in front", "Display the face that was registered last in front.", "", 0),
+        ("SORT_MIN", "Minimum", "Use the point in the face closest to the camera the reference point.", "", 1),
+        ("SORT_MAX", "Maximum", "Use the point in the face furthest away from the camera the reference point.", "", 2),
+        ("SORT_CEN", "Center", "Use the center point of the face as the reference point.", "", 3)
+    ]
+
+    _ENUM_PLANE_ITEMS = [
+        ("SINGLE_PLANE", "Single", "Treat the face as single sided.", "", 0),
+        ("DUAL_PLANE", "Dual", "Treat the face as double sided.", "", 1)
+    ]
+
+    _ENUM_ATTRIBUTE_HSS_ITEMS = [
+        ("HSS_OFF", "Disable HSS", "Disable high speed shrink", "", 0),
+        ("HSS_ON", "Enable HSS", "Enable high speed shrink", "", 1)
+    ]
+
+    _ENUM_ATTRIBUTE_MESH_ITEMS = [
+        ("MESH_OFF", "Disable mesh", "Enable mesh display", "", 0),
+        ("MESH_ON", "Enable mesh", "disable mesh display", "", 1)
+    ]
+
+    _ENUM_ATTRIBUTE_WINDOW_ITEMS = [
+        ("NO_WINDOW", "No window", "", "", 0),
+        ("WINDOW_IN", "Window in", "", "", 1),
+        ("WINDOW_OUT", "Window out", "", "", 2)
+    ]
+
+    _ENUM_ATTRIBUTE_COLOR_MODE_ITEMS = [
+        ("CL_16_BANK", "16 colors (color bank)", "", "", 0),
+        ("CL_16_LOOK", "16 colors (LUT)", "", "", 1),
+        ("CL_64_BANK", "64 colors (color bank)", "", "", 2),
+        ("CL_128_BANK", "128 colors (color bank)", "", "", 3),
+        ("CL_256_BANK", "256 colors (color bank)", "", "", 4),
+        ("CL_32K_RGB", "32,768 colors (RGB)", "", "", 5)
+    ]
+
+    _ENUM_ATTRIBUTE_COLOR_CALCULATION_ITEMS = [
+        ("CL_REPLACE", "Replace", "Mode 0", "", 0),
+        ("CL_SHADOW", "Shadow", "Mode 1", "", 1),
+        ("CL_HALF", "Half-luminance", "Mode 2", "", 2),
+        ("CL_TRANS", "Half-transparent", "Mode 3", "", 3),
+        ("CL_GOURAUD", "Gouraud shading", "Mode 4", "", 4),
+        ("CL_GOURAUD+CL_HALF", "Gouraud+Half-luminance", "Mode 6", "", 5),
+        ("CL_GOURAUD+CL_TRANS", "Gouraud+Half-transparent", "Mode 7", "", 6)
+    ]
+    # fmt: on
+
+    plane: bpy.props.EnumProperty(
+        name="plane",
+        items=_ENUM_PLANE_ITEMS,
+        description="Plane type",
+        default="SINGLE_PLANE",
+        update=None,
+        get=None,
+        set=None,
+    )
+
+    sort: bpy.props.EnumProperty(
+        name="sort",
+        items=_ENUM_SORT_ITEMS,
+        description="Sorting",
+        default="SORT_CEN",
+        update=None,
+        get=None,
+        set=None,
+    )
+
+    attribute_hss: bpy.props.EnumProperty(
+        name="attribute_hss",
+        items=_ENUM_ATTRIBUTE_HSS_ITEMS,
+        description="HSS",
+        default="HSS_ON",
+        update=None,
+        get=None,
+        set=None,
+    )
+
+    attribute_mesh: bpy.props.EnumProperty(
+        name="attribute_mesh",
+        items=_ENUM_ATTRIBUTE_MESH_ITEMS,
+        description="Mesh",
+        default="MESH_OFF",
+        update=None,
+        get=None,
+        set=None,
+    )
+
+    attribute_window: bpy.props.EnumProperty(
+        name="attribute_window",
+        items=_ENUM_ATTRIBUTE_WINDOW_ITEMS,
+        description="Windowing",
+        default="NO_WINDOW",
+        update=None,
+        get=None,
+        set=None,
+    )
+
+    attribute_flip_h: bpy.props.BoolProperty(
+        name="attribute_flip_h", description="Flip texture horizontally"
+    )
+
+    attribute_flip_v: bpy.props.BoolProperty(
+        name="attribute_flip_v", description="Flip texture vertically"
+    )
+
+    attribute_color_mode: bpy.props.EnumProperty(
+        name="attribute_color_mode",
+        items=_ENUM_ATTRIBUTE_COLOR_MODE_ITEMS,
+        description="Color mode",
+        default="CL_16_BANK",
+        update=None,
+        get=None,
+        set=None,
+    )
+
+    attribute_color_calculation: bpy.props.EnumProperty(
+        name="attribute_color_calculation",
+        description="Color calculation",
+        items=_ENUM_ATTRIBUTE_COLOR_CALCULATION_ITEMS,
+        default="CL_REPLACE",
+        update=None,
+        get=None,
+        set=None,
+    )
+
+
+################################################################################
+# Panel
+
+
+class FACE_ATTRIBUTE_PT_Panel(bpy.types.Panel):
+    bl_label = "Sega Saturn face attributes"
+    bl_region_type = "UI"
+    bl_space_type = "VIEW_3D"
+
+    @classmethod
+    def poll(cls, context):
+        # Only allow in edit mode for a selected mesh
+        return (
+            (context.mode == "EDIT_MESH")
+            and context.object is not None
+            and (context.object.type == "MESH")
+        )
+
+    def draw(self, context):
+        layout = self.layout
+
+        obj = context.object
+        mesh = bmesh.from_edit_mesh(obj.data)
+
+        selected_faces = get_selected_faces(mesh)
+        if len(selected_faces) != 0:
+            if len(selected_faces) > 1:
+                layout.label(text="Multiple faces selected.")
+                layout.separator()
+
+            saturn_settings = obj.saturn_settings
+
+            layout.label(text="Settings")
+            box = layout.box()
+            row = box.row()
+            row.prop(saturn_settings, "plane", text="Plane")
+            row = box.row()
+            row.prop(saturn_settings, "sort", text="Sort")
+
+            layout.separator()
+
+            layout.label(text="Attributes")
+            box = layout.box()
+            row = box.row()
+            row.prop(saturn_settings, "attribute_hss", text="HSS")
+            row = box.row()
+            row.prop(saturn_settings, "attribute_mesh", text="Mesh")
+            row = box.row()
+            row.prop(saturn_settings, "attribute_window", text="Windowing")
+
+            layout.separator()
+
+            layout.label(text="Texture settings")
+            box = layout.box()
+            row = box.row()
+            row.prop(saturn_settings, "attribute_color_mode", text="Color mode")
+            row = box.row()
+            column = row.column()
+            column.prop(saturn_settings, "attribute_flip_h", text="Flip horizontally")
+            column = row.column()
+            column.prop(saturn_settings, "attribute_flip_v", text="Flip vertically")
+        else:
+            layout.label(text="No face selected.")
+
+
 # Only needed if you want to add into a dynamic menu
 def menu_func(self, context):
     self.layout.operator_context = "INVOKE_DEFAULT"
     self.layout.operator(ExportSegaSaturnModel.bl_idname, text="Export to Sega Saturn")
 
 
+_CLASSES = (ExportSegaSaturnModel, SaturnObjectSettings, FACE_ATTRIBUTE_PT_Panel)
+
+
 def register():
-    bpy.utils.register_class(ExportSegaSaturnModel)
+    from bpy.utils import register_class
+
+    for cls in _CLASSES:
+        register_class(cls)
+
     bpy.types.TOPBAR_MT_file_export.append(menu_func)
+
+    bpy.types.Object.saturn_settings = bpy.props.PointerProperty(
+        name="Saturn object settings",
+        description="Object Settings",
+        type=SaturnObjectSettings,
+    )
+
+    # bpy.app.handlers.scene_update_post.clear()
 
 
 def unregister():
     bpy.utils.unregister_class(ExportSegaSaturnModel)
 
     bpy.types.TOPBAR_MT_file_export.remove(menu_func)
-    bpy.app.handlers.depsgraph_update_post.clear()
+    # bpy.app.handlers.depsgraph_update_post.clear()
 
 
 # This allows you to run the script directly from blenders text editor to test
