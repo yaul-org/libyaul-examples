@@ -278,7 +278,7 @@ _fill_map_pnd(uint16_t *map, uint16_t page_width, uint16_t page_height, uint16_t
                         cpd = (uint32_t)NBG1_CPD | (tile << 5);
 
                         uint16_t pnd;
-                        pnd = VDP2_SCRN_PND_CONFIG_1(cpd, NBG1_PAL);
+                        pnd = VDP2_SCRN_PND_CONFIG_1(1, cpd, NBG1_PAL);
 
                         map[x + (y * page_width)] = pnd;
                 }

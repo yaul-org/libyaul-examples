@@ -13,6 +13,13 @@
 
 extern uint8_t root_romdisk[];
 
+static vdp2_scrn_ls_format_t _ls_format = {
+        .scroll_screen     = VDP2_SCRN_NBG0,
+        .line_scroll_table = NBG0_LINE_SCROLL,
+        .interval          = 0,
+        .enable            = VDP2_SCRN_LS_HORZ
+};
+
 static void _hardware_init(void);
 
 void
@@ -68,13 +75,7 @@ main(void)
         _xfer_table[3].dst = NBG0_LINE_SCROLL;
         _xfer_table[3].src = SCU_DMA_INDIRECT_TABLE_END | (uint32_t)romdisk_direct(fh[3]);
 
-        vdp2_scrn_ls_format_t ls_format = {
-                .enable = VDP2_SCRN_LS_N0SCX,
-                .interlace_mode = 0,
-                .line_scroll_table = NBG0_LINE_SCROLL
-        };
-
-        vdp2_scrn_ls_set(&ls_format);
+        vdp2_scrn_ls_set(&_ls_format);
 
         int8_t ret __unused;
         ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN,
@@ -93,9 +94,9 @@ main(void)
         dbgio_puts("Line scroll\n");
 
         while (true) {
-                ls_format.line_scroll_table = NBG0_LINE_SCROLL + (i << 2);
+                _ls_format.line_scroll_table = NBG0_LINE_SCROLL + (i << 2);
 
-                vdp2_scrn_ls_set(&ls_format);
+                vdp2_scrn_ls_set(&_ls_format);
                 dbgio_flush();
                 vdp_sync();
 

@@ -155,7 +155,7 @@ _copy_map(const vdp2_scrn_cell_format_t *format)
                         page_idx = page_x + (page_width * page_y);
 
                         uint16_t pnd;
-                        pnd = VDP2_SCRN_PND_CONFIG_1((uint32_t)format->cp_table,
+                        pnd = VDP2_SCRN_PND_CONFIG_1(1, (uint32_t)format->cp_table,
                             (uint32_t)format->color_palette);
 
                         a_pages[0][page_idx] = pnd | num;

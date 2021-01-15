@@ -45,7 +45,7 @@ extern uint8_t root_romdisk[];
 static int32_t _state_zoom = STATE_ZOOM_MOVE_ORIGIN;
 static int16_vec2_t _display = INT16_VEC2_INITIALIZER(ZOOM_POINT_WIDTH, ZOOM_POINT_HEIGHT);
 static int16_vec2_t _zoom_point = INT16_VEC2_INITIALIZER(0, 0);
-static uint16_t _zoom_point_value = CMDT_ZOOM_POINT_CENTER;
+static uint16_t _zoom_point_value = VDP1_CMDT_ZOOM_POINT_CENTER;
 static uint32_t _delay_frames = 0;
 static smpc_peripheral_digital_t _digital;
 
@@ -417,7 +417,7 @@ _state_zoom_move_origin(void)
         _display.x = ZOOM_POINT_WIDTH - 1;
         _display.y = ZOOM_POINT_HEIGHT - 1;
 
-        _zoom_point_value = CMDT_ZOOM_POINT_CENTER;
+        _zoom_point_value = VDP1_CMDT_ZOOM_POINT_CENTER;
         _zoom_point.x = 0;
         _zoom_point.y = 0;
 
@@ -484,39 +484,39 @@ _state_zoom_move_anchor(void)
         y_down = _polygon_pointer.position.y > 0;
 
         if (x_center && y_up) {
-                _zoom_point_value = CMDT_ZOOM_POINT_UPPER_CENTER;
+                _zoom_point_value = VDP1_CMDT_ZOOM_POINT_UPPER_CENTER;
                 _zoom_point.x = 0;
                 _zoom_point.y = -((ZOOM_POINT_HEIGHT / 2) - 1);
         } else if (x_center && y_down) {
-                _zoom_point_value = CMDT_ZOOM_POINT_LOWER_CENTER;
+                _zoom_point_value = VDP1_CMDT_ZOOM_POINT_LOWER_CENTER;
                 _zoom_point.x = 0;
                 _zoom_point.y = ZOOM_POINT_HEIGHT / 2;
         } else if (y_center && x_left) {
-                _zoom_point_value = CMDT_ZOOM_POINT_CENTER_LEFT;
+                _zoom_point_value = VDP1_CMDT_ZOOM_POINT_CENTER_LEFT;
                 _zoom_point.x = -((ZOOM_POINT_WIDTH / 2) - 1);
                 _zoom_point.y = 0;
         } else if (y_center && x_right) {
-                _zoom_point_value = CMDT_ZOOM_POINT_CENTER_RIGHT;
+                _zoom_point_value = VDP1_CMDT_ZOOM_POINT_CENTER_RIGHT;
                 _zoom_point.x = ZOOM_POINT_WIDTH / 2;
                 _zoom_point.y = 0;
         } else if (y_up && x_left) {
-                _zoom_point_value = CMDT_ZOOM_POINT_UPPER_LEFT;
+                _zoom_point_value = VDP1_CMDT_ZOOM_POINT_UPPER_LEFT;
                 _zoom_point.x = -((ZOOM_POINT_WIDTH / 2) - 1);
                 _zoom_point.y = -((ZOOM_POINT_HEIGHT / 2) - 1);
         } else if (y_up && x_right) {
-                _zoom_point_value = CMDT_ZOOM_POINT_UPPER_RIGHT;
+                _zoom_point_value = VDP1_CMDT_ZOOM_POINT_UPPER_RIGHT;
                 _zoom_point.x = ZOOM_POINT_WIDTH / 2;
                 _zoom_point.y = -((ZOOM_POINT_HEIGHT / 2) - 1);
         } else if (y_down && x_left) {
-                _zoom_point_value = CMDT_ZOOM_POINT_LOWER_LEFT;
+                _zoom_point_value = VDP1_CMDT_ZOOM_POINT_LOWER_LEFT;
                 _zoom_point.x = -((ZOOM_POINT_WIDTH / 2) - 1);
                 _zoom_point.y = ZOOM_POINT_HEIGHT / 2;
         } else if (y_down && x_right) {
-                _zoom_point_value = CMDT_ZOOM_POINT_LOWER_RIGHT;
+                _zoom_point_value = VDP1_CMDT_ZOOM_POINT_LOWER_RIGHT;
                 _zoom_point.x = ZOOM_POINT_WIDTH / 2;
                 _zoom_point.y = ZOOM_POINT_HEIGHT / 2;
         } else if (x_center && y_center) {
-                _zoom_point_value = CMDT_ZOOM_POINT_CENTER;
+                _zoom_point_value = VDP1_CMDT_ZOOM_POINT_CENTER;
                 _zoom_point.x = 0;
                 _zoom_point.y = 0;
         }
