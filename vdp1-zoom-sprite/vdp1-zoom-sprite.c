@@ -39,6 +39,9 @@
 #define ORDER_DRAW_END_INDEX                6
 #define ORDER_COUNT                         7
 
+#define ANIMATION_FRAME_COUNT    (14)
+#define ANIMATION_FRAME_DURATION (3)
+
 extern uint8_t root_romdisk[];
 
 /* Zoom state */
@@ -57,8 +60,8 @@ static struct {
 } _polygon_pointer;
 
 static struct {
-        fix16_t anim_rate;
-        fix16_t anim_rate_dir;
+        uint16_t anim_frame;
+        uint16_t anim_counter;
 
         uint16_t *tex_base;
         uint16_t *pal_base;
@@ -306,8 +309,8 @@ _frame_time_calculate(void)
 static void
 _sprite_init(void)
 {
-        _sprite.anim_rate = FIX16(0.0f);
-        _sprite.anim_rate_dir = FIX16(1.0f);
+        _sprite.anim_frame = 0;
+        _sprite.anim_counter = 0;
 
         _sprite.tex_base = _vdp1_vram_partitions.texture_base;
         _sprite.pal_base = (void *)VDP2_CRAM_MODE_1_OFFSET(1, 0, 0x0000);
@@ -354,8 +357,8 @@ _sprite_init(void)
 static void
 _sprite_config(void)
 {
-        uint32_t offset __unused;
-        offset = fix16_int32_to(_sprite.anim_rate) * (ZOOM_POINT_WIDTH * ZOOM_POINT_HEIGHT);
+        const uint32_t offset =
+            _sprite.anim_frame * (ZOOM_POINT_WIDTH * ZOOM_POINT_HEIGHT);
 
         vdp1_cmdt_param_char_base_set(_sprite.cmdt, (uint32_t)_sprite.tex_base + offset);
 
@@ -363,14 +366,15 @@ _sprite_config(void)
         vdp1_cmdt_param_vertex_set(_sprite.cmdt, CMDT_VTX_ZOOM_SPRITE_POINT, &_zoom_point);
         vdp1_cmdt_param_vertex_set(_sprite.cmdt, CMDT_VTX_ZOOM_SPRITE_DISPLAY, &_display);
 
-        _sprite.anim_rate += _sprite.anim_rate_dir * FIX16(0.25f);
+        if (_sprite.anim_counter == 0) {
+                _sprite.anim_counter = ANIMATION_FRAME_DURATION;
 
-        if (_sprite.anim_rate <= FIX16(0.0f)) {
-                _sprite.anim_rate_dir = -_sprite.anim_rate_dir;
-                _sprite.anim_rate = FIX16(1.0f);
-        } else if (fix16_abs(_sprite.anim_rate) >= FIX16(13.0f)) {
-                _sprite.anim_rate_dir = -_sprite.anim_rate_dir;
-                _sprite.anim_rate = FIX16(12.0f);
+                _sprite.anim_frame++;
+                if (_sprite.anim_frame >= ANIMATION_FRAME_COUNT) {
+                        _sprite.anim_frame = 0;
+                }
+        } else {
+                _sprite.anim_counter--;
         }
 }
 
