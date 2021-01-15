@@ -12,14 +12,14 @@ include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 # quake_split.s3d.o
 # sonic.s3d.o
 
-MODEL_SH_OBJECT?= quake_split
+MODEL_SH_OBJECT?= cube
 
 SH_PROGRAM:= vdp1-sega3d
-SH_OBJECTS:= vdp1-sega3d.o textures.tex.o $(MODEL_SH_OBJECT).s3d.o
+SH_OBJECTS:= vdp1-sega3d.o textures.tex.o $(MODEL_SH_OBJECT).s3d.o root.romdisk.o
 
 # Important, libsega3d must be included
 SH_LIBRARIES:= sega3d
-SH_CFLAGS+= -O2 -I. -save-temps
+SH_CFLAGS+= -O2 -I. -save-temps -ggdb3
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

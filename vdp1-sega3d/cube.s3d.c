@@ -29,10 +29,11 @@ static ATTR attribute_cube1[] = {
         ATTRIBUTE(Dual_Plane, SORT_CEN, No_Texture, C_RGB(31,  0, 31), No_Gouraud, MESHoff, sprPolygon, No_Option),
 };
 
-PDATA PD_CUBE1 = {
+XPDATA PD_CUBE1 = {
         point_cube1,
         sizeof(point_cube1) / sizeof(POINT), 
         polygon_cube1,
         sizeof(polygon_cube1) / sizeof(POLYGON), 
-        attribute_cube1
+        attribute_cube1,
+        NULL
 };
