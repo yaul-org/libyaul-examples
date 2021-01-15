@@ -16,13 +16,28 @@
 
 extern uint8_t root_romdisk[];
 
-static void _hardware_init(void);
+static const vdp2_scrn_bitmap_format_t format = {
+        .scroll_screen       = VDP2_SCRN_RBG0,
+        .cc_count            = VDP2_SCRN_CCC_RGB_32768,
+        .bitmap_size         = { 512, 256 },
+        .color_palette       = 0x00000000,
+        .bitmap_pattern      = RBG0_BPD,
+        .rp_mode             = 0,
+        .sf_type             = VDP2_SCRN_SF_TYPE_NONE,
+        .sf_code             = VDP2_SCRN_SF_CODE_A,
+        .sf_mode             = 0,
+        .rotation_table_base = RBG0_ROTATION_TABLE,
+        .usage_banks         = {
+                .a0 = VDP2_VRAM_USAGE_TYPE_BPD,
+                .a1 = VDP2_VRAM_USAGE_TYPE_BPD,
+                .b0 = VDP2_VRAM_USAGE_TYPE_NONE,
+                .b1 = VDP2_VRAM_USAGE_TYPE_NONE
+        }
+};
 
 int
 main(void)
 {
-        _hardware_init();
-
         romdisk_init();
 
         void *romdisk;
@@ -124,30 +139,12 @@ main(void)
         return 0;
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
-        const vdp2_scrn_bitmap_format_t format = {
-                .scroll_screen = VDP2_SCRN_RBG0,
-                .cc_count = VDP2_SCRN_CCC_RGB_32768,
-                .bitmap_size = {
-                        512,
-                        256
-                },
-                .color_palette = 0x00000000,
-                .bitmap_pattern = RBG0_BPD,
-                .rp_mode = 0,
-                .sf_type = VDP2_SCRN_SF_TYPE_NONE,
-                .sf_code = VDP2_SCRN_SF_CODE_A,
-                .sf_mode = 0,
-                .rotation_table_base = RBG0_ROTATION_TABLE,
-                .usage_banks = {
-                        .a0 = VDP2_VRAM_USAGE_TYPE_BPD,
-                        .a1 = VDP2_VRAM_USAGE_TYPE_BPD,
-                        .b0 = VDP2_VRAM_USAGE_TYPE_NONE,
-                        .b1 = VDP2_VRAM_USAGE_TYPE_NONE
-                }
-        };
+        /* Force clear the TV display so we can draw */
+        vdp2_tvmd_display_clear();
+        vdp_sync();
 
         vdp2_scrn_bitmap_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);
