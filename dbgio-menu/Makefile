@@ -8,7 +8,7 @@ SH_PROGRAM:= dbgio-menu
 SH_OBJECTS:= dbgio-menu.o ../shared/menu/menu.o
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps
+SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps=obj
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

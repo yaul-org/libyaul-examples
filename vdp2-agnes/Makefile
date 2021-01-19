@@ -8,7 +8,7 @@ SH_PROGRAM:= vdp2-agnes
 SH_OBJECTS:= vdp2-agnes.o
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -save-temps -Wno-error
+SH_CFLAGS+= -O2 -I. -save-temps=obj -Wno-error
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

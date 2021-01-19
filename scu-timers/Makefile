@@ -11,7 +11,7 @@ SH_OBJECTS:= \
 	scu-timers.o
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -save-temps
+SH_CFLAGS+= -O2 -I. -save-temps=obj
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

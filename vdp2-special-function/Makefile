@@ -11,7 +11,7 @@ SH_OBJECTS:= \
 	vdp2-special-function.o \
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -save-temps
+SH_CFLAGS+= -O2 -I. -save-temps=obj
 
 IP_VERSION:= V0.001
 IP_RELEASE_DATE:= 20180214

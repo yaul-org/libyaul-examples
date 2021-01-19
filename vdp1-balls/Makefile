@@ -11,7 +11,7 @@ SH_OBJECTS:= \
 	balls.o
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -I. -Wno-error=unused-variable -Wno-error -O2 -save-temps
+SH_CFLAGS+= -I. -Wno-error=unused-variable -Wno-error -O2 -save-temps=obj
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

@@ -8,7 +8,7 @@ SH_PROGRAM:= dbgio-usb-cart
 SH_OBJECTS:= dbgio-usb-cart.o
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps
+SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps=obj
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
