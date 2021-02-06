@@ -28,14 +28,6 @@
 #define ORDER_SEGA3D_INDEX              (3)
 #define ORDER_BASE_COUNT                (3)
 
-extern XPDATA PD_CUBE1[];
-
-extern Uint16 GR_SMS[];
-extern XPDATA PD_SMS3[];
-
-extern TEXTURE TEX_SAMPLE[];
-extern PICTURE PIC_SAMPLE[];
-
 extern uint8_t root_romdisk[];
 
 static void _vblank_in_handler(void *);
@@ -45,7 +37,6 @@ static void _frt_ovi_handler(void);
 static void _timing_start(void) __used;
 static fix16_t _timing_get(void) __used;
 static void _timing_print(const fix16_t time) __used;
-static void _assets_copy(const sega3d_object_t *object) __used;
 
 static smpc_peripheral_digital_t _digital;
 
@@ -56,51 +47,8 @@ static vdp1_cmdt_orderlist_t _cmdt_orderlist[VDP1_VRAM_CMDT_COUNT] __aligned(0x2
 static vdp1_cmdt_t *_cmdts;
 
 static TEXTURE _textures[64];
-/* static PALETTE _palettes[64]; */
 
 static vdp1_vram_partitions_t _vram_partitions;
-
-static void
-_divu_ovfi_handler(void)
-{
-}
-
-static void
-_dma_illegal_handler(void)
-{
-}
-
-static const POINT _origins[] __unused = {
-        /* POStoFIXED(0.0f, 0.0f, 0.0f) */
-        POStoFIXED(-327.74971146245036,    -99.7805595454549,     -25.0098638142293),
-        POStoFIXED( 318.41509807355493,    -99.33722744308275,    -18.493731033274976),
-        POStoFIXED(   1.7962270085470124,  -65.39568931623924,    278.1383482905985),
-        POStoFIXED(   0.8227719548872167,    2.4680098872181877, -406.55613283208095),
-        POStoFIXED( -25.937490530973417,  -113.62659061946981,    -48.8466574778761)
-};
-
-static const FIXED _radii[] __unused = {
-        /* toFIXED(34.64101615137755f * 1.1), */
-        toFIXED(247.93746824610838 * 1.1),
-        toFIXED(257.88756123558966 * 1.1),
-        toFIXED(248.99245032794167 * 1.1),
-        toFIXED(397.2539339012265  * 1.1),
-        toFIXED(336.20933973982636 * 1.1)
-};
-
-static void __unused
-_ztp_tex_fn(sega3d_ztp_handle_t *handle __unused, const sega3d_ztp_tex_t *tex)
-{
-        const TEXTURE * const texture = tex->texture;
-        void *vram = (void *)(VDP1_VRAM(0) | (texture->CGadr << 3));
-
-        dma_queue_simple_enqueue(DMA_QUEUE_TAG_IMMEDIATE, vram, tex->offset_cg, tex->cg_size);
-
-        void *palette = (void *)(VDP1_VRAM(0) | (tex->palette_num << 3));
-        dma_queue_simple_enqueue(DMA_QUEUE_TAG_IMMEDIATE, palette, tex->offset_palette, tex->palette_size);
-
-        dma_queue_flush(DMA_QUEUE_TAG_IMMEDIATE);
-}
 
 typedef struct {
         char sig[4];
@@ -126,15 +74,11 @@ main(void)
         sega3d_display_level_set(3);
 
         sega3d_tlist_set(_textures, 64);
-        /* sega3d_plist_set(_palettes, 64); */
 
         /* Set up global command table list */
         _cmdts = memalign(sizeof(vdp1_cmdt_t) * VDP1_VRAM_CMDT_COUNT, sizeof(vdp1_cmdt_t));
         assert(_cmdts != NULL);
-
         /* Set up the first few command tables */
-        int16_vec2_t p __unused;
-        int16_vec2_zero(&p);
         vdp1_env_preamble_populate(&_cmdts[0], NULL);
 
         vdp1_cmdt_orderlist_init(_cmdt_orderlist, VDP1_VRAM_CMDT_COUNT);
@@ -149,8 +93,6 @@ main(void)
 
         static XPDATA xpdatas_cube[1];
 
-        (void)memcpy(&xpdatas_cube[0], PD_CUBE1, sizeof(XPDATA));
-
         sega3d_object_t object;
         object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME | SEGA3D_OBJECT_FLAGS_CULL_SCREEN | SEGA3D_OBJECT_FLAGS_CULL_AABB | SEGA3D_OBJECT_FLAGS_FOG_EXCLUDE;
         object.xpdatas = xpdatas_cube;
@@ -159,39 +101,7 @@ main(void)
         void *romdisk;
         romdisk = romdisk_mount("/", root_romdisk);
         assert(romdisk != NULL);
-#if ZTP
-        static XPDATA xpdatas[1];
-        void *fh;
-        fh = romdisk_open(romdisk, "/SONIC2.ZTP");
-        assert(fh != NULL);
 
-        void * const ptr = romdisk_direct(fh);
-        sega3d_ztp_t ztp __unused;
-
-        static ATTR attrs[512];
-        static sega3d_cull_aabb_t ztp_aabb;
-
-        ztp.data = ptr;
-        ztp.flags = SEGA3D_ZTP_FLAG_USE_AABB;
-        ztp.xpdatas = &xpdatas[0];
-        ztp.attrs = attrs;
-        ztp.texture_num = 0;
-        ztp.palette_num = (uint32_t)_vram_partitions.clut_base >> 3; 
-        ztp.cull_shape = &ztp_aabb;
-
-        sega3d_ztp_handle_t handle;
-        handle = sega3d_ztp_parse(&object, &ztp);
-
-        sega3d_ztp_textures_parse(&handle, _vram_partitions.texture_base, _ztp_tex_fn);
-
-        for (uint32_t i = 0; i < xpdatas[0].nbPolygon; i++) {
-                ATTR * const attr __unused = &xpdatas[0].attbl[i];
-                /* dbgio_printf("attr->sort: 0x%02X\n", attr->sort & 0x3); */
-        }
-
-        dma_queue_flush(DMA_QUEUE_TAG_IMMEDIATE);
-        dma_queue_flush_wait();
-#else
         void *fh;
         fh = romdisk_open(romdisk, "/XPDATA.DAT");
         assert(fh != NULL);
@@ -199,7 +109,7 @@ main(void)
         void * const ptr = romdisk_direct(fh);
 
         static sega3d_cull_aabb_t aabb;
-
+
         sega3d_s3d_t * const s3d = ptr;
         XPDATA * const xpdatas = (void *)((uintptr_t)ptr + sizeof(sega3d_s3d_t));
         sega3d_s3d_aux_t * const s3d_auxs = (void *)((uintptr_t)ptr + sizeof(sega3d_s3d_t) + (s3d->xpdata_count * sizeof(XPDATA)));
@@ -223,26 +133,29 @@ main(void)
                     s3d_auxs[j].gouraud_table_count * 8);
         }
 
-        object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME | SEGA3D_OBJECT_FLAGS_CULL_SCREEN | SEGA3D_OBJECT_FLAGS_FOG_EXCLUDE;
+        object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME |
+                       SEGA3D_OBJECT_FLAGS_CULL_SCREEN |
+                       SEGA3D_OBJECT_FLAGS_FOG_EXCLUDE;
         object.xpdatas = xpdatas;
         object.xpdata_count = s3d->xpdata_count;
         object.cull_shape = &aabb;
-#endif
-
-        /* _assets_copy(&object); */
-
+
         ANGLE rot[XYZ] __unused;
         rot[X] = DEGtoANG(0.0f);
         rot[Y] = DEGtoANG(0.0f);
         rot[Z] = DEGtoANG(0.0f);
 
-        sega3d_results_t results __unused;
+        sega3d_results_t results;
 
         POINT camera_pos;
         VECTOR rot_x;
         VECTOR rot_y;
         VECTOR rot_z;
-        camera_pos[X] = camera_pos[Y] = camera_pos[Z] = toFIXED(0.0f);
+
+        camera_pos[X] = toFIXED(0.0f);
+        camera_pos[Y] = toFIXED(0.0f);
+        camera_pos[Z] = toFIXED(-100.0f);
+
         rot_x[X] = rot_x[Y] = rot_x[Z] = toFIXED(0.0f);
         rot_y[X] = rot_y[Y] = rot_y[Z] = toFIXED(0.0f);
         rot_z[X] = rot_z[Y] = rot_z[Z] = toFIXED(0.0f);
@@ -250,7 +163,6 @@ main(void)
         rot_x[X] = toFIXED(1.0f);
         rot_y[Y] = toFIXED(1.0f);
         rot_z[Z] = toFIXED(1.0f);
-        camera_pos[Z] = toFIXED(-100.0f);
 
         while (true) {
                 smpc_peripheral_process();
@@ -307,16 +219,6 @@ main(void)
 
                 dbgio_flush();
                 vdp_sync();
-
-                /* dbgio_printf("_vblanks: %u, object/polygon: %lu/%lu, 0x%02X, (%f,%f,%f)\n", */
-                /*     _vblanks, */
-                /*     results.object_count, */
-                /*     results.polygon_count, */
-                /*     object.flags, */
-                /*     camera_pos[X], */
-                /*     camera_pos[Y], */
-                /*     camera_pos[Z]); */
-                /* dbgio_flush(); */
         }
 }
 
@@ -348,9 +250,6 @@ user_init(void)
         cpu_frt_init(CPU_FRT_CLOCK_DIV_128);
         cpu_frt_ovi_set(_frt_ovi_handler);
 
-        cpu_divu_ovfi_set(_divu_ovfi_handler);
-        scu_dma_illegal_set(_dma_illegal_handler);
-
         cpu_cache_purge();
 
         cpu_intc_mask_set(0);
@@ -365,7 +264,6 @@ user_init(void)
 void
 _vblank_in_handler(void *work __unused)
 {
-        /* dbgio_flush(); */
 }
 
 static void
@@ -377,6 +275,7 @@ _vblank_out_handler(void *work __unused)
 
         if (_vblanks > 1024) {
                 cpu_intc_mask_set(0);
+
                 smpc_smc_resenab_call();
                 smpc_smc_sysres_call();
 
@@ -416,32 +315,4 @@ static void
 _timing_print(const fix16_t time __unused)
 {
         dbgio_printf("time: %fms, ticks: %li\n", time, time);
-}
-
-static void
-_assets_copy(const sega3d_object_t *object __unused)
-{
-        /* const uint16_t polygon_count __unused = */
-        /*     sega3d_object_polycount_get(object); */
-
-        /* (void)memcpy((uint16_t *)VDP1_VRAM(0x2BFE0), */
-        /*     GR_SMS, */
-        /*     sizeof(vdp1_gouraud_table_t) * polygon_count); */
-
-        /* vdp1_vram_partitions_t vdp1_vram_parts; */
-        /* vdp1_vram_partitions_get(&vdp1_vram_parts); */
-
-        /* for (uint32_t i = 0; i < 2; i++) { */
-        /*         const PICTURE *picture; */
-        /*         picture = &PIC_SAMPLE[i]; */
-        /*         const TEXTURE *texture; */
-        /*         texture = &TEX_SAMPLE[picture->texno]; */
-
-        /*         const uint32_t vram_ptr = VDP1_VRAM(texture->CGadr << 3); */
-
-        /*         const uint32_t size = */
-        /*             (texture->Hsize * texture->Vsize * 4) >> picture->cmode; */
-
-        /*         (void)memcpy((void *)vram_ptr, picture->pcsrc, size); */
-        /* } */
 }

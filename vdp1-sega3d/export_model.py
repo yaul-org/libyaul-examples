@@ -479,9 +479,9 @@ def pack_attribute(attribute):
     # ATTR::dir  -> (d) & 0x3F
     attr_dir = attribute.flip_dir.value | attribute.primitive_type.value
 
-    # UseTexture      (1 << 2)
-    # UseLight        (1 << 3)
-    # UsePalette      (1 << 5)
+    # UseTexture  = (1 << 2)
+    # UseLight    = (1 << 3)
+    # UsePalette  = (1 << 5)
     #
     # sprHflip    = (1 << 4) | FUNC_Texture | (UseTexture << 16)
     # sprVflip    = (1 << 5) | FUNC_Texture | (UseTexture << 16)
