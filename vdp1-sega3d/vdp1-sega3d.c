@@ -145,7 +145,7 @@ main(void)
         _cmdt_orderlist[3].cmdt = &_cmdts[3];
 
         vdp1_cmdt_orderlist_vram_patch(_cmdt_orderlist,
-            VDP1_VRAM(0), VDP1_VRAM_CMDT_COUNT);
+            (const vdp1_cmdt_t *)VDP1_VRAM(0), VDP1_VRAM_CMDT_COUNT);
 
         static XPDATA xpdatas_cube[1];
 
