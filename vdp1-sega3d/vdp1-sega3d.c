@@ -114,11 +114,14 @@ main(void)
         XPDATA * const xpdatas = (void *)((uintptr_t)ptr + sizeof(sega3d_s3d_t));
         sega3d_s3d_aux_t * const s3d_auxs = (void *)((uintptr_t)ptr + sizeof(sega3d_s3d_t) + (s3d->xpdata_count * sizeof(XPDATA)));
 
+        vdp1_gouraud_table_t *gouraud_base;
+        gouraud_base = _vram_partitions.gouraud_base;
+
         for (uint32_t j = 0; j < s3d->xpdata_count; j++) {
                 /* Patch offsets */
                 s3d_auxs[j].gouraud_table = (void *)((uintptr_t)s3d_auxs[j].gouraud_table + (uintptr_t)ptr);
                 s3d_auxs[j].cg = (void *)((uintptr_t)s3d_auxs[j].cg + (uintptr_t)ptr);
-                
+
                 xpdatas[j].pntbl = (void *)((uintptr_t)xpdatas[j].pntbl + (uintptr_t)ptr);
                 xpdatas[j].pltbl = (void *)((uintptr_t)xpdatas[j].pltbl + (uintptr_t)ptr);
                 xpdatas[j].attbl = (void *)((uintptr_t)xpdatas[j].attbl + (uintptr_t)ptr);
@@ -128,9 +131,10 @@ main(void)
                         xpdatas[j].attbl[i].gstb += (uintptr_t)_vram_partitions.gouraud_base >> 3;
                 }
 
-                (void)memcpy(_vram_partitions.gouraud_base + (j * (s3d_auxs[j].gouraud_table_count * 8)),
-                    s3d_auxs[j].gouraud_table,
-                    s3d_auxs[j].gouraud_table_count * 8);
+                (void)memcpy(gouraud_base, s3d_auxs[j].gouraud_table,
+                    s3d_auxs[j].gouraud_table_count * sizeof(vdp1_gouraud_table_t));
+
+                gouraud_base += s3d_auxs[j].gouraud_table_count;
         }
 
         object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME |
