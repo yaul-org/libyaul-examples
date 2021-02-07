@@ -1,4 +1,5 @@
 /*/.rtags/
+/*/.ccls-cache/
 /*/cd/
 /*/*.BIN
 /*/*.asm
@@ -10,9 +11,8 @@
 /*/*.ii
 /*/*.iso
 /*/*.map
-/*/*.map
 /*/*.o
 /*/*.romdisk
-/*/*.sym
 /*/*.s
+/*/*.sym
 compile_commands.json
