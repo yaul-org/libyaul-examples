@@ -27,20 +27,36 @@ from .utilities import *
 
 
 class S3DExporter(bpy.types.Operator, Logger):
-    # get_id("exporter_tip")
-    # bl_idname = "export_scene.s3d"
-    # bl_label = get_id("exporter_title")
-    bl_idname = "export_scene.s3d"
-    bl_label = "Export S3D"
+    get_id("exporter_tip")
+    bl_idname = "export_scene.smd"
+    bl_label = get_id("exporter_title")
+
+    export_scene: bpy.props.BoolProperty(
+        name=get_id("scene_export"),
+        description=get_id("exporter_prop_scene_tip"),
+        default=False,
+    )
 
     @classmethod
     def poll(cls, context):
-        return len(context.scene.vs.export_list)
+        return len(context.scene.s3d.export_list)
 
     def invoke(self, context, event):
         # scene_update(context.scene, immediate=True)
-        # ops.wm.call_menu(name="S3D_MT_ExportChoice")
+        ops.wm.call_menu(name="S3D_MT_ExportChoice")
         return {"PASS_THROUGH"}
 
     def execute(self, context):
+        if not context.scene.s3d.export_path:
+            bpy.ops.wm.call_menu(name="S3D_MT_ConfigureScene")
+            return {"CANCELLED"}
+        if (
+            context.scene.s3d.export_path.startswith("//")
+            and not context.blend_data.filepath
+        ):
+            self.report({"ERROR"}, get_id("exporter_err_relativeunsaved"))
+            return {"CANCELLED"}
+        if self.export_scene:
+            print("Executing")
+        self.export_scene = False
         return {"FINISHED"}
