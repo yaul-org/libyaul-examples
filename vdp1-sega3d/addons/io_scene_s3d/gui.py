@@ -25,7 +25,7 @@ class S3D_MT_ConfigureScene(bpy.types.Menu):
     def draw(self, context):
         self.layout.label(text=get_id("exporter_err_unconfigured"))
         S3D_PT_Scene.HelpButton(self.layout)
-
+    
 
 class S3D_PT_Scene(bpy.types.Panel):
     bl_label = get_id("exportpanel_title")

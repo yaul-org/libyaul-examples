@@ -18,7 +18,7 @@
 # fmt: off
 bl_info = {
     "name":        "Sega Saturn 3D Tools (.s3d)",
-    "author":      "Israel Jacquez",
+    "author":      "Israel Jacquez, Tom Edwards",
     "version":     (1, 0, 0),
     "blender":     (2, 80, 0),
     "location":    "File > Import/Export",

@@ -25,6 +25,7 @@ import sys
 import builtins
 import itertools
 
+from bpy.app.handlers import depsgraph_update_post, persistent
 from bpy.app.translations import pgettext
 from mathutils import Matrix, Vector, Euler, Quaternion
 from math import *
@@ -37,8 +38,11 @@ EXPORTABLE_TYPES = (
 # fmt: on
 
 
-global exportables
-exportables = globals().get("exportables", set())
+global g_exportables
+g_exportables = globals().get("g_exportables", set())
+
+# Local
+_g_last_export_refresh = 0
 
 
 def get_id(id, format_string=False, data=False):
@@ -58,7 +62,11 @@ def count_exports(context):
     return count
 
 
-def make_object_icon(object, prefix=None, suffix=None):
+def get_file_extension():
+    return ".s3d"
+
+
+def _make_object_icon(object, prefix=None, suffix=None):
     if not (prefix or suffix):
         raise TypeError("A prefix or suffix is required")
 
@@ -76,11 +84,7 @@ def make_object_icon(object, prefix=None, suffix=None):
     return out
 
 
-def get_file_extension():
-    return ".s3d"
-
-
-def make_export_list():
+def _make_export_list():
     s = bpy.context.scene
     s.s3d.export_list.clear()
 
@@ -90,8 +94,8 @@ def make_export_list():
             (name if name else item.name) + get_file_extension(),
         )
 
-    if len(exportables):
-        ungrouped_objects = exportables.copy()
+    if len(g_exportables):
+        ungrouped_objects = g_exportables.copy()
 
         groups_sorted = bpy.data.collections[:]
         groups_sorted.sort(key=lambda g: g.name.lower())
@@ -102,7 +106,7 @@ def make_export_list():
             i_name = i_type = i_icon = None
             if ob.type == "MESH":
                 i_name = make_display_name(ob)
-                i_icon = make_object_icon(ob, prefix="OUTLINER_OB_")
+                i_icon = _make_object_icon(ob, prefix="OUTLINER_OB_")
                 i_type = "OBJECT"
             if i_name:
                 i = s.s3d.export_list.add()
@@ -112,26 +116,21 @@ def make_export_list():
                 i.item_name = ob.name
 
 
-from bpy.app.handlers import depsgraph_update_post, persistent
-
-last_export_refresh = 0
-
-
 @persistent
 def scene_update(scene, immediate=False):
-    global last_export_refresh
-    global exportables
+    global _g_last_export_refresh
+    global g_exportables
 
     if not hasattr(scene, "s3d"):
         return
 
-    exportables = set([ob for ob in scene.objects if ob.type in EXPORTABLE_TYPES])
+    g_exportables = set([ob for ob in scene.objects if ob.type in EXPORTABLE_TYPES])
 
     now = time.time()
 
-    if immediate or now - last_export_refresh > 0.25:
-        make_export_list()
-        last_export_refresh = now
+    if immediate or now - _g_last_export_refresh > 0.25:
+        _make_export_list()
+        _g_last_export_refresh = now
 
 
 def hook_scene_update():
