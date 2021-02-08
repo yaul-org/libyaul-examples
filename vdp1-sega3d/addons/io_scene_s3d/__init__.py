@@ -237,9 +237,8 @@ def register():
     hook_scene_update()
 
     bpy.app.handlers.load_post.append(scene_load_post)
-    depsgraph_update_post.append(
-        scene_load_post
-    )  # Handles enabling the add-on after the scene is loaded
+    # Handles enabling the addon after the scene is loaded
+    depsgraph_update_post.append(scene_load_post)
 
     def make_pointer(prop_type):
         return PointerProperty(name=get_id("settings_prop"), type=prop_type)

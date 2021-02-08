@@ -73,7 +73,7 @@ def count_exports(context):
         if (
             id
             and id.s3d.export
-            and (type(id) != bpy.types.Collection or not id.s3d.mute)
+            and ((type(id) != bpy.types.Collection) or not id.s3d.mute)
         ):
             count += 1
     return count
