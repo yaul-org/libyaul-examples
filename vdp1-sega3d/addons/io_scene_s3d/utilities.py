@@ -57,7 +57,11 @@ def count_exports(context):
     count = 0
     for exportable in context.scene.s3d.export_list:
         id = exportable.get_id()
-        if id and id.vs.export and (type(id) != bpy.types.Collection or not id.vs.mute):
+        if (
+            id
+            and id.s3d.export
+            and (type(id) != bpy.types.Collection or not id.s3d.mute)
+        ):
             count += 1
     return count
 
@@ -66,14 +70,50 @@ def get_file_extension():
     return ".s3d"
 
 
-def _make_object_icon(object, prefix=None, suffix=None):
+def get_active_exportable(context=None):
+    if not context:
+        context = bpy.context
+
+    if not context.scene.s3d.export_list_active < len(context.scene.s3d.export_list):
+        return None
+
+    return context.scene.s3d.export_list[context.scene.s3d.export_list_active]
+
+
+def get_exportables_for_id(id):
+    if not id:
+        raise ValueError("id is null")
+    out = set()
+    for exportable in bpy.context.scene.s3d.export_list:
+        if exportable.get_id() == id:
+            return [exportable]
+        if exportable.ob_type == "COLLECTION":
+            collection = exportable.get_id()
+            if not collection.s3d.mute and id.name in collection.objects:
+                out.add(exportable)
+    return list(out)
+
+
+def get_selected_exportables():
+    exportables = set()
+    for ob in bpy.context.selected_objects:
+        exportables.update(get_exportables_for_id(ob))
+    if (len(exportables) == 0) and bpy.context.active_object:
+        a_e = get_exportables_for_id(bpy.context.active_object)
+        if a_e:
+            exportables.update(a_e)
+    return exportables
+
+
+def should_export_group(group):
+    return group.s3d.export and not group.s3d.mute
+
+
+def make_object_icon(object, prefix=None, suffix=None):
     if not (prefix or suffix):
         raise TypeError("A prefix or suffix is required")
 
-    if object.type == "TEXT":
-        type = "FONT"
-    else:
-        type = object.type
+    type = object.type
 
     out = ""
     if prefix:
@@ -100,13 +140,37 @@ def _make_export_list():
         groups_sorted = bpy.data.collections[:]
         groups_sorted.sort(key=lambda g: g.name.lower())
 
+        scene_groups = []
+        for group in groups_sorted:
+            valid = False
+            print("for {} in groups_sorted".format(group))
+            for object in [ob for ob in group.objects if ob in g_exportables]:
+                if not group.s3d.mute and object in ungrouped_objects:
+                    ungrouped_objects.remove(object)
+                valid = True
+            if valid:
+                print("    {} is valid".format(group))
+                scene_groups.append(group)
+
+        for g in scene_groups:
+            i = s.s3d.export_list.add()
+            if g.s3d.mute:
+                i.name = "{} {}".format(
+                    g.name, pgettext(get_id("exportables_group_mute_suffix", True))
+                )
+            else:
+                i.name = make_display_name(g)
+            i.item_name = g.name
+            i.ob_type = "COLLECTION"
+            i.icon = "GROUP"
+
         ungrouped_objects = list(ungrouped_objects)
         ungrouped_objects.sort(key=lambda ob: ob.name.lower())
         for ob in ungrouped_objects:
             i_name = i_type = i_icon = None
             if ob.type == "MESH":
                 i_name = make_display_name(ob)
-                i_icon = _make_object_icon(ob, prefix="OUTLINER_OB_")
+                i_icon = make_object_icon(ob, prefix="OUTLINER_OB_")
                 i_type = "OBJECT"
             if i_name:
                 i = s.s3d.export_list.add()

@@ -291,7 +291,7 @@ _data = {
     },
     "exportables_title": {
         "ja": "SEGA3D Engineのエクスポート可能",
-        "en": "SEGA3D Engine Exportables",
+        "en": "SEGA3D Exportables",
         "ru": "Объекты для SEGA3D",
     },
     "exportables_armature_props": {

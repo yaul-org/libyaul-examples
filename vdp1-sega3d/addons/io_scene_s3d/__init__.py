@@ -77,6 +77,27 @@ from . import export_s3d, gui, translations
 from .utilities import *
 
 
+def export_active_changed(self, context):
+    if not context.scene.s3d.export_list_active < len(context.scene.s3d.export_list):
+        context.scene.s3d.export_list_active = len(context.scene.s3d.export_list) - 1
+        return
+
+    id = get_active_exportable(context).get_id()
+
+    if type(id) == bpy.types.Collection and id.s3d.mute:
+        return
+    for ob in context.scene.objects:
+        ob.select_set(False)
+
+    if type(id) == bpy.types.Collection:
+        context.view_layer.objects.active = id.objects[0]
+        for ob in id.objects:
+            ob.select_set(True)
+    else:
+        id.select_set(True)
+        context.view_layer.objects.active = id
+
+
 class S3D_Exportable(PropertyGroup):
     ob_type: StringProperty()
     icon: StringProperty()
@@ -102,6 +123,9 @@ class S3D_SceneProps(PropertyGroup):
         description=get_id("exportroot_tip"),
         subtype="DIR_PATH",
     )
+    export_list_active: IntProperty(
+        name=get_id("active_exportable"), default=0, min=0, update=export_active_changed
+    )
     export_list: CollectionProperty(
         type=S3D_Exportable, options={"SKIP_SAVE", "HIDDEN"}
     )
@@ -114,6 +138,15 @@ class ExportableProps:
         default=True,
     )
     subdir: StringProperty(name=get_id("subdir"), description=get_id("subdir_tip"))
+
+
+class S3D_CollectionProps(ExportableProps, PropertyGroup):
+    mute: BoolProperty(
+        name=get_id("group_suppress"),
+        description=get_id("group_suppress_tip"),
+        default=False,
+    )
+    selected_item: IntProperty(default=-1, max=-1, min=-1)
 
 
 class S3D_ObjectProps(ExportableProps, PropertyGroup):
@@ -146,20 +179,53 @@ def scene_load_post(_):
             # engine_path_changed(s, bpy.context)
     for ob in bpy.data.objects:
         convert(ob, S3D_ObjectProps, ExportableProps)
-
+    for g in bpy.data.collections:
+        convert(g, S3D_CollectionProps, ExportableProps)
     if scene_load_post in depsgraph_update_post:
         depsgraph_update_post.remove(scene_load_post)
 
 
+# fmt: off
 classes = (
     S3D_Exportable,
     S3D_SceneProps,
+    #
     S3D_ObjectProps,
-    export_s3d.S3DExporter,
+    #
+    S3D_CollectionProps,
+    #
+    #
+    #
+    #
     gui.S3D_MT_ExportChoice,
     gui.S3D_PT_Scene,
     gui.S3D_MT_ConfigureScene,
+    gui.S3D_UL_ExportItems,
+    gui.S3D_UL_GroupItems,
+    #
+    #
+    #
+    #
+    #
+    #
+    gui.S3D_PT_Object_Config,
+    gui.S3D_PT_Group,
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    export_s3d.S3DExporter,
 )
+# fmt: on
 
 
 def register():
@@ -180,6 +246,7 @@ def register():
 
     bpy.types.Scene.s3d = make_pointer(S3D_SceneProps)
     bpy.types.Object.s3d = make_pointer(S3D_ObjectProps)
+    bpy.types.Collection.s3d = make_pointer(S3D_CollectionProps)
 
 
 def unregister():
@@ -193,6 +260,7 @@ def unregister():
 
     del bpy.types.Scene.s3d
     del bpy.types.Object.s3d
+    del bpy.types.Collection.s3d
 
 
 if __name__ == "__main__":
