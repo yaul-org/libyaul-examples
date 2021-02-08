@@ -32,7 +32,7 @@ from .utilities import *
 
 class S3DExporter(bpy.types.Operator, Logger):
     get_id("exporter_tip")
-    bl_idname = "export_scene.smd"
+    bl_idname = "export_scene.s3d"
     bl_label = get_id("exporter_title")
 
     export_scene: bpy.props.BoolProperty(
@@ -134,7 +134,11 @@ class S3DExporter(bpy.types.Operator, Logger):
 
         if type(id) == Collection:
             for i, ob in enumerate(
-                [ob for ob in id.objects if ob.s3d.export and ob in g_exportables]
+                [
+                    ob
+                    for ob in id.objects
+                    if ob.s3d.export and ob in g_cache.valid_objects
+                ]
             ):
                 print("For loop collection: {}, {}".format(i, ob))
 

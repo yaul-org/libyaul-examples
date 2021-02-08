@@ -38,8 +38,21 @@ EXPORTABLE_TYPES = (
 # fmt: on
 
 
-global g_exportables
-g_exportables = globals().get("g_exportables", set())
+class Cache:
+    valid_objects = set()
+    valid_objects_version = 0
+
+    from . import translations
+
+    ids = translations.ids
+
+    @classmethod
+    def __del__(cls):
+        cls.valid_objects.clear()
+
+
+global g_cache
+g_cache = globals().get("g_cache", Cache())
 
 # Local
 _g_last_export_refresh = 0
@@ -134,8 +147,8 @@ def _make_export_list():
             (name if name else item.name) + get_file_extension(),
         )
 
-    if len(g_exportables):
-        ungrouped_objects = g_exportables.copy()
+    if len(g_cache.valid_objects):
+        ungrouped_objects = g_cache.valid_objects.copy()
 
         groups_sorted = bpy.data.collections[:]
         groups_sorted.sort(key=lambda g: g.name.lower())
@@ -143,13 +156,11 @@ def _make_export_list():
         scene_groups = []
         for group in groups_sorted:
             valid = False
-            print("for {} in groups_sorted".format(group))
-            for object in [ob for ob in group.objects if ob in g_exportables]:
+            for object in [ob for ob in group.objects if ob in g_cache.valid_objects]:
                 if not group.s3d.mute and object in ungrouped_objects:
                     ungrouped_objects.remove(object)
                 valid = True
             if valid:
-                print("    {} is valid".format(group))
                 scene_groups.append(group)
 
         for g in scene_groups:
@@ -183,16 +194,17 @@ def _make_export_list():
 @persistent
 def scene_update(scene, immediate=False):
     global _g_last_export_refresh
-    global g_exportables
 
     if not hasattr(scene, "s3d"):
         return
 
-    g_exportables = set([ob for ob in scene.objects if ob.type in EXPORTABLE_TYPES])
+    g_cache.valid_objects = set(
+        [ob for ob in scene.objects if ob.type in EXPORTABLE_TYPES]
+    )
 
     now = time.time()
 
-    if immediate or now - _g_last_export_refresh > 0.25:
+    if immediate or now - _g_last_export_refresh > 0.125:
         _make_export_list()
         _g_last_export_refresh = now
 

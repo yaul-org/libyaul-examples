@@ -47,21 +47,10 @@ class S3D_UL_GroupItems(bpy.types.UIList):
     def filter_items(self, context, data, propname):
         fname = self.filter_name.lower()
 
-        print('fname: "{}", data: {}'.format(fname, data))
-        for i, ob in enumerate(data.objects):
-            print(" data.objects[{}] = {}".format(i, ob))
-        print("g_exportables: {}".format(g_exportables))
-        print("get_active_exportable: {}".format(get_active_exportable()))
-        print("get_selected_exportables: {}".format(get_selected_exportables()))
-
-        # XXX: This is a bit odd. There is supposed to be a check if an
-        #      object within a collection is in g_exportables, but that
-        #      always seems to be invalid
         filtered = [
             (
                 self.bitflag_filter_item
-                if (ob.type == "MESH")
-                and ob.s3d.export
+                if ob in g_cache.valid_objects
                 and (not fname or (fname in ob.name.lower()))
                 else 0
             )
@@ -69,27 +58,7 @@ class S3D_UL_GroupItems(bpy.types.UIList):
         ]
         ordered = bpy.types.UI_UL_list.sort_items_by_name(data.objects)
 
-        print("filtered: {}, ordered: {}".format(filtered, ordered))
-
         return filtered, ordered
-
-        # if not (
-        #     cache
-        #     and cache.fname == fname
-        #     and p_cache.validObs_version == cache.validObs_version
-        # ):
-        #     cache = FilterCache(p_cache.validObs_version)
-        #     cache.filter = [
-        #         self.bitflag_filter_item
-        #         if ob in g_exportables and (not fname or fname in ob.name.lower())
-        #         else 0
-        #         for ob in data.objects
-        #     ]
-        #     cache.order = bpy.types.UI_UL_list.sort_items_by_name(data.objects)
-        #     cache.fname = fname
-        #     gui_cache[data] = cache
-
-        # return cache.filter, cache.order if self.use_filter_sort_alpha else []
 
 
 class S3D_PT_Object_Config(bpy.types.Panel):
@@ -163,7 +132,7 @@ class ExportableConfigurationPanel(bpy.types.Panel):
     def unpack_collection(cls, context):
         item = cls.get_item(context)
         return (
-            g_exportables.intersection(item.objects)
+            g_cache.valid_objects.intersection(item.objects)
             if cls.is_collection(item)
             else [item]
         )
