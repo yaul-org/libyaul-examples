@@ -223,7 +223,7 @@ class Logger:
     def __init__(self):
         self.log_warnings = []
         self.log_errors = []
-        self.startTime = time.time()
+        self.start_time = time.time()
 
     def warning(self, *string):
         message = " ".join(str(s) for s in string)
@@ -246,9 +246,9 @@ class Logger:
                 l.label(text="{}: {}".format(pgettext("Warning").upper(), msg))
 
     def elapsed_time(self):
-        return round(time.time() - self.startTime, 1)
+        return round(time.time() - self.start_time, 1)
 
-    def errorReport(self, message):
+    def error_report(self, message):
         if len(self.log_errors) or len(self.log_warnings):
             message += " with {0} Errors and {1} Warnings".format(
                 len(self.log_errors), len(self.log_warnings)
