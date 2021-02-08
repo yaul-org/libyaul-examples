@@ -32,7 +32,7 @@ from math import *
 
 # fmt: off
 
-EXPORTABLE_TYPES = (
+_G_EXPORTABLE_TYPES = (
     'MESH'
 )
 # fmt: on
@@ -199,7 +199,7 @@ def scene_update(scene, immediate=False):
         return
 
     g_cache.valid_objects = set(
-        [ob for ob in scene.objects if ob.type in EXPORTABLE_TYPES]
+        [ob for ob in scene.objects if ob.type in _G_EXPORTABLE_TYPES]
     )
 
     now = time.time()
