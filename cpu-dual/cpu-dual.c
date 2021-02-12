@@ -29,7 +29,7 @@ main(void)
         _master_counter = 0;
         _slave_counter = 0;
 
-        cpu_dual_init(CPU_DUAL_ENTRY_ICI);
+        cpu_dual_comm_mode_set(CPU_DUAL_ENTRY_ICI);
 
         cpu_dual_master_set(_master_entry);
         cpu_dual_slave_set(_slave_entry);
