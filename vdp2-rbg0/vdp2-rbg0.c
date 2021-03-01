@@ -56,13 +56,9 @@ static const vdp2_scrn_rotation_table_t _rot_tbl __used = {
 
 static scu_dma_xfer_t _xfer_table[4] __aligned(4 * 16);
 
-static void _hardware_init(void);
-
 void
 main(void)
 {
-        _hardware_init();
-
         romdisk_init();
 
         void *romdisk;
@@ -119,8 +115,8 @@ main(void)
         }
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         const vdp2_scrn_cell_format_t format = {
                 .scroll_screen = VDP2_SCRN_RBG0,

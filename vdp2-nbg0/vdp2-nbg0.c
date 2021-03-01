@@ -7,8 +7,6 @@
 
 #include <yaul.h>
 
-static void _hardware_init(void);
-
 static void _copy_character_pattern_data(const vdp2_scrn_cell_format_t *);
 static void _copy_color_palette(const vdp2_scrn_cell_format_t *);
 static void _copy_map(const vdp2_scrn_cell_format_t *);
@@ -16,8 +14,6 @@ static void _copy_map(const vdp2_scrn_cell_format_t *);
 int
 main(void)
 {
-        _hardware_init();
-
         vdp2_scrn_cell_format_t format;
 
         format.scroll_screen = VDP2_SCRN_NBG0;
@@ -91,8 +87,8 @@ main(void)
         }
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(2, 0x01FFFE),
             COLOR_RGB1555(1, 0, 0, 7));

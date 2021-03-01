@@ -38,7 +38,6 @@ static uint32_t _cmdt_buffer_index;
 
 static color_rgb1555_t _palette[16] __aligned(32);
 
-static void _hardware_init(void);
 static void _romdisk_init(void);
 
 static void _draw_init(void);
@@ -69,7 +68,6 @@ static const scene::draw_handler _draw_handlers[] = {
 };
 
 void main(void) {
-    _hardware_init();
     _romdisk_init();
 
     dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
@@ -122,7 +120,7 @@ void main(void) {
     __builtin_unreachable();
 }
 
-static void _hardware_init(void) {
+void user_init(void) {
     cpu_cache_disable();
 
     vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,

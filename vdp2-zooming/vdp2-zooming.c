@@ -19,8 +19,6 @@
 #define NBG1_MAP_PLANE_C        VDP2_VRAM_ADDR(0, 0x10000)
 #define NBG1_MAP_PLANE_D        VDP2_VRAM_ADDR(0, 0x18000)
 
-static void _hardware_init(void);
-
 static void _transfer_cpd(void);
 static void _transfer_pal(void);
 static void _transfer_pnd(const vdp2_scrn_cell_format_t *);
@@ -49,8 +47,6 @@ static const color_rgb1555_t _palette[] __unused = {
 int
 main(void)
 {
-        _hardware_init();
-
         fix16_t scroll_x;
         scroll_x = FIX16(0.0f);
 
@@ -87,8 +83,8 @@ main(void)
         }
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_tvmd_display_clear();
 

@@ -82,7 +82,6 @@ _digital_dirs_pressed(void)
         return (_digital.pressed.raw & PERIPHERAL_DIGITAL_DIRECTIONS) != 0x0000;
 }
 
-static void _hardware_init(void);
 static void _init(void);
 
 static void _cmdt_list_init(void);
@@ -116,7 +115,6 @@ main(void)
                 _state_zoom_select_anchor
         };
 
-        _hardware_init();
         _init();
 
         _sprite_config();
@@ -151,8 +149,8 @@ main(void)
         return 0;
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);

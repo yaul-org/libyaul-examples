@@ -110,8 +110,6 @@ static char *_primitive_draw_mode_strings[] = {
         "GOURAUD+HALF-TRANSPARENT"
 };
 
-static void _hardware_init(void);
-
 static void _cmdt_list_init(void);
 static void _primitive_init(void);
 
@@ -133,8 +131,6 @@ main(void)
         const uint16_t mask_pressed_draw_mode =
             PERIPHERAL_DIGITAL_UP |
             PERIPHERAL_DIGITAL_DOWN;
-
-        _hardware_init();
 
         dbgio_dev_default_init(DBGIO_DEV_VDP2_SIMPLE);
         dbgio_dev_font_load();
@@ -252,8 +248,8 @@ main(void)
         }
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);

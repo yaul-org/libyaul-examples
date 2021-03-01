@@ -39,8 +39,6 @@ typedef struct {
         int32_t p3;
 } __packed quad;
 
-static void _hardware_init(void);
-
 static uint8_t _sintb_buffer[] __aligned(4) = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x19, 0x00, 0x00, 0x00, 0x32, 0x00, 0x00,
@@ -357,8 +355,6 @@ main(void)
         static const int16_vec2_t local_coord_center =
             INT16_VEC2_INITIALIZER(0, 0);
 
-        _hardware_init();
-
         vdp1_cmdt_list_t *cmdt_list;
         cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
 
@@ -615,8 +611,8 @@ _sort_quads(quad *f, point *p, int32_t *order, int32_t n)
         }
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);

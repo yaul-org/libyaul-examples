@@ -15,13 +15,9 @@
 static void _cpu_wdt_handler(void);
 static void _vblank_in_handler(void *);
 
-static void _hardware_init(void);
-
 void
 main(void)
 {
-        _hardware_init();
-
         cpu_intc_mask_set(0);
 
         vdp_sync_vblank_in_set(_vblank_in_handler);
@@ -48,8 +44,8 @@ main(void)
         }
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);

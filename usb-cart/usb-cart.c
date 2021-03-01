@@ -9,8 +9,6 @@
 
 #include <stdio.h>
 
-static void _hardware_init(void);
-
 static void _ovi_handler(void);
 
 static volatile uint32_t _ovf_count = 0;
@@ -23,8 +21,6 @@ main(void)
 {
         (void)memset(_copy_buffer, '\0', sizeof(_copy_buffer));
         usb_cart_dma_read(_copy_buffer, sizeof(_copy_buffer));
-
-        _hardware_init();
 
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
@@ -74,8 +70,8 @@ main(void)
         return 0;
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);

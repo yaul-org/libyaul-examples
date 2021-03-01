@@ -90,7 +90,6 @@ static const char *_tga_files[] = {
 
 uint8_t _intermediate_buffer[512 * 256 * 2] __aligned(4) __unused;
 
-static void _hardware_init(void);
 static void _romdisk_init(void);
 
 static void _dma_handler(const dma_queue_transfer_t *transfer);
@@ -102,7 +101,6 @@ static void _dma_queue_enqueue(void *, void *, const uint32_t);
 int
 main(void)
 {
-        _hardware_init();
         _romdisk_init();
 
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
@@ -158,8 +156,8 @@ main(void)
         return 0;
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_tvmd_display_clear();
 

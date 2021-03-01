@@ -9,8 +9,6 @@
 
 #include <stdlib.h>
 
-static void _hardware_init(void);
-
 static void _vblank_out_handler(void *);
 
 static smpc_peripheral_digital_t _digital;
@@ -18,8 +16,6 @@ static smpc_peripheral_digital_t _digital;
 void
 main(void)
 {
-        _hardware_init();
-
         uint16_t width __unused;
         uint16_t height;
         vdp2_tvmd_display_res_get(&width, &height);
@@ -63,8 +59,8 @@ main(void)
         }
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_scrn_display_clear();
 

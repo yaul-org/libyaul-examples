@@ -12,15 +12,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-static void _hardware_init(void);
-
 static void _local_arp_cb(const arp_callback_t *);
 
 int
 main(void)
 {
-        _hardware_init();
-
         char *arp_ver;
         arp_ver = arp_version_get();
 
@@ -46,8 +42,8 @@ main(void)
         return 0;
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);

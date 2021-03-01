@@ -12,13 +12,9 @@
 
 extern uint8_t root_romdisk[];
 
-static void _hardware_init(void);
-
 int
 main(void)
 {
-        _hardware_init();
-
         romdisk_init();
 
         void *romdisk;
@@ -192,8 +188,8 @@ main(void)
         }
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);

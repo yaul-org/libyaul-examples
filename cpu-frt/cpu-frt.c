@@ -60,8 +60,6 @@ static void _timer_handler(struct timer_event *);
 static void _slave_entry(void);
 static void _slave_frt_ovi_handler(void);
 
-static void _hardware_init(void);
-
 static volatile uint32_t _counter_1 = 0;
 static volatile uint32_t _counter_2 = 0;
 static volatile uint32_t _counter_3 = 0;
@@ -72,8 +70,6 @@ static volatile uint32_t _slave_ovi_counter __section(".uncached") = 0;
 void
 main(void)
 {
-        _hardware_init();
-
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
         dbgio_dev_font_load_wait();
@@ -136,8 +132,8 @@ main(void)
         }
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);

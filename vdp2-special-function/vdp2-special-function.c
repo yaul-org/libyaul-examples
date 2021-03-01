@@ -31,8 +31,6 @@
 
 extern uint8_t root_romdisk[];
 
-static void _hardware_init(void);
-
 static void _cmdt_list_init(vdp1_cmdt_list_t *);
 
 static void _dma_upload(void *, void *, size_t);
@@ -40,8 +38,6 @@ static void _dma_upload(void *, void *, size_t);
 void
 main(void)
 {
-        _hardware_init();
-
         romdisk_init();
 
         void *romdisk;
@@ -113,8 +109,8 @@ main(void)
         }
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_tvmd_display_clear();
 

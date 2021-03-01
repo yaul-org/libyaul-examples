@@ -52,7 +52,6 @@ static vdp1_cmdt_list_t *_cmdt_list;
 
 static smpc_peripheral_digital_t _digital;
 
-static void _hardware_init(void);
 static void _romdisk_init(void);
 static void _cmdt_list_init(void);
 
@@ -62,7 +61,6 @@ static void _cpu_frt_ovi_handler(void);
 int
 main(void)
 {
-        _hardware_init();
         _romdisk_init();
         _cmdt_list_init();
 
@@ -161,8 +159,8 @@ main(void)
         return 0;
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         static const struct vdp1_env vdp1_env = {
                 .bpp = VDP1_ENV_BPP_16,

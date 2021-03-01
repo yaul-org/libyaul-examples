@@ -13,7 +13,6 @@
 
 extern uint8_t root_romdisk[];
 
-static void _hardware_init(void);
 static void _test_dsp_program(uint32_t);
 
 static uint32_t _ram0[DSP_RAM_PAGE_WORD_COUNT];
@@ -26,8 +25,6 @@ static void *_romdisk = NULL;
 int
 main(void)
 {
-        _hardware_init();
-
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
         dbgio_dev_font_load_wait();
@@ -64,8 +61,8 @@ main(void)
         return 0;
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);

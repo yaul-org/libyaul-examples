@@ -9,8 +9,6 @@
 
 #include <stdio.h>
 
-static void _hardware_init(void);
-
 static void _vblank_in_handler(void);
 static void _vblank_out_handler(void);
 static void _hblank_in_handler(void);
@@ -31,8 +29,6 @@ static uint16_t _line = 0;
 int
 main(void)
 {
-        _hardware_init();
-
         cons_init(CONS_DRIVER_VDP2, 40, 28);
 
         cpu_intc_mask_set(0);
@@ -54,8 +50,8 @@ main(void)
         return 0;
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         vdp2_init();
 

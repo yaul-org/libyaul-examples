@@ -20,14 +20,10 @@ static vdp2_scrn_ls_format_t _ls_format = {
         .enable            = VDP2_SCRN_LS_HORZ
 };
 
-static void _hardware_init(void);
-
 void
 main(void)
 {
         static scu_dma_xfer_t _xfer_table[4] __aligned(4 * 16);
-
-        _hardware_init();
 
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
@@ -104,8 +100,8 @@ main(void)
         }
 }
 
-static void
-_hardware_init(void)
+void
+user_init(void)
 {
         const vdp2_scrn_cell_format_t format = {
                 .scroll_screen = VDP2_SCRN_NBG0,
