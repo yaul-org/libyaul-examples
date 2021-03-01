@@ -147,7 +147,7 @@ _hardware_init(void)
 
         cpu_intc_mask_set(0);
 
-        cpu_dual_init(CPU_DUAL_ENTRY_POLLING);
+        cpu_dual_comm_mode_set(CPU_DUAL_ENTRY_POLLING);
         cpu_dual_slave_set(_slave_entry);
 
         vdp2_tvmd_display_set();
