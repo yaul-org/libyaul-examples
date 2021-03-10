@@ -9,8 +9,8 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= fileserver
-SH_OBJECTS:= \
-	fileserver.o
+SH_SRCS:= \
+	fileserver.c
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj

@@ -5,10 +5,11 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= vdp1-balls
-SH_OBJECTS:= \
-	root.romdisk.o \
-	vdp1-balls.o \
-	balls.o
+SH_SRCS:= \
+	vdp1-balls.c \
+	balls.c
+ROMDISK_SYMBOLS= root
+ROMDISK_DIRS= romdisk
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -I. -Wno-error=unused-variable -Wno-error -O2 -save-temps=obj

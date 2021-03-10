@@ -5,11 +5,11 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= c++
-SH_OBJECTS:= \
-	file-ext-1.o \
-	file-ext-2.o \
-	file-ext-3.o \
-	c++.o
+SH_SRCS:= \
+	file-ext-1.cc \
+	file-ext-2.cpp \
+	file-ext-3.C \
+	c++.cxx
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj

@@ -5,7 +5,8 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= dbgio-usb-cart
-SH_OBJECTS:= dbgio-usb-cart.o
+SH_SRCS:= \
+	dbgio-usb-cart.c
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps=obj

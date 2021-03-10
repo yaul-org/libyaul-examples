@@ -5,8 +5,8 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= vdp1-double-interlace
-SH_OBJECTS:= \
-	vdp1-double-interlace.o
+SH_SRCS:= \
+	vdp1-double-interlace.c
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj

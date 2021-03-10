@@ -5,7 +5,9 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= dbgio-menu
-SH_OBJECTS:= dbgio-menu.o ../shared/menu/menu.o
+SH_SRCS:= \
+	dbgio-menu.c \
+	../shared/menu/menu.c
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps=obj

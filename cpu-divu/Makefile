@@ -5,8 +5,8 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= cpu-divu
-SH_OBJECTS:= \
-	cpu-divu.o
+SH_SRCS:= \
+	cpu-divu.c
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj

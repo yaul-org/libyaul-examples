@@ -5,9 +5,10 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= dma-queue
-SH_OBJECTS:= \
-	root.romdisk.o \
-	dma-queue.o
+SH_SRCS:= \
+	dma-queue.c
+ROMDISK_SYMBOLS= root
+ROMDISK_DIRS= romdisk
 
 SH_LIBRARIES:= tga
 SH_CFLAGS+= -O2 -save-temps=obj

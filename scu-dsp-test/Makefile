@@ -5,9 +5,10 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= scu-dsp-test
-SH_OBJECTS:= \
-	scu-dsp-test.o \
-	root.romdisk.o
+SH_SRCS:= \
+	scu-dsp-test.c
+ROMDISK_SYMBOLS= root
+ROMDISK_DIRS= romdisk
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj

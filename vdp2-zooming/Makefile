@@ -5,7 +5,8 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= vdp2-zooming
-SH_OBJECTS:= vdp2-zooming.o
+SH_SRCS:= \
+	vdp2-zooming.c
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj

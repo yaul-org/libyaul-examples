@@ -5,9 +5,10 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= vdp2-rbg0
-SH_OBJECTS:= \
-	root.romdisk.o \
-	vdp2-rbg0.o \
+SH_SRCS:= \
+	vdp2-rbg0.c
+ROMDISK_SYMBOLS= root
+ROMDISK_DIRS= romdisk
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj

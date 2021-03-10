@@ -245,6 +245,6 @@ _dma_queue_enqueue(void *dst, void *src, const uint32_t size)
 }
 
 static void
-_dma_handler(const dma_queue_transfer_t *transfer)
+_dma_handler(const dma_queue_transfer_t *transfer __unused)
 {
 }

@@ -7,8 +7,8 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= scu-timers
-SH_OBJECTS:= \
-	scu-timers.o
+SH_SRCS:= \
+	scu-timers.c
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj

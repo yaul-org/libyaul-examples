@@ -5,8 +5,10 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= romdisk
-SH_OBJECTS:= root.romdisk.o \
-	romdisk.o
+SH_SRCS:= \
+	romdisk.c
+ROMDISK_SYMBOLS= root
+ROMDISK_DIRS= romdisk
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj

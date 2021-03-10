@@ -7,6 +7,7 @@ EXAMPLES:= \
 	cpu-frt \
 	cpu-wdt \
 	dbgio-menu \
+	dma-queue \
 	dram-cart \
 	romdisk \
 	scu-dma \

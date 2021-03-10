@@ -5,8 +5,8 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= vdp1-drawing
-SH_OBJECTS:= \
-	vdp1-drawing.o
+SH_SRCS:= \
+	vdp1-drawing.c
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj

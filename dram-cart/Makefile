@@ -5,7 +5,8 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= dram-cart
-SH_OBJECTS:= dram-cart.o
+SH_SRCS:= \
+	dram-cart.c
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj

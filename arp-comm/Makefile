@@ -11,7 +11,8 @@ ifneq ($(strip $(YAUL_OPTION_DEV_CARTRIDGE)),2)
 endif
 
 SH_PROGRAM:= arp-comm
-SH_OBJECTS:= arp-comm.o
+SH_SRCS:= \
+	arp-comm.c
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj

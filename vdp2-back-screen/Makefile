@@ -5,7 +5,8 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 SH_PROGRAM:= vdp2-back-screen
-SH_OBJECTS:= vdp2-back-screen.o
+SH_SRCS:= \
+	vdp2-back-screen.c
 
 SH_LIBRARIES:= tga
 SH_CFLAGS+= -O2 -I. -save-temps=obj
