@@ -66,6 +66,7 @@ main(void)
                 .detect_mode = CPU_DMAC_DETECT_MODE_EDGE,
                 .bus_mode = CPU_DMAC_BUS_MODE_CYCLE_STEAL,
                 .resource_select = CPU_DMAC_RESOURCE_SELECT_TXI,
+                .nondefault = true,
                 .ihr = _dmac_handler0,
                 .ihr_work = NULL
         };
@@ -82,7 +83,8 @@ main(void)
                 .detect_mode = CPU_DMAC_DETECT_MODE_EDGE,
                 .bus_mode = CPU_DMAC_BUS_MODE_CYCLE_STEAL,
                 .resource_select = CPU_DMAC_RESOURCE_SELECT_RXI,
-                .ihr = NULL,//_dmac_handler0,
+                .nondefault = true,
+                .ihr = NULL,
                 .ihr_work = NULL
         };
                 
