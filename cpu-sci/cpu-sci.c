@@ -25,14 +25,14 @@ static volatile uint32_t _ovf = 0;
 static volatile bool _done = false;
 
 //there is no core func for this yet, should be moved to not-yet-existent SCI driver 
-static inline void __always_inline
+/*static inline void __always_inline
 cpu_sci_interrupt_priority_set(uint8_t priority)
 {
         MEMORY_WRITE_AND(16, CPU(IPRB), 0x7FFF);
         MEMORY_WRITE_OR(16, CPU(IPRB), (priority & 0x0F) << 12);
-}
+}*/
 
-void
+/*void
 sci_setup()
 {
 	MEMORY_WRITE(8,CPU(SCR),0x00); //stop all
@@ -40,7 +40,7 @@ sci_setup()
 	MEMORY_WRITE(8,CPU(BRR),0x00); //maximum baudrate
 	MEMORY_WRITE(8,CPU(SCR),0x01); //internal clock output
 	MEMORY_WRITE(8,CPU(SCR),0xF1); //interrupts on, RX/TX on, internal clock output
-}
+}*/
 
 int
 main(void)
@@ -87,8 +87,15 @@ main(void)
                 .ihr = NULL,
                 .ihr_work = NULL
         };
-                
-        sci_setup();
+
+        cpu_sci_cfg_t cfg_sci __unused = {
+                .mode = CPU_SCI_MODE_SYNC,
+                .sck_config = CPU_SCI_SCK_OUTPUT
+        };
+
+      
+        //sci_setup();
+        cpu_sci_config_set(&cfg_sci);
 
         //prepare write buffer
         for (i=0;i<TEST_SEQUENCE_LENGTH;i++)
