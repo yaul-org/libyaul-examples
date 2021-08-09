@@ -15,32 +15,13 @@
 #define SCI_BUFFER 0x260F0000
 #define SCI_BUFFER_RECV 0x26080000
 
-//doing 64K SCI transaction
-#define TEST_SEQUENCE_LENGTH 0x10000 
+#define TEST_PATTERN_LENGTH 0x10000 
+#define TEST_PATTERN_START 0xA1 
 
-static void _dmac_handler0(void *);
+static void _dmac_handler(void *);
+static void __unused _sci_handler(void *);
 
-static volatile uint16_t _frt = 0;
-static volatile uint32_t _ovf = 0;
 static volatile bool _done = false;
-
-//there is no core func for this yet, should be moved to not-yet-existent SCI driver 
-/*static inline void __always_inline
-cpu_sci_interrupt_priority_set(uint8_t priority)
-{
-        MEMORY_WRITE_AND(16, CPU(IPRB), 0x7FFF);
-        MEMORY_WRITE_OR(16, CPU(IPRB), (priority & 0x0F) << 12);
-}*/
-
-/*void
-sci_setup()
-{
-	MEMORY_WRITE(8,CPU(SCR),0x00); //stop all
-	MEMORY_WRITE(8,CPU(SMR),0x80); //sync mode, 8bit, no parity, no MP, 1/4 clock
-	MEMORY_WRITE(8,CPU(BRR),0x00); //maximum baudrate
-	MEMORY_WRITE(8,CPU(SCR),0x01); //internal clock output
-	MEMORY_WRITE(8,CPU(SCR),0xF1); //interrupts on, RX/TX on, internal clock output
-}*/
 
 int
 main(void)
@@ -60,14 +41,14 @@ main(void)
                 .src_mode = CPU_DMAC_SOURCE_INCREMENT,
                 .dst = CPU(TDR),
                 .dst_mode = CPU_DMAC_DESTINATION_FIXED,
-                .len = TEST_SEQUENCE_LENGTH, 
+                .len = TEST_PATTERN_LENGTH, 
                 .stride = CPU_DMAC_STRIDE_1_BYTE,
                 .request_mode = CPU_DMAC_REQUEST_MODE_MODULE,
                 .detect_mode = CPU_DMAC_DETECT_MODE_EDGE,
                 .bus_mode = CPU_DMAC_BUS_MODE_CYCLE_STEAL,
                 .resource_select = CPU_DMAC_RESOURCE_SELECT_TXI,
                 .nondefault = true,
-                .ihr = _dmac_handler0,
+                .ihr = _dmac_handler,
                 .ihr_work = NULL
         };
 
@@ -77,7 +58,7 @@ main(void)
                 .src_mode = CPU_DMAC_SOURCE_FIXED,
                 .dst = SCI_BUFFER_RECV,
                 .dst_mode = CPU_DMAC_DESTINATION_INCREMENT,
-                .len = TEST_SEQUENCE_LENGTH,
+                .len = TEST_PATTERN_LENGTH,
                 .stride = CPU_DMAC_STRIDE_1_BYTE,
                 .request_mode = CPU_DMAC_REQUEST_MODE_MODULE,
                 .detect_mode = CPU_DMAC_DETECT_MODE_EDGE,
@@ -88,8 +69,12 @@ main(void)
                 .ihr_work = NULL
         };
 
+        //interrupt handlers are never called, because SCI interrupts are masked for CPU
+        //but we need to pass some non-null handlers to enable interrupts because DMAC needs them
         cpu_sci_cfg_t cfg_sci __unused = {
                 .mode = CPU_SCI_MODE_SYNC,
+                //.ihr_rxi = _sci_handler,
+                //.ihr_txi = _sci_handler,
                 .sck_config = CPU_SCI_SCK_OUTPUT
         };
 
@@ -98,13 +83,13 @@ main(void)
         cpu_sci_config_set(&cfg_sci);
 
         //prepare write buffer
-        for (i=0;i<TEST_SEQUENCE_LENGTH;i++)
+        for (i=0;i<TEST_PATTERN_LENGTH;i++)
         {
-                MEMORY_WRITE(8,SCI_BUFFER+i,0xA5+i);
+                MEMORY_WRITE(8,SCI_BUFFER+i,TEST_PATTERN_START+i);
         }
 
         //clear read buffer
-        memset((uint8_t*)SCI_BUFFER_RECV,0x00,TEST_SEQUENCE_LENGTH);
+        memset((uint8_t*)SCI_BUFFER_RECV,0x00,TEST_PATTERN_LENGTH);
 
         //apply config to DMA channels
         cpu_dmac_channel_config_set(&cfg0);
@@ -117,22 +102,25 @@ main(void)
         
         //fire DMA
         _done = false;
-        MEMORY_WRITE(8,CPU(SSR),0x00); //reset all SCI status flags
-        MEMORY_WRITE(8,CPU(SCR),0x00); //stop SCI
+        //MEMORY_WRITE(8,CPU(SSR),0x00); //reset all SCI status flags
+        cpu_sci_reset_status();
+        //MEMORY_WRITE(8,CPU(SCR),0x00); //stop SCI
+        cpu_sci_disable();
         cpu_dmac_channel_start(1); //start the read channel first, so it's with sync with write channel
         cpu_dmac_channel_start(0); //start the write channel
-        MEMORY_WRITE(8,CPU(SCR),0xF1); //enable SCI back, the requests to DMAC shoukld start automatically
-                
+        MEMORY_WRITE(8,CPU(SCR),0xF1); //enable SCI back, the requests to DMAC should start automatically
+        //cpu_sci_enable(); //enable SCI back, the requests to DMAC should start automatically
+        
         //wait for DMA
         while (!_done) ;
 
         //datacheck
         int iErrors = 0;
         uint8_t written,readen;
-        for (i=0;i<TEST_SEQUENCE_LENGTH;i++)
+        for (i=0;i<TEST_PATTERN_LENGTH;i++)
         {
                 readen = MEMORY_READ(8,SCI_BUFFER_RECV+i);
-                written = 0xA5+i;
+                written = TEST_PATTERN_START+i;
 
                 if (readen !=written)
                 {
@@ -160,8 +148,8 @@ main(void)
         dbgio_flush();
         vdp_sync(); 
 
-        //stop
-        while (1);
+        while (true) {
+        }
 
         return 0;
 }
@@ -181,7 +169,13 @@ user_init(void)
 }
 
 static void
-_dmac_handler0(void *work __unused)
+_dmac_handler(void *work __unused)
 {
         _done = true;
 }
+
+static void __unused
+_sci_handler(void *work __unused)
+{
+}
+
