@@ -73,8 +73,8 @@ main(void)
         //but we need to pass some non-null handlers to enable interrupts because DMAC needs them
         cpu_sci_cfg_t cfg_sci __unused = {
                 .mode = CPU_SCI_MODE_SYNC,
-                //.ihr_rxi = _sci_handler,
-                //.ihr_txi = _sci_handler,
+                .ihr_rxi = _sci_handler,
+                .ihr_txi = _sci_handler,
                 .sck_config = CPU_SCI_SCK_OUTPUT
         };
 
@@ -108,8 +108,9 @@ main(void)
         cpu_sci_disable();
         cpu_dmac_channel_start(1); //start the read channel first, so it's with sync with write channel
         cpu_dmac_channel_start(0); //start the write channel
-        MEMORY_WRITE(8,CPU(SCR),0xF1); //enable SCI back, the requests to DMAC should start automatically
+        //MEMORY_WRITE(8,CPU(SCR),0xF1); //enable SCI back, the requests to DMAC should start automatically
         //cpu_sci_enable(); //enable SCI back, the requests to DMAC should start automatically
+        cpu_sci_enable_with_dmac(&cfg_sci); //enable SCI back, the requests to DMAC should start automatically
         
         //wait for DMA
         while (!_done) ;
@@ -161,7 +162,8 @@ user_init(void)
             VDP2_TVMD_VERT_224);
 
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 3, 15));
+            COLOR_RGB1555(1, 0, 15, 3));
+            //COLOR_RGB1555(1, 0, 3, 15));
 
         cpu_intc_mask_set(0);
 
