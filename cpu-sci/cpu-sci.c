@@ -12,8 +12,8 @@
 #include <stdlib.h>
 
 //some test locations for read and write buffers
-#define SCI_BUFFER 0x260F0000
-#define SCI_BUFFER_RECV 0x26080000
+#define SCI_BUFFER 0x26080000
+#define SCI_BUFFER_RECV 0x26090000
 
 #define TEST_PATTERN_LENGTH 0x10000 
 #define TEST_PATTERN_START 0xA1 
@@ -100,16 +100,12 @@ main(void)
         //enable dmac, because priority mode set disables it
         cpu_dmac_enable();
         
-        //fire DMA
+        //start SCI with DMAC, it requires disabling and enabling it in a dmac mode
         _done = false;
-        //MEMORY_WRITE(8,CPU(SSR),0x00); //reset all SCI status flags
         cpu_sci_reset_status();
-        //MEMORY_WRITE(8,CPU(SCR),0x00); //stop SCI
         cpu_sci_disable();
         cpu_dmac_channel_start(1); //start the read channel first, so it's with sync with write channel
         cpu_dmac_channel_start(0); //start the write channel
-        //MEMORY_WRITE(8,CPU(SCR),0xF1); //enable SCI back, the requests to DMAC should start automatically
-        //cpu_sci_enable(); //enable SCI back, the requests to DMAC should start automatically
         cpu_sci_enable_with_dmac(&cfg_sci); //enable SCI back, the requests to DMAC should start automatically
         
         //wait for DMA
@@ -162,8 +158,7 @@ user_init(void)
             VDP2_TVMD_VERT_224);
 
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 15, 3));
-            //COLOR_RGB1555(1, 0, 3, 15));
+            COLOR_RGB1555(1, 0, 3, 15));
 
         cpu_intc_mask_set(0);
 
