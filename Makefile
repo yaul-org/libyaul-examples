@@ -10,7 +10,6 @@ EXAMPLES:= \
 	dma-queue \
 	dram-cart \
 	romdisk \
-	scu-dma \
 	scu-dsp \
 	scu-dsp-test \
 	vdp1-balls \
