@@ -149,6 +149,8 @@ main(void)
         vdp_sync(); 
 
         //For a second part, let's setup SCI in a normal mode, with CPU interrupt and without DMAC link
+        //FIXME : Second part is disabled, because it crashes from unknown reason when enabling SCI interrupts
+#if 0
 
         cpu_dmac_disable();
         cpu_sci_disable();
@@ -167,7 +169,7 @@ main(void)
         cpu_sci_reset_status();
 
         //enable interrupts from SCI
-        cpu_sci_interrupt_priority_set(8); 
+        cpu_sci_interrupt_priority_set(8); // <= this is where it crashes
 
         //clear read buffer
         memset((uint8_t*)SCI_BUFFER_RECV,0x00,TEST_PATTERN_LENGTH);
@@ -215,6 +217,7 @@ main(void)
 
         dbgio_flush();
         vdp_sync();
+#endif
 
         while (true) {
         }
