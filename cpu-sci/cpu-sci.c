@@ -138,19 +138,18 @@ main(void)
 
         if (iErrors)
         {
-                dbgio_printf("\nSCI-DMAC loopback test failed.\nEither pins 5 and 6 on CN6 (serial port)\nare not shorted, or you're running \nthe test within an emulator.\n");
+                dbgio_printf("\nSCI-DMAC loopback test failed.\nEither pins 5 and 6 on CN6 (serial port)\nare not shorted, or you're running \nthe test within an emulator.\n\n");
         }
         else
         {
-                dbgio_printf("\nSCI-DMAC loopback test was sucessful.\n");
+                dbgio_printf("\nSCI-DMAC loopback test was sucessful.\n\n");
         }
 
         dbgio_flush();
         vdp_sync(); 
 
         //For a second part, let's setup SCI in a normal mode, with CPU interrupt and without DMAC link
-        //FIXME : Second part is disabled, because it crashes from unknown reason when enabling SCI interrupts
-#if 0
+        //Second par doesn't use SCI interrupts, because it crashes from unknown reason when enabling SCI interrupts
 
         cpu_dmac_disable();
         cpu_sci_disable();
@@ -169,19 +168,20 @@ main(void)
         cpu_sci_reset_status();
 
         //enable interrupts from SCI
-        cpu_sci_interrupt_priority_set(8); // <= this is where it crashes
+        //cpu_sci_interrupt_priority_set(8); // <= this is where it crashes
 
         //clear read buffer
         memset((uint8_t*)SCI_BUFFER_RECV,0x00,TEST_PATTERN_LENGTH);
 
+        cpu_sci_enable();
+
+        cpu_sci_get_read_value(); //do a dummy read to clear RDRF
+
         //do a bunch of transfers
         for (i=0;i<TEST_PATTERN_LENGTH;i++)
         {
-                _sci_done = false;
                 cpu_sci_set_write_value(TEST_PATTERN_START+i);
-                cpu_sci_enable();
-                while (false == _sci_done)
-                        ;
+                cpu_sci_wait();
                 MEMORY_WRITE(8,SCI_BUFFER_RECV+i,cpu_sci_get_read_value());
         }
 
@@ -217,7 +217,7 @@ main(void)
 
         dbgio_flush();
         vdp_sync();
-#endif
+
 
         while (true) {
         }
