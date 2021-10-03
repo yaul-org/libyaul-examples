@@ -38,7 +38,7 @@ main(void)
         _filelist.entries_pooled_count = 0;
 
         /* Load the maximum number */
-        iso9660_filelist_read(&_filelist, -1);
+        iso9660_filelist_root_read(&_filelist, -1);
 
         scroll_menu_state_t menu_state;
 
@@ -157,23 +157,19 @@ _menu_action(void *state_ptr, menu_entry_t *menu_entry __unused)
          * there's an FRT overflow interrupt */
         _frt_overflow_count = 0;
 
-        /* Loop through and copy each sector, one at a time */
-        for (uint32_t sector = 0; sector < file_entry->sector_count; sector++) { 
-                int ret __unused;
-                ret = cd_block_sector_read(file_entry->starting_fad + sector, (void *)LWRAM(0));
-                assert(ret == 0);
-        }
+        int ret __unused;
+        ret = cd_block_sectors_read(file_entry->starting_fad, (void *)LWRAM(0), file_entry->size);
+        assert(ret == 0);
 
         uint32_t ticks_count;
         ticks_count = (65536 * _frt_overflow_count) + cpu_frt_count_get();
-
 
         /* Use Q28.4 to calculate time in milliseconds */
         uint32_t time;
         time = ((ticks_count << 8) / ((1000 * CPU_FRT_NTSC_320_128_COUNT_1MS) << 4)) >> 4;
 
         dbgio_printf("\n\nLoaded! Took %lu ticks (~%lus).\n\nCheck LWRAM.\n\nWaiting 5 seconds\n", ticks_count, time);
-        dbgio_flush();        
+        dbgio_flush();
 
         for (uint32_t i = 0; i < (5 * 60); i++) {
                 vdp_sync();
