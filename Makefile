@@ -1,4 +1,5 @@
 EXAMPLES:= \
+	bcl \
 	c++ \
 	cd-block \
 	cpu-divu \
