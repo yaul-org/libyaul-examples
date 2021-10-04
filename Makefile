@@ -18,6 +18,7 @@ EXAMPLES:= \
 	vdp1-drawing \
 	vdp1-mic3d \
 	vdp1-sega3d \
+	vdp1-uv-coords \
 	vdp1-zoom-sprite \
 	vdp2-24bpp-bitmap \
 	vdp2-2x2-plane \
@@ -50,6 +51,7 @@ endif
 # USB cartridge
 ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),1)
 EXAMPLES+= \
+	dbgio-usb-cart \
 	usb-cart
 endif
 
