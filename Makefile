@@ -18,6 +18,7 @@ EXAMPLES:= \
 	vdp1-drawing \
 	vdp1-mic3d \
 	vdp1-sega3d \
+	vdp1-st-niccc \
 	vdp1-uv-coords \
 	vdp1-zoom-sprite \
 	vdp2-24bpp-bitmap \
@@ -35,7 +36,6 @@ EXAMPLES:= \
 # Following examples are broken:
 #   arp-comm
 #   scu-timers
-#   vdp1-st-niccc
 
 # Either type of dev cartridge
 ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),$(filter $(YAUL_OPTION_DEV_CARTRIDGE),1 2))

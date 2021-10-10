@@ -1,5 +1,3 @@
-$(error This example is disabled)
-
 ifeq ($(strip $(YAUL_INSTALL_ROOT)),)
   $(error Undefined YAUL_INSTALL_ROOT (install root directory))
 endif
@@ -14,7 +12,7 @@ ROMDISK_SYMBOLS= root
 ROMDISK_DIRS= romdisk
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -save-temps=obj
+SH_CFLAGS+= -O2 -I. -save-temps=obj -Wno-error
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
