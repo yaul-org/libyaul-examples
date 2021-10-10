@@ -20,7 +20,7 @@
 #define ORDER_COUNT                         ORDER_DRAW_END_INDEX
 
 static constexpr uint32_t _screen_width = 320;
-static constexpr uint32_t _screen_height = 240;
+static constexpr uint32_t _screen_height = 224;
 
 static constexpr uint32_t _render_width = 256;
 static constexpr uint32_t _render_height = 200;
@@ -36,6 +36,15 @@ static smpc_peripheral_digital_t _digital;
 
 static vdp1_cmdt_list_t* _scene_cmdt_list;
 static uint32_t _cmdt_buffer_index;
+
+static volatile struct {
+    uint32_t frame_count;
+    uint32_t vblank_count;
+    uint32_t dropped_count;
+} _stats = {
+    .frame_count = 0,
+    .vblank_count = 0
+};
 
 static color_rgb1555_t _palette[16] __aligned(32);
 
@@ -61,10 +70,15 @@ static const scene::draw_handler _draw_handlers[] = {
     nullptr, // 0
     nullptr, // 1
     nullptr, // 2
+    // nullptr,
     _on_draw_polygon3,
+    // nullptr,
     _on_draw_polygon4,
+    // nullptr,
     _on_draw_polygon5,
+    // nullptr,
     _on_draw_polygon6,
+    // nullptr,
     _on_draw_polygon7
 };
 
@@ -94,6 +108,9 @@ void main(void) {
     // Determine whether to start automatically
     bool start_state = true;
 
+    // Reset the VBLANK count in case initialization takes more than one frame
+    _stats.vblank_count = 0;
+
     while (true) {
         smpc_peripheral_process();
         smpc_peripheral_digital_port(1, &_digital);
@@ -111,12 +128,31 @@ void main(void) {
         if (process_frame) {
             dbgio_puts("[H[2J");
 
+            const fix16_t frame_count = fix16_int32_from(_stats.frame_count);
+            const fix16_t vblank_count = fix16_int32_from(_stats.vblank_count);
+
+            cpu_divu_fix16_set(frame_count, vblank_count);
+
+            const fix16_t quotient = cpu_divu_quotient_get();
+            const fix16_t fps = fix16_int16_mul(quotient, 60);
+
+            if (_stats.vblank_count > 1) {
+                _stats.dropped_count++;
+            }
+
+            dbgio_printf("%i/%i -> %f (dropped frames: %i)\n", _stats.frame_count, _stats.vblank_count, fps, _stats.dropped_count);
+
+            _stats.vblank_count = 0;
+            _stats.frame_count = 0;
+
             scene::process_frame();
 
             dbgio_flush();
         }
 
         vdp_sync();
+
+        _stats.frame_count++;
     }
 
     __builtin_unreachable();
@@ -124,7 +160,7 @@ void main(void) {
 
 void user_init(void) {
     vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
-                              VDP2_TVMD_VERT_240);
+                              VDP2_TVMD_VERT_224);
 
     vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE), COLOR_RGB1555(1, 7, 7, 7));
 
@@ -133,6 +169,8 @@ void user_init(void) {
     cpu_intc_mask_set(0);
 
     vdp2_tvmd_display_set();
+
+    vdp1_sync_interval_set(VDP1_SYNC_INTERVAL_VARIABLE);
 
     vdp1_env_t vdp1_env;
 
@@ -147,8 +185,6 @@ void user_init(void) {
     vdp1_env.sprite_type = 0x0;
 
     vdp1_env_set(&vdp1_env);
-
-    vdp1_sync_interval_set(VDP1_SYNC_INTERVAL_60HZ);
 
     vdp_sync_vblank_out_set(_vblank_out_handler);
 }
@@ -194,6 +230,7 @@ static void _draw_init(void) {
     vdp1_cmdt_param_vertex_set(&cmdts[ORDER_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_ul);
 
     vdp1_cmdt_polygon_set(&cmdts[ORDER_ERASE_INDEX]);
+    vdp1_cmdt_jump_skip_assign(&cmdts[ORDER_ERASE_INDEX], ORDER_BUFFER_STARTING_INDEX << 2);
     vdp1_cmdt_param_draw_mode_set(&cmdts[ORDER_ERASE_INDEX], polygon_draw_mode);
     vdp1_cmdt_param_color_bank_set(&cmdts[ORDER_ERASE_INDEX], color_bank);
     vdp1_cmdt_param_color_set(&cmdts[ORDER_ERASE_INDEX], COLOR_RGB1555(1, 31, 0, 0));
@@ -216,6 +253,8 @@ static void _draw_init(void) {
 }
 
 static void _vblank_out_handler(void *) {
+    _stats.vblank_count++;
+
     smpc_peripheral_intback_issue();
 }
 
@@ -226,20 +265,6 @@ static void _on_end(uint32_t frame_index, bool last_frame) {
     const uint32_t prev_buffer_index = _cmdt_buffer_index;
 
     _cmdt_buffer_index = 0;
-
-    dbgio_printf("i: %04li, frame_index: %04li\n", prev_buffer_index, frame_index);
-
-    for (uint32_t i = 0; i < 28; i++) {
-        const vdp1_cmdt_t* vdp1_cmdt = (vdp1_cmdt_t*)VDP1_VRAM(i << 5);
-
-        const uint16_t cmdt_offset = (uint16_t)(i << 5);
-
-        dbgio_printf("%3li. %03X. CTRL:%04X PMOD:%04X)\n",
-                     i,
-                     cmdt_offset,
-                     vdp1_cmdt->cmd_ctrl,
-                     vdp1_cmdt->cmd_pmod);
-    }
 
     const uint16_t end_index = ORDER_BUFFER_STARTING_INDEX +
         prev_buffer_index;
@@ -254,6 +279,8 @@ static void _on_end(uint32_t frame_index, bool last_frame) {
 
     if (last_frame) {
         scene::reset();
+
+        _stats.dropped_count = 0;
     }
 }
 
@@ -270,36 +297,95 @@ static void _on_update_palette(uint8_t palette_index,
 }
 
 static void _on_clear_screen(bool clear_screen) {
-    vdp1_cmdt* const erase_cmdt =
-        &_scene_cmdt_list->cmdts[ORDER_ERASE_INDEX];
-
     if (!clear_screen) {
-        const vdp1_link_t link = ORDER_BUFFER_STARTING_INDEX << 2;
-
-        vdp1_cmdt_jump_skip_assign(erase_cmdt, link);
-        // vdp1_sync_mode_set(VDP1_SYNC_MODE_CHANGE_ONLY);
+        vdp1_sync_mode_set(VDP1_SYNC_MODE_CHANGE_ONLY);
     } else {
-        vdp1_cmdt_jump_clear(erase_cmdt);
-        // vdp1_sync_mode_set(VDP1_SYNC_MODE_ERASE_CHANGE);
+        vdp1_sync_mode_set(VDP1_SYNC_MODE_ERASE_CHANGE);
     }
 }
 
-static inline __always_inline void _triangle_vertex_set(vdp1_cmdt& cmdt,
-                                                        const int16_vec2_t* vertices,
-                                                        uint32_t p0,
-                                                        uint32_t p1,
-                                                        uint32_t p2) {
-    cmdt.cmd_xa = vertices[p0].x;
-    cmdt.cmd_ya = vertices[p0].y;
+static inline void _triangle_vertex_set(vdp1_cmdt& cmdt,
+                                        const int16_vec2_t* vertices) {
+    cmdt.cmd_xa = vertices->x;
+    cmdt.cmd_ya = vertices->y;
 
-    cmdt.cmd_xb = vertices[p1].x;
-    cmdt.cmd_yb = vertices[p1].y;
+    vertices++;
 
-    cmdt.cmd_xc = vertices[p2].x;
-    cmdt.cmd_yc = vertices[p2].y;
+    cmdt.cmd_xb = vertices->x;
+    cmdt.cmd_yb = vertices->y;
 
-    cmdt.cmd_xd = vertices[p0].x;
-    cmdt.cmd_yd = vertices[p0].y;
+    vertices++;
+
+    cmdt.cmd_xc = vertices->x;
+    cmdt.cmd_yc = vertices->y;
+
+    vertices -= 2;
+
+    cmdt.cmd_xd = vertices->x;
+    cmdt.cmd_yd = vertices->y;
+}
+
+static inline void _quad_vertex_set(vdp1_cmdt& cmdt,
+                                    const int16_vec2_t* vertices) {
+    cmdt.cmd_xa = vertices->x;
+    cmdt.cmd_ya = vertices->y;
+
+    vertices++;
+
+    cmdt.cmd_xb = vertices->x;
+    cmdt.cmd_yb = vertices->y;
+
+    vertices++;
+
+    cmdt.cmd_xc = vertices->x;
+    cmdt.cmd_yc = vertices->y;
+
+    vertices++;
+
+    cmdt.cmd_xd = vertices->x;
+    cmdt.cmd_yd = vertices->y;
+}
+
+static inline void _triangle_vertex_set(vdp1_cmdt& cmdt,
+                                        const int16_vec2_t* vertices,
+                                        uint32_t start_index) {
+    cmdt.cmd_xa = vertices->x;
+    cmdt.cmd_ya = vertices->y;
+
+    const int16_vec2_t* next_vertices = vertices + start_index;
+
+    cmdt.cmd_xb = next_vertices->x;
+    cmdt.cmd_yb = next_vertices->y;
+
+    next_vertices++;
+
+    cmdt.cmd_xc = next_vertices->x;
+    cmdt.cmd_yc = next_vertices->y;
+
+    cmdt.cmd_xd = vertices->x;
+    cmdt.cmd_yd = vertices->y;
+}
+
+static inline void _quad_vertex_set(vdp1_cmdt& cmdt,
+                                    const int16_vec2_t* vertices,
+                                    uint32_t start_index) {
+    cmdt.cmd_xa = vertices->x;
+    cmdt.cmd_ya = vertices->y;
+
+    vertices += start_index;
+
+    cmdt.cmd_xb = vertices->x;
+    cmdt.cmd_yb = vertices->y;
+
+    vertices++;
+
+    cmdt.cmd_xc = vertices->x;
+    cmdt.cmd_yc = vertices->y;
+
+    vertices++;
+
+    cmdt.cmd_xd = vertices->x;
+    cmdt.cmd_yd = vertices->y;
 }
 
 static void _scale_vertices(int16_vec2_t* const out_vertices,
@@ -331,12 +417,12 @@ static void _on_draw_polygon3(int16_vec2_t const * vertex_buffer,
     vdp1_cmdt* const cmdt =
         &_scene_cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _cmdt_buffer_index];
 
-    int16_vec2_t out_vertices[count];
+    // int16_vec2_t out_vertices[count];
 
     _prepare_cmdts(cmdt, 1, palette_index);
-    _scale_vertices(out_vertices, vertex_buffer, count);
+    // _scale_vertices(out_vertices, vertex_buffer, count);
 
-    _triangle_vertex_set(cmdt[0], out_vertices, 0, 1, 2);
+    _triangle_vertex_set(cmdt[0], vertex_buffer);
 
     _cmdt_buffer_index += 1;
 }
@@ -347,15 +433,14 @@ static void _on_draw_polygon4(int16_vec2_t const * vertex_buffer,
     vdp1_cmdt* const cmdt =
         &_scene_cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _cmdt_buffer_index];
 
-    int16_vec2_t out_vertices[count];
+    // int16_vec2_t out_vertices[count];
 
-    _prepare_cmdts(cmdt, 2, palette_index);
-    _scale_vertices(out_vertices, vertex_buffer, count);
+    _prepare_cmdts(cmdt, 1, palette_index);
+    // _scale_vertices(out_vertices, vertex_buffer, count);
 
-    _triangle_vertex_set(cmdt[0], out_vertices, 0, 1, 2);
-    _triangle_vertex_set(cmdt[1], out_vertices, 0, 2, 3);
+    _quad_vertex_set(cmdt[0], vertex_buffer);
 
-    _cmdt_buffer_index += 2;
+    _cmdt_buffer_index += 1;
 }
 
 static void _on_draw_polygon5(int16_vec2_t const * vertex_buffer,
@@ -364,16 +449,15 @@ static void _on_draw_polygon5(int16_vec2_t const * vertex_buffer,
     vdp1_cmdt* const cmdt =
         &_scene_cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _cmdt_buffer_index];
 
-    int16_vec2_t out_vertices[count];
+    // int16_vec2_t out_vertices[count];
 
-    _prepare_cmdts(cmdt, 3, palette_index);
-    _scale_vertices(out_vertices, vertex_buffer, count);
+    _prepare_cmdts(cmdt, 2, palette_index);
+    // _scale_vertices(out_vertices, vertex_buffer, count);
 
-    _triangle_vertex_set(cmdt[0], out_vertices, 0, 1, 2);
-    _triangle_vertex_set(cmdt[1], out_vertices, 0, 2, 3);
-    _triangle_vertex_set(cmdt[2], out_vertices, 0, 3, 4);
+    _quad_vertex_set(cmdt[0], vertex_buffer);
+    _triangle_vertex_set(cmdt[1], vertex_buffer, 3);
 
-    _cmdt_buffer_index += 3;
+    _cmdt_buffer_index += 2;
 }
 
 static void _on_draw_polygon6(int16_vec2_t const * vertex_buffer,
@@ -382,17 +466,15 @@ static void _on_draw_polygon6(int16_vec2_t const * vertex_buffer,
     vdp1_cmdt* const cmdt =
         &_scene_cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _cmdt_buffer_index];
 
-    int16_vec2_t out_vertices[count];
+    // int16_vec2_t out_vertices[count];
 
-    _prepare_cmdts(cmdt, 4, palette_index);
-    _scale_vertices(out_vertices, vertex_buffer, count);
+    _prepare_cmdts(cmdt, 2, palette_index);
+    // _scale_vertices(out_vertices, vertex_buffer, count);
 
-    _triangle_vertex_set(cmdt[0], out_vertices, 0, 1, 2);
-    _triangle_vertex_set(cmdt[1], out_vertices, 0, 2, 3);
-    _triangle_vertex_set(cmdt[2], out_vertices, 0, 3, 4);
-    _triangle_vertex_set(cmdt[3], out_vertices, 0, 4, 5);
+    _quad_vertex_set(cmdt[0], vertex_buffer);
+    _quad_vertex_set(cmdt[1], vertex_buffer, 3);
 
-    _cmdt_buffer_index += 4;
+    _cmdt_buffer_index += 2;
 }
 
 static void _on_draw_polygon7(int16_vec2_t const * vertex_buffer,
@@ -401,18 +483,16 @@ static void _on_draw_polygon7(int16_vec2_t const * vertex_buffer,
     vdp1_cmdt* const cmdt =
         &_scene_cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _cmdt_buffer_index];
 
-    int16_vec2_t out_vertices[count];
+    // int16_vec2_t out_vertices[count];
 
-    _prepare_cmdts(cmdt, 5, palette_index);
-    _scale_vertices(out_vertices, vertex_buffer, count);
+    _prepare_cmdts(cmdt, 3, palette_index);
+    // _scale_vertices(out_vertices, vertex_buffer, count);
 
-    _triangle_vertex_set(cmdt[0], out_vertices, 0, 1, 2);
-    _triangle_vertex_set(cmdt[1], out_vertices, 0, 2, 3);
-    _triangle_vertex_set(cmdt[2], out_vertices, 0, 3, 4);
-    _triangle_vertex_set(cmdt[3], out_vertices, 0, 4, 5);
-    _triangle_vertex_set(cmdt[4], out_vertices, 0, 5, 6);
+    _quad_vertex_set(cmdt[0], vertex_buffer);
+    _quad_vertex_set(cmdt[1], vertex_buffer, 3);
+    _triangle_vertex_set(cmdt[2], vertex_buffer, 5);
 
-    _cmdt_buffer_index += 5;
+    _cmdt_buffer_index += 3;
 }
 
 static void _on_draw(int16_vec2_t const * vertex_buffer,
