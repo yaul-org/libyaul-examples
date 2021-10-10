@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include <fix16.h>
+#include <math.h>
 
 namespace scene {
     union rgb444 {
@@ -24,9 +24,9 @@ namespace scene {
     typedef void (*update_palette_handler)(uint8_t palette_index,
                                            const rgb444 color);
     typedef void (*clear_screen_handler)(bool clear_screen);
-    typedef void (*draw_handler)(int16_vec2_t const* vertex_buffer,
-                                 const size_t count,
-                                 const uint8_t palette_index);
+    typedef void (*draw_handler)(uint8_vec2_t const * vertex_buffer,
+                                 uint32_t count,
+                                 uint32_t palette_index);
 
     struct callbacks {
         start_handler on_start;
