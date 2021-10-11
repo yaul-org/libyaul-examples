@@ -11,6 +11,9 @@
 
 #include "scene.h"
 
+// #pragma GCC push_options
+// #pragma GCC optimize ("align-functions=16")
+
 #define ORDER_SYSTEM_CLIP_COORDS_INDEX      0
 #define ORDER_LOCAL_COORDS_INDEX            1
 #define ORDER_ERASE_INDEX                   2
@@ -19,7 +22,7 @@
 #define ORDER_DRAW_END_INDEX                (ORDER_BUFFER_END_INDEX + 1)
 #define ORDER_COUNT                         ORDER_DRAW_END_INDEX
 
-typedef void (*draw_handler)(const uint8_vec2_t* vertex_buffer, uint32_t palette_index);
+typedef uint32_t (*draw_handler)(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, color_rgb1555_t color);
 
 static constexpr uint32_t _screen_width = 352;
 static constexpr uint32_t _screen_height = 240;
@@ -63,11 +66,11 @@ static void _on_clear_screen(bool);
 static void _on_update_palette(uint8_t, const scene::rgb444);
 static void _on_draw(const uint8_vec2_t *, uint32_t, uint32_t);
 
-static void _on_draw_polygon3(const uint8_vec2_t*, uint32_t);
-static void _on_draw_polygon4(const uint8_vec2_t*, uint32_t);
-static void _on_draw_polygon5(const uint8_vec2_t*, uint32_t);
-static void _on_draw_polygon6(const uint8_vec2_t*, uint32_t);
-static void _on_draw_polygon7(const uint8_vec2_t*, uint32_t);
+static uint32_t _on_draw_polygon3(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, color_rgb1555_t color);
+static uint32_t _on_draw_polygon4(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, color_rgb1555_t color);
+static uint32_t _on_draw_polygon5(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, color_rgb1555_t color);
+static uint32_t _on_draw_polygon6(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, color_rgb1555_t color);
+static uint32_t _on_draw_polygon7(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, color_rgb1555_t color);
 
 static const draw_handler _draw_handlers[] = {
     nullptr, // 0
@@ -205,14 +208,27 @@ static void _draw_init(void) {
         INT16_VEC2_INITIALIZER(0,
                                0);
 
+    vdp1_vram_partitions_t vram_partitions;
+
+    vdp1_vram_partitions_get(&vram_partitions);
+
     vdp1_cmdt_draw_mode_t polygon_draw_mode;
     polygon_draw_mode.raw = 0x0000;
     polygon_draw_mode.bits.pre_clipping_disable = true;
     polygon_draw_mode.bits.end_code_disable = true;
     polygon_draw_mode.bits.trans_pixel_disable = true;
+    polygon_draw_mode.bits.hss_enable = true;
 
     vdp1_cmdt_color_bank_t color_bank;
     color_bank.raw = 0x0000;
+
+    vdp1_cmdt_draw_mode_t clear_draw_mode;
+    clear_draw_mode.raw = 0x0000;
+    clear_draw_mode.bits.hss_enable = true;
+    clear_draw_mode.bits.pre_clipping_disable = true;
+    clear_draw_mode.bits.end_code_disable = true;
+    clear_draw_mode.bits.trans_pixel_disable = true;
+    clear_draw_mode.bits.color_mode = 1;
 
     _scene_cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
     assert(_scene_cmdt_list != nullptr);
@@ -227,26 +243,35 @@ static void _draw_init(void) {
     vdp1_cmdt_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX]);
     vdp1_cmdt_param_vertex_set(&cmdts[ORDER_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_ul);
 
-    vdp1_cmdt_polygon_set(&cmdts[ORDER_ERASE_INDEX]);
-    vdp1_cmdt_param_draw_mode_set(&cmdts[ORDER_ERASE_INDEX], polygon_draw_mode);
-    vdp1_cmdt_param_color_bank_set(&cmdts[ORDER_ERASE_INDEX], color_bank);
-    vdp1_cmdt_param_color_set(&cmdts[ORDER_ERASE_INDEX], COLOR_RGB1555(0, 0, 0, 0));
+    vdp1_cmdt_scaled_sprite_set(&cmdts[ORDER_ERASE_INDEX]);
+    vdp1_cmdt_param_draw_mode_set(&cmdts[ORDER_ERASE_INDEX], clear_draw_mode);
+    vdp1_cmdt_param_size_set(&cmdts[ORDER_ERASE_INDEX], 8, 1);
+    vdp1_cmdt_param_char_base_set(&cmdts[ORDER_ERASE_INDEX], (vdp1_vram_t)vram_partitions.texture_base);
+    vdp1_cmdt_param_color_mode1_set(&cmdts[ORDER_ERASE_INDEX], (vdp1_vram_t)vram_partitions.clut_base);
 
     /* The clear polygon is cut in half due to the VDP1 not having enough time
      * to clear the bottom half of the framebuffer in time */
     cmdts[ORDER_ERASE_INDEX].cmd_xa = 0;
     cmdts[ORDER_ERASE_INDEX].cmd_ya = ((_screen_height - 16) / 2) - 1;
-    cmdts[ORDER_ERASE_INDEX].cmd_xb = _screen_width - 1;
-    cmdts[ORDER_ERASE_INDEX].cmd_yb = ((_screen_height - 16) / 2) - 1;
+    cmdts[ORDER_ERASE_INDEX].cmd_xb = 0;
+    cmdts[ORDER_ERASE_INDEX].cmd_yb = 0;
     cmdts[ORDER_ERASE_INDEX].cmd_xc = _screen_width - 1;
     cmdts[ORDER_ERASE_INDEX].cmd_yc = _screen_height - 1;
     cmdts[ORDER_ERASE_INDEX].cmd_xd = 0;
-    cmdts[ORDER_ERASE_INDEX].cmd_yd = _screen_height - 1;
+    cmdts[ORDER_ERASE_INDEX].cmd_yd = 0;
 
     for (uint32_t i = ORDER_BUFFER_STARTING_INDEX; i < ORDER_BUFFER_END_INDEX; i++) {
         vdp1_cmdt_polygon_set(&cmdts[i]);
         vdp1_cmdt_param_draw_mode_set(&cmdts[i], polygon_draw_mode);
         vdp1_cmdt_param_color_bank_set(&cmdts[i], color_bank);
+        cmdts[i].cmd_xa = 0;
+        cmdts[i].cmd_ya = 0;
+        cmdts[i].cmd_xb = 0;
+        cmdts[i].cmd_yb = 0;
+        cmdts[i].cmd_xc = 0;
+        cmdts[i].cmd_yc = 0;
+        cmdts[i].cmd_xd = 0;
+        cmdts[i].cmd_yd = 0;
     }
 }
 
@@ -316,90 +341,6 @@ static void _on_clear_screen(bool clear_screen) {
     }
 }
 
-static void _triangle_vertex_set(vdp1_cmdt& cmdt,
-                                 const uint8_vec2_t* vertices) {
-    cmdt.cmd_xa = vertices->x;
-    cmdt.cmd_ya = vertices->y;
-
-    vertices++;
-
-    cmdt.cmd_xb = vertices->x;
-    cmdt.cmd_yb = vertices->y;
-
-    vertices++;
-
-    cmdt.cmd_xc = vertices->x;
-    cmdt.cmd_yc = vertices->y;
-
-    vertices -= 2;
-
-    cmdt.cmd_xd = vertices->x;
-    cmdt.cmd_yd = vertices->y;
-}
-
-static void _quad_vertex_set(vdp1_cmdt& cmdt,
-                             const uint8_vec2_t* vertices) {
-    cmdt.cmd_xa = vertices->x;
-    cmdt.cmd_ya = vertices->y;
-
-    vertices++;
-
-    cmdt.cmd_xb = vertices->x;
-    cmdt.cmd_yb = vertices->y;
-
-    vertices++;
-
-    cmdt.cmd_xc = vertices->x;
-    cmdt.cmd_yc = vertices->y;
-
-    vertices++;
-
-    cmdt.cmd_xd = vertices->x;
-    cmdt.cmd_yd = vertices->y;
-}
-
-static void _triangle_vertex_set(vdp1_cmdt& cmdt,
-                                 const uint8_vec2_t* vertices,
-                                 uint32_t start_index) {
-    cmdt.cmd_xa = vertices->x;
-    cmdt.cmd_ya = vertices->y;
-
-    const uint8_vec2_t* next_vertices = vertices + start_index;
-
-    cmdt.cmd_xb = next_vertices->x;
-    cmdt.cmd_yb = next_vertices->y;
-
-    next_vertices++;
-
-    cmdt.cmd_xc = next_vertices->x;
-    cmdt.cmd_yc = next_vertices->y;
-
-    cmdt.cmd_xd = vertices->x;
-    cmdt.cmd_yd = vertices->y;
-}
-
-static void _quad_vertex_set(vdp1_cmdt& cmdt,
-                             const uint8_vec2_t* vertices,
-                             uint32_t start_index) {
-    cmdt.cmd_xa = vertices->x;
-    cmdt.cmd_ya = vertices->y;
-
-    vertices += start_index;
-
-    cmdt.cmd_xb = vertices->x;
-    cmdt.cmd_yb = vertices->y;
-
-    vertices++;
-
-    cmdt.cmd_xc = vertices->x;
-    cmdt.cmd_yc = vertices->y;
-
-    vertices++;
-
-    cmdt.cmd_xd = vertices->x;
-    cmdt.cmd_yd = vertices->y;
-}
-
 static void _scale_vertices(uint8_vec2_t* const out_vertices,
                             uint8_vec2_t const * vertex_buffer,
                             size_t count) {
@@ -412,96 +353,236 @@ static void _scale_vertices(uint8_vec2_t* const out_vertices,
     }
 }
 
-static void _on_draw_polygon3(const uint8_vec2_t* vertex_buffer,
-                              uint32_t palette_index) {
-    vdp1_cmdt* const cmdt =
-        &_scene_cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _cmdt_buffer_index];
+static void  _triangle_vertex_set(vdp1_cmdt& cmdt,
+                                     const uint8_vec2_t* vertices) {
+    uint8_t* p = (uint8_t*)&cmdt.cmd_xa;
 
-    const color_rgb1555_t color = _palette[palette_index];
+    p++;
 
+    // cmdt.cmd_xa = vertices->x;
+    // cmdt.cmd_ya = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+    p += 2;
+
+    vertices++;
+
+    // cmdt.cmd_xb = vertices->x;
+    // cmdt.cmd_yb = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+    p += 2;
+
+    vertices++;
+
+    // cmdt.cmd_xc = vertices->x;
+    // cmdt.cmd_yc = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+    p += 2;
+
+    vertices -= 2;
+
+    // cmdt.cmd_xd = vertices->x;
+    // cmdt.cmd_yd = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+}
+
+static void  _quad_vertex_set(vdp1_cmdt& cmdt,
+                                 const uint8_vec2_t* vertices) {
+    uint8_t* p = (uint8_t*)&cmdt.cmd_xa;
+
+    p++;
+
+    // cmdt.cmd_xa = vertices->x;
+    // cmdt.cmd_ya = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+    p += 2;
+
+    vertices++;
+
+    // cmdt.cmd_xb = vertices->x;
+    // cmdt.cmd_yb = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+    p += 2;
+
+    vertices++;
+
+    // cmdt.cmd_xc = vertices->x;
+    // cmdt.cmd_yc = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+    p += 2;
+
+    vertices++;
+
+    // cmdt.cmd_xd = vertices->x;
+    // cmdt.cmd_yd = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+}
+
+static void  _triangle_vertex_set(vdp1_cmdt& cmdt,
+                                     const uint8_vec2_t* vertices,
+                                     uint32_t start_index) {
+    uint8_t* p = (uint8_t*)&cmdt.cmd_xa;
+
+    p++;
+
+    // cmdt.cmd_xa = vertices->x;
+    // cmdt.cmd_ya = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+    p += 2;
+
+    const uint8_vec2_t* next_vertices = vertices + start_index;
+
+    // cmdt.cmd_xb = next_vertices->x;
+    // cmdt.cmd_yb = next_vertices->y;
+    *p = next_vertices->x;
+    p += 2;
+    *p = next_vertices->y;
+    p += 2;
+
+    next_vertices++;
+
+    // cmdt.cmd_xc = next_vertices->x;
+    // cmdt.cmd_yc = next_vertices->y;
+    *p = next_vertices->x;
+    p += 2;
+    *p = next_vertices->y;
+    p += 2;
+
+    // cmdt.cmd_xd = vertices->x;
+    // cmdt.cmd_yd = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+}
+
+static void  _quad_vertex_set(vdp1_cmdt& cmdt,
+                                 const uint8_vec2_t* vertices,
+                                 uint32_t start_index) {
+    uint8_t* p = (uint8_t*)&cmdt.cmd_xa;
+
+    p++;
+
+    // cmdt.cmd_xa = vertices->x;
+    // cmdt.cmd_ya = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+    p += 2;
+
+    vertices += start_index;
+
+    // cmdt.cmd_xb = vertices->x;
+    // cmdt.cmd_yb = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+    p += 2;
+
+    vertices++;
+
+    // cmdt.cmd_xc = vertices->x;
+    // cmdt.cmd_yc = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+    p += 2;
+
+    vertices++;
+
+    // cmdt.cmd_xd = vertices->x;
+    // cmdt.cmd_yd = vertices->y;
+    *p = vertices->x;
+    p += 2;
+    *p = vertices->y;
+}
+
+static uint32_t _on_draw_polygon3(vdp1_cmdt* cmdt,
+                                  const uint8_vec2_t* vertex_buffer,
+                                  color_rgb1555_t color) {
     // uint8_vec2_t out_vertices[count];
     // _scale_vertices(out_vertices, vertex_buffer, count);
 
-    vdp1_cmdt_param_color_set(&cmdt[0], color);
+    cmdt[0].cmd_colr = color.raw;
     _triangle_vertex_set(cmdt[0], vertex_buffer);
 
-    _cmdt_buffer_index += 1;
+    return 1;
 }
 
-static void _on_draw_polygon4(const uint8_vec2_t* vertex_buffer,
-                              uint32_t palette_index) {
-    vdp1_cmdt* const cmdt =
-        &_scene_cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _cmdt_buffer_index];
-
-    const color_rgb1555_t color = _palette[palette_index];
-
+static uint32_t _on_draw_polygon4(vdp1_cmdt* cmdt,
+                                  const uint8_vec2_t* vertex_buffer,
+                                  color_rgb1555_t color) {
     // uint8_vec2_t out_vertices[count];
     // _scale_vertices(out_vertices, vertex_buffer, count);
 
-    vdp1_cmdt_param_color_set(&cmdt[0], color);
+    cmdt[0].cmd_colr = color.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
-    _cmdt_buffer_index += 1;
+    return 1;
 }
 
-static void _on_draw_polygon5(const uint8_vec2_t* vertex_buffer,
-                              uint32_t palette_index) {
-    vdp1_cmdt* const cmdt =
-        &_scene_cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _cmdt_buffer_index];
-
-    const color_rgb1555_t color = _palette[palette_index];
-
+static uint32_t _on_draw_polygon5(vdp1_cmdt* cmdt,
+                                  const uint8_vec2_t* vertex_buffer,
+                                  color_rgb1555_t color) {
     // uint8_vec2_t out_vertices[count];
     // _scale_vertices(out_vertices, vertex_buffer, count);
 
-    vdp1_cmdt_param_color_set(&cmdt[0], color);
+    cmdt[0].cmd_colr = color.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
-    vdp1_cmdt_param_color_set(&cmdt[1], color);
+    cmdt[1].cmd_colr = color.raw;
     _triangle_vertex_set(cmdt[1], vertex_buffer, 3);
 
-    _cmdt_buffer_index += 2;
+    return 2;
 }
 
-static void _on_draw_polygon6(const uint8_vec2_t* vertex_buffer,
-                              uint32_t palette_index) {
-    vdp1_cmdt* const cmdt =
-        &_scene_cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _cmdt_buffer_index];
-
-    const color_rgb1555_t color = _palette[palette_index];
-
+static uint32_t _on_draw_polygon6(vdp1_cmdt* cmdt,
+                                  const uint8_vec2_t* vertex_buffer,
+                                  color_rgb1555_t color) {
     // uint8_vec2_t out_vertices[count];
     // _scale_vertices(out_vertices, vertex_buffer, count);
 
-    vdp1_cmdt_param_color_set(&cmdt[0], color);
+    cmdt[0].cmd_colr = color.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
-    vdp1_cmdt_param_color_set(&cmdt[1], color);
+    cmdt[1].cmd_colr = color.raw;
     _quad_vertex_set(cmdt[1], vertex_buffer, 3);
 
-    _cmdt_buffer_index += 2;
+    return 2;
 }
 
-static void _on_draw_polygon7(const uint8_vec2_t* vertex_buffer,
-                              uint32_t palette_index) {
-    vdp1_cmdt* const cmdt =
-        &_scene_cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _cmdt_buffer_index];
-
-    const color_rgb1555_t color = _palette[palette_index];
-
+static uint32_t _on_draw_polygon7(vdp1_cmdt* cmdt,
+                                  const uint8_vec2_t* vertex_buffer,
+                                  color_rgb1555_t color) {
     // uint8_vec2_t out_vertices[count];
     // _scale_vertices(out_vertices, vertex_buffer, count);
 
-    vdp1_cmdt_param_color_set(&cmdt[0], color);
+    cmdt[0].cmd_colr = color.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
-    vdp1_cmdt_param_color_set(&cmdt[1], color);
+    cmdt[1].cmd_colr = color.raw;
     _quad_vertex_set(cmdt[1], vertex_buffer, 3);
 
-    vdp1_cmdt_param_color_set(&cmdt[2], color);
+    cmdt[2].cmd_colr = color.raw;
     _triangle_vertex_set(cmdt[2], vertex_buffer, 5);
 
-    _cmdt_buffer_index += 3;
+    return 3;
 }
 
 static void _on_draw(const uint8_vec2_t* vertex_buffer,
@@ -509,5 +590,12 @@ static void _on_draw(const uint8_vec2_t* vertex_buffer,
                      uint32_t palette_index) {
     const draw_handler draw_handler = _draw_handlers[count];
 
-    draw_handler(vertex_buffer, palette_index);
+    vdp1_cmdt* cmdt =
+        &_scene_cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _cmdt_buffer_index];
+
+    const color_rgb1555_t color = _palette[palette_index];
+
+    _cmdt_buffer_index += draw_handler(cmdt, vertex_buffer, color);
 }
+
+// #pragma GCC pop_options
