@@ -21,8 +21,8 @@
 
 typedef void (*draw_handler)(const uint8_vec2_t* vertex_buffer, uint32_t palette_index);
 
-static constexpr uint32_t _screen_width = 320;
-static constexpr uint32_t _screen_height = 224;
+static constexpr uint32_t _screen_width = 352;
+static constexpr uint32_t _screen_height = 240;
 
 static constexpr uint32_t _render_width = 256;
 static constexpr uint32_t _render_height = 200;
@@ -149,8 +149,6 @@ void main(void) {
         }
 
         vdp_sync();
-        while (true) {
-        }
 
         _stats.frame_count++;
     }
@@ -159,8 +157,8 @@ void main(void) {
 }
 
 void user_init(void) {
-    vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
-                              VDP2_TVMD_VERT_224);
+    vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_B,
+                              VDP2_TVMD_VERT_240);
 
     vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE), COLOR_RGB1555(1, 7, 7, 7));
 
@@ -230,18 +228,20 @@ static void _draw_init(void) {
     vdp1_cmdt_param_vertex_set(&cmdts[ORDER_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_ul);
 
     vdp1_cmdt_polygon_set(&cmdts[ORDER_ERASE_INDEX]);
-    vdp1_cmdt_jump_skip_assign(&cmdts[ORDER_ERASE_INDEX], ORDER_BUFFER_STARTING_INDEX << 2);
     vdp1_cmdt_param_draw_mode_set(&cmdts[ORDER_ERASE_INDEX], polygon_draw_mode);
     vdp1_cmdt_param_color_bank_set(&cmdts[ORDER_ERASE_INDEX], color_bank);
-    vdp1_cmdt_param_color_set(&cmdts[ORDER_ERASE_INDEX], COLOR_RGB1555(1, 31, 0, 0));
+    vdp1_cmdt_param_color_set(&cmdts[ORDER_ERASE_INDEX], COLOR_RGB1555(0, 0, 0, 0));
+
+    /* The clear polygon is cut in half due to the VDP1 not having enough time
+     * to clear the bottom half of the framebuffer in time */
     cmdts[ORDER_ERASE_INDEX].cmd_xa = 0;
-    cmdts[ORDER_ERASE_INDEX].cmd_ya = 0;
-    cmdts[ORDER_ERASE_INDEX].cmd_xb = _render_width - 1;
-    cmdts[ORDER_ERASE_INDEX].cmd_yb = 0;
-    cmdts[ORDER_ERASE_INDEX].cmd_xc = _render_width - 1;
-    cmdts[ORDER_ERASE_INDEX].cmd_yc = _render_height - 1;
+    cmdts[ORDER_ERASE_INDEX].cmd_ya = ((_screen_height - 16) / 2) - 1;
+    cmdts[ORDER_ERASE_INDEX].cmd_xb = _screen_width - 1;
+    cmdts[ORDER_ERASE_INDEX].cmd_yb = ((_screen_height - 16) / 2) - 1;
+    cmdts[ORDER_ERASE_INDEX].cmd_xc = _screen_width - 1;
+    cmdts[ORDER_ERASE_INDEX].cmd_yc = _screen_height - 1;
     cmdts[ORDER_ERASE_INDEX].cmd_xd = 0;
-    cmdts[ORDER_ERASE_INDEX].cmd_yd = _render_height - 1;
+    cmdts[ORDER_ERASE_INDEX].cmd_yd = _screen_height - 1;
 
     for (uint32_t i = ORDER_BUFFER_STARTING_INDEX; i < ORDER_BUFFER_END_INDEX; i++) {
         vdp1_cmdt_polygon_set(&cmdts[i]);
@@ -303,9 +303,15 @@ static void _on_update_palette(uint8_t palette_index,
 }
 
 static void _on_clear_screen(bool clear_screen) {
+    vdp1_cmdt_t* const cmdts = _scene_cmdt_list->cmdts;
+
     if (!clear_screen) {
+        vdp1_cmdt_jump_skip_assign(&cmdts[ORDER_ERASE_INDEX], ORDER_BUFFER_STARTING_INDEX << 2);
+
         vdp1_sync_mode_set(VDP1_SYNC_MODE_CHANGE_ONLY);
     } else {
+        vdp1_cmdt_jump_clear(&cmdts[ORDER_ERASE_INDEX]);
+
         vdp1_sync_mode_set(VDP1_SYNC_MODE_ERASE_CHANGE);
     }
 }
