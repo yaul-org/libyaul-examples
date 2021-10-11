@@ -33,7 +33,7 @@ static constexpr uint32_t _render_height = 200;
 static constexpr fix16_t _scale_width = FIX16(_screen_width / static_cast<float>(_render_width));
 static constexpr fix16_t _scale_height = FIX16(_screen_height / static_cast<float>(_render_height));
 
-static constexpr char* _scene_file_path = "SCENE.BIN";
+static const char* _scene_file_path = "SCENE.BIN";
 
 static void* _romdisk;
 
@@ -83,7 +83,7 @@ static const draw_handler _draw_handlers[] = {
     _on_draw_polygon7
 };
 
-void main(void) {
+int main(void) {
     _romdisk_init();
 
     dbgio_dev_default_init(DBGIO_DEV_VDP2_SIMPLE);
@@ -188,6 +188,9 @@ void user_init(void) {
     vdp1_env_set(&vdp1_env);
 
     vdp_sync_vblank_out_set(_vblank_out_handler);
+
+    // Disable HBLANK-IN interrupt for better performance
+    scu_ic_mask_chg(SCU_IC_MASK_ALL, SCU_IC_MASK_HBLANK_IN);
 }
 
 static void _romdisk_init(void) {
@@ -294,7 +297,7 @@ static void _on_start(uint32_t, bool) {
     _cmdt_buffer_index = 0;
 }
 
-static void _on_end(uint32_t frame_index, bool last_frame) {
+static void _on_end(uint32_t frame_index __unused, bool last_frame) {
     const uint32_t prev_buffer_index = _cmdt_buffer_index;
 
     const uint16_t end_index = ORDER_BUFFER_STARTING_INDEX +
