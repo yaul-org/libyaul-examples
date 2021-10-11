@@ -39,26 +39,31 @@ static void* _romdisk;
 
 static smpc_peripheral_digital_t _digital;
 
-static vdp1_cmdt_list_t* _scene_cmdt_list;
-static uint32_t _cmdt_buffer_index;
+static struct {
+    vdp1_cmdt_list_t* cmdt_list;
+    uint32_t cmdt_index;
+    color_rgb1555_t palette[16];
+} __aligned(16) _scene;
 
 static volatile struct {
     uint32_t frame_count;
     uint32_t vblank_count;
     uint32_t dropped_count;
+    uint32_t ovi_count;
 } _stats = {
-    .frame_count = 0,
-    .vblank_count = 0,
-    .dropped_count = 0
+    .frame_count   = 0,
+    .vblank_count  = 0,
+    .dropped_count = 0,
+    .ovi_count     = 0
 };
-
-static color_rgb1555_t _palette[16] __aligned(16);
 
 static void _romdisk_init(void);
 
 static void _draw_init(void);
 
 static void _vblank_out_handler(void *);
+
+static void _frt_ovi_handler(void);
 
 static void _on_start(uint32_t, bool);
 static void _on_end(uint32_t, bool);
@@ -146,7 +151,15 @@ int main(void) {
             _stats.vblank_count = 0;
             _stats.frame_count = 0;
 
+            // _stats.ovi_count = 0;
+            // cpu_frt_count_set(0);
+
             scene::process_frame();
+
+            // const uint16_t tick_count = cpu_frt_count_get();
+            // const uint32_t total_tick_counts = tick_count + (_stats.ovi_count * 65536);
+            //
+            // dbgio_printf("%i ticks\n", total_tick_counts);
 
             dbgio_flush();
         }
@@ -189,6 +202,9 @@ void user_init(void) {
 
     vdp_sync_vblank_out_set(_vblank_out_handler);
 
+    cpu_frt_init(CPU_FRT_CLOCK_DIV_8);
+    cpu_frt_ovi_set(_frt_ovi_handler);
+
     // Disable HBLANK-IN interrupt for better performance
     scu_ic_mask_chg(SCU_IC_MASK_ALL, SCU_IC_MASK_HBLANK_IN);
 }
@@ -217,10 +233,10 @@ static void _draw_init(void) {
 
     vdp1_cmdt_draw_mode_t polygon_draw_mode;
     polygon_draw_mode.raw = 0x0000;
+    polygon_draw_mode.bits.hss_enable = true;
     polygon_draw_mode.bits.pre_clipping_disable = true;
     polygon_draw_mode.bits.end_code_disable = true;
     polygon_draw_mode.bits.trans_pixel_disable = true;
-    polygon_draw_mode.bits.hss_enable = true;
 
     vdp1_cmdt_color_bank_t color_bank;
     color_bank.raw = 0x0000;
@@ -233,10 +249,10 @@ static void _draw_init(void) {
     clear_draw_mode.bits.trans_pixel_disable = true;
     clear_draw_mode.bits.color_mode = 1;
 
-    _scene_cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
-    assert(_scene_cmdt_list != nullptr);
+    _scene.cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
+    assert(_scene.cmdt_list != nullptr);
 
-    vdp1_cmdt_t* const cmdts = _scene_cmdt_list->cmdts;
+    vdp1_cmdt_t* const cmdts = _scene.cmdt_list->cmdts;
 
     (void)memset(&cmdts[0], 0x00, ORDER_COUNT * sizeof(vdp1_cmdt));
 
@@ -284,34 +300,38 @@ static void _vblank_out_handler(void *) {
     smpc_peripheral_intback_issue();
 }
 
+static void _frt_ovi_handler(void) {
+    _stats.ovi_count++;
+}
+
 static void _on_start(uint32_t, bool) {
     // At the beginning of a processing frame, clear the previous Draw End
     // command
     const uint16_t end_index = ORDER_BUFFER_STARTING_INDEX +
-        _cmdt_buffer_index;
+        _scene.cmdt_index;
 
-    vdp1_cmdt* const end_cmdt = &_scene_cmdt_list->cmdts[end_index];
+    vdp1_cmdt* const end_cmdt = &_scene.cmdt_list->cmdts[end_index];
 
     end_cmdt->cmd_ctrl &= ~0x8000;
 
-    _cmdt_buffer_index = 0;
+    _scene.cmdt_index = 0;
 }
 
 static void _on_end(uint32_t frame_index __unused, bool last_frame) {
-    const uint32_t prev_buffer_index = _cmdt_buffer_index;
+    if (!last_frame) {
+        const uint32_t prev_buffer_index = _scene.cmdt_index;
 
-    const uint16_t end_index = ORDER_BUFFER_STARTING_INDEX +
-        prev_buffer_index;
+        const uint16_t end_index = ORDER_BUFFER_STARTING_INDEX +
+            prev_buffer_index;
 
-    vdp1_cmdt* const end_cmdt = &_scene_cmdt_list->cmdts[end_index];
+        vdp1_cmdt* const end_cmdt = &_scene.cmdt_list->cmdts[end_index];
 
-    vdp1_cmdt_end_set(end_cmdt);
+        vdp1_cmdt_end_set(end_cmdt);
 
-    _scene_cmdt_list->count = end_index + 1;
+        _scene.cmdt_list->count = end_index + 1;
 
-    vdp1_sync_cmdt_list_put(_scene_cmdt_list, 0, NULL, NULL);
-
-    if (last_frame) {
+        vdp1_sync_cmdt_list_put(_scene.cmdt_list, 0, NULL, NULL);
+    } else {
         scene::reset();
 
         _stats.dropped_count = 0;
@@ -327,11 +347,11 @@ static void _on_update_palette(uint8_t palette_index,
     const color_rgb1555_t rgb1555_color =
         COLOR_RGB1555(1, scaled_r, scaled_g, scaled_b);
 
-    _palette[palette_index] = rgb1555_color;
+    _scene.palette[palette_index] = rgb1555_color;
 }
 
 static void _on_clear_screen(bool clear_screen) {
-    vdp1_cmdt_t* const cmdts = _scene_cmdt_list->cmdts;
+    vdp1_cmdt_t* const cmdts = _scene.cmdt_list->cmdts;
 
     if (!clear_screen) {
         vdp1_cmdt_jump_skip_assign(&cmdts[ORDER_ERASE_INDEX], ORDER_BUFFER_STARTING_INDEX << 2);
@@ -356,14 +376,13 @@ static void _scale_vertices(uint8_vec2_t* const out_vertices,
     }
 }
 
-static void  _triangle_vertex_set(vdp1_cmdt& cmdt,
-                                     const uint8_vec2_t* vertices) {
+static void _triangle_vertex_set(vdp1_cmdt& cmdt,
+                                  const uint8_vec2_t* vertices) {
     uint8_t* p = (uint8_t*)&cmdt.cmd_xa;
 
     p++;
 
-    // cmdt.cmd_xa = vertices->x;
-    // cmdt.cmd_ya = vertices->y;
+    // A
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
@@ -371,8 +390,7 @@ static void  _triangle_vertex_set(vdp1_cmdt& cmdt,
 
     vertices++;
 
-    // cmdt.cmd_xb = vertices->x;
-    // cmdt.cmd_yb = vertices->y;
+    // B
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
@@ -380,8 +398,7 @@ static void  _triangle_vertex_set(vdp1_cmdt& cmdt,
 
     vertices++;
 
-    // cmdt.cmd_xc = vertices->x;
-    // cmdt.cmd_yc = vertices->y;
+    // C
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
@@ -389,21 +406,19 @@ static void  _triangle_vertex_set(vdp1_cmdt& cmdt,
 
     vertices -= 2;
 
-    // cmdt.cmd_xd = vertices->x;
-    // cmdt.cmd_yd = vertices->y;
+    // D
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
 }
 
-static void  _quad_vertex_set(vdp1_cmdt& cmdt,
-                                 const uint8_vec2_t* vertices) {
+static void _quad_vertex_set(vdp1_cmdt& cmdt,
+                             const uint8_vec2_t* vertices) {
     uint8_t* p = (uint8_t*)&cmdt.cmd_xa;
 
     p++;
 
-    // cmdt.cmd_xa = vertices->x;
-    // cmdt.cmd_ya = vertices->y;
+    // A
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
@@ -411,8 +426,7 @@ static void  _quad_vertex_set(vdp1_cmdt& cmdt,
 
     vertices++;
 
-    // cmdt.cmd_xb = vertices->x;
-    // cmdt.cmd_yb = vertices->y;
+    // B
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
@@ -420,8 +434,7 @@ static void  _quad_vertex_set(vdp1_cmdt& cmdt,
 
     vertices++;
 
-    // cmdt.cmd_xc = vertices->x;
-    // cmdt.cmd_yc = vertices->y;
+    // C
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
@@ -429,22 +442,20 @@ static void  _quad_vertex_set(vdp1_cmdt& cmdt,
 
     vertices++;
 
-    // cmdt.cmd_xd = vertices->x;
-    // cmdt.cmd_yd = vertices->y;
+    // D
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
 }
 
-static void  _triangle_vertex_set(vdp1_cmdt& cmdt,
-                                     const uint8_vec2_t* vertices,
-                                     uint32_t start_index) {
+static void _triangle_vertex_set(vdp1_cmdt& cmdt,
+                                 const uint8_vec2_t* vertices,
+                                 uint32_t start_index) {
     uint8_t* p = (uint8_t*)&cmdt.cmd_xa;
 
     p++;
 
-    // cmdt.cmd_xa = vertices->x;
-    // cmdt.cmd_ya = vertices->y;
+    // A
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
@@ -452,8 +463,7 @@ static void  _triangle_vertex_set(vdp1_cmdt& cmdt,
 
     const uint8_vec2_t* next_vertices = vertices + start_index;
 
-    // cmdt.cmd_xb = next_vertices->x;
-    // cmdt.cmd_yb = next_vertices->y;
+    // B
     *p = next_vertices->x;
     p += 2;
     *p = next_vertices->y;
@@ -461,29 +471,26 @@ static void  _triangle_vertex_set(vdp1_cmdt& cmdt,
 
     next_vertices++;
 
-    // cmdt.cmd_xc = next_vertices->x;
-    // cmdt.cmd_yc = next_vertices->y;
+    // C
     *p = next_vertices->x;
     p += 2;
     *p = next_vertices->y;
     p += 2;
 
-    // cmdt.cmd_xd = vertices->x;
-    // cmdt.cmd_yd = vertices->y;
+    // D
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
 }
 
-static void  _quad_vertex_set(vdp1_cmdt& cmdt,
-                                 const uint8_vec2_t* vertices,
-                                 uint32_t start_index) {
+static void _quad_vertex_set(vdp1_cmdt& cmdt,
+                             const uint8_vec2_t* vertices,
+                             uint32_t start_index) {
     uint8_t* p = (uint8_t*)&cmdt.cmd_xa;
 
     p++;
 
-    // cmdt.cmd_xa = vertices->x;
-    // cmdt.cmd_ya = vertices->y;
+    // A
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
@@ -491,8 +498,7 @@ static void  _quad_vertex_set(vdp1_cmdt& cmdt,
 
     vertices += start_index;
 
-    // cmdt.cmd_xb = vertices->x;
-    // cmdt.cmd_yb = vertices->y;
+    // B
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
@@ -500,8 +506,7 @@ static void  _quad_vertex_set(vdp1_cmdt& cmdt,
 
     vertices++;
 
-    // cmdt.cmd_xc = vertices->x;
-    // cmdt.cmd_yc = vertices->y;
+    // C
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
@@ -509,8 +514,7 @@ static void  _quad_vertex_set(vdp1_cmdt& cmdt,
 
     vertices++;
 
-    // cmdt.cmd_xd = vertices->x;
-    // cmdt.cmd_yd = vertices->y;
+    // D
     *p = vertices->x;
     p += 2;
     *p = vertices->y;
@@ -594,11 +598,11 @@ static void _on_draw(const uint8_vec2_t* vertex_buffer,
     const draw_handler draw_handler = _draw_handlers[count];
 
     vdp1_cmdt* cmdt =
-        &_scene_cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _cmdt_buffer_index];
+        &_scene.cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _scene.cmdt_index];
 
-    const color_rgb1555_t color = _palette[palette_index];
+    const color_rgb1555_t color = _scene.palette[palette_index];
 
-    _cmdt_buffer_index += draw_handler(cmdt, vertex_buffer, color);
+    _scene.cmdt_index += draw_handler(cmdt, vertex_buffer, color);
 }
 
 // #pragma GCC pop_options

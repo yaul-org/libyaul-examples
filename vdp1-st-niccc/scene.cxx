@@ -56,7 +56,7 @@ static struct {
     uint32_t frame_index;
 } __aligned(16) _state;
 
-static uint8_vec2_t _vertex_buffer[_polygon_vertex_buffer_size] __aligned(16);
+static uint8_vec2_t _vertex_buffer[8] __aligned(16);
 
 static scene::start_handler _on_start;
 static scene::end_handler _on_end;
