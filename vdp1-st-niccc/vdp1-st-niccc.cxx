@@ -40,8 +40,11 @@ static void* _romdisk;
 static smpc_peripheral_digital_t _digital;
 
 static struct {
+    vdp1_cmdt_list_t* cmdt_lists[2];
+    uint32_t which_cmdt_list;
+
     vdp1_cmdt_list_t* cmdt_list;
-    uint32_t cmdt_index;
+
     color_rgb1555_t palette[16];
 } __aligned(16) _scene;
 
@@ -117,10 +120,11 @@ int main(void) {
     // Reset the VBLANK count in case initialization takes more than one frame
     _stats.vblank_count = 0;
 
-    while (true) {
-        smpc_peripheral_process();
-        smpc_peripheral_digital_port(1, &_digital);
+    dbgio_flush();
+    vdp2_sync();
+    vdp2_sync_wait();
 
+    while (true) {
         if ((_digital.held.button.l) != 0) {
             start_state ^= true;
         }
@@ -134,19 +138,20 @@ int main(void) {
         if (process_frame) {
             dbgio_puts("[H[2J");
 
-            const fix16_t frame_count = fix16_int32_from(_stats.frame_count);
-            const fix16_t vblank_count = fix16_int32_from(_stats.vblank_count);
-
-            cpu_divu_fix16_set(frame_count, vblank_count);
-
-            const fix16_t quotient = cpu_divu_quotient_get();
-            const fix16_t fps = fix16_int16_mul(quotient, 60);
+            // const fix16_t frame_count = fix16_int32_from(_stats.frame_count);
+            // const fix16_t vblank_count = fix16_int32_from(_stats.vblank_count);
+            //
+            // cpu_divu_fix16_set(frame_count, vblank_count);
+            //
+            // const fix16_t quotient = cpu_divu_quotient_get();
+            // const fix16_t fps = fix16_int16_mul(quotient, 60);
 
             if (_stats.vblank_count > 1) {
                 _stats.dropped_count++;
             }
 
-            dbgio_printf("%i/%i -> %f (dropped frames: %i)\n", _stats.frame_count, _stats.vblank_count, fps, _stats.dropped_count);
+            // dbgio_printf("%i/%i -> %f (dropped frames: %i)\n", _stats.frame_count, _stats.vblank_count, fps, _stats.dropped_count);
+            // dbgio_printf("dropped_count: %i\n", _stats.dropped_count);
 
             _stats.vblank_count = 0;
             _stats.frame_count = 0;
@@ -161,10 +166,8 @@ int main(void) {
             //
             // dbgio_printf("%i ticks\n", total_tick_counts);
 
-            dbgio_flush();
+            // dbgio_flush();
         }
-
-        vdp_sync();
 
         _stats.frame_count++;
     }
@@ -200,7 +203,7 @@ void user_init(void) {
 
     vdp1_env_set(&vdp1_env);
 
-    vdp_sync_vblank_out_set(_vblank_out_handler);
+    vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
     cpu_frt_init(CPU_FRT_CLOCK_DIV_8);
     cpu_frt_ovi_set(_frt_ovi_handler);
@@ -218,7 +221,7 @@ static void _romdisk_init(void) {
     assert(_romdisk != NULL);
 }
 
-static void _draw_init(void) {
+static void _draw_cmdt_list_init(vdp1_cmdt_list_t* cmdt_list) {
     constexpr int16_vec2_t system_clip_coord =
         INT16_VEC2_INITIALIZER(_screen_width - 1,
                                _screen_height - 1);
@@ -249,10 +252,7 @@ static void _draw_init(void) {
     clear_draw_mode.bits.trans_pixel_disable = true;
     clear_draw_mode.bits.color_mode = 1;
 
-    _scene.cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
-    assert(_scene.cmdt_list != nullptr);
-
-    vdp1_cmdt_t* const cmdts = _scene.cmdt_list->cmdts;
+    vdp1_cmdt_t* const cmdts = cmdt_list->cmdts;
 
     (void)memset(&cmdts[0], 0x00, ORDER_COUNT * sizeof(vdp1_cmdt));
 
@@ -271,7 +271,7 @@ static void _draw_init(void) {
     /* The clear polygon is cut in half due to the VDP1 not having enough time
      * to clear the bottom half of the framebuffer in time */
     cmdts[ORDER_ERASE_INDEX].cmd_xa = 0;
-    cmdts[ORDER_ERASE_INDEX].cmd_ya = ((_screen_height - 16) / 2) - 1;
+    cmdts[ORDER_ERASE_INDEX].cmd_ya = ((_screen_height - 18) / 2) - 1;
     cmdts[ORDER_ERASE_INDEX].cmd_xb = 0;
     cmdts[ORDER_ERASE_INDEX].cmd_yb = 0;
     cmdts[ORDER_ERASE_INDEX].cmd_xc = _screen_width - 1;
@@ -294,10 +294,33 @@ static void _draw_init(void) {
     }
 }
 
+static void _draw_init(void) {
+    _scene.cmdt_lists[0] = vdp1_cmdt_list_alloc(ORDER_COUNT);
+    assert(_scene.cmdt_lists[0] != nullptr);
+
+    _scene.cmdt_lists[1] = vdp1_cmdt_list_alloc(ORDER_COUNT);
+    assert(_scene.cmdt_lists[1] != nullptr);
+
+    _draw_cmdt_list_init(_scene.cmdt_lists[0]);
+    _draw_cmdt_list_init(_scene.cmdt_lists[1]);
+
+    vdp1_cmdt_end_set(&_scene.cmdt_lists[0]->cmdts[ORDER_BUFFER_STARTING_INDEX]);
+    vdp1_cmdt_end_set(&_scene.cmdt_lists[1]->cmdts[ORDER_BUFFER_STARTING_INDEX]);
+
+    _scene.cmdt_lists[0]->count = ORDER_BUFFER_STARTING_INDEX + 1;
+    _scene.cmdt_lists[1]->count = ORDER_BUFFER_STARTING_INDEX + 1;
+
+    _scene.which_cmdt_list = 0;
+    _scene.cmdt_list = _scene.cmdt_lists[_scene.which_cmdt_list];
+}
+
 static void _vblank_out_handler(void *) {
     _stats.vblank_count++;
 
-    smpc_peripheral_intback_issue();
+    // smpc_peripheral_intback_issue();
+
+    // smpc_peripheral_process();
+    // smpc_peripheral_digital_port(1, &_digital);
 }
 
 static void _frt_ovi_handler(void) {
@@ -307,30 +330,32 @@ static void _frt_ovi_handler(void) {
 static void _on_start(uint32_t, bool) {
     // At the beginning of a processing frame, clear the previous Draw End
     // command
-    const uint16_t end_index = ORDER_BUFFER_STARTING_INDEX +
-        _scene.cmdt_index;
-
-    vdp1_cmdt* const end_cmdt = &_scene.cmdt_list->cmdts[end_index];
+    vdp1_cmdt* const end_cmdt =
+            &_scene.cmdt_list->cmdts[_scene.cmdt_list->count - 1];
 
     end_cmdt->cmd_ctrl &= ~0x8000;
 
-    _scene.cmdt_index = 0;
+    _scene.cmdt_list->count = ORDER_BUFFER_STARTING_INDEX;
 }
 
 static void _on_end(uint32_t frame_index __unused, bool last_frame) {
     if (!last_frame) {
-        const uint32_t prev_buffer_index = _scene.cmdt_index;
-
-        const uint16_t end_index = ORDER_BUFFER_STARTING_INDEX +
-            prev_buffer_index;
-
-        vdp1_cmdt* const end_cmdt = &_scene.cmdt_list->cmdts[end_index];
+        vdp1_cmdt* const end_cmdt = &_scene.cmdt_list->cmdts[_scene.cmdt_list->count];
 
         vdp1_cmdt_end_set(end_cmdt);
 
-        _scene.cmdt_list->count = end_index + 1;
+        _scene.cmdt_list->count++;
 
+        /* Wait for the previous sync (if any) */
+        vdp1_sync_wait();
         vdp1_sync_cmdt_list_put(_scene.cmdt_list, 0, NULL, NULL);
+
+        /* Call to sync -- does not block */
+        vdp1_sync();
+
+        /* Switch over to begin populating the other command table list */
+        _scene.which_cmdt_list ^= 1;
+        _scene.cmdt_list = _scene.cmdt_lists[_scene.which_cmdt_list];
     } else {
         scene::reset();
 
@@ -364,20 +389,8 @@ static void _on_clear_screen(bool clear_screen) {
     }
 }
 
-static void _scale_vertices(uint8_vec2_t* const out_vertices,
-                            uint8_vec2_t const * vertex_buffer,
-                            size_t count) {
-    for (uint32_t i = 0; i < count; i++) {
-        out_vertices[i].x = vertex_buffer[i].x;
-        out_vertices[i].y = vertex_buffer[i].y;
-
-        // out_vertices[i].x = fix16_int32_to(fix16_int16_mul(_scale_width, vertex_buffer[i].x));
-        // out_vertices[i].y = fix16_int32_to(fix16_int16_mul(_scale_height, vertex_buffer[i].y));
-    }
-}
-
 static void _triangle_vertex_set(vdp1_cmdt& cmdt,
-                                  const uint8_vec2_t* vertices) {
+                                 const uint8_vec2_t* vertices) {
     uint8_t* p = (uint8_t*)&cmdt.cmd_xa;
 
     p++;
@@ -523,9 +536,6 @@ static void _quad_vertex_set(vdp1_cmdt& cmdt,
 static uint32_t _on_draw_polygon3(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
                                   color_rgb1555_t color) {
-    // uint8_vec2_t out_vertices[count];
-    // _scale_vertices(out_vertices, vertex_buffer, count);
-
     cmdt[0].cmd_colr = color.raw;
     _triangle_vertex_set(cmdt[0], vertex_buffer);
 
@@ -535,9 +545,6 @@ static uint32_t _on_draw_polygon3(vdp1_cmdt* cmdt,
 static uint32_t _on_draw_polygon4(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
                                   color_rgb1555_t color) {
-    // uint8_vec2_t out_vertices[count];
-    // _scale_vertices(out_vertices, vertex_buffer, count);
-
     cmdt[0].cmd_colr = color.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
@@ -547,9 +554,6 @@ static uint32_t _on_draw_polygon4(vdp1_cmdt* cmdt,
 static uint32_t _on_draw_polygon5(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
                                   color_rgb1555_t color) {
-    // uint8_vec2_t out_vertices[count];
-    // _scale_vertices(out_vertices, vertex_buffer, count);
-
     cmdt[0].cmd_colr = color.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
@@ -562,9 +566,6 @@ static uint32_t _on_draw_polygon5(vdp1_cmdt* cmdt,
 static uint32_t _on_draw_polygon6(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
                                   color_rgb1555_t color) {
-    // uint8_vec2_t out_vertices[count];
-    // _scale_vertices(out_vertices, vertex_buffer, count);
-
     cmdt[0].cmd_colr = color.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
@@ -577,9 +578,6 @@ static uint32_t _on_draw_polygon6(vdp1_cmdt* cmdt,
 static uint32_t _on_draw_polygon7(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
                                   color_rgb1555_t color) {
-    // uint8_vec2_t out_vertices[count];
-    // _scale_vertices(out_vertices, vertex_buffer, count);
-
     cmdt[0].cmd_colr = color.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
@@ -597,12 +595,11 @@ static void _on_draw(const uint8_vec2_t* vertex_buffer,
                      uint32_t palette_index) {
     const draw_handler draw_handler = _draw_handlers[count];
 
-    vdp1_cmdt* cmdt =
-        &_scene.cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + _scene.cmdt_index];
+    vdp1_cmdt* cmdt = &_scene.cmdt_list->cmdts[_scene.cmdt_list->count];
 
     const color_rgb1555_t color = _scene.palette[palette_index];
 
-    _scene.cmdt_index += draw_handler(cmdt, vertex_buffer, color);
+    _scene.cmdt_list->count += draw_handler(cmdt, vertex_buffer, color);
 }
 
 // #pragma GCC pop_options

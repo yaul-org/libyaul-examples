@@ -165,7 +165,7 @@ void scene::process_frame(void) {
         }
 
         if (polygon_descriptor.flag == polygon_descriptor_flags::FRAME_END_STREAM_SKIP) {
-            // _on_end(_state.frame_index, false);
+            _on_end(_state.frame_index, false);
             _align();
 
             break;
