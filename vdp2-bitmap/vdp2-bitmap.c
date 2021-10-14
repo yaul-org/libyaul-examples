@@ -133,7 +133,8 @@ main(void)
                     NULL, NULL);
                 assert(ret == 0);
 
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
         }
 
         return 0;
@@ -144,7 +145,8 @@ user_init(void)
 {
         /* Force clear the TV display so we can draw */
         vdp2_tvmd_display_clear();
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         vdp2_scrn_bitmap_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);

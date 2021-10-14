@@ -59,10 +59,9 @@ main(void)
         dbgio_puts(".\n");
 
         dbgio_flush();
-        vdp_sync();
 
-        dbgio_flush();
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         while (true) {
         }

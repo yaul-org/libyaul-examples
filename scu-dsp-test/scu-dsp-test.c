@@ -53,7 +53,8 @@ main(void)
         dbgio_puts("Passed");
 
         dbgio_flush();
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         while (true) {
         }
@@ -130,7 +131,8 @@ _test_dsp_program(uint32_t program_id)
                      mnemonic);
 
         dbgio_flush();
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         scu_dsp_program_start();
         scu_dsp_program_end_wait();
@@ -163,7 +165,8 @@ _test_dsp_program(uint32_t program_id)
                      status.pc);
 
         dbgio_flush();
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         abort();
 }

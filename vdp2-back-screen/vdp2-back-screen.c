@@ -55,7 +55,8 @@ main(void)
 
                 count++;
 
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
         }
 }
 
@@ -75,7 +76,7 @@ user_init(void)
         vdp2_sprite_priority_set(6, 0);
         vdp2_sprite_priority_set(7, 0);
 
-        vdp_sync_vblank_out_set(_vblank_out_handler);
+        vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);

@@ -35,7 +35,8 @@ main(void)
         if ((id != DRAM_CART_ID_1MIB) && (id != DRAM_CART_ID_4MIB)) {
                 dbgio_puts(_error_message);
                 dbgio_flush();
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
                 abort();
         }
 
@@ -54,7 +55,8 @@ main(void)
                      cart_len);
         dbgio_flush();
 
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         while (true) {
         }

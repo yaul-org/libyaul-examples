@@ -105,7 +105,8 @@ main(void)
             NULL, NULL);
         assert(ret == 0);
 
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         romdisk_close(fh[2]);
         romdisk_close(fh[1]);

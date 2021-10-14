@@ -116,7 +116,8 @@ main(void)
                 dbgio_flush();
 
                 vdp1_sync_cmdt_list_put(cmdt_list, 0, NULL, NULL);
-                vdp_sync();
+                vdp1_sync();
+                vdp1_sync_wait();
         }
 }
 
@@ -138,7 +139,7 @@ user_init(void)
         vdp2_sprite_priority_set(6, 6);
         vdp2_sprite_priority_set(7, 6);
 
-        vdp_sync_vblank_out_set(_vblank_out_handler);
+        vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
         vdp2_tvmd_display_set();
 

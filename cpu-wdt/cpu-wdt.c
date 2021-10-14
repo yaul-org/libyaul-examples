@@ -20,7 +20,7 @@ main(void)
 {
         cpu_intc_mask_set(0);
 
-        vdp_sync_vblank_in_set(_vblank_in_handler);
+        vdp_sync_vblank_in_set(_vblank_in_handler, NULL);
 
         cpu_wdt_init(CPU_WDT_CLOCK_DIV_4096);
         cpu_wdt_interrupt_priority_set(8);
@@ -32,7 +32,8 @@ main(void)
         dbgio_dev_font_load_wait();
 
         dbgio_flush();
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         while (true) {
                 uint8_t count;
@@ -40,7 +41,8 @@ main(void)
 
                 dbgio_printf("[H[2Jcpu_wdt_count_get(): %i\n", count);
                 dbgio_flush();
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
         }
 }
 

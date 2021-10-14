@@ -78,7 +78,8 @@ main(void)
             NULL, NULL);
         assert(ret == 0);
 
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         romdisk_close(fh[2]);
         romdisk_close(fh[1]);
@@ -94,7 +95,8 @@ main(void)
 
                 vdp2_scrn_ls_set(&_ls_format);
                 dbgio_flush();
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
 
                 i = (i + 1) & 0x00FF;
         }

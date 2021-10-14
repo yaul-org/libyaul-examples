@@ -62,7 +62,8 @@ main(void)
                 scroll_menu_update(&menu_state);
 
                 dbgio_flush();
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
         }
 }
 
@@ -75,7 +76,7 @@ user_init(void)
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB1555(1, 0, 3, 15));
 
-        vdp_sync_vblank_out_set(_vblank_out_handler);
+        vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
         cpu_frt_init(CPU_FRT_CLOCK_DIV_128);
 
@@ -147,7 +148,8 @@ _menu_action(void *state_ptr, menu_entry_t *menu_entry __unused)
             file_entry->sector_count);
 
         dbgio_flush();
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         cpu_frt_ovi_set(_frt_ovi_handler);
 
@@ -171,7 +173,8 @@ _menu_action(void *state_ptr, menu_entry_t *menu_entry __unused)
         dbgio_printf("\n\nLoaded! Took %lu ticks (~%lus).\n\nCheck LWRAM.\n\nWaiting 5 seconds\n", ticks_count, time);
         dbgio_flush();
 
-        for (uint32_t i = 0; i < (5 * 60); i++) {
-                vdp_sync();
-        }
+        vdp2_sync();
+        vdp2_sync_wait();
+
+        vdp2_tvmd_vblank_in_next_wait(5);
 }

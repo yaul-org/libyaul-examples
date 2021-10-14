@@ -244,7 +244,8 @@ main(void)
                 vdp1_cmdt_param_vertices_set(cmdt_polygon, &_primitive.points[0]);
 
                 vdp1_sync_cmdt_list_put(_cmdt_list, 0, NULL, NULL);
-                vdp_sync();
+                vdp1_sync();
+                vdp1_sync_wait();
         }
 }
 
@@ -264,13 +265,16 @@ user_init(void)
 
         vdp1_env_set(&env);
 
-        vdp_sync_vblank_out_set(_vblank_out_handler);
+        vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
         cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
 
         vdp1_vram_partitions_get(&_vdp1_vram_partitions);
+
+        vdp2_sync();
+        vdp2_sync_wait();
 }
 
 static void

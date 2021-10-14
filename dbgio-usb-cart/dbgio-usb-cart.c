@@ -19,7 +19,6 @@ main(void)
 
         for (uint32_t i = 0; i < (1 * 60); i++) {
                 dbgio_flush();
-                vdp_sync();
         }
 
         uint16_t r;
@@ -36,7 +35,8 @@ main(void)
 
 
                 dbgio_flush();
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
         }
 }
 

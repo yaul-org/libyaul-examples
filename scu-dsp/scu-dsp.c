@@ -65,7 +65,8 @@ main(void)
                 dbgio_printf("PC: %02X\n", pc);
                 /* dbgio_flush() needs to be called during VBLANK-IN */
                 dbgio_flush();
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
         } while (!(scu_dsp_program_end()));
 
         _dsp_end();
@@ -92,7 +93,8 @@ main(void)
                      status.pc);
 
         dbgio_flush();
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         while (true) {
         }

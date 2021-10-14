@@ -135,7 +135,8 @@ main(void)
 
                 dbgio_flush();
 
-                vdp_sync();
+                vdp1_sync();
+                vdp1_sync_wait();
 
                 uint32_t result;
                 result = _frame_time_calculate();
@@ -167,12 +168,15 @@ user_init(void)
 
         vdp2_tvmd_display_set();
 
-        vdp_sync_vblank_out_set(_vblank_out_handler);
+        vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
         cpu_frt_init(CPU_FRT_CLOCK_DIV_32);
         cpu_frt_ovi_set(_cpu_frt_ovi_handler);
 
         vdp1_vram_partitions_get(&_vdp1_vram_partitions);
+
+        vdp2_sync();
+        vdp2_sync_wait();
 }
 
 static void

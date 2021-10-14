@@ -83,7 +83,8 @@ main(void)
                         cpu_frt_count_set(0);
 
                         dbgio_flush();
-                        vdp_sync();
+                        vdp2_sync();
+                        vdp2_sync_wait();
 
                         while (!_done);
 
@@ -93,7 +94,8 @@ main(void)
                         dbgio_printf(" Completed in %lu ticks\n", ticks);
 
                         dbgio_flush();
-                        vdp_sync();
+                        vdp2_sync();
+                        vdp2_sync_wait();
                 }
 
                 /* Switch over to the next channel */

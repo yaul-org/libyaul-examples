@@ -123,7 +123,8 @@ main(void)
 
                 bcl_prs_decompress((void *)LWRAM(0x00000000), (void *)VDP2_VRAM_ADDR(0, 0x00000));
 
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
         }
 
         return 0;

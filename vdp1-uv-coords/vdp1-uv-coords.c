@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 #define SCREEN_WIDTH    320
-#define SCREEN_HEIGHT   240
+#define SCREEN_HEIGHT   224
 
 #define STATE_UV_MOVE_INVALID         (-1)
 #define STATE_UV_MOVE_ORIGIN          (0)
@@ -112,6 +112,9 @@ main(void)
 
         cpu_frt_count_set(0);
 
+        vdp2_sync();
+        vdp2_sync_wait();
+
         while (true) {
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
@@ -123,23 +126,24 @@ main(void)
 
                 vdp1_sync_cmdt_list_put(_cmdt_list, 0, NULL, NULL);
 
-                dbgio_printf("[H[2J");
+                /* dbgio_printf("[H[2J"); */
 
-                for (uint32_t i = 0; i < 4; i++) {
-                        dbgio_printf("%i. (%2i,%2i)\n", i, _uv_coords[i].x, _uv_coords[i].y);
-                }
+                /* for (uint32_t i = 0; i < 4; i++) { */
+                /*         dbgio_printf("%i. (%2i,%2i)\n", i, _uv_coords[i].x, _uv_coords[i].y); */
+                /* } */
 
-                dbgio_flush();
+                /* dbgio_flush(); */
 
-                vdp_sync();
+                vdp1_sync();
+                vdp1_sync_wait();
 
-                uint32_t result;
-                result = _frame_time_calculate();
+                /* uint32_t result; */
+                /* result = _frame_time_calculate(); */
 
-                char fixed[16];
-                fix16_str(result, fixed, 7);
+                /* char fixed[16]; */
+                /* fix16_str(result, fixed, 7); */
 
-                dbgio_printf("\n%sms\n", fixed);
+                /* dbgio_printf("\n%sms\n", fixed); */
         }
 
         return 0;
@@ -149,7 +153,7 @@ void
 user_init(void)
 {
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
-            VDP2_TVMD_VERT_240);
+            VDP2_TVMD_VERT_224);
 
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB1555(1, 0, 3, 15));
@@ -166,16 +170,21 @@ user_init(void)
         /* Setup default VDP1 environment */
         vdp1_env_default_set();
 
+        vdp1_sync_interval_set(VDP1_SYNC_INTERVAL_60HZ);
+
         cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
 
-        vdp_sync_vblank_out_set(_vblank_out_handler);
+        vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
         cpu_frt_init(CPU_FRT_CLOCK_DIV_32);
         cpu_frt_ovi_set(_cpu_frt_ovi_handler);
 
         vdp1_vram_partitions_get(&_vdp1_vram_partitions);
+
+        /* Disable HBLANK-IN interrupt for better performance */
+        scu_ic_mask_chg(SCU_IC_MASK_ALL, SCU_IC_MASK_HBLANK_IN);
 }
 
 static void
@@ -322,8 +331,6 @@ _sprite_init(void)
                 .type_0.data.cc = 0x00,
                 .type_0.data.pr = 0x00
         };
-
-        MEMORY_WRITE(16, LWRAM(0), draw_mode.raw);
 
         (void)memset(_sprite.cmdt, 0, sizeof(vdp1_cmdt_t));
 

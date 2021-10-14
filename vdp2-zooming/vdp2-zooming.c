@@ -79,7 +79,8 @@ main(void)
                         zoom_dir = 1;
                 }
 
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
         }
 }
 
@@ -144,7 +145,8 @@ user_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);
 
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         _transfer_cpd();
         _transfer_pal();
@@ -152,7 +154,8 @@ user_init(void)
 
         vdp2_tvmd_display_set();
 
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 }
 
 static void

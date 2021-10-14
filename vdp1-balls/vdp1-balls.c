@@ -152,8 +152,8 @@ main(void)
 
                 dbgio_flush();
 
-                vdp2_tvmd_vblank_in_wait();
-                vdp_sync();
+                vdp1_sync();
+                vdp1_sync_wait();
         }
 
         return 0;
@@ -188,10 +188,13 @@ user_init(void)
 
         vdp1_env_set(&vdp1_env);
 
-        vdp_sync_vblank_out_set(_vblank_out_handler);
+        vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
         cpu_frt_init(CPU_FRT_CLOCK_DIV_32);
         cpu_frt_ovi_set(_cpu_frt_ovi_handler);
+
+        vdp2_sync();
+        vdp2_sync_wait();
 }
 
 static void

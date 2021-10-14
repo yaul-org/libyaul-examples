@@ -4,4 +4,5 @@
 /*/build/
 /*/*.cue
 /*/*.iso
+/*/*.log
 compile_commands.json

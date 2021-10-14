@@ -23,8 +23,8 @@
 
 #define ELEMENT_COUNT(n) (sizeof((n)) / sizeof(*(n)))
 
-#define INT2FIX(a) (((int32_t)(a))<<10)
-#define FIX2INT(a) (((int32_t)(a))>>10)
+#define INT2FIX(a) (((int32_t)(a)) << 10)
+#define FIX2INT(a) (((int32_t)(a)) >> 10)
 
 typedef struct {
         int32_t x;
@@ -39,7 +39,7 @@ typedef struct {
         int32_t p3;
 } __packed quad;
 
-static uint8_t _sintb_buffer[] __aligned(4) = {
+static const uint8_t _sintb_buffer[] __aligned(4) = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x19, 0x00, 0x00, 0x00, 0x32, 0x00, 0x00,
         0x00, 0x4B, 0x00, 0x00, 0x00, 0x64, 0x00,
@@ -348,20 +348,20 @@ static void _sort_quads(quad *, point *, int32_t *, int32_t);
 void
 main(void)
 {
-        static const int16_vec2_t system_clip_coord =
+        const int16_vec2_t system_clip_coord =
             INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,
-                                     SCREEN_HEIGHT - 1);
+                                   SCREEN_HEIGHT - 1);
 
         static const int16_vec2_t local_coord_center =
             INT16_VEC2_INITIALIZER(0, 0);
 
         vdp1_cmdt_list_t *cmdt_list;
         cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
+        assert(cmdt_list != NULL);
 
         (void)memset(&cmdt_list->cmdts[0], 0x00, sizeof(vdp1_cmdt_t) * ORDER_COUNT);
 
-        vdp1_cmdt_t *cmdts;
-        cmdts = &cmdt_list->cmdts[0];
+        vdp1_cmdt_t * const cmdts = &cmdt_list->cmdts[0];
 
         vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
         vdp1_cmdt_param_vertex_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX],
@@ -423,6 +423,10 @@ main(void)
         int32_t theta = 0;
 
         while (true) {
+                vdp1_cmdt_end_set(&cmdts[ORDER_BUFFER_STARTING_INDEX]);
+
+                cmdt_list->count = ORDER_BUFFER_STARTING_INDEX + 1;
+
                 vdp1_sync_cmdt_list_put(cmdt_list, 0, NULL, NULL);
 
                 _rotate(_points_m, _rotated_m, theta, 28);
@@ -476,8 +480,8 @@ main(void)
                                 .raw = 0x0000
                         };
 
-                        vdp1_cmdt_t *cmdt;
-                        cmdt = &cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + i];
+                        vdp1_cmdt_t * const cmdt =
+                            &cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + i];
 
                         /* Set the vertices directly as we have to cast from
                          * int32_t to int16_t */
@@ -503,9 +507,12 @@ main(void)
 
                 cmdt_list->count = ORDER_COUNT;
 
-                vdp1_sync_cmdt_list_put(cmdt_list, 0, NULL, NULL);
+                vdp1_sync_cmdt_list_put(cmdt_list, ORDER_BUFFER_STARTING_INDEX, NULL, NULL);
 
-                vdp_sync();
+                vdp1_sync();
+                vdp1_sync_wait();
+
+                MEMORY_WRITE(32, LWRAM(0), MEMORY_READ(32, LWRAM(0)) + 1);
         }
 }
 
@@ -564,7 +571,7 @@ _project(point *in, point *out, int32_t n)
         int32_t i;
 
         for (i = 0; i < n; i++) {
-                const int32_t inx = in[i].x; 
+                const int32_t inx = in[i].x;
                 const int32_t iny = in[i].y;
                 const int32_t inz = in[i].z;
 
@@ -632,4 +639,7 @@ user_init(void)
         cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
+
+        vdp2_sync();
+        vdp2_sync_wait();
 }

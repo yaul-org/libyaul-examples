@@ -31,7 +31,8 @@ main(void)
         dbgio_puts("\n");
 
         dbgio_flush();
-        vdp_sync();
+        vdp1_sync();
+        vdp1_sync_wait();
 
         free(text);
 

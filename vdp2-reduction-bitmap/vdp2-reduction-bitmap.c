@@ -125,15 +125,18 @@ main(void)
         ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
         assert(ret == 0);
 
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         vdp2_tvmd_display_set();
 
         romdisk_close(fh[0]);
         romdisk_close(fh[1]);
 
+        vdp2_sync();
+        vdp2_sync_wait();
+
         while (true) {
-                vdp_sync();
         }
 
         return 0;

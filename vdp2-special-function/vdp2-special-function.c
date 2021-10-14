@@ -74,7 +74,8 @@ main(void)
         _cmdt_list_init(cmdt_list);
 
         vdp1_sync_cmdt_list_put(cmdt_list, 0, NULL, NULL);
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         romdisk_close(fh[0]);
         romdisk_close(fh[1]);
@@ -98,7 +99,8 @@ main(void)
 
                 vdp1_sync_cmdt_list_put(cmdt_list, 0, NULL, NULL);
 
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
 
                 count_frames++;
 
@@ -236,7 +238,8 @@ user_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);
 
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 }
 
 static void

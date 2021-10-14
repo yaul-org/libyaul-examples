@@ -128,7 +128,8 @@ main(void)
                              _slave_ovi_counter);
 
                 dbgio_flush();
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
         }
 }
 
