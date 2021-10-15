@@ -4,9 +4,9 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
-SH_PROGRAM:= vdp2-bitmap
+SH_PROGRAM:= vdp2-rbg0-bitmap
 SH_SRCS:= \
-	vdp2-bitmap.c
+	vdp2-rbg0-bitmap.c
 ROMDISK_SYMBOLS= root
 ROMDISK_DIRS= romdisk
 

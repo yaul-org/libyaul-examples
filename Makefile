@@ -24,11 +24,11 @@ EXAMPLES:= \
 	vdp2-24bpp-bitmap \
 	vdp2-2x2-plane \
 	vdp2-back-screen \
-	vdp2-bitmap \
 	vdp2-line-scroll \
 	vdp2-nbg0 \
 	vdp2-normal-bitmap \
 	vdp2-rbg0 \
+	vdp2-rbg0-bitmap \
 	vdp2-reduction-bitmap \
 	vdp2-special-function \
 	vdp2-zooming
