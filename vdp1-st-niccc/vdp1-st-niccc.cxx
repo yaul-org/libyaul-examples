@@ -176,8 +176,8 @@ void user_init(void) {
     vdp1_env.erase_color = COLOR_RGB1555(0, 0, 0, 0);
     vdp1_env.erase_points[0].x = 0;
     vdp1_env.erase_points[0].y = 0;
-    vdp1_env.erase_points[1].x = _screen_width - 1;
-    vdp1_env.erase_points[1].y = _screen_height - 1;
+    vdp1_env.erase_points[1].x = _render_width - 1;
+    vdp1_env.erase_points[1].y = _render_height - 1;
     vdp1_env.bpp = VDP1_ENV_BPP_8;
     vdp1_env.rotation = VDP1_ENV_ROTATION_0;
     vdp1_env.color_mode = VDP1_ENV_COLOR_MODE_RGB_PALETTE;
@@ -205,8 +205,8 @@ static void _romdisk_init(void) {
 
 static void _draw_cmdt_list_init(vdp1_cmdt_list_t* cmdt_list) {
     constexpr int16_vec2_t system_clip_coord =
-        INT16_VEC2_INITIALIZER(_screen_width - 1,
-                               _screen_height - 1);
+        INT16_VEC2_INITIALIZER(_render_width - 1,
+                               _render_height - 1);
 
     constexpr int16_vec2_t local_coord_ul =
         INT16_VEC2_INITIALIZER(0,
@@ -250,14 +250,14 @@ static void _draw_cmdt_list_init(vdp1_cmdt_list_t* cmdt_list) {
     vdp1_cmdt_param_char_base_set(&cmdts[ORDER_ERASE_INDEX], (vdp1_vram_t)vram_partitions.texture_base);
     vdp1_cmdt_param_color_mode1_set(&cmdts[ORDER_ERASE_INDEX], (vdp1_vram_t)vram_partitions.clut_base);
 
-    /* The clear polygon is cut in half due to the VDP1 not having enough time
-     * to clear the bottom half of the framebuffer in time */
+    // The clear polygon is cut in half due to the VDP1 not having enough time *
+    // to clear the bottom half of the framebuffer in time
     cmdts[ORDER_ERASE_INDEX].cmd_xa = 0;
-    cmdts[ORDER_ERASE_INDEX].cmd_ya = ((_screen_height - 18) / 2) - 1;
+    cmdts[ORDER_ERASE_INDEX].cmd_ya = ((_render_height - 18) / 2) - 1;
     cmdts[ORDER_ERASE_INDEX].cmd_xb = 0;
     cmdts[ORDER_ERASE_INDEX].cmd_yb = 0;
-    cmdts[ORDER_ERASE_INDEX].cmd_xc = _screen_width - 1;
-    cmdts[ORDER_ERASE_INDEX].cmd_yc = _screen_height - 1;
+    cmdts[ORDER_ERASE_INDEX].cmd_xc = _render_width - 1;
+    cmdts[ORDER_ERASE_INDEX].cmd_yc = _render_height - 1;
     cmdts[ORDER_ERASE_INDEX].cmd_xd = 0;
     cmdts[ORDER_ERASE_INDEX].cmd_yd = 0;
 
@@ -362,12 +362,12 @@ static void _on_update_palette(uint8_t palette_index,
 static void _on_clear_screen(bool clear_screen) {
     vdp1_cmdt_t* const cmdts = _scene.cmdt_list->cmdts;
 
-    if (!clear_screen) {
         vdp1_cmdt_jump_skip_assign(&cmdts[ORDER_ERASE_INDEX], ORDER_BUFFER_STARTING_INDEX << 2);
+    if (!clear_screen) {
 
         vdp1_sync_mode_set(VDP1_SYNC_MODE_CHANGE_ONLY);
     } else {
-        vdp1_cmdt_jump_clear(&cmdts[ORDER_ERASE_INDEX]);
+        // vdp1_cmdt_jump_clear(&cmdts[ORDER_ERASE_INDEX]);
 
         vdp1_sync_mode_set(VDP1_SYNC_MODE_ERASE_CHANGE);
     }
