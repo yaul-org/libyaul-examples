@@ -11,11 +11,11 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#define RESOLUTION_WIDTH    (320)
-#define RESOLUTION_HEIGHT   (224)
+#define RESOLUTION_WIDTH    (352)
+#define RESOLUTION_HEIGHT   (240)
 
-#define SCREEN_WIDTH    (320)
-#define SCREEN_HEIGHT   (224)
+#define SCREEN_WIDTH    (352)
+#define SCREEN_HEIGHT   (240)
 
 #define VDP1_VRAM_CMDT_COUNT    (8192)
 #define VDP1_VRAM_TEXTURE_SIZE  (0x3BFE0)
@@ -25,8 +25,9 @@
 #define ORDER_SYSTEM_CLIP_COORDS_INDEX  (0)
 #define ORDER_USER_CLIP_INDEX           (1)
 #define ORDER_LOCAL_COORDS_INDEX        (2)
-#define ORDER_SEGA3D_INDEX              (3)
-#define ORDER_BASE_COUNT                (3)
+#define ORDER_ERASE_INDEX               (3)
+#define ORDER_SEGA3D_INDEX              (4)
+#define ORDER_BASE_COUNT                (5)
 
 extern uint8_t root_romdisk[];
 
@@ -78,15 +79,40 @@ main(void)
         /* Set up global command table list */
         _cmdts = memalign(sizeof(vdp1_cmdt_t) * VDP1_VRAM_CMDT_COUNT, sizeof(vdp1_cmdt_t));
         assert(_cmdts != NULL);
+
         /* Set up the first few command tables */
         vdp1_env_preamble_populate(&_cmdts[0], NULL);
 
+        const vdp1_cmdt_draw_mode_t erase_draw_mode = {
+                .raw = 0x0000,
+                .bits.pre_clipping_disable = true,
+                .bits.end_code_disable = true,
+        };
+
+        vdp1_cmdt_polygon_set(&_cmdts[ORDER_ERASE_INDEX]);
+        vdp1_cmdt_param_draw_mode_set(&_cmdts[ORDER_ERASE_INDEX], erase_draw_mode);
+        vdp1_cmdt_param_color_set(&_cmdts[ORDER_ERASE_INDEX], COLOR_RGB1555(0, 0, 0, 0));
+
+        /* The clear polygon is cut in half due to the VDP1 not having enough
+         * time to clear the bottom half of the framebuffer in time */
+        _cmdts[ORDER_ERASE_INDEX].cmd_xa = -SCREEN_WIDTH / 2;
+        _cmdts[ORDER_ERASE_INDEX].cmd_ya = -18;
+        _cmdts[ORDER_ERASE_INDEX].cmd_xb = (SCREEN_WIDTH / 2) - 1;
+        _cmdts[ORDER_ERASE_INDEX].cmd_yb = -18;
+        _cmdts[ORDER_ERASE_INDEX].cmd_xc = (SCREEN_WIDTH / 2) - 1;
+        _cmdts[ORDER_ERASE_INDEX].cmd_yc = SCREEN_HEIGHT - 1;
+        _cmdts[ORDER_ERASE_INDEX].cmd_xd = -SCREEN_WIDTH / 2;
+        _cmdts[ORDER_ERASE_INDEX].cmd_yd = (SCREEN_HEIGHT / 2) - 1;
+
+        vdp1_cmdt_end_set(&_cmdts[ORDER_SEGA3D_INDEX]);
+
         vdp1_cmdt_orderlist_init(_cmdt_orderlist, VDP1_VRAM_CMDT_COUNT);
 
-        _cmdt_orderlist[0].cmdt = &_cmdts[0];
-        _cmdt_orderlist[1].cmdt = &_cmdts[1];
-        _cmdt_orderlist[2].cmdt = &_cmdts[2];
-        _cmdt_orderlist[3].cmdt = &_cmdts[3];
+        _cmdt_orderlist[0].cmdt = &_cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX];
+        _cmdt_orderlist[1].cmdt = &_cmdts[ORDER_USER_CLIP_INDEX];
+        _cmdt_orderlist[2].cmdt = &_cmdts[ORDER_LOCAL_COORDS_INDEX];
+        _cmdt_orderlist[3].cmdt = &_cmdts[ORDER_ERASE_INDEX];
+        _cmdt_orderlist[4].cmdt = &_cmdts[ORDER_SEGA3D_INDEX];
 
         vdp1_cmdt_orderlist_vram_patch(_cmdt_orderlist,
             (const vdp1_cmdt_t *)VDP1_VRAM(0), VDP1_VRAM_CMDT_COUNT);
@@ -142,6 +168,7 @@ main(void)
                        SEGA3D_OBJECT_FLAGS_FOG_EXCLUDE;
         object.xpdatas = xpdatas;
         object.xpdata_count = s3d->xpdata_count;
+
         object.cull_shape = &aabb;
 
         ANGLE rot[XYZ] __unused;
@@ -193,6 +220,7 @@ main(void)
                                 sega3d_object_transform(&object, i);
 
                                 *time_p = _timing_get(); total_time += *time_p; time_p++;
+                                break;
                         }
 
                         /* for (uint32_t i = 0; i < (uint32_t)(time_p - time); i++) { */
@@ -222,21 +250,22 @@ main(void)
                 }
 
                 dbgio_flush();
-                vdp_sync();
+                vdp1_sync();
+                vdp1_sync_wait();
         }
 }
 
 void
 user_init(void)
 {
-        vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
-            VDP2_TVMD_VERT_224);
+        vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_B,
+            VDP2_TVMD_VERT_240);
 
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB1555(1, 0, 3, 15));
 
-        vdp_sync_vblank_in_set(_vblank_in_handler);
-        vdp_sync_vblank_out_set(_vblank_out_handler);
+        vdp_sync_vblank_in_set(_vblank_in_handler, NULL);
+        vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
         vdp1_vram_partitions_set(VDP1_VRAM_CMDT_COUNT,
             VDP1_VRAM_TEXTURE_SIZE,
@@ -248,7 +277,20 @@ user_init(void)
         /* Variable internal */
         vdp1_sync_interval_set(-1);
 
-        vdp1_env_default_set();
+        vdp1_env_t vdp1_env;
+
+        vdp1_env.erase_color = COLOR_RGB1555(0, 0, 0, 0);
+        vdp1_env.erase_points[0].x = 0;
+        vdp1_env.erase_points[0].y = 0;
+        vdp1_env.erase_points[1].x = SCREEN_WIDTH - 1;
+        vdp1_env.erase_points[1].y = SCREEN_HEIGHT - 1;
+        vdp1_env.bpp = VDP1_ENV_BPP_16;
+        vdp1_env.rotation = VDP1_ENV_ROTATION_0;
+        vdp1_env.color_mode = VDP1_ENV_COLOR_MODE_RGB_PALETTE;
+        vdp1_env.sprite_type = 0;
+
+        vdp1_env_set(&vdp1_env);
+
         vdp2_sprite_priority_set(0, 6);
 
         cpu_frt_init(CPU_FRT_CLOCK_DIV_128);
@@ -258,11 +300,14 @@ user_init(void)
 
         cpu_intc_mask_set(0);
 
-        dbgio_dev_default_init(DBGIO_DEV_USB_CART);
-        dbgio_dev_font_load();
-        dbgio_dev_font_load_wait();
+        /* dbgio_dev_default_init(DBGIO_DEV_USB_CART); */
+        /* dbgio_dev_font_load(); */
+        /* dbgio_dev_font_load_wait(); */
 
         vdp2_tvmd_display_set();
+
+        vdp2_sync();
+        vdp2_sync_wait();
 }
 
 void

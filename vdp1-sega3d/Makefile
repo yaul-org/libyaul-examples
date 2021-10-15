@@ -24,7 +24,7 @@ ROMDISK_DIRS= romdisk
 
 # Important, libsega3d must be included
 SH_LIBRARIES:= sega3d
-SH_CFLAGS+= -O2 -I. -save-temps=obj -ggdb3
+SH_CFLAGS+= -O2 -I. -save-temps=obj -ggdb3 -Wno-error
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
