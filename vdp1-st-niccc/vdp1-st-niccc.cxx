@@ -14,13 +14,18 @@
 // #pragma GCC push_options
 // #pragma GCC optimize ("align-functions=16")
 
-#define ORDER_SYSTEM_CLIP_COORDS_INDEX      0
-#define ORDER_LOCAL_COORDS_INDEX            1
-#define ORDER_ERASE_INDEX                   2
-#define ORDER_BUFFER_STARTING_INDEX         3
-#define ORDER_BUFFER_END_INDEX              (ORDER_BUFFER_STARTING_INDEX + 512)
-#define ORDER_DRAW_END_INDEX                (ORDER_BUFFER_END_INDEX + 1)
-#define ORDER_COUNT                         ORDER_DRAW_END_INDEX
+#define VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX    0
+#define VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX          1
+#define VDP1_CMDT_ORDER_ERASE_INDEX                 2
+#define VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX       3
+#define VDP1_CMDT_ORDER_BUFFER_END_INDEX            (VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX + 512)
+#define VDP1_CMDT_ORDER_DRAW_END_INDEX              (VDP1_CMDT_ORDER_BUFFER_END_INDEX + 1)
+#define VDP1_CMDT_ORDER_COUNT                       VDP1_CMDT_ORDER_DRAW_END_INDEX
+
+#define RBG0_BPD            VDP2_VRAM_ADDR(0, 0x000000)
+#define RBG0_ROTATION_TABLE VDP2_VRAM_ADDR(2, 0x000000)
+
+#define BACK_SCREEN         VDP2_VRAM_ADDR(1, 0x01FFFE)
 
 typedef uint32_t (*draw_handler)(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, vdp1_cmdt_color_bank_t color_bank);
 
@@ -30,8 +35,8 @@ static constexpr uint32_t _screen_height = 240;
 static constexpr uint32_t _render_width = 256;
 static constexpr uint32_t _render_height = 200;
 
-static constexpr fix16_t _scale_width = FIX16(_screen_width / static_cast<float>(_render_width));
-static constexpr fix16_t _scale_height = FIX16(_screen_height / static_cast<float>(_render_height));
+static constexpr fix16_t _scale_width = FIX16(_render_width / static_cast<float>(_screen_width));
+static constexpr fix16_t _scale_height = FIX16(_render_height / static_cast<float>(_screen_height));
 
 static const char* _scene_file_path = "SCENE.BIN";
 
@@ -157,17 +162,8 @@ int main(void) {
     __builtin_unreachable();
 }
 
-void user_init(void) {
-    vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_B,
-                              VDP2_TVMD_VERT_240);
-
-    vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE), COLOR_RGB1555(1, 7, 7, 7));
-
+static void _vdp1_init(void) {
     vdp2_sprite_priority_set(0, 6);
-
-    cpu_intc_mask_set(0);
-
-    vdp2_tvmd_display_set();
 
     vdp1_sync_interval_set(VDP1_SYNC_INTERVAL_VARIABLE);
 
@@ -179,19 +175,109 @@ void user_init(void) {
     vdp1_env.erase_points[1].x = _render_width - 1;
     vdp1_env.erase_points[1].y = _render_height - 1;
     vdp1_env.bpp = VDP1_ENV_BPP_8;
-    vdp1_env.rotation = VDP1_ENV_ROTATION_0;
-    vdp1_env.color_mode = VDP1_ENV_COLOR_MODE_RGB_PALETTE;
+    vdp1_env.rotation = VDP1_ENV_ROTATION_90;
+    vdp1_env.color_mode = VDP1_ENV_COLOR_MODE_PALETTE;
     vdp1_env.sprite_type = 0;
 
     vdp1_env_set(&vdp1_env);
+}
+
+static void _vdp2_init(void) {
+    static const vdp2_scrn_bitmap_format_t rbg0_format = {
+            .scroll_screen       = VDP2_SCRN_RBG0,
+            .cc_count            = VDP2_SCRN_CCC_PALETTE_256,
+            .bitmap_size         = { 512, 512 },
+            .color_palette       = 0x00000000,
+            .bitmap_pattern      = RBG0_BPD,
+            .sf_type             = VDP2_SCRN_SF_TYPE_NONE,
+            .sf_code             = VDP2_SCRN_SF_CODE_A,
+            .sf_mode             = 0,
+            .rp_mode             = 0, /* Mode 0: Rotation Parameter A */
+            .rotation_table_base = RBG0_ROTATION_TABLE,
+            .usage_banks         = {
+                    .a0 = VDP2_VRAM_USAGE_TYPE_NONE,
+                    .a1 = VDP2_VRAM_USAGE_TYPE_NONE,
+                    .b0 = VDP2_VRAM_USAGE_TYPE_NONE,
+                    .b1 = VDP2_VRAM_USAGE_TYPE_NONE
+            }
+    };
+
+    /* XXX: Make it const */
+    static vdp2_scrn_rotation_table_t rbg0_rotation_table __used = {
+            // Starting TV screen coordinates
+            .xst = 0,
+            .yst = 0,
+            .zst = 0,
+
+            // Screen vertical coordinate increments (per each line)
+            .delta_xst = FIX16(0.0f),
+            .delta_yst = _scale_height,
+
+            // Screen horizontal coordinate increments (per each dot)
+            .delta_x = _scale_width,
+            .delta_y = FIX16(0.0f),
+
+            .matrix = {
+                    .param = {
+                            .a = FIX16(1.0f),
+                            .b = FIX16(0.0f),
+                            .c = FIX16(0.0f),
+                            .d = FIX16(0.0f),
+                            .e = FIX16(1.0f),
+                            .f = FIX16(0.0f)
+                    }
+            },
+
+            // View point coordinates
+            .px = 0,
+            .py = 0,
+            .pz = 0,
+
+            // Center coordinates
+            .cx = 0,
+            .cy = 0,
+            .cz = 0,
+
+            // Amount of horizontal shifting
+            .mx = 0,
+            .my = 0,
+
+            // Scaling coefficients
+            .kx = FIX16(1.0f),
+            .ky = FIX16(1.0f),
+
+            // Coefficient table start address
+            .kast = 0,
+            // Addr. increment coeff. table (per line)
+            .delta_kast = 0,
+            // Addr. increment coeff. table (per dot)
+            .delta_kax = 0,
+    };
+
+    vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_B,
+                              VDP2_TVMD_VERT_240);
+
+    vdp2_scrn_back_screen_color_set(BACK_SCREEN, COLOR_RGB1555(1, 7, 7, 7));
+
+    vdp2_scrn_bitmap_format_set(&rbg0_format);
+    vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);
+    vdp2_scrn_display_set(VDP2_SCRN_RBG0, /* no_trans = */ true);
+
+    (void)memcpy((void *)RBG0_ROTATION_TABLE, &rbg0_rotation_table, sizeof(rbg0_rotation_table));
+
+    vdp2_tvmd_display_set();
+}
+
+void user_init(void) {
+    cpu_intc_mask_set(0);
+
+    _vdp2_init();
+    _vdp1_init();
 
     vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
     cpu_frt_init(CPU_FRT_CLOCK_DIV_8);
     cpu_frt_ovi_set(_frt_ovi_handler);
-
-    // Disable HBLANK-IN interrupt for better performance
-    scu_ic_mask_chg(SCU_IC_MASK_ALL, SCU_IC_MASK_HBLANK_IN);
 }
 
 static void _romdisk_init(void) {
@@ -236,32 +322,32 @@ static void _draw_cmdt_list_init(vdp1_cmdt_list_t* cmdt_list) {
 
     vdp1_cmdt_t* const cmdts = cmdt_list->cmdts;
 
-    (void)memset(&cmdts[0], 0x00, ORDER_COUNT * sizeof(vdp1_cmdt));
+    (void)memset(&cmdts[0], 0x00, VDP1_CMDT_ORDER_COUNT * sizeof(vdp1_cmdt));
 
-    vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
-    vdp1_cmdt_param_vertex_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX], CMDT_VTX_SYSTEM_CLIP, &system_clip_coord);
+    vdp1_cmdt_system_clip_coord_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX]);
+    vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX], CMDT_VTX_SYSTEM_CLIP, &system_clip_coord);
 
-    vdp1_cmdt_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX]);
-    vdp1_cmdt_param_vertex_set(&cmdts[ORDER_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+    vdp1_cmdt_local_coord_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX]);
+    vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_ul);
 
-    vdp1_cmdt_scaled_sprite_set(&cmdts[ORDER_ERASE_INDEX]);
-    vdp1_cmdt_param_draw_mode_set(&cmdts[ORDER_ERASE_INDEX], clear_draw_mode);
-    vdp1_cmdt_param_size_set(&cmdts[ORDER_ERASE_INDEX], 8, 1);
-    vdp1_cmdt_param_char_base_set(&cmdts[ORDER_ERASE_INDEX], (vdp1_vram_t)vram_partitions.texture_base);
-    vdp1_cmdt_param_color_mode1_set(&cmdts[ORDER_ERASE_INDEX], (vdp1_vram_t)vram_partitions.clut_base);
+    vdp1_cmdt_scaled_sprite_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX]);
+    vdp1_cmdt_param_draw_mode_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], clear_draw_mode);
+    vdp1_cmdt_param_size_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], 8, 1);
+    vdp1_cmdt_param_char_base_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], (vdp1_vram_t)vram_partitions.texture_base);
+    vdp1_cmdt_param_color_mode1_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], (vdp1_vram_t)vram_partitions.clut_base);
 
     // The clear polygon is cut in half due to the VDP1 not having enough time *
     // to clear the bottom half of the framebuffer in time
-    cmdts[ORDER_ERASE_INDEX].cmd_xa = 0;
-    cmdts[ORDER_ERASE_INDEX].cmd_ya = ((_render_height - 18) / 2) - 1;
-    cmdts[ORDER_ERASE_INDEX].cmd_xb = 0;
-    cmdts[ORDER_ERASE_INDEX].cmd_yb = 0;
-    cmdts[ORDER_ERASE_INDEX].cmd_xc = _render_width - 1;
-    cmdts[ORDER_ERASE_INDEX].cmd_yc = _render_height - 1;
-    cmdts[ORDER_ERASE_INDEX].cmd_xd = 0;
-    cmdts[ORDER_ERASE_INDEX].cmd_yd = 0;
+    cmdts[VDP1_CMDT_ORDER_ERASE_INDEX].cmd_xa = 0;
+    cmdts[VDP1_CMDT_ORDER_ERASE_INDEX].cmd_ya = ((_render_height - 18) / 2) - 1;
+    cmdts[VDP1_CMDT_ORDER_ERASE_INDEX].cmd_xb = 0;
+    cmdts[VDP1_CMDT_ORDER_ERASE_INDEX].cmd_yb = 0;
+    cmdts[VDP1_CMDT_ORDER_ERASE_INDEX].cmd_xc = _render_width - 1;
+    cmdts[VDP1_CMDT_ORDER_ERASE_INDEX].cmd_yc = _render_height - 1;
+    cmdts[VDP1_CMDT_ORDER_ERASE_INDEX].cmd_xd = 0;
+    cmdts[VDP1_CMDT_ORDER_ERASE_INDEX].cmd_yd = 0;
 
-    for (uint32_t i = ORDER_BUFFER_STARTING_INDEX; i < ORDER_BUFFER_END_INDEX; i++) {
+    for (uint32_t i = VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX; i < VDP1_CMDT_ORDER_BUFFER_END_INDEX; i++) {
         vdp1_cmdt_polygon_set(&cmdts[i]);
         vdp1_cmdt_param_draw_mode_set(&cmdts[i], polygon_draw_mode);
         vdp1_cmdt_param_color_bank_set(&cmdts[i], color_bank);
@@ -277,20 +363,20 @@ static void _draw_cmdt_list_init(vdp1_cmdt_list_t* cmdt_list) {
 }
 
 static void _draw_init(void) {
-    _scene.cmdt_lists[0] = vdp1_cmdt_list_alloc(ORDER_COUNT);
+    _scene.cmdt_lists[0] = vdp1_cmdt_list_alloc(VDP1_CMDT_ORDER_COUNT);
     assert(_scene.cmdt_lists[0] != nullptr);
 
-    _scene.cmdt_lists[1] = vdp1_cmdt_list_alloc(ORDER_COUNT);
+    _scene.cmdt_lists[1] = vdp1_cmdt_list_alloc(VDP1_CMDT_ORDER_COUNT);
     assert(_scene.cmdt_lists[1] != nullptr);
 
     _draw_cmdt_list_init(_scene.cmdt_lists[0]);
     _draw_cmdt_list_init(_scene.cmdt_lists[1]);
 
-    vdp1_cmdt_end_set(&_scene.cmdt_lists[0]->cmdts[ORDER_BUFFER_STARTING_INDEX]);
-    vdp1_cmdt_end_set(&_scene.cmdt_lists[1]->cmdts[ORDER_BUFFER_STARTING_INDEX]);
+    vdp1_cmdt_end_set(&_scene.cmdt_lists[0]->cmdts[VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX]);
+    vdp1_cmdt_end_set(&_scene.cmdt_lists[1]->cmdts[VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX]);
 
-    _scene.cmdt_lists[0]->count = ORDER_BUFFER_STARTING_INDEX + 1;
-    _scene.cmdt_lists[1]->count = ORDER_BUFFER_STARTING_INDEX + 1;
+    _scene.cmdt_lists[0]->count = VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX + 1;
+    _scene.cmdt_lists[1]->count = VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX + 1;
 
     _scene.which_cmdt_list = 0;
     _scene.cmdt_list = _scene.cmdt_lists[_scene.which_cmdt_list];
@@ -317,7 +403,7 @@ static void _on_start(uint32_t, bool) {
 
     end_cmdt->cmd_ctrl &= ~0x8000;
 
-    _scene.cmdt_list->count = ORDER_BUFFER_STARTING_INDEX;
+    _scene.cmdt_list->count = VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX;
 }
 
 static void _on_end(uint32_t frame_index __unused, bool last_frame) {
@@ -362,12 +448,12 @@ static void _on_update_palette(uint8_t palette_index,
 static void _on_clear_screen(bool clear_screen) {
     vdp1_cmdt_t* const cmdts = _scene.cmdt_list->cmdts;
 
-        vdp1_cmdt_jump_skip_assign(&cmdts[ORDER_ERASE_INDEX], ORDER_BUFFER_STARTING_INDEX << 2);
+        vdp1_cmdt_jump_skip_assign(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX << 2);
     if (!clear_screen) {
 
         vdp1_sync_mode_set(VDP1_SYNC_MODE_CHANGE_ONLY);
     } else {
-        // vdp1_cmdt_jump_clear(&cmdts[ORDER_ERASE_INDEX]);
+        // vdp1_cmdt_jump_clear(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX]);
 
         vdp1_sync_mode_set(VDP1_SYNC_MODE_ERASE_CHANGE);
     }
