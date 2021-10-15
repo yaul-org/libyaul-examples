@@ -151,7 +151,7 @@ user_init(void)
                                 RBG0_PND
                         }
                 },
-                .rotation_table = VDP2_VRAM_ADDR(2, 0x00000),
+                .rotation_table = RBG0_ROTATION_TABLE,
                 .usage_banks = {
                         .a0 = VDP2_VRAM_USAGE_TYPE_CPD,
                         .a1 = VDP2_VRAM_USAGE_TYPE_PND,
