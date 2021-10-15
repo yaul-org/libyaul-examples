@@ -22,7 +22,7 @@
 #define ORDER_DRAW_END_INDEX                (ORDER_BUFFER_END_INDEX + 1)
 #define ORDER_COUNT                         ORDER_DRAW_END_INDEX
 
-typedef uint32_t (*draw_handler)(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, color_rgb1555_t color);
+typedef uint32_t (*draw_handler)(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, vdp1_cmdt_color_bank_t color_bank);
 
 static constexpr uint32_t _screen_width = 352;
 static constexpr uint32_t _screen_height = 240;
@@ -74,11 +74,11 @@ static void _on_clear_screen(bool);
 static void _on_update_palette(uint8_t, const scene::rgb444);
 static void _on_draw(const uint8_vec2_t *, uint32_t, uint32_t);
 
-static uint32_t _on_draw_polygon3(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, color_rgb1555_t color);
-static uint32_t _on_draw_polygon4(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, color_rgb1555_t color);
-static uint32_t _on_draw_polygon5(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, color_rgb1555_t color);
-static uint32_t _on_draw_polygon6(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, color_rgb1555_t color);
-static uint32_t _on_draw_polygon7(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, color_rgb1555_t color);
+static uint32_t _on_draw_polygon3(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, vdp1_cmdt_color_bank_t color_bank);
+static uint32_t _on_draw_polygon4(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, vdp1_cmdt_color_bank_t color_bank);
+static uint32_t _on_draw_polygon5(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, vdp1_cmdt_color_bank_t color_bank);
+static uint32_t _on_draw_polygon6(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, vdp1_cmdt_color_bank_t color_bank);
+static uint32_t _on_draw_polygon7(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, vdp1_cmdt_color_bank_t color_bank);
 
 static const draw_handler _draw_handlers[] = {
     nullptr, // 0
@@ -178,7 +178,7 @@ void user_init(void) {
     vdp1_env.erase_points[0].y = 0;
     vdp1_env.erase_points[1].x = _screen_width - 1;
     vdp1_env.erase_points[1].y = _screen_height - 1;
-    vdp1_env.bpp = VDP1_ENV_BPP_16;
+    vdp1_env.bpp = VDP1_ENV_BPP_8;
     vdp1_env.rotation = VDP1_ENV_ROTATION_0;
     vdp1_env.color_mode = VDP1_ENV_COLOR_MODE_RGB_PALETTE;
     vdp1_env.sprite_type = 0;
@@ -355,6 +355,8 @@ static void _on_update_palette(uint8_t palette_index,
         COLOR_RGB1555(1, scaled_r, scaled_g, scaled_b);
 
     _scene.palette[palette_index] = rgb1555_color;
+
+    MEMORY_WRITE(16, VDP2_CRAM((palette_index + 16) << 1), rgb1555_color.raw);
 }
 
 static void _on_clear_screen(bool clear_screen) {
@@ -517,8 +519,9 @@ static void _quad_vertex_set(vdp1_cmdt& cmdt,
 
 static uint32_t _on_draw_polygon3(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
-                                  color_rgb1555_t color) {
-    cmdt[0].cmd_colr = color.raw;
+                                  vdp1_cmdt_color_bank_t color_bank) {
+    // cmdt[0].cmd_colr = color.raw;
+    cmdt[0].cmd_colr = color_bank.raw;
     _triangle_vertex_set(cmdt[0], vertex_buffer);
 
     return 1;
@@ -526,8 +529,9 @@ static uint32_t _on_draw_polygon3(vdp1_cmdt* cmdt,
 
 static uint32_t _on_draw_polygon4(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
-                                  color_rgb1555_t color) {
-    cmdt[0].cmd_colr = color.raw;
+                                  vdp1_cmdt_color_bank_t color_bank) {
+    // cmdt[0].cmd_colr = color.raw;
+    cmdt[0].cmd_colr = color_bank.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
     return 1;
@@ -535,11 +539,13 @@ static uint32_t _on_draw_polygon4(vdp1_cmdt* cmdt,
 
 static uint32_t _on_draw_polygon5(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
-                                  color_rgb1555_t color) {
-    cmdt[0].cmd_colr = color.raw;
+                                  vdp1_cmdt_color_bank_t color_bank) {
+    // cmdt[0].cmd_colr = color.raw;
+    cmdt[0].cmd_colr = color_bank.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
-    cmdt[1].cmd_colr = color.raw;
+    // cmdt[1].cmd_colr = color.raw;
+    cmdt[1].cmd_colr = color_bank.raw;
     _triangle_vertex_set(cmdt[1], vertex_buffer, 3);
 
     return 2;
@@ -547,11 +553,13 @@ static uint32_t _on_draw_polygon5(vdp1_cmdt* cmdt,
 
 static uint32_t _on_draw_polygon6(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
-                                  color_rgb1555_t color) {
-    cmdt[0].cmd_colr = color.raw;
+                                  vdp1_cmdt_color_bank_t color_bank) {
+    // cmdt[0].cmd_colr = color.raw;
+    cmdt[0].cmd_colr = color_bank.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
-    cmdt[1].cmd_colr = color.raw;
+    // cmdt[1].cmd_colr = color.raw;
+    cmdt[1].cmd_colr = color_bank.raw;
     _quad_vertex_set(cmdt[1], vertex_buffer, 3);
 
     return 2;
@@ -559,14 +567,19 @@ static uint32_t _on_draw_polygon6(vdp1_cmdt* cmdt,
 
 static uint32_t _on_draw_polygon7(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
-                                  color_rgb1555_t color) {
-    cmdt[0].cmd_colr = color.raw;
+                                  vdp1_cmdt_color_bank_t color_bank) {
+
+
+    // cmdt[0].cmd_colr = color.raw;
+    cmdt[0].cmd_colr = color_bank.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
-    cmdt[1].cmd_colr = color.raw;
+    // cmdt[1].cmd_colr = color.raw;
+    cmdt[1].cmd_colr = color_bank.raw;
     _quad_vertex_set(cmdt[1], vertex_buffer, 3);
 
-    cmdt[2].cmd_colr = color.raw;
+    // cmdt[2].cmd_colr = color.raw;
+    cmdt[2].cmd_colr = color_bank.raw;
     _triangle_vertex_set(cmdt[2], vertex_buffer, 5);
 
     return 3;
@@ -579,9 +592,11 @@ static void _on_draw(const uint8_vec2_t* vertex_buffer,
 
     vdp1_cmdt* cmdt = &_scene.cmdt_list->cmdts[_scene.cmdt_list->count];
 
-    const color_rgb1555_t color = _scene.palette[palette_index];
+    vdp1_cmdt_color_bank_t color_bank;
+    color_bank.raw = 0x0000;
+    color_bank.type_0.data.dc = palette_index + 16;
 
-    _scene.cmdt_list->count += draw_handler(cmdt, vertex_buffer, color);
+    _scene.cmdt_list->count += draw_handler(cmdt, vertex_buffer, color_bank);
 }
 
 // #pragma GCC pop_options
