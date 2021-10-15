@@ -94,7 +94,7 @@ static const draw_handler _draw_handlers[] = {
 int main(void) {
     _romdisk_init();
 
-    dbgio_dev_default_init(DBGIO_DEV_VDP2_SIMPLE);
+    dbgio_dev_default_init(DBGIO_DEV_VDP2);
     dbgio_dev_font_load();
     dbgio_dev_font_load_wait();
 
