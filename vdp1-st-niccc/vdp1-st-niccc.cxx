@@ -136,37 +136,19 @@ int main(void) {
         }
 
         if (process_frame) {
-            dbgio_puts("[H[2J");
-
-            // const fix16_t frame_count = fix16_int32_from(_stats.frame_count);
-            // const fix16_t vblank_count = fix16_int32_from(_stats.vblank_count);
-            //
-            // cpu_divu_fix16_set(frame_count, vblank_count);
-            //
-            // const fix16_t quotient = cpu_divu_quotient_get();
-            // const fix16_t fps = fix16_int16_mul(quotient, 60);
-
             if (_stats.vblank_count > 1) {
                 _stats.dropped_count++;
             }
 
-            // dbgio_printf("%i/%i -> %f (dropped frames: %i)\n", _stats.frame_count, _stats.vblank_count, fps, _stats.dropped_count);
-            // dbgio_printf("dropped_count: %i\n", _stats.dropped_count);
+            dbgio_printf("[H[2J\n_stats.dropped_count: %i\n", _stats.dropped_count);
 
             _stats.vblank_count = 0;
             _stats.frame_count = 0;
 
-            // _stats.ovi_count = 0;
-            // cpu_frt_count_set(0);
+            dbgio_flush();
+            vdp2_sync();
 
             scene::process_frame();
-
-            // const uint16_t tick_count = cpu_frt_count_get();
-            // const uint32_t total_tick_counts = tick_count + (_stats.ovi_count * 65536);
-            //
-            // dbgio_printf("%i ticks\n", total_tick_counts);
-
-            // dbgio_flush();
         }
 
         _stats.frame_count++;
