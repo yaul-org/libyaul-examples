@@ -130,6 +130,9 @@ int main(void) {
     vdp2_sync_wait();
 
     while (true) {
+        smpc_peripheral_process();
+        smpc_peripheral_digital_port(1, &_digital);
+
         if ((_digital.held.button.l) != 0) {
             start_state ^= true;
         }
@@ -154,6 +157,9 @@ int main(void) {
             vdp2_sync();
 
             scene::process_frame();
+        } else {
+                vdp2_tvmd_vblank_in_wait();
+                vdp2_tvmd_vblank_out_wait();
         }
 
         _stats.frame_count++;
@@ -331,6 +337,7 @@ static void _draw_cmdt_list_init(vdp1_cmdt_list_t* cmdt_list) {
     vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_ul);
 
     vdp1_cmdt_scaled_sprite_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX]);
+    vdp1_cmdt_jump_skip_assign(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX);
     vdp1_cmdt_param_draw_mode_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], clear_draw_mode);
     vdp1_cmdt_param_size_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], 8, 1);
     vdp1_cmdt_param_char_base_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], (vdp1_vram_t)vram_partitions.texture_base);
@@ -385,10 +392,7 @@ static void _draw_init(void) {
 static void _vblank_out_handler(void *) {
     _stats.vblank_count++;
 
-    // smpc_peripheral_intback_issue();
-
-    // smpc_peripheral_process();
-    // smpc_peripheral_digital_port(1, &_digital);
+    smpc_peripheral_intback_issue();
 }
 
 static void _frt_ovi_handler(void) {
@@ -446,15 +450,9 @@ static void _on_update_palette(uint8_t palette_index,
 }
 
 static void _on_clear_screen(bool clear_screen) {
-    vdp1_cmdt_t* const cmdts = _scene.cmdt_list->cmdts;
-
-        vdp1_cmdt_jump_skip_assign(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX << 2);
     if (!clear_screen) {
-
         vdp1_sync_mode_set(VDP1_SYNC_MODE_CHANGE_ONLY);
     } else {
-        // vdp1_cmdt_jump_clear(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX]);
-
         vdp1_sync_mode_set(VDP1_SYNC_MODE_ERASE_CHANGE);
     }
 }
@@ -606,7 +604,6 @@ static void _quad_vertex_set(vdp1_cmdt& cmdt,
 static uint32_t _on_draw_polygon3(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
                                   vdp1_cmdt_color_bank_t color_bank) {
-    // cmdt[0].cmd_colr = color.raw;
     cmdt[0].cmd_colr = color_bank.raw;
     _triangle_vertex_set(cmdt[0], vertex_buffer);
 
@@ -616,7 +613,6 @@ static uint32_t _on_draw_polygon3(vdp1_cmdt* cmdt,
 static uint32_t _on_draw_polygon4(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
                                   vdp1_cmdt_color_bank_t color_bank) {
-    // cmdt[0].cmd_colr = color.raw;
     cmdt[0].cmd_colr = color_bank.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
@@ -626,11 +622,9 @@ static uint32_t _on_draw_polygon4(vdp1_cmdt* cmdt,
 static uint32_t _on_draw_polygon5(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
                                   vdp1_cmdt_color_bank_t color_bank) {
-    // cmdt[0].cmd_colr = color.raw;
     cmdt[0].cmd_colr = color_bank.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
-    // cmdt[1].cmd_colr = color.raw;
     cmdt[1].cmd_colr = color_bank.raw;
     _triangle_vertex_set(cmdt[1], vertex_buffer, 3);
 
@@ -640,11 +634,9 @@ static uint32_t _on_draw_polygon5(vdp1_cmdt* cmdt,
 static uint32_t _on_draw_polygon6(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
                                   vdp1_cmdt_color_bank_t color_bank) {
-    // cmdt[0].cmd_colr = color.raw;
     cmdt[0].cmd_colr = color_bank.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
-    // cmdt[1].cmd_colr = color.raw;
     cmdt[1].cmd_colr = color_bank.raw;
     _quad_vertex_set(cmdt[1], vertex_buffer, 3);
 
@@ -654,17 +646,12 @@ static uint32_t _on_draw_polygon6(vdp1_cmdt* cmdt,
 static uint32_t _on_draw_polygon7(vdp1_cmdt* cmdt,
                                   const uint8_vec2_t* vertex_buffer,
                                   vdp1_cmdt_color_bank_t color_bank) {
-
-
-    // cmdt[0].cmd_colr = color.raw;
     cmdt[0].cmd_colr = color_bank.raw;
     _quad_vertex_set(cmdt[0], vertex_buffer);
 
-    // cmdt[1].cmd_colr = color.raw;
     cmdt[1].cmd_colr = color_bank.raw;
     _quad_vertex_set(cmdt[1], vertex_buffer, 3);
 
-    // cmdt[2].cmd_colr = color.raw;
     cmdt[2].cmd_colr = color_bank.raw;
     _triangle_vertex_set(cmdt[2], vertex_buffer, 5);
 
