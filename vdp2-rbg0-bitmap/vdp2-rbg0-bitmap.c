@@ -143,11 +143,6 @@ main(void)
 void
 user_init(void)
 {
-        /* Force clear the TV display so we can draw */
-        vdp2_tvmd_display_clear();
-        vdp2_sync();
-        vdp2_sync_wait();
-
         vdp2_scrn_bitmap_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);
         vdp2_scrn_display_set(VDP2_SCRN_RBG0, /* no_trans = */ false);
@@ -167,5 +162,6 @@ user_init(void)
 
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);
+
         vdp2_tvmd_display_set();
 }
