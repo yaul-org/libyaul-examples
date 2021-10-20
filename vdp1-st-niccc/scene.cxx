@@ -145,7 +145,7 @@ void scene::process_frame(void) {
         _palette_update();
     }
 
-    const uint8_vec2_t* indexed_vertex_buffer;
+    const uint8_vec2_t* indexed_vertex_buffer = nullptr;
 
     if (frame_flags.index_mode) {
         uint8_t vertex_count = _buffer_read<uint8_t>();
