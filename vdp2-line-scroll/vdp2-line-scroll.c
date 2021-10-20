@@ -35,7 +35,7 @@ main(void)
         romdisk = romdisk_mount("/", root_romdisk);
         assert(romdisk != NULL);
 
-        void *fh[3];
+        void *fh[4];
 
         const scu_dma_level_cfg_t scu_dma_level_cfg = {
                 .xfer.indirect = &_xfer_table[0],
