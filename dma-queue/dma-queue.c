@@ -18,16 +18,16 @@ extern uint8_t root_romdisk[];
 static void *_romdisk;
 
 static vdp2_scrn_bitmap_format_t _format = {
-        .scroll_screen = VDP2_SCRN_NBG0,
-        .cc_count = VDP2_SCRN_CCC_RGB_32768,
-        .bitmap_size.width = 512,
+        .scroll_screen      = VDP2_SCRN_NBG0,
+        .cc_count           = VDP2_SCRN_CCC_RGB_32768,
+        .bitmap_size.width  = 512,
         .bitmap_size.height = 256,
-        .color_palette = 0x00000000,
-        .bitmap_pattern = VDP2_VRAM_ADDR(0, 0x00000),
-        .rp_mode = 0,
-        .sf_type = VDP2_SCRN_SF_TYPE_NONE,
-        .sf_code = VDP2_SCRN_SF_CODE_A,
-        .sf_mode = 0
+        .color_palette      = 0x00000000,
+        .bitmap_pattern     = VDP2_VRAM_ADDR(0, 0x00000),
+        .rp_mode            = 0,
+        .sf_type            = VDP2_SCRN_SF_TYPE_NONE,
+        .sf_code            = VDP2_SCRN_SF_CODE_A,
+        .sf_mode            = 0
 };
 
 /* Setting the no-access timing cycles from 0xF to 0xE increased performance
@@ -88,11 +88,9 @@ static const char *_tga_files[] = {
         NULL
 };
 
-uint8_t _intermediate_buffer[512 * 256 * 2] __aligned(4) __unused;
+static uint8_t _intermediate_buffer[512 * 256 * 2] __aligned(4) __unused;
 
 static void _romdisk_init(void);
-
-static void _dma_handler(const dma_queue_transfer_t *transfer);
 
 static uint32_t _tga_file_decode(const char *, void *, void *);
 
@@ -119,19 +117,12 @@ main(void)
                         current_file = &_tga_files[0];
                 }
 
-                void *lwram;
-                lwram = (void *)LWRAM(0x00000000);
-
-                void *vram;
-                vram = (void *)VDP2_VRAM_ADDR(2 * bank, 0x00000);
+                void * const lwram = (void *)LWRAM(0x00000000);
+                void * const vram = (void *)VDP2_VRAM_ADDR(2 * bank, 0x00000);
 
                 uint32_t intermediate_size __unused;
                 intermediate_size = _tga_file_decode(*current_file, lwram,
                     _intermediate_buffer);
-
-                _dma_queue_enqueue(vram, _intermediate_buffer, intermediate_size);
-
-                dma_queue_flush(DMA_QUEUE_TAG_IMMEDIATE);
 
                 /* Set the back screen to its original color */
                 vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(2 * bank, 0x01FFFE),
@@ -145,9 +136,10 @@ main(void)
 
                 vdp2_tvmd_vblank_in_next_wait(15);
 
-                dma_queue_flush_wait();
-                vdp2_sync_commit();
+                _dma_queue_enqueue(vram, _intermediate_buffer, intermediate_size);
 
+                vdp2_sync();
+                vdp2_sync_wait();
 
                 current_file++;
                 bank ^= 1;
@@ -159,8 +151,6 @@ main(void)
 void
 user_init(void)
 {
-        vdp2_tvmd_display_clear();
-
         vdp2_sprite_priority_set(0, 0);
         vdp2_sprite_priority_set(1, 0);
         vdp2_sprite_priority_set(2, 0);
@@ -179,10 +169,6 @@ user_init(void)
             VDP2_TVMD_VERT_240);
 
         vdp2_tvmd_display_set();
-
-        vdp2_tvmd_vblank_in_next_wait(1);
-
-        vdp2_sync_commit();
 }
 
 static void
@@ -218,10 +204,13 @@ _tga_file_decode(const char *file, void *tga_buffer, void *buffer)
 
         romdisk_close(fh);
 
+        int32_t tga_size;
+        tga_size = tga_image_decode(&tga, buffer);
+
         /* XXX: The TGA library isn't very well written. The pixel count is
          *      return, but because we're dealing with 16-BPP TGA images, it's 2
          *      bytes per pixel */
-        return 2 * tga_image_decode(&tga, buffer);
+        return (2 * tga_size);
 }
 
 static void
@@ -241,10 +230,5 @@ _dma_queue_enqueue(void *dst, void *src, const uint32_t size)
 
         scu_dma_config_buffer(&dma_handle, &dma_cfg);
 
-        dma_queue_enqueue(&dma_handle, DMA_QUEUE_TAG_IMMEDIATE, _dma_handler, NULL);
-}
-
-static void
-_dma_handler(const dma_queue_transfer_t *transfer __unused)
-{
+        dma_queue_enqueue(&dma_handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
 }
