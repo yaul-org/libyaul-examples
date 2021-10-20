@@ -183,7 +183,7 @@ static void _vdp1_init(void) {
     vdp1_env.bpp = VDP1_ENV_BPP_8;
     vdp1_env.rotation = VDP1_ENV_ROTATION_90;
     vdp1_env.color_mode = VDP1_ENV_COLOR_MODE_PALETTE;
-    vdp1_env.sprite_type = 0;
+    vdp1_env.sprite_type = 8;
 
     vdp1_env_set(&vdp1_env);
 }
@@ -201,15 +201,14 @@ static void _vdp2_init(void) {
             .rp_mode             = 0, /* Mode 0: Rotation Parameter A */
             .rotation_table_base = RBG0_ROTATION_TABLE,
             .usage_banks         = {
-                    .a0 = VDP2_VRAM_USAGE_TYPE_NONE,
+                    .a0 = VDP2_VRAM_USAGE_TYPE_BPD,
                     .a1 = VDP2_VRAM_USAGE_TYPE_NONE,
                     .b0 = VDP2_VRAM_USAGE_TYPE_NONE,
                     .b1 = VDP2_VRAM_USAGE_TYPE_NONE
             }
     };
 
-    /* XXX: Make it const */
-    static vdp2_scrn_rotation_table_t rbg0_rotation_table __used = {
+    static const vdp2_scrn_rotation_table_t rbg0_rotation_table __used = {
             // Starting TV screen coordinates
             .xst = 0,
             .yst = 0,
