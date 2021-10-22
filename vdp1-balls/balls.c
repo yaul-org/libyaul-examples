@@ -16,164 +16,206 @@
 #define BALL_HHEIGHT    (BALL_HEIGHT / 2)
 
 struct balls_handle {
-        struct balls_config config;
+        balls_config_t config;
 
-        balls_load_callback load_callback;
         int8_t load_count;
 };
 
-static void _dma_upload(balls_handle_t handle, const void *dst,
+static vdp1_vram_t _sprite_tex_base;
+static vdp2_cram_t _sprite_pal_base;
+
+static void _dma_upload(balls_handle_t *handle, const void *dst,
     const void *src, size_t len);
-static void _dma_upload_handler(const dma_queue_transfer_t *transfer);
+static void _dma_upload_wait(void);
 
-balls_handle_t
-balls_init(const struct balls_config *config)
+balls_handle_t *
+balls_init(const balls_config_t config)
 {
-        struct balls_handle *handle;
-        handle = malloc(sizeof(struct balls_handle));
+        struct balls_handle * const handle =
+            malloc(sizeof(struct balls_handle));
+        assert(handle != NULL);
 
-        (void)memcpy(&handle->config, config, sizeof(struct balls_config));
+        handle->config = config;
 
-        (void)memset(&handle->config.balls[0], 0x00,
-            handle->config.count * sizeof(struct ball));
+        for (uint32_t i = 0; i < handle->config.count; i++) {
+                handle->config.balls->pos_x[i] = 0;
+                handle->config.balls->pos_y[i] = 0;
+        }
 
         return handle;
 }
 
 void
-balls_sprite_load(balls_handle_t handle, balls_load_callback callback)
+balls_assets_init(balls_handle_t *handle __unused)
+{
+        vdp1_vram_partitions_t vdp1_vram_partitions;
+
+        vdp1_vram_partitions_get(&vdp1_vram_partitions);
+
+        _sprite_tex_base = (vdp1_vram_t)vdp1_vram_partitions.texture_base;
+        _sprite_pal_base = VDP2_CRAM_MODE_1_OFFSET(0, 1, 0x0000);
+}
+
+void
+balls_assets_load(balls_handle_t *handle)
 {
         void *fh[2];
         void *p;
         size_t len;
 
-        handle->load_callback = callback;
         handle->load_count = 2;
 
         fh[0] = romdisk_open(_romdisk, BALL_TEX_PATH);
         assert(fh[0] != NULL);
         p = romdisk_direct(fh[0]);
         len = romdisk_total(fh[0]);
-
-        _dma_upload(handle, handle->config.sprite_tex_base, p, len);
+        _dma_upload(handle, (void *)_sprite_tex_base, p, len);
+        romdisk_close(fh[0]);
 
         fh[1] = romdisk_open(_romdisk, BALL_PAL_PATH);
         assert(fh[1] != NULL);
         p = romdisk_direct(fh[1]);
         len = romdisk_total(fh[1]);
-        _dma_upload(handle, handle->config.sprite_pal_base, p, len);
-
-        romdisk_close(fh[0]);
+        _dma_upload(handle, (void *)_sprite_pal_base, p, len);
         romdisk_close(fh[1]);
+
+        _dma_upload_wait();
+}
+
+static inline q0_12_4_t
+_ball_position_update(q0_12_4_t pos, q0_12_4_t speed)
+{
+        /* Map bit 0 as direction:
+         *   dir_?_bit: 0 -> ((0-1)^0xFF)=0x00 -> positive
+         *   dir_?_bit: 1 -> ((1-1)^0xFF)=0xFF -> negative */
+        const int8_t dir_x_bit = pos & 0x0001;
+        const uint8_t d_x = (dir_x_bit - 1) ^ 0xFF;
+        const q0_12_4_t fixed_dir_x = (q0_12_4_t)((int8_t)d_x ^ speed);
+
+        return (pos + fixed_dir_x) | dir_x_bit;
 }
 
 void
-balls_position_update(balls_handle_t handle, const uint16_t count)
+balls_position_update(balls_handle_t *handle, uint16_t count)
 {
-        for (uint16_t i = 0; i < count; i++) {
-                struct ball *ball = &handle->config.balls[i];
+        const balls_t * const balls = handle->config.balls;
 
-                /* Map bit 0 as direction:
-                 *   dir_?_bit: 0 -> ((0-1)^0xFF)=0x00 -> positive
-                 *   dir_?_bit: 1 -> ((1-1)^0xFF)=0xFF -> negative */
-                const int8_t dir_x_bit = ball->pos_x & 0x0001;
-                const uint8_t d_x = (dir_x_bit - 1) ^ 0xFF;
-                const q0_12_4_t fixed_dir_x = (q0_12_4_t)((int8_t)d_x ^ ball->speed);
+        const q0_12_4_t speed = handle->config.speed;
 
-                const int8_t dir_y_bit = ball->pos_y & 0x0001;
-                const uint8_t d_y = (dir_y_bit - 1) ^ 0xFF;
-                const q0_12_4_t fixed_dir_y = (q0_12_4_t)((int8_t)d_y ^ ball->speed);
+        for (uint32_t i = 0; i < count; i++) {
+                balls->pos_x[i] = _ball_position_update(balls->pos_x[i], speed);
+        }
 
-                ball->pos_x = (ball->pos_x + fixed_dir_x) | dir_x_bit;
-                ball->pos_y = (ball->pos_y + fixed_dir_y) | dir_y_bit;
+        for (uint32_t i = 0; i < count; i++) {
+                balls->pos_y[i] = _ball_position_update(balls->pos_y[i], speed);
         }
 }
 
 void
-balls_position_clamp(balls_handle_t handle, const uint16_t count)
+balls_position_clamp(balls_handle_t *handle, uint16_t count)
 {
         const q0_12_4_t left_clamp = -SCREEN_HWIDTH_Q;
         const q0_12_4_t right_clamp = SCREEN_HWIDTH_Q;
 
-        for (uint16_t i = 0; i < count; i++) {
-                struct ball *ball = &handle->config.balls[i];
+        const balls_t * const balls = handle->config.balls;
 
-                if (ball->pos_x <= left_clamp) {
-                        ball->pos_x = (left_clamp + ball->speed) & ~0x0001;
-                } else if (ball->pos_x > right_clamp) {
-                        ball->pos_x = (right_clamp - ball->speed) | 0x0001;
+        const q0_12_4_t speed = handle->config.speed;
+
+        for (uint32_t i = 0; i < count; i++) {
+                if (balls->pos_x[i] <= left_clamp) {
+                        balls->pos_x[i] = (left_clamp + speed) & ~0x0001;
+                } else if (balls->pos_x[i] > right_clamp) {
+                        balls->pos_x[i] = (right_clamp - speed) | 0x0001;
                 }
+        }
 
-                if (ball->pos_y < (-SCREEN_HHEIGHT_Q)) {
-                        ball->pos_y = ((-SCREEN_HHEIGHT_Q) + ball->speed) & ~0x0001;
-                } else if (ball->pos_y > SCREEN_HHEIGHT_Q) {
-                        ball->pos_y = (SCREEN_HHEIGHT_Q - ball->speed) | 0x0001;
+        for (uint32_t i = 0; i < count; i++) {
+                if (balls->pos_y[i] < (-SCREEN_HHEIGHT_Q)) {
+                        balls->pos_y[i] = ((-SCREEN_HHEIGHT_Q) + speed) & ~0x0001;
+                } else if (balls->pos_y[i] > SCREEN_HHEIGHT_Q) {
+                        balls->pos_y[i] = (SCREEN_HHEIGHT_Q - speed) | 0x0001;
                 }
         }
 }
 
 void
-balls_cmdt_list_init(balls_handle_t handle, vdp1_cmdt_t *cmdts, const uint16_t count)
+balls_cmdts_put(balls_handle_t *handle __unused, uint16_t index, uint16_t count)
 {
-        static const vdp1_cmdt_draw_mode_t draw_mode = {
-                .raw = 0x0000,
-                .bits.color_mode = 0,
-                .bits.trans_pixel_disable = false,
-                .bits.pre_clipping_disable =true,
-                .bits.end_code_disable = true
+        const vdp1_cmdt_draw_mode_t draw_mode = {
+                .raw                       = 0x0000,
+                .bits.color_mode           = 0,
+                .bits.trans_pixel_disable  = false,
+                .bits.pre_clipping_disable = true
         };
 
-        vdp1_cmdt_color_bank_t color_bank;
-
         const uint16_t offset =
-            (uint32_t)handle->config.sprite_pal_base & (VDP2_CRAM_SIZE - 1);
+            (uint32_t)_sprite_pal_base & (VDP2_CRAM_SIZE - 1);
         const uint16_t palette_number = offset >> 1;
 
-        color_bank.raw = 0x0000;
-        color_bank.type_0.data.dc = palette_number & VDP2_SPRITE_TYPE_0_DC_MASK;
+        const vdp1_cmdt_color_bank_t color_bank ={
+                .raw = 0x0000,
+                .type_0.data.dc = palette_number & VDP2_SPRITE_TYPE_0_DC_MASK
+        };
 
-        for (uint16_t i = 0; i < count; i++) {
-                vdp1_cmdt_t *cmdt;
-                cmdt = &cmdts[i];
+        vdp1_cmdt_t *cmdt;
+        cmdt = (vdp1_cmdt_t *)VDP1_CMD_TABLE(index, 0);
 
+        for (uint32_t i = 0; i < count; i++) {
                 vdp1_cmdt_normal_sprite_set(cmdt);
 
                 vdp1_cmdt_param_draw_mode_set(cmdt, draw_mode);
                 vdp1_cmdt_param_color_mode0_set(cmdt, color_bank);
                 vdp1_cmdt_param_size_set(cmdt, BALL_WIDTH, BALL_HEIGHT);
-                vdp1_cmdt_param_char_base_set(cmdt,
-                    (uint32_t)handle->config.sprite_tex_base);
+                vdp1_cmdt_param_char_base_set(cmdt, _sprite_tex_base);
 
                 cmdt->cmd_xa = 0;
                 cmdt->cmd_ya = 0;
+
+                cmdt++;
         }
 
-        vdp1_cmdt_end_set(&cmdts[count]);
+        vdp1_cmdt_end_set(cmdt);
 }
 
 void
-balls_cmdt_list_update(balls_handle_t handle, vdp1_cmdt_t *cmdts, const uint16_t count)
+balls_cmdts_position_put(balls_handle_t *handle __unused, uint16_t index, uint16_t count)
 {
-        for (uint16_t i = 0; i < count; i++) {
-                struct ball *ball = &handle->config.balls[i];
+        const balls_t * const balls = handle->config.balls;
 
-                vdp1_cmdt_t *cmdt;
-                cmdt = &cmdts[i];
+        vdp1_sync_cmdt_stride_put(balls->cmd_xa,
+            count,
+            6, /* CMDXA */
+            index);
+        vdp1_sync_put_wait();
 
-                vdp1_cmdt_normal_sprite_set(cmdt);
+        vdp1_sync_cmdt_stride_put(balls->cmd_ya,
+            count,
+            7, /* CMDYA */
+            index);
+}
 
-                cmdt->cmd_xa = Q0_12_4_INT(ball->pos_x) - BALL_HWIDTH - 1;
-                cmdt->cmd_ya = Q0_12_4_INT(ball->pos_y) - BALL_HHEIGHT - 1;
+void
+balls_cmdts_update(balls_handle_t *handle, uint16_t count)
+{
+        const balls_t * const balls = handle->config.balls;
+
+        for (uint32_t i = 0; i < count; i++) {
+                balls->cmd_xa[i] = Q0_12_4_INT(balls->pos_x[i]) - BALL_HWIDTH - 1;
+        }
+
+        for (uint32_t i = 0; i < count; i++) {
+                balls->cmd_ya[i] = Q0_12_4_INT(balls->pos_y[i]) - BALL_HHEIGHT - 1;
         }
 }
 
 static void
-_dma_upload(balls_handle_t handle, const void *dst, const void *src, size_t len)
+_dma_upload(balls_handle_t *handle __unused, const void *dst, const void *src, size_t len)
 {
         const struct scu_dma_level_cfg scu_dma_level_cfg = {
-                .mode = SCU_DMA_MODE_DIRECT,
-                .stride = SCU_DMA_STRIDE_2_BYTES,
-                .update = SCU_DMA_UPDATE_NONE,
+                .mode            = SCU_DMA_MODE_DIRECT,
+                .space           = SCU_DMA_SPACE_BUS_B,
+                .stride          = SCU_DMA_STRIDE_2_BYTES,
+                .update          = SCU_DMA_UPDATE_NONE,
                 .xfer.direct.len = len,
                 .xfer.direct.dst = (uint32_t)dst,
                 .xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src
@@ -184,21 +226,13 @@ _dma_upload(balls_handle_t handle, const void *dst, const void *src, size_t len)
         scu_dma_config_buffer(&dma_handle, &scu_dma_level_cfg);
 
         int8_t ret;
-        ret = dma_queue_enqueue(&dma_handle, handle->config.dma_tag,
-            _dma_upload_handler, handle);
+        ret = dma_queue_enqueue(&dma_handle, DMA_QUEUE_TAG_IMMEDIATE, NULL, NULL);
         assert(ret == 0);
 }
 
 static void
-_dma_upload_handler(const dma_queue_transfer_t *transfer)
+_dma_upload_wait(void)
 {
-        balls_handle_t handle = transfer->work;
-
-        handle->load_count--;
-
-        if (handle->load_count == 0) {
-                if (handle->load_callback != NULL) {
-                        handle->load_callback(handle);
-                }
-        }
+        dma_queue_flush(DMA_QUEUE_TAG_IMMEDIATE);
+        dma_queue_flush_wait();
 }

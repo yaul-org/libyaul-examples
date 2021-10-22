@@ -12,36 +12,36 @@
 
 #include "q0_12_4.h"
 
-struct ball {
-        q0_12_4_t speed; /* 2-bytes */
-        q0_12_4_t pos_x; /* 2-bytes */
-        q0_12_4_t pos_y; /* 2-bytes */
-};
+typedef struct balls {
+        q0_12_4_t *pos_x;
+        q0_12_4_t *pos_y;
+        int16_t *cmd_xa;
+        int16_t *cmd_ya;
+} balls_t;
 
-struct balls_config {
-        struct ball *balls;
+typedef struct balls_config {
+        const balls_t *balls;
         uint16_t count;
-
-        void *sprite_tex_base;
-        void *sprite_pal_base;
-
-        uint8_t dma_tag;
-};
+        q0_12_4_t speed;
+} balls_config_t;
 
 struct balls_handle;
 
-typedef struct balls_handle *balls_handle_t;
+typedef struct balls_handle balls_handle_t;
 
-typedef void (*balls_load_callback)(balls_handle_t handle);
+typedef void (*balls_load_callback_t)(balls_handle_t *handle);
 
-balls_handle_t balls_init(const struct balls_config *config);
-void balls_sprite_load(balls_handle_t handle, balls_load_callback callback);
-void balls_position_update(balls_handle_t handle, const uint16_t count);
-void balls_position_clamp(balls_handle_t handle, const uint16_t count);
+balls_handle_t *balls_init(const balls_config_t config);
 
-void balls_cmdt_list_init(balls_handle_t handle, vdp1_cmdt_t *cmdts,
-    const uint16_t count);
-void balls_cmdt_list_update(balls_handle_t handle, vdp1_cmdt_t *cmdts,
-    const uint16_t count);
+void balls_assets_init(balls_handle_t *handle);
+void balls_assets_load(balls_handle_t *handle);
+
+void balls_position_update(balls_handle_t *handle, uint16_t count);
+void balls_position_clamp(balls_handle_t *handle, uint16_t count);
+
+void balls_cmdts_update(balls_handle_t *handle, uint16_t count);
+
+void balls_cmdts_put(balls_handle_t *handle, uint16_t index, uint16_t count);
+void balls_cmdts_position_put(balls_handle_t *handle, uint16_t index, uint16_t count);
 
 #endif /* !BALL_H */
