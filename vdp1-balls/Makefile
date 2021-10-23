@@ -7,7 +7,8 @@ include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 SH_PROGRAM:= vdp1-balls
 SH_SRCS:= \
 	vdp1-balls.c \
-	balls.c
+	balls.c \
+	perf.c
 ROMDISK_SYMBOLS= root
 ROMDISK_DIRS= romdisk
 

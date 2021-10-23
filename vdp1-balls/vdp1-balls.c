@@ -11,7 +11,11 @@
 #include <stdlib.h>
 
 #include "vdp1-balls.h"
+
+#include "perf.h"
+
 #include "balls.h"
+
 #include "q0_12_4.h"
 
 #define VDP1_VRAM_CMDT_COUNT    (BALL_MAX_COUNT + 3)
@@ -57,9 +61,6 @@ struct buffer_context {
         vdp1_cmdt_t *cmdt_draw_end;
 };
 
-static volatile uint32_t _vblank_count = 0;
-static volatile uint32_t _sync_count = 0;
-
 static void _romdisk_init(void);
 
 static void _vdp1_init(void);
@@ -103,7 +104,7 @@ main(void)
 
         uint32_t which_context = 0;
         uint8_t sync_mode = 0;
-        uint32_t balls_count = 1;
+        uint32_t balls_count = 730;
 
         balls_handle_t *balls_handle[2];
         smpc_peripheral_digital_t digital;
@@ -129,6 +130,14 @@ main(void)
 
         struct buffer_context * previous_buffer_context = &buffer_contexts[0];
         struct buffer_context * buffer_context = &buffer_contexts[0];
+
+        perf_t cpu_perf;
+        perf_t vdp1_perf;
+        perf_t dma_perf;
+
+        perf_init(&cpu_perf);
+        perf_init(&vdp1_perf);
+        perf_init(&dma_perf);
 
         while (true) {
                 smpc_peripheral_process();
@@ -162,16 +171,15 @@ main(void)
                         balls_count = BALL_MAX_COUNT;
                 }
 
-                balls_position_update(buffer_context->balls_handle, balls_count);
-                balls_position_clamp(buffer_context->balls_handle, balls_count);
+                perf_start(&cpu_perf); {
+                        balls_position_update(buffer_context->balls_handle, balls_count);
+                        balls_position_clamp(buffer_context->balls_handle, balls_count);
 
-                balls_cmdts_update(buffer_context->balls_handle, balls_count);
+                        balls_cmdts_update(buffer_context->balls_handle, balls_count);
+                } perf_end(&cpu_perf);
 
                 /* Wait for the previous sync (if any) */
                 vdp1_sync_wait();
-                /* vdp2_sync_wait(); */
-
-                _sync_count++;
 
                 buffer_context->cmdt_draw_end =
                     (vdp1_cmdt_t *)VDP1_CMD_TABLE(VDP1_CMDT_ORDER_BALL_START_INDEX + balls_count, 0);
@@ -179,7 +187,20 @@ main(void)
                 vdp1_cmdt_end_clear(previous_buffer_context->cmdt_draw_end);
                 vdp1_cmdt_end_set(buffer_context->cmdt_draw_end);
 
-                balls_cmdts_position_put(buffer_context->balls_handle, VDP1_CMDT_ORDER_BALL_START_INDEX, balls_count);
+                perf_start(&dma_perf); {
+                        balls_cmdts_position_put(buffer_context->balls_handle, VDP1_CMDT_ORDER_BALL_START_INDEX, balls_count);
+                } perf_end(&dma_perf);
+
+                vdp1_sync_commit();
+
+                /* perf_start(&vdp1_perf); { */
+                /*         while (true) { */
+                /*                 const vdp1_transfer_status_t transfer_status = vdp1_transfer_status_get(); */
+                /*                 if (transfer_status.cef) { */
+                /*                         break; */
+                /*                 } */
+                /*         } */
+                /* } perf_end(&vdp1_perf); */
 
                 /* Call to sync -- does not block */
                 vdp1_sync();
@@ -189,9 +210,18 @@ main(void)
                 buffer_context = &buffer_contexts[which_context];
 
                 dbgio_printf("[H[2J"
-                             "ball_count: %4lu, which: %lu",
+                             "ball_count: %4lu, which: %lu\n"
+                             " CPU: %7lu (max: %7lu)\n"
+                             " DMA: %7lu (max: %7lu)\n"
+                             "VDP1: %7lu (max: %7lu)\n",
                     balls_count,
-                    which_context);
+                    which_context,
+                    cpu_perf.ticks,
+                    cpu_perf.max_ticks,
+                    dma_perf.ticks,
+                    dma_perf.max_ticks,
+                    vdp1_perf.ticks,
+                    vdp1_perf.max_ticks);
 
                 dbgio_flush();
 
@@ -216,6 +246,8 @@ user_init(void)
 
         vdp2_sync();
         vdp2_sync_wait();
+
+        perf_system_init();
 }
 
 static void
@@ -246,8 +278,8 @@ _vdp1_init(void)
 
 
         const int16_vec2_t local_coords =
-            INT16_VEC2_INITIALIZER(RESOLUTION_WIDTH / 2,
-                                   RESOLUTION_HEIGHT / 2);
+            INT16_VEC2_INITIALIZER((RESOLUTION_WIDTH / 2) - BALL_HWIDTH - 1,
+                                   (RESOLUTION_HEIGHT / 2) - BALL_HHEIGHT - 1);
 
         const int16_vec2_t system_clip_coords =
             INT16_VEC2_INITIALIZER(RESOLUTION_WIDTH,
@@ -257,11 +289,13 @@ _vdp1_init(void)
          * change, we can write directly */
         vdp1_cmdt_t * const cmdt = (vdp1_cmdt_t *)VDP1_CMD_TABLE(0, 0);
 
-        vdp1_cmdt_system_clip_coord_set(&cmdt[0]);
-        vdp1_cmdt_param_vertex_set(&cmdt[0], CMDT_VTX_SYSTEM_CLIP, &system_clip_coords);
+        vdp1_cmdt_system_clip_coord_set(&cmdt[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdt[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX],
+            CMDT_VTX_SYSTEM_CLIP, &system_clip_coords);
 
-        vdp1_cmdt_local_coord_set(&cmdt[1]);
-        vdp1_cmdt_param_vertex_set(&cmdt[1], CMDT_VTX_LOCAL_COORD, &local_coords);
+        vdp1_cmdt_local_coord_set(&cmdt[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdt[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX],
+            CMDT_VTX_LOCAL_COORD, &local_coords);
 
 
         vdp1_env_set(&vdp1_env);
@@ -271,7 +305,7 @@ _vdp1_init(void)
             VDP1_VRAM_GOURAUD_COUNT,
             VDP1_VRAM_CLUT_COUNT);
 
-        vdp1_sync_interval_set(VDP1_SYNC_INTERVAL_VARIABLE);
+        vdp1_sync_interval_set(VDP1_SYNC_INTERVAL_60HZ);
 }
 
 static void

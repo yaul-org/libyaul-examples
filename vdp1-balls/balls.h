@@ -12,6 +12,12 @@
 
 #include "q0_12_4.h"
 
+#define BALL_WIDTH      (16)
+#define BALL_HEIGHT     (16)
+
+#define BALL_HWIDTH     (BALL_WIDTH / 2)
+#define BALL_HHEIGHT    (BALL_HEIGHT / 2)
+
 typedef struct balls {
         q0_12_4_t *pos_x;
         q0_12_4_t *pos_y;
@@ -36,7 +42,7 @@ balls_handle_t *balls_init(const balls_config_t config);
 void balls_assets_init(balls_handle_t *handle);
 void balls_assets_load(balls_handle_t *handle);
 
-void balls_position_update(balls_handle_t *handle, uint16_t count);
+void balls_position_update(balls_handle_t *handle, uint32_t count);
 void balls_position_clamp(balls_handle_t *handle, uint16_t count);
 
 void balls_cmdts_update(balls_handle_t *handle, uint16_t count);

@@ -6,14 +6,11 @@
 
 #include "balls.h"
 
+/* #pragma GCC push_options */
+/* #pragma GCC optimize ("align-functions=16") */
+
 #define BALL_TEX_PATH   "BALL.TEX"
 #define BALL_PAL_PATH   "BALL.PAL"
-
-#define BALL_WIDTH      (16)
-#define BALL_HEIGHT     (16)
-
-#define BALL_HWIDTH     (BALL_WIDTH / 2)
-#define BALL_HHEIGHT    (BALL_HEIGHT / 2)
 
 struct balls_handle {
         balls_config_t config;
@@ -86,55 +83,94 @@ static inline q0_12_4_t
 _ball_position_update(q0_12_4_t pos, q0_12_4_t speed)
 {
         /* Map bit 0 as direction:
-         *   dir_?_bit: 0 -> ((0-1)^0xFF)=0x00 -> positive
-         *   dir_?_bit: 1 -> ((1-1)^0xFF)=0xFF -> negative */
-        const int8_t dir_x_bit = pos & 0x0001;
-        const uint8_t d_x = (dir_x_bit - 1) ^ 0xFF;
-        const q0_12_4_t fixed_dir_x = (q0_12_4_t)((int8_t)d_x ^ speed);
+         *   dir_bit: 0 -> ((0-1)^0xFF)=0x00 -> positive
+         *   dir_bit: 1 -> ((1-1)^0xFF)=0xFF -> negative */
+        const int8_t dir_bit = pos & 0x0001;
+        const uint8_t d = (dir_bit - 1) ^ 0xFF;
+        const q0_12_4_t fixed_dir = (q0_12_4_t)((int8_t)d ^ speed);
 
-        return (pos + fixed_dir_x) | dir_x_bit;
+        return (pos + fixed_dir) | dir_bit;
 }
 
 void
-balls_position_update(balls_handle_t *handle, uint16_t count)
+balls_position_update(balls_handle_t *handle, uint32_t count)
 {
         const balls_t * const balls = handle->config.balls;
 
+        q0_12_4_t *pos_x = balls->pos_x;
+        q0_12_4_t *pos_y = balls->pos_y;
+
+        const uint32_t unrolled_count = count / 8;
+        const uint32_t remainder_count = count & 7;
         const q0_12_4_t speed = handle->config.speed;
 
-        for (uint32_t i = 0; i < count; i++) {
-                balls->pos_x[i] = _ball_position_update(balls->pos_x[i], speed);
+        for (uint32_t i = 0; i < unrolled_count; i++) {
+                *pos_x = _ball_position_update(*pos_x, speed); pos_x++;
+                *pos_x = _ball_position_update(*pos_x, speed); pos_x++;
+                *pos_x = _ball_position_update(*pos_x, speed); pos_x++;
+                *pos_x = _ball_position_update(*pos_x, speed); pos_x++;
+                *pos_x = _ball_position_update(*pos_x, speed); pos_x++;
+                *pos_x = _ball_position_update(*pos_x, speed); pos_x++;
+                *pos_x = _ball_position_update(*pos_x, speed); pos_x++;
+                *pos_x = _ball_position_update(*pos_x, speed); pos_x++;
         }
 
-        for (uint32_t i = 0; i < count; i++) {
-                balls->pos_y[i] = _ball_position_update(balls->pos_y[i], speed);
+        for (uint32_t i = 0; i < remainder_count; i++) {
+                *pos_x = _ball_position_update(*pos_x, speed); pos_x++;
+        }
+
+        for (uint32_t i = 0; i < unrolled_count; i++) {
+                *pos_y = _ball_position_update(*pos_y, speed); pos_y++;
+                *pos_y = _ball_position_update(*pos_y, speed); pos_y++;
+                *pos_y = _ball_position_update(*pos_y, speed); pos_y++;
+                *pos_y = _ball_position_update(*pos_y, speed); pos_y++;
+                *pos_y = _ball_position_update(*pos_y, speed); pos_y++;
+                *pos_y = _ball_position_update(*pos_y, speed); pos_y++;
+                *pos_y = _ball_position_update(*pos_y, speed); pos_y++;
+                *pos_y = _ball_position_update(*pos_y, speed); pos_y++;
+        }
+
+
+        for (uint32_t i = 0; i < remainder_count; i++) {
+                *pos_y = _ball_position_update(*pos_y, speed); pos_y++;
         }
 }
 
 void
 balls_position_clamp(balls_handle_t *handle, uint16_t count)
 {
-        const q0_12_4_t left_clamp = -SCREEN_HWIDTH_Q;
-        const q0_12_4_t right_clamp = SCREEN_HWIDTH_Q;
-
         const balls_t * const balls = handle->config.balls;
 
         const q0_12_4_t speed = handle->config.speed;
 
-        for (uint32_t i = 0; i < count; i++) {
-                if (balls->pos_x[i] <= left_clamp) {
-                        balls->pos_x[i] = (left_clamp + speed) & ~0x0001;
-                } else if (balls->pos_x[i] > right_clamp) {
-                        balls->pos_x[i] = (right_clamp - speed) | 0x0001;
-                }
-        }
+        const q0_12_4_t left_clamp = -SCREEN_HWIDTH_Q;
+        const q0_12_4_t right_clamp = SCREEN_HWIDTH_Q;
+
+        q0_12_4_t *pos_x = balls->pos_x;
 
         for (uint32_t i = 0; i < count; i++) {
-                if (balls->pos_y[i] < (-SCREEN_HHEIGHT_Q)) {
-                        balls->pos_y[i] = ((-SCREEN_HHEIGHT_Q) + speed) & ~0x0001;
-                } else if (balls->pos_y[i] > SCREEN_HHEIGHT_Q) {
-                        balls->pos_y[i] = (SCREEN_HHEIGHT_Q - speed) | 0x0001;
+                if (*pos_x <= left_clamp) {
+                        *pos_x = (left_clamp + speed) & ~0x0001;
+                } else if (*pos_x > right_clamp) {
+                        *pos_x = (right_clamp - speed) | 0x0001;
                 }
+
+                pos_x++;
+        }
+
+        const q0_12_4_t up_clamp = -SCREEN_HHEIGHT_Q;
+        const q0_12_4_t down_clamp = SCREEN_HHEIGHT_Q;
+
+        q0_12_4_t *pos_y = balls->pos_y;
+
+        for (uint32_t i = 0; i < count; i++) {
+                if (*pos_y < up_clamp) {
+                        *pos_y = (up_clamp + speed) & ~0x0001;
+                } else if (*pos_y > down_clamp) {
+                        *pos_y = (down_clamp - speed) | 0x0001;
+                }
+
+                pos_y++;
         }
 }
 
@@ -145,7 +181,8 @@ balls_cmdts_put(balls_handle_t *handle __unused, uint16_t index, uint16_t count)
                 .raw                       = 0x0000,
                 .bits.color_mode           = 0,
                 .bits.trans_pixel_disable  = false,
-                .bits.pre_clipping_disable = true
+                .bits.pre_clipping_disable = true,
+                .bits.end_code_disable     = false
         };
 
         const uint16_t offset =
@@ -178,7 +215,7 @@ balls_cmdts_put(balls_handle_t *handle __unused, uint16_t index, uint16_t count)
 }
 
 void
-balls_cmdts_position_put(balls_handle_t *handle __unused, uint16_t index, uint16_t count)
+balls_cmdts_position_put(balls_handle_t *handle, uint16_t index, uint16_t count)
 {
         const balls_t * const balls = handle->config.balls;
 
@@ -186,7 +223,6 @@ balls_cmdts_position_put(balls_handle_t *handle __unused, uint16_t index, uint16
             count,
             6, /* CMDXA */
             index);
-        vdp1_sync_put_wait();
 
         vdp1_sync_cmdt_stride_put(balls->cmd_ya,
             count,
@@ -199,12 +235,22 @@ balls_cmdts_update(balls_handle_t *handle, uint16_t count)
 {
         const balls_t * const balls = handle->config.balls;
 
+        q0_12_4_t *pos_x = balls->pos_x;
+        q0_12_4_t *pos_y = balls->pos_y;
+
+        int16_t *cmd_xa = balls->cmd_xa;
+        int16_t *cmd_ya = balls->cmd_ya;
+
         for (uint32_t i = 0; i < count; i++) {
-                balls->cmd_xa[i] = Q0_12_4_INT(balls->pos_x[i]) - BALL_HWIDTH - 1;
+                *cmd_xa = Q0_12_4_INT(*pos_x);
+                pos_x++;
+                cmd_xa++;
         }
 
         for (uint32_t i = 0; i < count; i++) {
-                balls->cmd_ya[i] = Q0_12_4_INT(balls->pos_y[i]) - BALL_HHEIGHT - 1;
+                *cmd_ya = Q0_12_4_INT(*pos_y);
+                pos_y++;
+                cmd_ya++;
         }
 }
 
@@ -236,3 +282,5 @@ _dma_upload_wait(void)
         dma_queue_flush(DMA_QUEUE_TAG_IMMEDIATE);
         dma_queue_flush_wait();
 }
+
+/* #pragma GCC pop_options */
