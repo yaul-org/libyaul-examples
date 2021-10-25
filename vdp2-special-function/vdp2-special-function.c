@@ -16,11 +16,11 @@
 #define SCREEN_WIDTH    320
 #define SCREEN_HEIGHT   240
 
-#define ORDER_SYSTEM_CLIP_COORDS_INDEX  0
-#define ORDER_LOCAL_COORDS_INDEX        1
-#define ORDER_POLYGON_INDEX             2
-#define ORDER_DRAW_END_INDEX            3
-#define ORDER_COUNT                     4
+#define VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX  0
+#define VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX        1
+#define VDP1_CMDT_ORDER_POLYGON_INDEX             2
+#define VDP1_CMDT_ORDER_DRAW_END_INDEX            3
+#define VDP1_CMDT_ORDER_COUNT                     (VDP1_CMDT_ORDER_DRAW_END_INDEX + 1)
 
 #define NBG0_CPD                VDP2_VRAM_ADDR(0, 0x00000)
 #define NBG0_PAL                VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
@@ -31,9 +31,7 @@
 
 extern uint8_t root_romdisk[];
 
-static void _cmdt_list_init(vdp1_cmdt_list_t *);
-
-static void _dma_upload(void *, void *, size_t);
+static void _cmdt_list_init(vdp1_cmdt_list_t *cmdt_list);
 
 void
 main(void)
@@ -52,34 +50,34 @@ main(void)
         assert(fh[0] != NULL);
         p = romdisk_direct(fh[0]);
         len = romdisk_total(fh[0]);
-        _dma_upload((void *)NBG0_CPD, p, len);
+        scu_dma_transfer(0, (void *)NBG0_CPD, p, len);
+        romdisk_close(fh[0]);
 
         fh[1] = romdisk_open(romdisk, "PND.DAT");
         assert(fh[1] != NULL);
         p = romdisk_direct(fh[1]);
         len = romdisk_total(fh[1]);
-        _dma_upload((void *)NBG0_MAP_PLANE_A, p, len);
+        scu_dma_transfer(0, (void *)NBG0_MAP_PLANE_A, p, len);
+        romdisk_close(fh[1]);
 
         fh[2] = romdisk_open(romdisk, "PAL.DAT");
         assert(fh[2] != NULL);
         p = romdisk_direct(fh[2]);
         len = romdisk_total(fh[2]);
-        _dma_upload((void *)NBG0_PAL, p, len);
+        scu_dma_transfer(0, (void *)NBG0_PAL, p, len);
+        romdisk_close(fh[2]);
 
         vdp2_tvmd_display_set();
 
-        vdp1_cmdt_list_t *cmdt_list;
-        cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
+        vdp1_cmdt_list_t * const cmdt_list =
+            vdp1_cmdt_list_alloc(VDP1_CMDT_ORDER_COUNT);
 
         _cmdt_list_init(cmdt_list);
 
-        vdp1_sync_cmdt_list_put(cmdt_list, 0, NULL, NULL);
-        vdp2_sync();
-        vdp2_sync_wait();
-
-        romdisk_close(fh[0]);
-        romdisk_close(fh[1]);
-        romdisk_close(fh[2]);
+        vdp1_sync_cmdt_list_put(cmdt_list, 0);
+        vdp1_sync_commit();
+        vdp1_sync();
+        vdp1_sync_wait();
 
         bool show_polygon;
         show_polygon = false;
@@ -89,7 +87,7 @@ main(void)
 
         while (true) {
                 vdp1_cmdt_t *cmdt_polygon;
-                cmdt_polygon = &cmdt_list->cmdts[ORDER_POLYGON_INDEX];
+                cmdt_polygon = &cmdt_list->cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX];
 
                 if (show_polygon) {
                         vdp1_cmdt_jump_clear(cmdt_polygon);
@@ -97,9 +95,13 @@ main(void)
                         vdp1_cmdt_jump_skip_next(cmdt_polygon);
                 }
 
-                vdp1_sync_cmdt_list_put(cmdt_list, 0, NULL, NULL);
+                vdp1_sync_cmdt_list_put(cmdt_list, 0);
+
+                vdp1_sync_commit();
+                vdp1_sync();
 
                 vdp2_sync();
+                vdp1_sync_wait();
                 vdp2_sync_wait();
 
                 count_frames++;
@@ -114,23 +116,18 @@ main(void)
 void
 user_init(void)
 {
-        vdp2_tvmd_display_clear();
-
-        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 0, 7));
-
         const vdp2_scrn_cell_format_t format = {
-                .scroll_screen = VDP2_SCRN_NBG0,
-                .cc_count = VDP2_SCRN_CCC_PALETTE_2048,
+                .scroll_screen  = VDP2_SCRN_NBG0,
+                .cc_count       = VDP2_SCRN_CCC_PALETTE_2048,
                 .character_size = 1 * 1,
-                .pnd_size = 2,
+                .pnd_size       = 2,
                 .auxiliary_mode = 1,
-                .sf_mode = 2,
-                .sf_code = VDP2_SCRN_SF_CODE_A,
-                .plane_size = 1 * 1,
-                .cp_table = NBG0_CPD,
-                .color_palette = NBG0_PAL,
-                .map_bases = {
+                .sf_mode        = 2,
+                .sf_code        = VDP2_SCRN_SF_CODE_A,
+                .plane_size     = 1 * 1,
+                .cp_table       = NBG0_CPD,
+                .color_palette  = NBG0_PAL,
+                .map_bases      = {
                         .planes = {
                                 NBG0_MAP_PLANE_A,
                                 NBG0_MAP_PLANE_B,
@@ -141,6 +138,9 @@ user_init(void)
         };
 
         vdp2_scrn_cell_format_set(&format);
+
+        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
+            COLOR_RGB1555(1, 0, 0, 7));
 
         /* The special priority function only toggles the LSB, so the priority
          * must be even */
@@ -164,10 +164,11 @@ user_init(void)
          * also be used: (0x03, 0x07, 0x0B, and 0x0F).
          */
 
-        vdp2_scrn_sf_codes_set(VDP2_SCRN_SF_CODE_A, VDP2_SCRN_SF_CODE_0x02_0x03 |
-                                               VDP2_SCRN_SF_CODE_0x06_0x07 |
-                                               VDP2_SCRN_SF_CODE_0x0A_0x0B |
-                                               VDP2_SCRN_SF_CODE_0x0E_0x0F);
+        vdp2_scrn_sf_codes_set(VDP2_SCRN_SF_CODE_A,
+            VDP2_SCRN_SF_CODE_0x02_0x03 |
+            VDP2_SCRN_SF_CODE_0x06_0x07 |
+            VDP2_SCRN_SF_CODE_0x0A_0x0B |
+            VDP2_SCRN_SF_CODE_0x0E_0x0F);
 
         vdp2_scrn_display_set(VDP2_SCRN_NBG0, /* transparent = */ false);
 
@@ -211,15 +212,15 @@ user_init(void)
         vdp2_vram_cycp_bank_set(3, &vram_cycp_bank[1]);
 
         const vdp1_env_t vdp1_env = {
-                .erase_color = COLOR_RGB1555_INITIALIZER(0, 0, 0, 0),
+                .erase_color  = COLOR_RGB1555_INITIALIZER(0, 0, 0, 0),
                 .erase_points = {
                         INT16_VEC2_INITIALIZER(0, 0),
                         INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1)
                 },
-                .bpp = VDP1_ENV_BPP_16,
-                .rotation = VDP1_ENV_ROTATION_0,
-                .color_mode = VDP1_ENV_COLOR_MODE_RGB_PALETTE,
-                .sprite_type = 0x5
+                .bpp          = VDP1_ENV_BPP_16,
+                .rotation     = VDP1_ENV_ROTATION_0,
+                .color_mode   = VDP1_ENV_COLOR_MODE_RGB_PALETTE,
+                .sprite_type  = 5
         };
 
         vdp1_env_set(&vdp1_env);
@@ -245,69 +246,48 @@ user_init(void)
 static void
 _cmdt_list_init(vdp1_cmdt_list_t *cmdt_list)
 {
-        static const int16_vec2_t system_clip_coord =
+        const int16_vec2_t system_clip_coord =
             INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,
-                                      SCREEN_HEIGHT - 1);
+                                   SCREEN_HEIGHT - 1);
 
-        static const int16_vec2_t local_coord_ul =
-            INT16_VEC2_INITIALIZER(0,
-                                      0);
+        const int16_vec2_t local_coord_ul =
+            INT16_VEC2_INITIALIZER(0, 0);
 
-        static const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
-                .raw = 0x0000,
+        const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
+                .raw                       = 0x0000,
                 .bits.pre_clipping_disable = true
         };
 
-        static const int16_vec2_t polygon_points[] = {
+        const int16_vec2_t polygon_points[] = {
                 INT16_VEC2_INITIALIZER(0, SCREEN_HEIGHT - 1),
                 INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1),
                 INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,                 0),
                 INT16_VEC2_INITIALIZER(               0,                 0)
         };
 
-        vdp1_cmdt_t *cmdts;
-        cmdts = &cmdt_list->cmdts[0];
+        vdp1_cmdt_t * const cmdts =
+            &cmdt_list->cmdts[0];
 
-        (void)memset(&cmdts[0], 0x00, sizeof(vdp1_cmdt_t) * ORDER_COUNT);
+        (void)memset(&cmdts[0], 0x00, sizeof(vdp1_cmdt_t) * VDP1_CMDT_ORDER_COUNT);
 
-        cmdt_list->count = ORDER_COUNT;
+        cmdt_list->count = VDP1_CMDT_ORDER_COUNT;
 
-        vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX],
+        vdp1_cmdt_system_clip_coord_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX],
             CMDT_VTX_SYSTEM_CLIP,
             &system_clip_coord);
 
-        vdp1_cmdt_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_LOCAL_COORDS_INDEX],
+        vdp1_cmdt_local_coord_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX],
             CMDT_VTX_LOCAL_COORD, &local_coord_ul);
 
-        vdp1_cmdt_polygon_set(&cmdts[ORDER_POLYGON_INDEX]);
-        vdp1_cmdt_param_draw_mode_set(&cmdts[ORDER_POLYGON_INDEX], polygon_draw_mode);
-        vdp1_cmdt_param_color_set(&cmdts[ORDER_POLYGON_INDEX], COLOR_RGB1555(1, 15, 7, 7));
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_POLYGON_INDEX], CMDT_VTX_POLYGON_A, &polygon_points[0]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_POLYGON_INDEX], CMDT_VTX_POLYGON_B, &polygon_points[1]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_POLYGON_INDEX], CMDT_VTX_POLYGON_C, &polygon_points[2]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_POLYGON_INDEX], CMDT_VTX_POLYGON_D, &polygon_points[3]);
+        vdp1_cmdt_polygon_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX]);
+        vdp1_cmdt_param_draw_mode_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX],
+            polygon_draw_mode);
+        vdp1_cmdt_param_color_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX],
+            COLOR_RGB1555(1, 15, 15, 15));
+        vdp1_cmdt_param_vertices_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX],
+            polygon_points);
 
-        vdp1_cmdt_end_set(&cmdts[ORDER_DRAW_END_INDEX]);
-}
-
-static void
-_dma_upload(void *dst, void *src, size_t len)
-{
-        scu_dma_level_cfg_t scu_dma_level_cfg;
-        scu_dma_handle_t handle;
-
-        scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
-        scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;
-        scu_dma_level_cfg.update = SCU_DMA_UPDATE_NONE;
-        scu_dma_level_cfg.xfer.direct.len = len;
-        scu_dma_level_cfg.xfer.direct.dst = (uint32_t)dst;
-        scu_dma_level_cfg.xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src;
-
-        scu_dma_config_buffer(&handle, &scu_dma_level_cfg);
-
-        int8_t ret __unused;
-        ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
-        assert(ret == 0);
+        vdp1_cmdt_end_set(&cmdts[VDP1_CMDT_ORDER_DRAW_END_INDEX]);
 }

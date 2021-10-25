@@ -21,10 +21,6 @@ struct balls_handle {
 static vdp1_vram_t _sprite_tex_base;
 static vdp2_cram_t _sprite_pal_base;
 
-static void _dma_upload(balls_handle_t *handle, const void *dst,
-    const void *src, size_t len);
-static void _dma_upload_wait(void);
-
 balls_handle_t *
 balls_init(const balls_config_t config)
 {
@@ -66,17 +62,15 @@ balls_assets_load(balls_handle_t *handle)
         assert(fh[0] != NULL);
         p = romdisk_direct(fh[0]);
         len = romdisk_total(fh[0]);
-        _dma_upload(handle, (void *)_sprite_tex_base, p, len);
+        scu_dma_transfer(0, (void *)_sprite_tex_base, p, len);
         romdisk_close(fh[0]);
 
         fh[1] = romdisk_open(_romdisk, BALL_PAL_PATH);
         assert(fh[1] != NULL);
         p = romdisk_direct(fh[1]);
         len = romdisk_total(fh[1]);
-        _dma_upload(handle, (void *)_sprite_pal_base, p, len);
+        scu_dma_transfer(0, (void *)_sprite_pal_base, p, len);
         romdisk_close(fh[1]);
-
-        _dma_upload_wait();
 }
 
 static inline q0_12_4_t
@@ -252,35 +246,6 @@ balls_cmdts_update(balls_handle_t *handle, uint16_t count)
                 pos_y++;
                 cmd_ya++;
         }
-}
-
-static void
-_dma_upload(balls_handle_t *handle __unused, const void *dst, const void *src, size_t len)
-{
-        const struct scu_dma_level_cfg scu_dma_level_cfg = {
-                .mode            = SCU_DMA_MODE_DIRECT,
-                .space           = SCU_DMA_SPACE_BUS_B,
-                .stride          = SCU_DMA_STRIDE_2_BYTES,
-                .update          = SCU_DMA_UPDATE_NONE,
-                .xfer.direct.len = len,
-                .xfer.direct.dst = (uint32_t)dst,
-                .xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src
-        };
-
-        struct scu_dma_handle dma_handle;
-
-        scu_dma_config_buffer(&dma_handle, &scu_dma_level_cfg);
-
-        int8_t ret;
-        ret = dma_queue_enqueue(&dma_handle, DMA_QUEUE_TAG_IMMEDIATE, NULL, NULL);
-        assert(ret == 0);
-}
-
-static void
-_dma_upload_wait(void)
-{
-        dma_queue_flush(DMA_QUEUE_TAG_IMMEDIATE);
-        dma_queue_flush_wait();
 }
 
 /* #pragma GCC pop_options */

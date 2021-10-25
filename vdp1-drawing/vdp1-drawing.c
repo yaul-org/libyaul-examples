@@ -134,7 +134,6 @@ main(void)
 
         dbgio_dev_default_init(DBGIO_DEV_VDP2);
         dbgio_dev_font_load();
-        dbgio_dev_font_load_wait();
 
         _cmdt_list_init();
         _primitive_init();
@@ -243,7 +242,8 @@ main(void)
                     _primitive_draw_modes[_primitive.draw_mode]);
                 vdp1_cmdt_param_vertices_set(cmdt_polygon, &_primitive.points[0]);
 
-                vdp1_sync_cmdt_list_put(_cmdt_list, 0, NULL, NULL);
+                vdp1_sync_cmdt_list_put(_cmdt_list, 0);
+                vdp1_sync_commit();
                 vdp1_sync();
                 vdp1_sync_wait();
         }

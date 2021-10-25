@@ -20,8 +20,8 @@ main(void)
         uint16_t height;
         vdp2_tvmd_display_res_get(&width, &height);
 
-        color_rgb1555_t *buffer;
-        buffer = malloc(sizeof(color_rgb1555_t) * height);
+        color_rgb1555_t * const buffer =
+            malloc(sizeof(color_rgb1555_t) * height);
         assert(buffer != NULL);
 
         uint16_t buffer_count;
@@ -48,8 +48,7 @@ main(void)
                 vdp2_scrn_back_screen_buffer_set(VDP2_VRAM_ADDR(0, 0x00000), buffer,
                     buffer_count);
 
-                uint16_t i;
-                for (i = 0; i < buffer_count; i++) {
+                for (uint16_t i = 0; i < buffer_count; i++) {
                         buffer[i] = COLOR_RGB1555(1, i + count, i + count, i + count);
                 }
 
@@ -63,8 +62,6 @@ main(void)
 void
 user_init(void)
 {
-        vdp2_scrn_display_clear();
-
         vdp2_vram_cycp_clear();
 
         vdp2_sprite_priority_set(0, 0);

@@ -84,7 +84,6 @@ user_init(void)
 
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
-        dbgio_dev_font_load_wait();
 
         vdp2_tvmd_display_set();
 }

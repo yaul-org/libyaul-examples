@@ -427,7 +427,7 @@ main(void)
 
                 cmdt_list->count = ORDER_BUFFER_STARTING_INDEX + 1;
 
-                vdp1_sync_cmdt_list_put(cmdt_list, 0, NULL, NULL);
+                vdp1_sync_cmdt_list_put(cmdt_list, 0);
 
                 _rotate(_points_m, _rotated_m, theta, 28);
                 _rotate(_points_i, _rotated_i, theta, 10);
@@ -507,7 +507,9 @@ main(void)
 
                 cmdt_list->count = ORDER_COUNT;
 
-                vdp1_sync_cmdt_list_put(cmdt_list, ORDER_BUFFER_STARTING_INDEX, NULL, NULL);
+                vdp1_sync_cmdt_list_put(cmdt_list, ORDER_BUFFER_STARTING_INDEX);
+
+                vdp1_sync_commit();
 
                 vdp1_sync();
                 vdp1_sync_wait();

@@ -23,18 +23,17 @@ main(void)
         romdisk = romdisk_mount("/", root_romdisk);
         assert(romdisk != NULL);
 
-        vdp2_scrn_bitmap_format_t format;
-        (void)memset(&format, 0x00, sizeof(format));
-
-        format.scroll_screen = VDP2_SCRN_NBG0;
-        format.cc_count = VDP2_SCRN_CCC_PALETTE_256;
-        format.bitmap_size.width = 1024;
-        format.bitmap_size.height = 512;
-        format.color_palette = VDP2_CRAM_ADDR(0x300);
-        format.bitmap_pattern = VDP2_VRAM_ADDR(0, 0x00000);
-        format.sf_type = VDP2_SCRN_SF_TYPE_NONE;
-        format.sf_code = VDP2_SCRN_SF_CODE_A;
-        format.sf_mode = 0;
+        const vdp2_scrn_bitmap_format_t format = {
+                .scroll_screen      = VDP2_SCRN_NBG0,
+                .cc_count           = VDP2_SCRN_CCC_PALETTE_256,
+                .bitmap_size.width  = 1024,
+                .bitmap_size.height = 512,
+                .color_palette      = VDP2_CRAM_ADDR(0x0300),
+                .bitmap_pattern     = VDP2_VRAM_ADDR(0, 0x00000),
+                .sf_type            = VDP2_SCRN_SF_TYPE_NONE,
+                .sf_code            = VDP2_SCRN_SF_CODE_A,
+                .sf_mode            = 0
+        };
 
         vdp2_scrn_bitmap_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
@@ -86,52 +85,23 @@ main(void)
         /* Set for CRAM mode 1: RGB 555 2,048 colors */
         vdp2_cram_mode_set(1);
 
-        /* Set up and enqueue two DMA transfers tagged as VBLANK-IN */
-
-        scu_dma_level_cfg_t scu_dma_level_cfg;
-        scu_dma_handle_t handle;
-
-        scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
-        scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;
-        scu_dma_level_cfg.update = SCU_DMA_UPDATE_NONE;
-
         void *fh[2];
         void *p;
         int8_t ret __unused;
 
         fh[0] = romdisk_open(romdisk, "/BITMAP.PAL");
         assert(fh[0] != NULL);
-
         p = romdisk_direct(fh[0]);
-
-        scu_dma_level_cfg.xfer.direct.len = romdisk_total(fh[0]);
-        scu_dma_level_cfg.xfer.direct.dst = VDP2_CRAM_ADDR(0x0000);
-        scu_dma_level_cfg.xfer.direct.src = (uint32_t)p;
-
-        scu_dma_config_buffer(&handle, &scu_dma_level_cfg);
-        ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
-        assert(ret == 0);
+        scu_dma_transfer(0, (void *)VDP2_CRAM_ADDR(0x0000), p, romdisk_total(fh[0]));
+        romdisk_close(fh[0]);
 
         fh[1] = romdisk_open(romdisk, "/BITMAP.CPD");
         assert(fh[1] != NULL);
-
         p = romdisk_direct(fh[1]);
-
-        scu_dma_level_cfg.xfer.direct.len = romdisk_total(fh[1]);
-        scu_dma_level_cfg.xfer.direct.dst = VDP2_VRAM_ADDR(0, 0x00000);
-        scu_dma_level_cfg.xfer.direct.src = (uint32_t)p;
-
-        scu_dma_config_buffer(&handle, &scu_dma_level_cfg);
-        ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
-        assert(ret == 0);
-
-        vdp2_sync();
-        vdp2_sync_wait();
+        scu_dma_transfer(0, (void *)VDP2_VRAM_ADDR(0, 0x00000), p, romdisk_total(fh[0]));
+        romdisk_close(fh[1]);
 
         vdp2_tvmd_display_set();
-
-        romdisk_close(fh[0]);
-        romdisk_close(fh[1]);
 
         vdp2_sync();
         vdp2_sync_wait();
@@ -150,8 +120,4 @@ user_init(void)
 
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB1555(1, 0, 3, 15));
-
-        cpu_intc_mask_set(0);
-
-        vdp2_tvmd_display_clear();
 }

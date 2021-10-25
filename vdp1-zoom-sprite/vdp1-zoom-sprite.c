@@ -30,14 +30,14 @@
 #define ZOOM_POINT_COLOR_WAIT           COLOR_RGB1555(1, 31,  0,  0)
 #define ZOOM_POINT_COLOR_HIGHLIGHT      COLOR_RGB1555(1,  0, 31,  0)
 
-#define ORDER_SYSTEM_CLIP_COORDS_INDEX      0
-#define ORDER_CLEAR_LOCAL_COORDS_INDEX      1
-#define ORDER_CLEAR_POLYGON_INDEX           2
-#define ORDER_LOCAL_COORDS_INDEX            3
-#define ORDER_SPRITE_INDEX                  4
-#define ORDER_POLYGON_POINTER_INDEX         5
-#define ORDER_DRAW_END_INDEX                6
-#define ORDER_COUNT                         7
+#define VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX        0
+#define VDP1_CMDT_ORDER_CLEAR_LOCAL_COORDS_INDEX        1
+#define VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX             2
+#define VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX              3
+#define VDP1_CMDT_ORDER_SPRITE_INDEX                    4
+#define VDP1_CMDT_ORDER_POLYGON_POINTER_INDEX           5
+#define VDP1_CMDT_ORDER_DRAW_END_INDEX                  6
+#define VDP1_CMDT_ORDER_COUNT                           7
 
 #define ANIMATION_FRAME_COUNT    (14)
 #define ANIMATION_FRAME_DURATION (3)
@@ -97,8 +97,6 @@ static void _sprite_config(void);
 static void _polygon_pointer_init(void);
 static void _polygon_pointer_config(void);
 
-static void _dma_upload(void *, void *, size_t, uint8_t);
-
 static uint32_t _frame_time_calculate(void);
 
 static void _vblank_out_handler(void *);
@@ -131,12 +129,14 @@ main(void)
                 _sprite_config();
                 _polygon_pointer_config();
 
-                vdp1_sync_cmdt_list_put(_cmdt_list, 0, NULL, NULL);
+                vdp1_sync_cmdt_list_put(_cmdt_list, 0);
 
-                dbgio_flush();
+                vdp1_sync_commit();
 
                 vdp1_sync();
                 vdp1_sync_wait();
+
+                dbgio_flush();
 
                 uint32_t result;
                 result = _frame_time_calculate();
@@ -184,7 +184,6 @@ _init(void)
 {
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
-        dbgio_dev_font_load_wait();
 
         romdisk_init();
 
@@ -199,18 +198,17 @@ _cmdt_list_init(void)
 {
         static const int16_vec2_t system_clip_coord =
             INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,
-                                     SCREEN_HEIGHT - 1);
+                                   SCREEN_HEIGHT - 1);
 
         static const int16_vec2_t local_coord_ul =
-            INT16_VEC2_INITIALIZER(0,
-                                      0);
+            INT16_VEC2_INITIALIZER(0, 0);
 
         static const int16_vec2_t local_coord_center =
             INT16_VEC2_INITIALIZER(SCREEN_WIDTH / 2,
-                                      SCREEN_HEIGHT / 2);
+                                   SCREEN_HEIGHT / 2);
 
         static const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
-                .raw = 0x0000,
+                .raw                       = 0x0000,
                 .bits.pre_clipping_disable = true
         };
 
@@ -221,59 +219,44 @@ _cmdt_list_init(void)
                 INT16_VEC2_INITIALIZER(               0,                 0)
         };
 
-        _cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
+        _cmdt_list = vdp1_cmdt_list_alloc(VDP1_CMDT_ORDER_COUNT);
 
-        (void)memset(&_cmdt_list->cmdts[0], 0x00, sizeof(vdp1_cmdt_t) * ORDER_COUNT);
+        (void)memset(&_cmdt_list->cmdts[0], 0x00, sizeof(vdp1_cmdt_t) * VDP1_CMDT_ORDER_COUNT);
 
-        _cmdt_list->count = ORDER_COUNT;
+        _cmdt_list->count = VDP1_CMDT_ORDER_COUNT;
 
-        vdp1_cmdt_t *cmdts;
-        cmdts = &_cmdt_list->cmdts[0];
+        vdp1_cmdt_t * const cmdts =
+            &_cmdt_list->cmdts[0];
 
-        _sprite.cmdt = &cmdts[ORDER_SPRITE_INDEX];
-        _polygon_pointer.cmdt = &cmdts[ORDER_POLYGON_POINTER_INDEX];
+        _sprite.cmdt = &cmdts[VDP1_CMDT_ORDER_SPRITE_INDEX];
+        _polygon_pointer.cmdt = &cmdts[VDP1_CMDT_ORDER_POLYGON_POINTER_INDEX];
 
         _polygon_pointer_init();
         _sprite_init();
 
-        vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX], CMDT_VTX_SYSTEM_CLIP, &system_clip_coord);
+        vdp1_cmdt_system_clip_coord_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX],
+            CMDT_VTX_SYSTEM_CLIP,
+            &system_clip_coord);
 
-        vdp1_cmdt_local_coord_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+        vdp1_cmdt_local_coord_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_LOCAL_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_LOCAL_COORDS_INDEX],
+            CMDT_VTX_LOCAL_COORD,
+            &local_coord_ul);
 
-        vdp1_cmdt_polygon_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX]);
-        vdp1_cmdt_param_draw_mode_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], polygon_draw_mode);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_A, &polygon_points[0]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_B, &polygon_points[1]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_C, &polygon_points[2]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_D, &polygon_points[3]);
-        vdp1_cmdt_jump_skip_next(&cmdts[ORDER_CLEAR_POLYGON_INDEX]);
+        vdp1_cmdt_polygon_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX]);
+        vdp1_cmdt_param_draw_mode_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX],
+            polygon_draw_mode);
+        vdp1_cmdt_param_vertices_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX],
+            polygon_points);
+        vdp1_cmdt_jump_skip_next(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX]);
 
-        vdp1_cmdt_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_center);
+        vdp1_cmdt_local_coord_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX],
+            CMDT_VTX_LOCAL_COORD,
+            &local_coord_center);
 
-        vdp1_cmdt_end_set(&cmdts[ORDER_DRAW_END_INDEX]);
-}
-
-static void
-_dma_upload(void *dst, void *src, size_t len, uint8_t tag)
-{
-        const scu_dma_level_cfg_t scu_dma_level_cfg = {
-                .mode = SCU_DMA_MODE_DIRECT,
-                .stride = SCU_DMA_STRIDE_2_BYTES,
-                .update = SCU_DMA_UPDATE_NONE,
-                .xfer.direct.len = len,
-                .xfer.direct.dst = (uint32_t)dst,
-                .xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src
-        };
-
-        scu_dma_handle_t handle;
-        scu_dma_config_buffer(&handle, &scu_dma_level_cfg);
-
-        int8_t ret __unused;
-        ret = dma_queue_enqueue(&handle, tag, NULL, NULL);
-        assert(ret == 0);
+        vdp1_cmdt_end_set(&cmdts[VDP1_CMDT_ORDER_DRAW_END_INDEX]);
 }
 
 static uint32_t
@@ -341,16 +324,13 @@ _sprite_init(void)
         assert(fh[0] != NULL);
         p = romdisk_direct(fh[0]);
         len = romdisk_total(fh[0]);
-        _dma_upload(_sprite.tex_base, p, len, DMA_QUEUE_TAG_IMMEDIATE);
+        scu_dma_transfer(0, _sprite.tex_base, p, len);
 
         fh[1] = romdisk_open(_romdisk, ZOOM_PAL_PATH);
         assert(fh[1] != NULL);
         p = romdisk_direct(fh[1]);
         len = romdisk_total(fh[1]);
-        _dma_upload(_sprite.pal_base, p, len, DMA_QUEUE_TAG_IMMEDIATE);
-
-        dma_queue_flush(DMA_QUEUE_TAG_IMMEDIATE);
-        dma_queue_flush_wait();
+        scu_dma_transfer(0, _sprite.pal_base, p, len);
 
         romdisk_close(fh[0]);
         romdisk_close(fh[1]);

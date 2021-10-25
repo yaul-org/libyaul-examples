@@ -30,23 +30,23 @@
 #define UV_POINT_COLOR_WAIT           COLOR_RGB1555(1, 31,  0,  0)
 #define UV_POINT_COLOR_HIGHLIGHT      COLOR_RGB1555(1,  0, 31,  0)
 
-#define ORDER_SYSTEM_CLIP_COORDS_INDEX      0
-#define ORDER_USER_CLIP_COORDS_INDEX        1
-#define ORDER_CLEAR_LOCAL_COORDS_INDEX      2
-#define ORDER_CLEAR_POLYGON_INDEX           3
-#define ORDER_LOCAL_COORDS_INDEX            4
-#define ORDER_SPRITE_INDEX                  5
-#define ORDER_POLYGON_POINTER_INDEX         6
-#define ORDER_DRAW_END_INDEX                7
-#define ORDER_COUNT                         8
+#define VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX        0
+#define VDP1_CMDT_ORDER_USER_CLIP_COORDS_INDEX          1
+#define VDP1_CMDT_ORDER_CLEAR_LOCAL_COORDS_INDEX        2
+#define VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX             3
+#define VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX              4
+#define VDP1_CMDT_ORDER_SPRITE_INDEX                    5
+#define VDP1_CMDT_ORDER_POLYGON_POINTER_INDEX           6
+#define VDP1_CMDT_ORDER_DRAW_END_INDEX                  7
+#define VDP1_CMDT_ORDER_COUNT                           8
 
 extern uint8_t root_romdisk[];
 
 /* State */
-static int32_t _state_uv        = STATE_UV_MOVE_ORIGIN;
+static int32_t _state_uv      = STATE_UV_MOVE_ORIGIN;
 static int16_vec2_t _uv_coords[4];
-static uint16_t _uv_index       = 0;
-static uint32_t _delay_frames   = 0;
+static uint16_t _uv_index     = 0;
+static uint32_t _delay_frames = 0;
 
 static smpc_peripheral_digital_t _digital;
 
@@ -65,8 +65,6 @@ static void *_romdisk = NULL;
 
 static vdp1_cmdt_list_t *_cmdt_list = NULL;
 static vdp1_vram_partitions_t _vdp1_vram_partitions;
-
-static volatile uint32_t _frt_count = 0;
 
 static inline bool __always_inline
 _digital_dirs_pressed(void)
@@ -89,10 +87,7 @@ static void _sprite_config(void);
 static void _polygon_pointer_init(void);
 static void _polygon_pointer_config(void);
 
-static uint32_t _frame_time_calculate(void);
-
 static void _vblank_out_handler(void *);
-static void _cpu_frt_ovi_handler(void);
 
 int
 main(void)
@@ -110,8 +105,6 @@ main(void)
         _sprite_config();
         _polygon_pointer_config();
 
-        cpu_frt_count_set(0);
-
         vdp2_sync();
         vdp2_sync_wait();
 
@@ -124,7 +117,7 @@ main(void)
                 _sprite_config();
                 _polygon_pointer_config();
 
-                vdp1_sync_cmdt_list_put(_cmdt_list, 0, NULL, NULL);
+                vdp1_sync_cmdt_list_put(_cmdt_list, 0);
 
                 /* dbgio_printf("[H[2J"); */
 
@@ -134,16 +127,10 @@ main(void)
 
                 /* dbgio_flush(); */
 
+                vdp1_sync_commit();
+
                 vdp1_sync();
                 vdp1_sync_wait();
-
-                /* uint32_t result; */
-                /* result = _frame_time_calculate(); */
-
-                /* char fixed[16]; */
-                /* fix16_str(result, fixed, 7); */
-
-                /* dbgio_printf("\n%sms\n", fixed); */
         }
 
         return 0;
@@ -178,9 +165,6 @@ user_init(void)
 
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
-        cpu_frt_init(CPU_FRT_CLOCK_DIV_32);
-        cpu_frt_ovi_set(_cpu_frt_ovi_handler);
-
         vdp1_vram_partitions_get(&_vdp1_vram_partitions);
 
         /* Disable HBLANK-IN interrupt for better performance */
@@ -192,7 +176,6 @@ _init(void)
 {
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
-        dbgio_dev_font_load_wait();
 
         romdisk_init();
 
@@ -249,66 +232,52 @@ _cmdt_list_init(void)
                 INT16_VEC2_INITIALIZER(               0,                 0)
         };
 
-        _cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
+        _cmdt_list = vdp1_cmdt_list_alloc(VDP1_CMDT_ORDER_COUNT);
 
-        (void)memset(&_cmdt_list->cmdts[0], 0x00, sizeof(vdp1_cmdt_t) * ORDER_COUNT);
+        (void)memset(&_cmdt_list->cmdts[0], 0x00, sizeof(vdp1_cmdt_t) * VDP1_CMDT_ORDER_COUNT);
 
-        _cmdt_list->count = ORDER_COUNT;
+        _cmdt_list->count = VDP1_CMDT_ORDER_COUNT;
 
-        vdp1_cmdt_t *cmdts;
-        cmdts = &_cmdt_list->cmdts[0];
+        vdp1_cmdt_t * const cmdts =
+            &_cmdt_list->cmdts[0];
 
-        _sprite.cmdt = &cmdts[ORDER_SPRITE_INDEX];
-        _polygon_pointer.cmdt = &cmdts[ORDER_POLYGON_POINTER_INDEX];
+        _sprite.cmdt = &cmdts[VDP1_CMDT_ORDER_SPRITE_INDEX];
+        _polygon_pointer.cmdt = &cmdts[VDP1_CMDT_ORDER_POLYGON_POINTER_INDEX];
 
         _polygon_pointer_init();
         _sprite_init();
 
-        vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX], CMDT_VTX_SYSTEM_CLIP, &system_clip_coord);
+        vdp1_cmdt_system_clip_coord_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX],
+            CMDT_VTX_SYSTEM_CLIP,
+            &system_clip_coord);
 
-        vdp1_cmdt_user_clip_coord_set(&cmdts[ORDER_USER_CLIP_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_USER_CLIP_COORDS_INDEX], CMDT_VTX_USER_CLIP_UL, &user_clip_ul);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_USER_CLIP_COORDS_INDEX], CMDT_VTX_USER_CLIP_LR, &user_clip_lr);
+        vdp1_cmdt_user_clip_coord_set(&cmdts[VDP1_CMDT_ORDER_USER_CLIP_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_USER_CLIP_COORDS_INDEX],
+            CMDT_VTX_USER_CLIP_UL,
+            &user_clip_ul);
+        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_USER_CLIP_COORDS_INDEX],
+            CMDT_VTX_USER_CLIP_LR,
+            &user_clip_lr);
 
-        vdp1_cmdt_local_coord_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+        vdp1_cmdt_local_coord_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_LOCAL_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_LOCAL_COORDS_INDEX],
+            CMDT_VTX_LOCAL_COORD,
+            &local_coord_ul);
 
-        vdp1_cmdt_polygon_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX]);
-        vdp1_cmdt_param_draw_mode_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], polygon_draw_mode);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_A, &polygon_points[0]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_B, &polygon_points[1]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_C, &polygon_points[2]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], CMDT_VTX_POLYGON_D, &polygon_points[3]);
-        vdp1_cmdt_jump_skip_next(&cmdts[ORDER_CLEAR_POLYGON_INDEX]);
+        vdp1_cmdt_polygon_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX]);
+        vdp1_cmdt_param_draw_mode_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX],
+            polygon_draw_mode);
+        vdp1_cmdt_param_vertices_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX],
+            polygon_points);
+        vdp1_cmdt_jump_skip_next(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX]);
 
-        vdp1_cmdt_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_center);
+        vdp1_cmdt_local_coord_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX]);
+        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX],
+            CMDT_VTX_LOCAL_COORD,
+            &local_coord_center);
 
-        vdp1_cmdt_end_set(&cmdts[ORDER_DRAW_END_INDEX]);
-}
-
-static uint32_t
-_frame_time_calculate(void)
-{
-        uint16_t frt;
-        frt = cpu_frt_count_get();
-
-        cpu_frt_count_set(0);
-
-        uint32_t delta_fix;
-        delta_fix = frt << 4;
-
-        uint32_t divisor_fix;
-        divisor_fix = CPU_FRT_NTSC_320_32_COUNT_1MS << 4;
-
-        cpu_divu_32_32_set(delta_fix << 4, divisor_fix);
-
-        uint32_t result;
-        result = cpu_divu_quotient_get();
-        result <<= 12;
-
-        return result;
+        vdp1_cmdt_end_set(&cmdts[VDP1_CMDT_ORDER_DRAW_END_INDEX]);
 }
 
 static void
@@ -543,9 +512,4 @@ static void
 _vblank_out_handler(void *work __unused)
 {
         smpc_peripheral_intback_issue();
-}
-
-static void
-_cpu_frt_ovi_handler(void)
-{
 }

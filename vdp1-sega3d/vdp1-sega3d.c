@@ -251,6 +251,7 @@ main(void)
 
                 dbgio_flush();
                 vdp1_sync();
+                vdp1_sync_commit();
                 vdp1_sync_wait();
         }
 }
@@ -275,7 +276,7 @@ user_init(void)
         vdp1_vram_partitions_get(&_vram_partitions);
 
         /* Variable internal */
-        vdp1_sync_interval_set(-1);
+        vdp1_sync_interval_set(VDP1_SYNC_INTERVAL_VARIABLE);
 
         vdp1_env_t vdp1_env;
 
@@ -302,7 +303,6 @@ user_init(void)
 
         /* dbgio_dev_default_init(DBGIO_DEV_USB_CART); */
         /* dbgio_dev_font_load(); */
-        /* dbgio_dev_font_load_wait(); */
 
         vdp2_tvmd_display_set();
 

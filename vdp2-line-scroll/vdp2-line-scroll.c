@@ -23,12 +23,6 @@ static vdp2_scrn_ls_format_t _ls_format = {
 void
 main(void)
 {
-        static scu_dma_xfer_t _xfer_table[4] __aligned(4 * 16);
-
-        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
-        dbgio_dev_font_load();
-        dbgio_dev_font_load_wait();
-
         romdisk_init();
 
         void *romdisk;
@@ -37,64 +31,37 @@ main(void)
 
         void *fh[4];
 
-        const scu_dma_level_cfg_t scu_dma_level_cfg = {
-                .xfer.indirect = &_xfer_table[0],
-                .mode = SCU_DMA_MODE_INDIRECT,
-                .stride = SCU_DMA_STRIDE_2_BYTES,
-                .update = SCU_DMA_UPDATE_NONE
-        };
-
-        scu_dma_handle_t handle;
-        scu_dma_config_buffer(&handle, &scu_dma_level_cfg);
-
         fh[0] = romdisk_open(romdisk, "/VF.CPD");
         assert(fh[0] != NULL);
-        _xfer_table[0].len = romdisk_total(fh[0]);
-        _xfer_table[0].dst = NBG0_CPD;
-        _xfer_table[0].src = (uint32_t)romdisk_direct(fh[0]);
+        scu_dma_transfer(0, (void *)NBG0_CPD, romdisk_direct(fh[0]), romdisk_total(fh[0]));
+        romdisk_close(fh[0]);
 
         fh[1] = romdisk_open(romdisk, "/VF.PND");
         assert(fh[1] != NULL);
-        _xfer_table[1].len = romdisk_total(fh[1]);
-        _xfer_table[1].dst = NBG0_PND;
-        _xfer_table[1].src = (uint32_t)romdisk_direct(fh[1]);
+        scu_dma_transfer(0, (void *)NBG0_PND, romdisk_direct(fh[1]), romdisk_total(fh[1]));
+        romdisk_close(fh[1]);
 
         fh[2] = romdisk_open(romdisk, "/VF.PAL");
         assert(fh[2] != NULL);
-        _xfer_table[2].len = romdisk_total(fh[2]);
-        _xfer_table[2].dst = NBG0_PAL;
-        _xfer_table[2].src = (uint32_t)romdisk_direct(fh[2]);
+        scu_dma_transfer(0, (void *)NBG0_PAL, romdisk_direct(fh[2]), romdisk_total(fh[2]));
 
         fh[3] = romdisk_open(romdisk, "/LINE_SCROLL.TBL");
         assert(fh[3] != NULL);
-        _xfer_table[3].len = romdisk_total(fh[3]);
-        _xfer_table[3].dst = NBG0_LINE_SCROLL;
-        _xfer_table[3].src = SCU_DMA_INDIRECT_TABLE_END | (uint32_t)romdisk_direct(fh[3]);
+        scu_dma_transfer(0, (void *)NBG0_LINE_SCROLL, romdisk_direct(fh[3]), romdisk_total(fh[3]));
+        romdisk_close(fh[2]);
 
         vdp2_scrn_ls_set(&_ls_format);
-
-        int8_t ret __unused;
-        ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN,
-            NULL, NULL);
-        assert(ret == 0);
 
         vdp2_sync();
         vdp2_sync_wait();
 
-        romdisk_close(fh[2]);
-        romdisk_close(fh[1]);
-        romdisk_close(fh[0]);
-
         uint16_t i;
         i = 0;
-
-        dbgio_puts("Line scroll\n");
 
         while (true) {
                 _ls_format.line_scroll_table = NBG0_LINE_SCROLL + (i << 2);
 
                 vdp2_scrn_ls_set(&_ls_format);
-                dbgio_flush();
                 vdp2_sync();
                 vdp2_sync_wait();
 
@@ -106,14 +73,14 @@ void
 user_init(void)
 {
         const vdp2_scrn_cell_format_t format = {
-                .scroll_screen = VDP2_SCRN_NBG0,
-                .cc_count = VDP2_SCRN_CCC_PALETTE_256,
-                .character_size = 2 * 2,
-                .pnd_size = 1, /* 1-word */
-                .auxiliary_mode = 1,
-                .plane_size = 1 * 1,
-                .cp_table = NBG0_CPD,
-                .color_palette = NBG0_PAL,
+                .scroll_screen     = VDP2_SCRN_NBG0,
+                .cc_count          = VDP2_SCRN_CCC_PALETTE_256,
+                .character_size    = 2 * 2,
+                .pnd_size          = 1, /* 1-word */
+                .auxiliary_mode    = 1,
+                .plane_size        = 1 * 1,
+                .cp_table          = NBG0_CPD,
+                .color_palette     = NBG0_PAL,
                 .map_bases.plane_a = NBG0_PND,
                 .map_bases.plane_b = NBG0_PND,
                 .map_bases.plane_c = NBG0_PND,
@@ -124,8 +91,6 @@ user_init(void)
             VDP2_TVMD_VERT_240);
 
         vdp2_scrn_back_screen_color_set(BACK_SCREEN, COLOR_RGB1555(1, 5, 5, 7));
-
-        vdp2_tvmd_display_clear();
 
         vdp2_scrn_cell_format_set(&format);
 
@@ -141,29 +106,31 @@ user_init(void)
         vdp2_sprite_priority_set(6, 0);
         vdp2_sprite_priority_set(7, 0);
 
-        vdp2_vram_cycp_bank_t vram_cycp_bank;
+        const vdp2_vram_cycp_bank_t vram_cycp_bank_a0 = {
+                .t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .t2 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .t3 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .t4 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .t5 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .t6 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .t7 = VDP2_VRAM_CYCP_NO_ACCESS
+        };
 
-        vram_cycp_bank.t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp_bank.t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp_bank.t2 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank.t3 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank.t4 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank.t5 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank.t6 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank.t7 = VDP2_VRAM_CYCP_NO_ACCESS;
+        vdp2_vram_cycp_bank_set(0, &vram_cycp_bank_a0);
 
-        vdp2_vram_cycp_bank_set(0, &vram_cycp_bank);
+        const vdp2_vram_cycp_bank_t vram_cycp_bank_b0 = {
+                .t0 = VDP2_VRAM_CYCP_PNDR_NBG0,
+                .t1 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .t2 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .t3 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .t4 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .t5 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .t6 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .t7 = VDP2_VRAM_CYCP_NO_ACCESS
+        };
 
-        vram_cycp_bank.t0 = VDP2_VRAM_CYCP_PNDR_NBG0;
-        vram_cycp_bank.t1 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank.t2 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank.t3 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank.t4 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank.t5 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank.t6 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank.t7 = VDP2_VRAM_CYCP_NO_ACCESS;
-
-        vdp2_vram_cycp_bank_set(2, &vram_cycp_bank);
+        vdp2_vram_cycp_bank_set(2, &vram_cycp_bank_b0);
 
         vdp2_tvmd_display_set();
 }

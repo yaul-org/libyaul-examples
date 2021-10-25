@@ -15,7 +15,6 @@ main(void)
 {
         dbgio_dev_default_init(DBGIO_DEV_USB_CART);
         dbgio_dev_font_load();
-        dbgio_dev_font_load_wait();
 
         for (uint32_t i = 0; i < (1 * 60); i++) {
                 dbgio_flush();

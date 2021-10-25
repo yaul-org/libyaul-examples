@@ -55,29 +55,29 @@ main(void)
 
         (void)tga_image_decode(&tga, (void *)RBG0_BPD);
 
-        vdp2_scrn_rotation_table_t rot_tbl = {
+        vdp2_scrn_rotation_table_t rotation_table = {
                 /* Screen start coordinates */
                 .xst = 0,
                 .yst = 0,
                 .zst = 0,
 
                 /* Screen vertical coordinate increments (per each line) */
-                .delta_xst = 0x00000000,
-                .delta_yst = 0x00010000,
+                .delta_xst = FIX16(0.0f),
+                .delta_yst = FIX16(1.0f),
 
                 /* Screen horizontal coordinate increments (per each dot) */
-                .delta_x = 0x00010000,
-                .delta_y = 0x00000000,
+                .delta_x = FIX16(1.0f),
+                .delta_y = FIX16(0.0f),
 
                 /* Rotation matrix */
                 .matrix = {
                         .param = {
-                                .a = 0x00010000,
-                                .b = 0x00000000,
-                                .c = 0x00000000,
-                                .d = 0x00000000,
-                                .e = 0x00010000,
-                                .f = 0x00000000
+                                .a = FIX16(1.0f),
+                                .b = FIX16(0.0f),
+                                .c = FIX16(0.0f),
+                                .d = FIX16(0.0f),
+                                .e = FIX16(1.0f),
+                                .f = FIX16(0.0f)
                         }
                 },
 
@@ -96,8 +96,8 @@ main(void)
                 .my = 0,
 
                 /* Scaling coefficients */
-                .kx = 0x00010000,
-                .ky = 0x00010000,
+                .kx = FIX16(1.0f),
+                .ky = FIX16(1.0f),
 
                 /* Coefficient table start address */
                 .kast = 0,
@@ -107,30 +107,31 @@ main(void)
                 .delta_kax = 0
         };
 
-        scu_dma_level_cfg_t scu_dma_level_cfg;
         scu_dma_handle_t handle;
 
-        scu_dma_level_cfg.xfer.direct.len = sizeof(vdp2_scrn_rotation_table_t);
-        scu_dma_level_cfg.xfer.direct.dst = RBG0_ROTATION_TABLE;
-        scu_dma_level_cfg.xfer.direct.src = (uint32_t)&rot_tbl;
-        scu_dma_level_cfg.mode = SCU_DMA_MODE_DIRECT;
-        scu_dma_level_cfg.stride = SCU_DMA_STRIDE_2_BYTES;
-        scu_dma_level_cfg.update = SCU_DMA_UPDATE_NONE;
+        const scu_dma_level_cfg_t scu_dma_level_cfg = {
+                .xfer.direct.len = sizeof(vdp2_scrn_rotation_table_t),
+                .xfer.direct.dst = RBG0_ROTATION_TABLE,
+                .xfer.direct.src = (uint32_t)&rotation_table,
+                .space           = SCU_DMA_SPACE_BUS_B,
+                .mode            = SCU_DMA_MODE_DIRECT,
+                .stride          = SCU_DMA_STRIDE_2_BYTES,
+                .update          = SCU_DMA_UPDATE_NONE
+        };
 
         scu_dma_config_buffer(&handle, &scu_dma_level_cfg);
 
         while (true) {
                 /* Scale */
-                rot_tbl.matrix.raw[0][0] = 0x00019980; /* int(1.6*1024.0)<<6 */
-                rot_tbl.matrix.raw[1][1] = 0x00011100; /* int(1.0666666666666667*1024.0)<<6 */
+                rotation_table.matrix.raw[0][0] = 0x00019980; /* int(1.6*1024.0)<<6 */
+                rotation_table.matrix.raw[1][1] = 0x00011100; /* int(1.0666666666666667*1024.0)<<6 */
 
                 /* Translate */
-                rot_tbl.mx += 0x00010000;
-                rot_tbl.my += 0x00010000;
+                rotation_table.mx += FIX16(1.0f);
+                rotation_table.my += FIX16(1.0f);
 
                 int8_t ret __unused;
-                ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN,
-                    NULL, NULL);
+                ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
                 assert(ret == 0);
 
                 vdp2_sync();
@@ -146,8 +147,6 @@ user_init(void)
         vdp2_scrn_bitmap_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);
         vdp2_scrn_display_set(VDP2_SCRN_RBG0, /* no_trans = */ false);
-
-        vdp2_vram_cycp_clear();
 
         vdp2_scrn_back_screen_color_set(BACK_SCREEN, COLOR_RGB1555(1, 5, 5, 7));
 

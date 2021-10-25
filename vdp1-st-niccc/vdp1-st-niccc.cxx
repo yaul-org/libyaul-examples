@@ -101,7 +101,6 @@ int main(void) {
 
     dbgio_dev_default_init(DBGIO_DEV_VDP2);
     dbgio_dev_font_load();
-    dbgio_dev_font_load_wait();
 
     _draw_init();
 
@@ -171,7 +170,7 @@ int main(void) {
 static void _vdp1_init(void) {
     vdp2_sprite_priority_set(0, 6);
 
-    vdp1_sync_interval_set(VDP1_SYNC_INTERVAL_VARIABLE);
+    vdp1_sync_interval_set(VDP1_SYNC_INTERVAL_60HZ);
 
     vdp1_env_t vdp1_env;
 
@@ -404,7 +403,7 @@ static void _on_start(uint32_t, bool) {
     vdp1_cmdt* const end_cmdt =
             &_scene.cmdt_list->cmdts[_scene.cmdt_list->count - 1];
 
-    end_cmdt->cmd_ctrl &= ~0x8000;
+    vdp1_cmdt_end_clear(end_cmdt);
 
     _scene.cmdt_list->count = VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX;
 }
@@ -419,7 +418,8 @@ static void _on_end(uint32_t frame_index __unused, bool last_frame) {
 
         /* Wait for the previous sync (if any) */
         vdp1_sync_wait();
-        vdp1_sync_cmdt_list_put(_scene.cmdt_list, 0, NULL, NULL);
+        vdp1_sync_cmdt_list_put(_scene.cmdt_list, 0);
+        vdp1_sync_commit();
 
         /* Call to sync -- does not block */
         vdp1_sync();

@@ -21,9 +21,9 @@
 
 static void _transfer_cpd(void);
 static void _transfer_pal(void);
-static void _transfer_pnd(const vdp2_scrn_cell_format_t *);
+static void _transfer_pnd(uint32_t page_width, uint32_t page_height, uint32_t page_size);
 
-static void _fill_map_pnd(uint16_t *, uint16_t, uint16_t, uint16_t);
+static void _fill_map_pnd(uint16_t *map, uint16_t page_width, uint16_t page_height, uint16_t tile);
 
 static const color_rgb1555_t _palette[] __unused = {
         COLOR_RGB1888_RGB1555_INITIALIZER(1,   0,   0,   0),
@@ -87,21 +87,19 @@ main(void)
 void
 user_init(void)
 {
-        vdp2_tvmd_display_clear();
-
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(2, 0x01FFFE),
             COLOR_RGB1555(1, 0, 0, 7));
 
         const vdp2_scrn_cell_format_t format = {
-                .scroll_screen = VDP2_SCRN_NBG1,
-                .cc_count = VDP2_SCRN_CCC_PALETTE_16,
+                .scroll_screen  = VDP2_SCRN_NBG1,
+                .cc_count       = VDP2_SCRN_CCC_PALETTE_16,
                 .character_size = 1 * 1,
-                .pnd_size = 1,
+                .pnd_size       = 1,
                 .auxiliary_mode = 1,
-                .plane_size = 2 * 2,
-                .cp_table = NBG1_CPD,
-                .color_palette = NBG1_PAL,
-                .map_bases = {
+                .plane_size     = 2 * 2,
+                .cp_table       = NBG1_CPD,
+                .color_palette  = NBG1_PAL,
+                .map_bases      = {
                         .planes = {
                                 NBG1_MAP_PLANE_A,
                                 NBG1_MAP_PLANE_B,
@@ -145,12 +143,14 @@ user_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);
 
-        vdp2_sync();
-        vdp2_sync_wait();
-
         _transfer_cpd();
         _transfer_pal();
-        _transfer_pnd(&format);
+
+        const uint32_t page_width = VDP2_SCRN_CALCULATE_PAGE_WIDTH(&format);
+        const uint32_t page_height = VDP2_SCRN_CALCULATE_PAGE_HEIGHT(&format);
+        const uint32_t page_size = VDP2_SCRN_CALCULATE_PAGE_SIZE(&format);
+
+        _transfer_pnd(page_width, page_height, page_size);
 
         vdp2_tvmd_display_set();
 
@@ -161,10 +161,8 @@ user_init(void)
 static void
 _transfer_cpd(void)
 {
-        uint32_t tile;
-        for (tile = 0; tile < 16; tile++) {
-                uint8_t byte;
-                byte = (tile << 4) | tile;
+        for (uint16_t tile = 0; tile < 16; tile++) {
+                const uint8_t byte = (tile << 4) | tile;
 
                 (void)memset((void *)((uint32_t)NBG1_CPD | (tile << 5)), byte, 32);
         }
@@ -177,102 +175,32 @@ _transfer_pal(void)
 }
 
 static void
-_transfer_pnd(const vdp2_scrn_cell_format_t *format)
+_transfer_pnd(uint32_t page_width, uint32_t page_height, uint32_t page_size)
 {
-        /* The scroll screen is set up to have 16 64x64 cell pages (4 planes
-         * total), each 4 KiB, resulting in 64 KiB.
-         *
-         * 1. Set up a DMA indirect table with 2 entries
-         * 2. Split a single page into two 64x32 sub-pages
-         * 3. While one sub-page is being filled, transfer the other sub-page
-         *    via the DMA queue
-         * 4. Use the two entries to transfer one mirrored sub-page one after
-         *    the other
-         * 5. Swap sub-pages and repeat */
 
-        uint32_t page_width;
-        page_width = VDP2_SCRN_CALCULATE_PAGE_WIDTH(format);
-        uint32_t page_height;
-        page_height = VDP2_SCRN_CALCULATE_PAGE_HEIGHT(format);
-        uint32_t page_size;
-        page_size = VDP2_SCRN_CALCULATE_PAGE_SIZE(format);
 
-        scu_dma_handle_t scu_dma_handle;
-
-        /* XXX: WA until memalign() is implemented { */
-        void *p;
-        p = malloc(32 + (2 * sizeof(scu_dma_xfer_t)));
-        assert(p != NULL);
-
-        uint32_t aligned_offset;
-        aligned_offset = (((uint32_t)p + 0x0000001F) & ~0x0000001F) - (uint32_t)p;
-
-        scu_dma_xfer_t *xfer_table;
-        xfer_table = (scu_dma_xfer_t *)((uint32_t)p + aligned_offset);
-        /* } */
-
-        scu_dma_level_cfg_t scu_dma_level_cfg = {
-                .mode = SCU_DMA_MODE_INDIRECT,
-                .stride = SCU_DMA_STRIDE_2_BYTES,
-                .update = SCU_DMA_UPDATE_NONE,
-                .xfer.indirect = xfer_table
-        };
-
-        scu_dma_config_buffer(&scu_dma_handle, &scu_dma_level_cfg);
-
-        uint16_t *map[2];
-        map[0] = malloc(page_size / 2);
-        assert(map[0] != NULL);
-        map[1] = malloc(page_size / 2);
-        assert(map[1] != NULL);
-
-        uint32_t offset;
-        offset = 0;
+        uint16_t * const map = malloc(page_size);
+        assert(map != NULL);
 
         uint32_t pnd;
         pnd = NBG1_MAP_PLANE_A;
 
-        uint32_t tile;
-        for (tile = 0; tile < 16; tile++) {
-                uint16_t *map_p;
-                map_p = map[offset];
+        for (uint32_t tile = 0; tile < 16; tile++) {
+                _fill_map_pnd(map, page_width, page_height, tile);
 
-                _fill_map_pnd(map_p, page_width, page_height / 2, tile);
+                scu_dma_transfer(0, (void *)pnd, map, page_size);
 
-                dma_queue_flush_wait();
-
-                xfer_table[0].len = page_size / 2;
-                xfer_table[0].dst = (uint32_t)pnd;
-                xfer_table[0].src = CPU_CACHE_THROUGH | (uint32_t)map_p;
-
-                xfer_table[1].len = page_size / 2;
-                xfer_table[1].dst = (uint32_t)pnd | (page_size / 2);
-                xfer_table[1].src = SCU_DMA_INDIRECT_TABLE_END | CPU_CACHE_THROUGH | (uint32_t)map_p;
-
-                int8_t ret __unused;
-                ret = dma_queue_enqueue(&scu_dma_handle, DMA_QUEUE_TAG_IMMEDIATE, NULL, NULL);
-                assert(ret == 0);
-
-                dma_queue_flush(DMA_QUEUE_TAG_IMMEDIATE);
-
-                offset ^= 1;
                 pnd += page_size;
         }
 
-        dma_queue_flush_wait();
-
-        free(p);
-        free(map[0]);
-        free(map[1]);
+        free(map);
 }
 
 static void
 _fill_map_pnd(uint16_t *map, uint16_t page_width, uint16_t page_height, uint16_t tile)
 {
-        uint16_t x;
-        for (x = 0; x < page_width; x++) {
-                uint16_t y;
-                for (y = 0; y < page_height; y++) {
+        for (uint16_t x = 0; x < page_width; x++) {
+                for (uint16_t y = 0; y < page_height; y++) {
                         uint32_t cpd;
                         cpd = (uint32_t)NBG1_CPD | (tile << 5);
 
