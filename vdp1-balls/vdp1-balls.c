@@ -181,28 +181,19 @@ main(void)
                 /* Wait for the previous sync (if any) */
                 vdp1_sync_wait();
 
+                perf_start(&dma_perf); {
+                        balls_cmdts_position_put(buffer_context->balls_handle, VDP1_CMDT_ORDER_BALL_START_INDEX, balls_count);
+                } perf_end(&dma_perf);
+
                 buffer_context->cmdt_draw_end =
                     (vdp1_cmdt_t *)VDP1_CMD_TABLE(VDP1_CMDT_ORDER_BALL_START_INDEX + balls_count, 0);
 
                 vdp1_cmdt_end_clear(previous_buffer_context->cmdt_draw_end);
                 vdp1_cmdt_end_set(buffer_context->cmdt_draw_end);
 
-                perf_start(&dma_perf); {
-                        balls_cmdts_position_put(buffer_context->balls_handle, VDP1_CMDT_ORDER_BALL_START_INDEX, balls_count);
-                } perf_end(&dma_perf);
-
+                /* Call to render */
                 vdp1_sync_commit();
-
-                /* perf_start(&vdp1_perf); { */
-                /*         while (true) { */
-                /*                 const vdp1_transfer_status_t transfer_status = vdp1_transfer_status_get(); */
-                /*                 if (transfer_status.cef) { */
-                /*                         break; */
-                /*                 } */
-                /*         } */
-                /* } perf_end(&vdp1_perf); */
-
-                /* Call to sync -- does not block */
+                /* Call to sync with frame change -- does not block */
                 vdp1_sync();
 
                 which_context ^= 1;

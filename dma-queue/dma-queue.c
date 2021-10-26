@@ -193,10 +193,9 @@ _tga_file_decode(const char *file, void *tga_buffer, void *buffer)
         assert(fh != NULL);
 
         tga_t tga;
-        int ret;
-        size_t len;
+        int ret __unused;
 
-        len = romdisk_read(fh, tga_buffer, romdisk_total(fh));
+        const size_t len = romdisk_read(fh, tga_buffer, romdisk_total(fh));
         assert(len == romdisk_total(fh));
 
         ret = tga_read(&tga, tga_buffer);
@@ -204,8 +203,7 @@ _tga_file_decode(const char *file, void *tga_buffer, void *buffer)
 
         romdisk_close(fh);
 
-        int32_t tga_size;
-        tga_size = tga_image_decode(&tga, buffer);
+        const int32_t tga_size = tga_image_decode(&tga, buffer);
 
         /* XXX: The TGA library isn't very well written. The pixel count is
          *      return, but because we're dealing with 16-BPP TGA images, it's 2
@@ -217,7 +215,8 @@ static void
 _dma_queue_enqueue(void *dst, void *src, const uint32_t size)
 {
         static struct scu_dma_level_cfg dma_cfg = {
-                .mode = SCU_DMA_MODE_DIRECT,
+                .mode   = SCU_DMA_MODE_DIRECT,
+                .space  = SCU_DMA_SPACE_BUS_B,
                 .stride = SCU_DMA_STRIDE_2_BYTES,
                 .update = SCU_DMA_UPDATE_NONE
         };

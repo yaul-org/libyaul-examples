@@ -107,7 +107,7 @@ main(void)
                 .delta_kax = 0
         };
 
-        scu_dma_handle_t handle;
+        scu_dma_handle_t dma_handle;
 
         const scu_dma_level_cfg_t scu_dma_level_cfg = {
                 .xfer.direct.len = sizeof(vdp2_scrn_rotation_table_t),
@@ -119,7 +119,7 @@ main(void)
                 .update          = SCU_DMA_UPDATE_NONE
         };
 
-        scu_dma_config_buffer(&handle, &scu_dma_level_cfg);
+        scu_dma_config_buffer(&dma_handle, &scu_dma_level_cfg);
 
         while (true) {
                 /* Scale */
@@ -131,7 +131,7 @@ main(void)
                 rotation_table.my += FIX16(1.0f);
 
                 int8_t ret __unused;
-                ret = dma_queue_enqueue(&handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
+                ret = dma_queue_enqueue(&dma_handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
                 assert(ret == 0);
 
                 vdp2_sync();
