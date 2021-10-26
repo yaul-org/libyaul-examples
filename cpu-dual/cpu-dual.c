@@ -29,8 +29,6 @@ main(void)
         cpu_dual_master_set(_master_entry);
         cpu_dual_slave_set(_slave_entry);
 
-        cpu_intc_mask_set(0);
-
         assert((cpu_dual_executor_get()) == CPU_MASTER);
 
         dbgio_printf("Master stack address: 0x%08lX\n",
@@ -75,8 +73,6 @@ user_init(void)
 
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB1555(1, 0, 3, 15));
-
-        cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
 }

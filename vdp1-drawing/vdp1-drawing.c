@@ -267,8 +267,6 @@ user_init(void)
 
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
-        cpu_intc_mask_set(0);
-
         vdp2_tvmd_display_set();
 
         vdp1_vram_partitions_get(&_vdp1_vram_partitions);

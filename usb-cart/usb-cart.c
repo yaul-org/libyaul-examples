@@ -81,8 +81,6 @@ user_init(void)
 
         cpu_frt_init(CPU_FRT_CLOCK_DIV_8);
         cpu_frt_ovi_set(_ovi_handler);
-
-        cpu_intc_mask_set(0);
 }
 
 static void

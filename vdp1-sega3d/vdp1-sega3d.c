@@ -299,8 +299,6 @@ user_init(void)
 
         cpu_cache_purge();
 
-        cpu_intc_mask_set(0);
-
         /* dbgio_dev_default_init(DBGIO_DEV_USB_CART); */
         /* dbgio_dev_font_load(); */
 

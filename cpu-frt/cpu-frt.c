@@ -141,8 +141,6 @@ user_init(void)
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB1555(1, 0, 3, 3));
 
-        cpu_intc_mask_set(0);
-
         cpu_dual_comm_mode_set(CPU_DUAL_ENTRY_POLLING);
         cpu_dual_slave_set(_slave_entry);
 

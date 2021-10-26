@@ -164,8 +164,6 @@ user_init(void)
         /* Setup default VDP1 environment */
         vdp1_env_default_set();
 
-        cpu_intc_mask_set(0);
-
         vdp2_tvmd_display_set();
 
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);

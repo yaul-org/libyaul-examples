@@ -48,7 +48,5 @@ user_init(void)
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB1555(1, 0, 3, 15));
 
-        cpu_intc_mask_set(0);
-
         vdp2_tvmd_display_set();
 }

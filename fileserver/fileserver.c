@@ -42,6 +42,4 @@ user_init(void)
             COLOR_RGB1555(1, 0, 3, 15));
 
         vdp2_tvmd_display_set();
-
-        cpu_intc_mask_set(0);
 }

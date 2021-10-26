@@ -31,7 +31,6 @@ main(void)
 {
         cons_init(CONS_DRIVER_VDP2, 40, 28);
 
-        cpu_intc_mask_set(0);
 
         scu_timer_init();
 
@@ -79,9 +78,6 @@ user_init(void)
         scu_ic_ihr_set(IC_INTERRUPT_HBLANK_IN, _hblank_in_handler);
 
         scu_ic_mask_chg(~scu_mask, IC_MASK_NONE);
-
-        /* Enable interrupts */
-        cpu_intc_mask_set(0);
 
         vdp2_tvmd_display_set();
 }

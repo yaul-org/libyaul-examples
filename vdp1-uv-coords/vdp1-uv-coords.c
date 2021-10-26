@@ -159,8 +159,6 @@ user_init(void)
 
         vdp1_sync_interval_set(VDP1_SYNC_INTERVAL_60HZ);
 
-        cpu_intc_mask_set(0);
-
         vdp2_tvmd_display_set();
 
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);

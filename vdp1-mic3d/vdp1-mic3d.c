@@ -638,8 +638,6 @@ user_init(void)
 
         vdp1_env_set(&env);
 
-        cpu_intc_mask_set(0);
-
         vdp2_tvmd_display_set();
 
         vdp2_sync();

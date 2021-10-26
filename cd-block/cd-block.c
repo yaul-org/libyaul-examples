@@ -80,8 +80,6 @@ user_init(void)
 
         cpu_frt_init(CPU_FRT_CLOCK_DIV_128);
 
-        cpu_intc_mask_set(0);
-
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 

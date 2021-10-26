@@ -273,8 +273,6 @@ static void _vdp2_init(void) {
 }
 
 void user_init(void) {
-    cpu_intc_mask_set(0);
-
     _vdp2_init();
     _vdp1_init();
 
