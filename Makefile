@@ -12,7 +12,6 @@ EXAMPLES:= \
 	dram-cart \
 	romdisk \
 	scu-dsp \
-	scu-dsp-test \
 	vdp1-balls \
 	vdp1-double-interlace \
 	vdp1-drawing \
