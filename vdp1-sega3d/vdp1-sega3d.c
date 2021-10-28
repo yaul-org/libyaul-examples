@@ -125,7 +125,7 @@ main(void)
         object.xpdata_count = 1;
 
         void *romdisk;
-        romdisk = romdisk_mount("/", root_romdisk);
+        romdisk = romdisk_mount(root_romdisk);
         assert(romdisk != NULL);
 
         void *fh;

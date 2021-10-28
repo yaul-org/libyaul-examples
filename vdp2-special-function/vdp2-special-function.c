@@ -39,7 +39,7 @@ main(void)
         romdisk_init();
 
         void *romdisk;
-        romdisk = romdisk_mount("/", root_romdisk);
+        romdisk = romdisk_mount(root_romdisk);
         assert(romdisk != NULL);
 
         void *fh[3];

@@ -287,7 +287,7 @@ static void _romdisk_init(void) {
 
     romdisk_init();
 
-    _romdisk = romdisk_mount("/", root_romdisk);
+    _romdisk = romdisk_mount(root_romdisk);
     assert(_romdisk != NULL);
 }
 

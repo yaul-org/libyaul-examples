@@ -28,7 +28,7 @@ main(void)
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
-        _romdisk = romdisk_mount("/", root_romdisk);
+        _romdisk = romdisk_mount(root_romdisk);
 
         memset(_ram0, 0xAA, DSP_RAM_PAGE_SIZE);
         memset(_ram1, 0xBB, DSP_RAM_PAGE_SIZE);
