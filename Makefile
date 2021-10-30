@@ -13,8 +13,8 @@ EXAMPLES:= \
 	romdisk \
 	scu-dsp \
 	vdp1-balls \
-	vdp1-double-interlace \
 	vdp1-drawing \
+	vdp1-interlace \
 	vdp1-mic3d \
 	vdp1-sega3d \
 	vdp1-st-niccc \
