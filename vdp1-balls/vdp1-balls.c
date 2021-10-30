@@ -296,7 +296,7 @@ _vdp1_init(void)
             VDP1_VRAM_GOURAUD_COUNT,
             VDP1_VRAM_CLUT_COUNT);
 
-        vdp1_sync_interval_set(VDP1_SYNC_INTERVAL_60HZ);
+        vdp1_sync_interval_set(0);
 }
 
 static void

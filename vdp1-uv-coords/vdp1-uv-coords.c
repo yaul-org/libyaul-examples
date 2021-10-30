@@ -157,7 +157,7 @@ user_init(void)
         /* Setup default VDP1 environment */
         vdp1_env_default_set();
 
-        vdp1_sync_interval_set(VDP1_SYNC_INTERVAL_60HZ);
+        vdp1_sync_interval_set(0);
 
         vdp2_tvmd_display_set();
 

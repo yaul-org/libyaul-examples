@@ -170,7 +170,7 @@ int main(void) {
 static void _vdp1_init(void) {
     vdp2_sprite_priority_set(0, 6);
 
-    vdp1_sync_interval_set(VDP1_SYNC_INTERVAL_60HZ);
+    vdp1_sync_interval_set(0);
 
     vdp1_env_t vdp1_env;
 
