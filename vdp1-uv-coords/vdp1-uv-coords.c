@@ -127,7 +127,7 @@ main(void)
 
                 /* dbgio_flush(); */
 
-                vdp1_sync_commit();
+                vdp1_sync_render();
 
                 vdp1_sync();
                 vdp1_sync_wait();

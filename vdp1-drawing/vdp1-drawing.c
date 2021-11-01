@@ -243,7 +243,7 @@ main(void)
                 vdp1_cmdt_param_vertices_set(cmdt_polygon, &_primitive.points[0]);
 
                 vdp1_sync_cmdt_list_put(_cmdt_list, 0);
-                vdp1_sync_commit();
+                vdp1_sync_render();
                 vdp1_sync();
                 vdp1_sync_wait();
         }

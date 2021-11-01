@@ -56,6 +56,8 @@ static q0_12_4_t _balls_pos_y[BALL_MAX_COUNT] __aligned(0x1000);
 static int16_t _balls_cmd_xa[2][BALL_MAX_COUNT] __aligned(0x1000);
 static int16_t _balls_cmd_ya[2][BALL_MAX_COUNT] __aligned(0x1000);
 
+static volatile uint32_t _transfer_over_count = 0;
+
 struct buffer_context {
         balls_handle_t *balls_handle;
         vdp1_cmdt_t *cmdt_draw_end;
@@ -67,6 +69,8 @@ static void _vdp1_init(void);
 static void _vdp2_init(void);
 
 static void _vblank_out_handler(void *work);
+
+static void _transfer_over(void *work);
 
 int
 main(void)
@@ -102,9 +106,14 @@ main(void)
                 VDP1_SYNC_MODE_CHANGE_ONLY
         };
 
-        uint32_t which_context = 0;
-        uint8_t sync_mode = 0;
-        uint32_t balls_count = 730;
+        uint32_t which_context;
+        which_context = 0;
+
+        uint8_t sync_mode;
+        sync_mode = 0;
+
+        uint32_t balls_count;
+        balls_count = 1;
 
         balls_handle_t *balls_handle[2];
         smpc_peripheral_digital_t digital;
@@ -115,9 +124,9 @@ main(void)
         struct buffer_context buffer_contexts[] = {
                 {
                         .balls_handle  = balls_handle[0],
-                        .cmdt_draw_end = NULL
+                        .cmdt_draw_end = (vdp1_cmdt_t *)VDP1_CMD_TABLE(VDP1_CMDT_ORDER_BALL_START_INDEX, 0),
                 }, {
-                        .balls_handle = balls_handle[1],
+                        .balls_handle  = balls_handle[1],
                         .cmdt_draw_end = NULL,
                 }
         };
@@ -138,6 +147,8 @@ main(void)
         perf_init(&cpu_perf);
         perf_init(&vdp1_perf);
         perf_init(&dma_perf);
+
+        vdp1_sync_transfer_over_set(_transfer_over, NULL);
 
         while (true) {
                 smpc_peripheral_process();
@@ -185,14 +196,15 @@ main(void)
                         balls_cmdts_position_put(buffer_context->balls_handle, VDP1_CMDT_ORDER_BALL_START_INDEX, balls_count);
                 } perf_end(&dma_perf);
 
+                vdp1_cmdt_end_clear(previous_buffer_context->cmdt_draw_end);
+
                 buffer_context->cmdt_draw_end =
                     (vdp1_cmdt_t *)VDP1_CMD_TABLE(VDP1_CMDT_ORDER_BALL_START_INDEX + balls_count, 0);
 
-                vdp1_cmdt_end_clear(previous_buffer_context->cmdt_draw_end);
                 vdp1_cmdt_end_set(buffer_context->cmdt_draw_end);
 
                 /* Call to render */
-                vdp1_sync_commit();
+                vdp1_sync_render();
                 /* Call to sync with frame change -- does not block */
                 vdp1_sync();
 
@@ -204,7 +216,9 @@ main(void)
                              "ball_count: %4lu, which: %lu\n"
                              " CPU: %7lu (max: %7lu)\n"
                              " DMA: %7lu (max: %7lu)\n"
-                             "VDP1: %7lu (max: %7lu)\n",
+                             "VDP1: %7lu (max: %7lu)\n"
+                             "\n"
+                             "Transfer-over: %i\n",
                     balls_count,
                     which_context,
                     cpu_perf.ticks,
@@ -212,7 +226,8 @@ main(void)
                     dma_perf.ticks,
                     dma_perf.max_ticks,
                     vdp1_perf.ticks,
-                    vdp1_perf.max_ticks);
+                    vdp1_perf.max_ticks,
+                    _transfer_over_count);
 
                 dbgio_flush();
 
@@ -315,4 +330,10 @@ static void
 _vblank_out_handler(void *work __unused)
 {
         smpc_peripheral_intback_issue();
+}
+
+static void
+_transfer_over(void *work __unused)
+{
+        _transfer_over_count++;
 }

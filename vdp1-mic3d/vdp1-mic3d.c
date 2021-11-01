@@ -509,7 +509,7 @@ main(void)
 
                 vdp1_sync_cmdt_list_put(cmdt_list, ORDER_BUFFER_STARTING_INDEX);
 
-                vdp1_sync_commit();
+                vdp1_sync_render();
 
                 vdp1_sync();
                 vdp1_sync_wait();

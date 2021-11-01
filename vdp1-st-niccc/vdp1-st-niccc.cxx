@@ -417,7 +417,7 @@ static void _on_end(uint32_t frame_index __unused, bool last_frame) {
         /* Wait for the previous sync (if any) */
         vdp1_sync_wait();
         vdp1_sync_cmdt_list_put(_scene.cmdt_list, 0);
-        vdp1_sync_commit();
+        vdp1_sync_render();
 
         /* Call to sync -- does not block */
         vdp1_sync();

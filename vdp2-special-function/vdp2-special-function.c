@@ -75,7 +75,7 @@ main(void)
         _cmdt_list_init(cmdt_list);
 
         vdp1_sync_cmdt_list_put(cmdt_list, 0);
-        vdp1_sync_commit();
+        vdp1_sync_render();
         vdp1_sync();
         vdp1_sync_wait();
 
@@ -97,7 +97,7 @@ main(void)
 
                 vdp1_sync_cmdt_list_put(cmdt_list, 0);
 
-                vdp1_sync_commit();
+                vdp1_sync_render();
                 vdp1_sync();
 
                 vdp2_sync();
