@@ -140,13 +140,13 @@ main(void)
         struct buffer_context * previous_buffer_context = &buffer_contexts[0];
         struct buffer_context * buffer_context = &buffer_contexts[0];
 
-        perf_t cpu_perf;
-        perf_t vdp1_perf;
-        perf_t dma_perf;
+        perf_counter_t cpu_perf;
+        perf_counter_t vdp1_perf;
+        perf_counter_t dma_perf;
 
-        perf_init(&cpu_perf);
-        perf_init(&vdp1_perf);
-        perf_init(&dma_perf);
+        perf_counter_init(&cpu_perf);
+        perf_counter_init(&vdp1_perf);
+        perf_counter_init(&dma_perf);
 
         vdp1_sync_transfer_over_set(_transfer_over, NULL);
 
@@ -182,19 +182,19 @@ main(void)
                         balls_count = BALL_MAX_COUNT;
                 }
 
-                perf_start(&cpu_perf); {
+                perf_counter_start(&cpu_perf); {
                         balls_position_update(buffer_context->balls_handle, balls_count);
                         balls_position_clamp(buffer_context->balls_handle, balls_count);
 
                         balls_cmdts_update(buffer_context->balls_handle, balls_count);
-                } perf_end(&cpu_perf);
+                } perf_counter_end(&cpu_perf);
 
                 /* Wait for the previous sync (if any) */
                 vdp1_sync_wait();
 
-                perf_start(&dma_perf); {
+                perf_counter_start(&dma_perf); {
                         balls_cmdts_position_put(buffer_context->balls_handle, VDP1_CMDT_ORDER_BALL_START_INDEX, balls_count);
-                } perf_end(&dma_perf);
+                } perf_counter_end(&dma_perf);
 
                 vdp1_cmdt_end_clear(previous_buffer_context->cmdt_draw_end);
 
@@ -253,7 +253,7 @@ user_init(void)
         vdp2_sync();
         vdp2_sync_wait();
 
-        perf_system_init();
+        perf_init();
 }
 
 static void
