@@ -10268,5 +10268,34 @@ PDATA PD_QUAKE_SINGLE_4 = {
         attribute_4
 };
 
+XPDATA PD_QUAKE_SINGLE[] = {
+        {
+                point_0, sizeof(point_0)/sizeof(POINT),
+                polygon_0, sizeof(polygon_0)/sizeof(POLYGON),
+                attribute_0,
+                normal_0
+        }, {
+                point_1, sizeof(point_1)/sizeof(POINT),
+                polygon_1, sizeof(polygon_1)/sizeof(POLYGON),
+                attribute_1,
+                normal_1
+        }, {
+                point_2, sizeof(point_2)/sizeof(POINT),
+                polygon_2, sizeof(polygon_2)/sizeof(POLYGON),
+                attribute_2,
+                normal_2
+        }, {
+                point_3, sizeof(point_3)/sizeof(POINT),
+                polygon_3, sizeof(polygon_3)/sizeof(POLYGON),
+                attribute_3,
+                normal_3
+        }, {
+                point_4, sizeof(point_4)/sizeof(POINT),
+                polygon_4, sizeof(polygon_4)/sizeof(POLYGON),
+                attribute_4,
+                normal_4
+        }
+};
+
 /* Total points : 2795 */
 /* Total polygons : 2287 */

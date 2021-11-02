@@ -12,7 +12,7 @@ include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 # quake_split.s3d.o
 # sonic.s3d.o
 
-MODEL_OBJECT?= cube
+MODEL_OBJECT?= quake_split
 
 SH_PROGRAM:= vdp1-sega3d
 SH_SRCS:= \
