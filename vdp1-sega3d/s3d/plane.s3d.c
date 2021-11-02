@@ -18,10 +18,15 @@ static ATTR attribute_PLANE1[] = {
         ATTRIBUTE(Dual_Plane, SORT_CEN, PN_AM2, No_Palet, No_Gouraud, CL32KRGB | MESHoff, sprNoflip, No_Option)
 };
 
-PDATA PD_PLANE1 = {
-        point_PLANE1,
-        sizeof(point_PLANE1) / sizeof(POINT),
-        polygon_PLANE1,
-        sizeof(polygon_PLANE1) / sizeof(POLYGON),
-        attribute_PLANE1
+XPDATA XDATA_S3D[] = {
+        {
+                point_PLANE1,
+                sizeof(point_PLANE1) / sizeof(POINT),
+                polygon_PLANE1,
+                sizeof(polygon_PLANE1) / sizeof(POLYGON),
+                attribute_PLANE1,
+                NULL
+        }
 };
+
+uint32_t XPDATA_S3D_COUNT = 1;

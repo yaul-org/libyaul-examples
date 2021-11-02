@@ -10268,7 +10268,7 @@ PDATA PD_QUAKE_SINGLE_4 = {
         attribute_4
 };
 
-XPDATA PD_QUAKE_SINGLE[] = {
+XPDATA XDATA_S3D[] = {
         {
                 point_0, sizeof(point_0)/sizeof(POINT),
                 polygon_0, sizeof(polygon_0)/sizeof(POLYGON),
@@ -10296,6 +10296,8 @@ XPDATA PD_QUAKE_SINGLE[] = {
                 normal_4
         }
 };
+
+uint32_t XPDATA_S3D_COUNT = 5;
 
 /* Total points : 2795 */
 /* Total polygons : 2287 */

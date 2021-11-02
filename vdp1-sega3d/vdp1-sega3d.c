@@ -43,8 +43,8 @@ static TEXTURE _textures[64];
 
 static vdp1_vram_partitions_t _vram_partitions;
 
-extern XPDATA PD_CUBE1;
-extern XPDATA PD_QUAKE_SINGLE[];
+extern XPDATA XDATA_S3D[];
+extern uint32_t XPDATA_S3D_COUNT;
 
 int
 main(void)
@@ -102,8 +102,8 @@ main(void)
                        /* SEGA3D_OBJECT_FLAGS_CULL_SCREEN | */
                        SEGA3D_OBJECT_FLAGS_NON_TEXTURED |
                        SEGA3D_OBJECT_FLAGS_FOG_EXCLUDE;
-        object.xpdatas = &PD_QUAKE_SINGLE[0];
-        object.xpdata_count = 1;
+        object.xpdatas = &XDATA_S3D[0];
+        object.xpdata_count = XPDATA_S3D_COUNT;
         object.cull_shape = NULL;
         object.user_data = NULL;
 
@@ -144,9 +144,9 @@ main(void)
 
                         sega3d_frustum_camera_set(camera_pos, rot_x, rot_y, rot_z);
 
-                        sega3d_object_transform(&object, 0);
-                        /* for (uint32_t i = 0; i < object.xpdata_count; i++) { */
-                        /* } */
+                        for (uint32_t i = 0; i < object.xpdata_count; i++) {
+                                sega3d_object_transform(&object, i);
+                        }
                 } sega3d_matrix_pop();
 
                 sega3d_finish(&results);
@@ -169,7 +169,6 @@ main(void)
                         camera_pos[Z] -= FIX16(1.0f);
                 }
 
-                /* dbgio_flush(); */
                 vdp1_sync();
                 vdp1_sync_render();
                 vdp1_sync_wait();

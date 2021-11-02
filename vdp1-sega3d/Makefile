@@ -18,7 +18,7 @@ SH_PROGRAM:= vdp1-sega3d
 SH_SRCS:= \
 	vdp1-sega3d.c \
 	textures.tex.c \
-	$(MODEL_OBJECT).s3d.c
+	s3d/$(MODEL_OBJECT).s3d.c
 ROMDISK_SYMBOLS= root
 ROMDISK_DIRS= romdisk
 
