@@ -33,8 +33,13 @@ extern uint8_t root_romdisk[];
 
 static void _vblank_in_handler(void *);
 static void _vblank_out_handler(void *);
+static void _sprite_end_handler(void);
 
 static void _vdp1_init(void);
+
+static void _perf_print(const char *name, const perf_counter_t *perf_counter);
+
+static perf_counter_t _perf_vdp1;
 
 static smpc_peripheral_digital_t _digital;
 
@@ -94,6 +99,8 @@ main(void)
         rot_y[Y] = toFIXED(0.0f);
         rot_z[Z] = toFIXED(0.0f);
 
+        dbgio_puts("[H[2J");
+
         while (true) {
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
@@ -113,6 +120,35 @@ main(void)
                 } sega3d_matrix_pop();
 
                 sega3d_finish(&results);
+
+                perf_counter_start(&_perf_vdp1);
+                vdp1_sync_render();
+                vdp1_sync();
+                vdp1_sync_wait();
+
+                dbgio_puts("[H");
+                _perf_print("            sort", &results.perf_sort);
+                _perf_print("             dma", &results.perf_dma);
+                _perf_print("    aabb_culling", &results.perf_aabb_culling);
+                _perf_print("       transform", &results.perf_transform);
+                _perf_print("        clipping", &results.perf_clipping);
+                _perf_print(" polygon_process", &results.perf_polygon_process);
+                _perf_print("            vdp1", &_perf_vdp1);
+
+                const uint32_t total_ticks =
+                    results.perf_sort.ticks +
+                    results.perf_dma.ticks +
+                    results.perf_aabb_culling.ticks +
+                    results.perf_transform.ticks +
+                    results.perf_clipping.ticks +
+                    results.perf_polygon_process.ticks +
+                    _perf_vdp1.ticks;
+
+                dbgio_printf("          Total: %lu\n"
+                             "  Polygon count: %lu\n",
+                    total_ticks,
+                    results.polygon_count);
+                dbgio_flush();
 
                 if (_digital.held.button.start != 0) {
                         smpc_smc_sysres_call();
@@ -137,10 +173,6 @@ main(void)
                 } else if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_DOWN) != 0) {
                         camera_pos[Z] -= FIX16(5.0f);
                 }
-
-                vdp1_sync();
-                vdp1_sync_render();
-                vdp1_sync_wait();
         }
 }
 
@@ -230,6 +262,15 @@ _vdp1_init(void)
         vdp1_cmdt_orderlist_vram_patch(_cmdt_orderlist,
             (const vdp1_cmdt_t *)VDP1_CMD_TABLE(ORDER_SEGA3D_INDEX, 0),
             VDP1_VRAM_CMDT_COUNT - ORDER_SEGA3D_INDEX);
+
+        scu_ic_ihr_set(SCU_IC_INTERRUPT_SPRITE_END, _sprite_end_handler);
+}
+
+static void
+_perf_print(const char *name, const perf_counter_t *perf_counter)
+{
+        dbgio_printf("%s: %10lu/%10lu\n", name, perf_counter->ticks, perf_counter->max_ticks);
+        dbgio_flush();
 }
 
 void
@@ -241,4 +282,10 @@ static void
 _vblank_out_handler(void *work __unused)
 {
         smpc_peripheral_intback_issue();
+}
+
+static void
+_sprite_end_handler(void)
+{
+        perf_counter_end(&_perf_vdp1);
 }
