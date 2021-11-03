@@ -158,15 +158,15 @@ main(void)
                 }
 
                 if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_LEFT) != 0) {
-                        camera_pos[X] -= FIX16(1.0f);
+                        camera_pos[X] -= FIX16(5.0f);
                 } else if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_RIGHT) != 0) {
-                        camera_pos[X] += FIX16(1.0f);
+                        camera_pos[X] += FIX16(5.0f);
                 }
 
                 if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_UP) != 0) {
-                        camera_pos[Z] += FIX16(1.0f);
+                        camera_pos[Z] += FIX16(5.0f);
                 } else if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_DOWN) != 0) {
-                        camera_pos[Z] -= FIX16(1.0f);
+                        camera_pos[Z] -= FIX16(5.0f);
                 }
 
                 vdp1_sync();
