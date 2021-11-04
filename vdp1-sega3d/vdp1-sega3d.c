@@ -123,7 +123,10 @@ main(void)
 
                 perf_counter_start(&_perf_vdp1);
                 vdp1_sync_render();
+                perf_counter_end(&_perf_vdp1);
+
                 vdp1_sync();
+                vdp2_sync();
                 vdp1_sync_wait();
 
                 dbgio_puts("[H");
@@ -144,8 +147,8 @@ main(void)
                     results.perf_polygon_process.ticks +
                     _perf_vdp1.ticks;
 
-                dbgio_printf("          Total: %lu\n"
-                             "  Polygon count: %lu\n",
+                dbgio_printf("           Total: %010lu\n"
+                             "   Polygon count: %010lu\n",
                     total_ticks,
                     results.polygon_count);
                 dbgio_flush();
@@ -213,7 +216,7 @@ user_init(void)
 
         cpu_cache_purge();
 
-        dbgio_dev_default_init(DBGIO_DEV_USB_CART);
+        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
         vdp2_tvmd_display_set();
@@ -238,6 +241,7 @@ _vdp1_init(void)
                 .raw                       = 0x0000,
                 .bits.pre_clipping_disable = true,
                 .bits.end_code_disable     = true,
+                .bits.trans_pixel_disable  = true
         };
 
         vdp1_cmdt_polygon_set(&preamble_cmdt[ORDER_ERASE_INDEX]);
@@ -270,7 +274,10 @@ static void
 _perf_print(const char *name, const perf_counter_t *perf_counter)
 {
         dbgio_printf("%s: %10lu/%10lu\n", name, perf_counter->ticks, perf_counter->max_ticks);
-        dbgio_flush();
+
+        if ((dbgio_dev_selected_get()) == DBGIO_DEV_USB_CART) {
+                dbgio_flush();
+        }
 }
 
 void
