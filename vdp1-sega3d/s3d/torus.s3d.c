@@ -1584,11 +1584,15 @@ Uint16 GR_TORUS[] = {
         C_RGB(31, 31, 31),
 };
 
-PDATA PD_TORUS = {
-        point_torus,
-        sizeof(point_torus) / sizeof(POINT),
-        polygon_torus,
-        sizeof(polygon_torus) / sizeof(POLYGON),
-        attribute_torus
+XPDATA XDATA_S3D[] = {
+        {
+                point_torus,
+                sizeof(point_torus) / sizeof(POINT),
+                polygon_torus,
+                sizeof(polygon_torus) / sizeof(POLYGON),
+                attribute_torus,
+                NULL
+        }
 };
 
+uint32_t XPDATA_S3D_COUNT = 1;

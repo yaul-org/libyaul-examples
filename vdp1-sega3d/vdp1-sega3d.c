@@ -33,16 +33,15 @@ extern uint8_t root_romdisk[];
 
 static void _vblank_in_handler(void *);
 static void _vblank_out_handler(void *);
-static void _frt_ovi_handler(void);
+static void _sprite_end_handler(void);
 
-static void _timing_start(void) __used;
-static fix16_t _timing_get(void) __used;
-static void _timing_print(const fix16_t time) __used;
+static void _vdp1_init(void);
+
+static void _perf_print(const char *name, const perf_counter_t *perf_counter);
+
+static perf_counter_t _perf_vdp1;
 
 static smpc_peripheral_digital_t _digital;
-
-static volatile uint16_t _vblanks = 0;
-static volatile uint16_t _frt_ovf_count = 0;
 
 static vdp1_cmdt_orderlist_t _cmdt_orderlist[VDP1_VRAM_CMDT_COUNT] __aligned(0x20000);
 static vdp1_cmdt_t *_cmdts;
@@ -51,22 +50,8 @@ static TEXTURE _textures[64];
 
 static vdp1_vram_partitions_t _vram_partitions;
 
-typedef struct {
-        char sig[4];
-        uint16_t version;
-        uint32_t flags;
-        uint16_t xpdata_count;
-        uint16_t picture_count;
-} __packed __aligned(64) sega3d_s3d_t;
-
-typedef struct {
-        void *gouraud_table;
-        uint16_t gouraud_table_count;
-        void *cg;
-        uint32_t cg_size;
-} __packed __aligned(16) sega3d_s3d_aux_t;
-
-static_assert(sizeof(sega3d_s3d_t) == 64);
+extern XPDATA XDATA_S3D[];
+extern uint32_t XPDATA_S3D_COUNT;
 
 int
 main(void)
@@ -76,101 +61,20 @@ main(void)
 
         sega3d_tlist_set(_textures, 64);
 
-        /* Set up global command table list */
-        _cmdts = memalign(sizeof(vdp1_cmdt_t) * VDP1_VRAM_CMDT_COUNT, sizeof(vdp1_cmdt_t));
-        assert(_cmdts != NULL);
-
-        /* Set up the first few command tables */
-        vdp1_env_preamble_populate(&_cmdts[0], NULL);
-
-        const vdp1_cmdt_draw_mode_t erase_draw_mode = {
-                .raw = 0x0000,
-                .bits.pre_clipping_disable = true,
-                .bits.end_code_disable = true,
-        };
-
-        vdp1_cmdt_polygon_set(&_cmdts[ORDER_ERASE_INDEX]);
-        vdp1_cmdt_param_draw_mode_set(&_cmdts[ORDER_ERASE_INDEX], erase_draw_mode);
-        vdp1_cmdt_param_color_set(&_cmdts[ORDER_ERASE_INDEX], COLOR_RGB1555(0, 0, 0, 0));
-
-        /* The clear polygon is cut in half due to the VDP1 not having enough
-         * time to clear the bottom half of the framebuffer in time */
-        _cmdts[ORDER_ERASE_INDEX].cmd_xa = -SCREEN_WIDTH / 2;
-        _cmdts[ORDER_ERASE_INDEX].cmd_ya = -18;
-        _cmdts[ORDER_ERASE_INDEX].cmd_xb = (SCREEN_WIDTH / 2) - 1;
-        _cmdts[ORDER_ERASE_INDEX].cmd_yb = -18;
-        _cmdts[ORDER_ERASE_INDEX].cmd_xc = (SCREEN_WIDTH / 2) - 1;
-        _cmdts[ORDER_ERASE_INDEX].cmd_yc = SCREEN_HEIGHT - 1;
-        _cmdts[ORDER_ERASE_INDEX].cmd_xd = -SCREEN_WIDTH / 2;
-        _cmdts[ORDER_ERASE_INDEX].cmd_yd = (SCREEN_HEIGHT / 2) - 1;
-
-        vdp1_cmdt_end_set(&_cmdts[ORDER_SEGA3D_INDEX]);
-
-        vdp1_cmdt_orderlist_init(_cmdt_orderlist, VDP1_VRAM_CMDT_COUNT);
-
-        _cmdt_orderlist[0].cmdt = &_cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX];
-        _cmdt_orderlist[1].cmdt = &_cmdts[ORDER_USER_CLIP_INDEX];
-        _cmdt_orderlist[2].cmdt = &_cmdts[ORDER_LOCAL_COORDS_INDEX];
-        _cmdt_orderlist[3].cmdt = &_cmdts[ORDER_ERASE_INDEX];
-        _cmdt_orderlist[4].cmdt = &_cmdts[ORDER_SEGA3D_INDEX];
-
-        vdp1_cmdt_orderlist_vram_patch(_cmdt_orderlist,
-            (const vdp1_cmdt_t *)VDP1_VRAM(0), VDP1_VRAM_CMDT_COUNT);
-
-        static XPDATA xpdatas_cube[1];
-
-        sega3d_object_t object;
-        object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME | SEGA3D_OBJECT_FLAGS_CULL_SCREEN | SEGA3D_OBJECT_FLAGS_CULL_AABB | SEGA3D_OBJECT_FLAGS_FOG_EXCLUDE;
-        object.xpdatas = xpdatas_cube;
-        object.xpdata_count = 1;
-
-        void *romdisk;
-        romdisk = romdisk_mount(root_romdisk);
-        assert(romdisk != NULL);
-
-        void *fh;
-        fh = romdisk_open(romdisk, "/XPDATA.DAT");
-        assert(fh != NULL);
-
-        void * const ptr = romdisk_direct(fh);
+        _vdp1_init();
 
         static sega3d_cull_aabb_t aabb;
-
-        sega3d_s3d_t * const s3d = ptr;
-        XPDATA * const xpdatas = (void *)((uintptr_t)ptr + sizeof(sega3d_s3d_t));
-        sega3d_s3d_aux_t * const s3d_auxs = (void *)((uintptr_t)ptr + sizeof(sega3d_s3d_t) + (s3d->xpdata_count * sizeof(XPDATA)));
 
-        vdp1_gouraud_table_t *gouraud_base;
-        gouraud_base = _vram_partitions.gouraud_base;
-
-        for (uint32_t j = 0; j < s3d->xpdata_count; j++) {
-                /* Patch offsets */
-                s3d_auxs[j].gouraud_table = (void *)((uintptr_t)s3d_auxs[j].gouraud_table + (uintptr_t)ptr);
-                s3d_auxs[j].cg = (void *)((uintptr_t)s3d_auxs[j].cg + (uintptr_t)ptr);
-
-                xpdatas[j].pntbl = (void *)((uintptr_t)xpdatas[j].pntbl + (uintptr_t)ptr);
-                xpdatas[j].pltbl = (void *)((uintptr_t)xpdatas[j].pltbl + (uintptr_t)ptr);
-                xpdatas[j].attbl = (void *)((uintptr_t)xpdatas[j].attbl + (uintptr_t)ptr);
-                xpdatas[j].vntbl = (void *)((uintptr_t)xpdatas[j].vntbl + (uintptr_t)ptr);
-
-                for (uint32_t i = 0; i < xpdatas[j].nbPolygon; i++) {
-                        xpdatas[j].attbl[i].gstb += (uintptr_t)_vram_partitions.gouraud_base >> 3;
-                }
-
-                (void)memcpy(gouraud_base, s3d_auxs[j].gouraud_table,
-                    s3d_auxs[j].gouraud_table_count * sizeof(vdp1_gouraud_table_t));
-
-                gouraud_base += s3d_auxs[j].gouraud_table_count;
-        }
-
+        sega3d_object_t object;
         object.flags = SEGA3D_OBJECT_FLAGS_WIREFRAME |
                        SEGA3D_OBJECT_FLAGS_CULL_SCREEN |
-                       SEGA3D_OBJECT_FLAGS_FOG_EXCLUDE;
-        object.xpdatas = xpdatas;
-        object.xpdata_count = s3d->xpdata_count;
+                       SEGA3D_OBJECT_FLAGS_CULL_VIEW |
+                       SEGA3D_OBJECT_FLAGS_NON_TEXTURED;
+        object.xpdatas = &XDATA_S3D[0];
+        object.xpdata_count = XPDATA_S3D_COUNT;
+        object.cull_shape = NULL;
+        object.user_data = NULL;
 
-        object.cull_shape = &aabb;
-
         ANGLE rot[XYZ] __unused;
         rot[X] = DEGtoANG(0.0f);
         rot[Y] = DEGtoANG(0.0f);
@@ -191,45 +95,69 @@ main(void)
         rot_y[X] = rot_y[Y] = rot_y[Z] = toFIXED(0.0f);
         rot_z[X] = rot_z[Y] = rot_z[Z] = toFIXED(0.0f);
 
-        rot_x[X] = toFIXED(1.0f);
-        rot_y[Y] = toFIXED(1.0f);
-        rot_z[Z] = toFIXED(1.0f);
+        rot_x[X] = toFIXED(0.0f);
+        rot_y[Y] = toFIXED(0.0f);
+        rot_z[Z] = toFIXED(0.0f);
+
+        dbgio_puts("[H[2J");
 
         while (true) {
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
 
-                _vblanks = 0;
-
-                sega3d_start(_cmdt_orderlist, ORDER_SEGA3D_INDEX, &_cmdts[ORDER_SEGA3D_INDEX]);
+                sega3d_start(_cmdt_orderlist, 0, &_cmdts[0]);
 
                 sega3d_matrix_push(SEGA3D_MATRIX_TYPE_PUSH); {
                         /* sega3d_matrix_rot_y(rot[Y]); */
                         /* sega3d_matrix_rot_x(rot[X]); */
                         /* sega3d_matrix_rot_z(rot[Z]); */
 
-                        fix16_t time[16];
-                        fix16_t total_time = 0;
-                        fix16_t *time_p = time;
-
                         sega3d_frustum_camera_set(camera_pos, rot_x, rot_y, rot_z);
 
                         for (uint32_t i = 0; i < object.xpdata_count; i++) {
-                                _timing_start();
-
                                 sega3d_object_transform(&object, i);
-
-                                *time_p = _timing_get(); total_time += *time_p; time_p++;
-                                break;
                         }
-
-                        /* for (uint32_t i = 0; i < (uint32_t)(time_p - time); i++) { */
-                        /*         _timing_print(time[i]); */
-                        /* } */
-                        /* _timing_print(total_time); */
                 } sega3d_matrix_pop();
 
                 sega3d_finish(&results);
+
+                perf_counter_start(&_perf_vdp1);
+                vdp1_sync_render();
+                perf_counter_end(&_perf_vdp1);
+
+                vdp1_sync();
+                vdp2_sync();
+                vdp1_sync_wait();
+
+                dbgio_puts("[H");
+                _perf_print("            sort", &results.perf_sort);
+                _perf_print("             dma", &results.perf_dma);
+                _perf_print("    aabb_culling", &results.perf_aabb_culling);
+                _perf_print("       transform", &results.perf_transform);
+                _perf_print("        clipping", &results.perf_clipping);
+                _perf_print(" polygon_process", &results.perf_polygon_process);
+                _perf_print("            vdp1", &_perf_vdp1);
+
+                const uint32_t total_ticks =
+                    results.perf_sort.ticks +
+                    results.perf_dma.ticks +
+                    results.perf_aabb_culling.ticks +
+                    results.perf_transform.ticks +
+                    results.perf_clipping.ticks +
+                    results.perf_polygon_process.ticks +
+                    _perf_vdp1.ticks;
+
+                dbgio_printf("           Total: %010lu\n"
+                             "   Polygon count: %010lu\n",
+                    total_ticks,
+                    results.polygon_count);
+                dbgio_flush();
+
+                if (_digital.held.button.start != 0) {
+                        smpc_smc_sysres_call();
+
+                        return 0;
+                }
 
                 if ((_digital.held.raw & PERIPHERAL_DIGITAL_A) != 0) {
                         object.flags = object.flags ^ SEGA3D_OBJECT_FLAGS_CULL_SCREEN;
@@ -238,21 +166,16 @@ main(void)
                 }
 
                 if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_LEFT) != 0) {
-                        camera_pos[X] -= FIX16(1.0f);
+                        camera_pos[X] -= FIX16(5.0f);
                 } else if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_RIGHT) != 0) {
-                        camera_pos[X] += FIX16(1.0f);
+                        camera_pos[X] += FIX16(5.0f);
                 }
 
                 if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_UP) != 0) {
-                        camera_pos[Z] += FIX16(1.0f);
+                        camera_pos[Z] += FIX16(5.0f);
                 } else if ((_digital.pressed.raw & PERIPHERAL_DIGITAL_DOWN) != 0) {
-                        camera_pos[Z] -= FIX16(1.0f);
+                        camera_pos[Z] -= FIX16(5.0f);
                 }
-
-                dbgio_flush();
-                vdp1_sync();
-                vdp1_sync_render();
-                vdp1_sync_wait();
         }
 }
 
@@ -269,42 +192,92 @@ user_init(void)
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
         vdp1_vram_partitions_set(VDP1_VRAM_CMDT_COUNT,
-            VDP1_VRAM_TEXTURE_SIZE,
-            VDP1_VRAM_GOURAUD_COUNT,
-            VDP1_VRAM_CLUT_COUNT);
+                                 VDP1_VRAM_TEXTURE_SIZE,
+                                 VDP1_VRAM_GOURAUD_COUNT,
+                                 VDP1_VRAM_CLUT_COUNT);
 
         vdp1_vram_partitions_get(&_vram_partitions);
 
         vdp1_sync_interval_set(-1);
 
-        vdp1_env_t vdp1_env;
-
-        vdp1_env.erase_color = COLOR_RGB1555(0, 0, 0, 0);
-        vdp1_env.erase_points[0].x = 0;
-        vdp1_env.erase_points[0].y = 0;
-        vdp1_env.erase_points[1].x = SCREEN_WIDTH - 1;
-        vdp1_env.erase_points[1].y = SCREEN_HEIGHT - 1;
-        vdp1_env.bpp = VDP1_ENV_BPP_16;
-        vdp1_env.rotation = VDP1_ENV_ROTATION_0;
-        vdp1_env.color_mode = VDP1_ENV_COLOR_MODE_RGB_PALETTE;
-        vdp1_env.sprite_type = 0;
+        const vdp1_env_t vdp1_env = {
+                .erase_color     = COLOR_RGB1555(0, 0, 0, 0),
+                .erase_points[0] = INT16_VEC2_INITIALIZER(0, 0),
+                .erase_points[1] = INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1),
+                .bpp             = VDP1_ENV_BPP_16,
+                .rotation        = VDP1_ENV_ROTATION_0,
+                .color_mode      = VDP1_ENV_COLOR_MODE_RGB_PALETTE,
+                .sprite_type     = 0
+        };
 
         vdp1_env_set(&vdp1_env);
 
         vdp2_sprite_priority_set(0, 6);
 
-        cpu_frt_init(CPU_FRT_CLOCK_DIV_128);
-        cpu_frt_ovi_set(_frt_ovi_handler);
-
         cpu_cache_purge();
 
-        /* dbgio_dev_default_init(DBGIO_DEV_USB_CART); */
-        /* dbgio_dev_font_load(); */
+        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
+        dbgio_dev_font_load();
 
         vdp2_tvmd_display_set();
 
         vdp2_sync();
         vdp2_sync_wait();
+}
+
+void
+_vdp1_init(void)
+{
+        /* Set up global command table list */
+        _cmdts = memalign(sizeof(vdp1_cmdt_t) * VDP1_VRAM_CMDT_COUNT, sizeof(vdp1_cmdt_t));
+        assert(_cmdts != NULL);
+
+        vdp1_cmdt_t * const preamble_cmdt = (vdp1_cmdt_t *)VDP1_CMD_TABLE(0, 0);
+
+        /* Set up the first few command tables */
+        vdp1_env_preamble_populate(&preamble_cmdt[ORDER_SYSTEM_CLIP_COORDS_INDEX], NULL);
+
+        const vdp1_cmdt_draw_mode_t erase_draw_mode = {
+                .raw                       = 0x0000,
+                .bits.pre_clipping_disable = true,
+                .bits.end_code_disable     = true,
+                .bits.trans_pixel_disable  = true
+        };
+
+        vdp1_cmdt_polygon_set(&preamble_cmdt[ORDER_ERASE_INDEX]);
+        vdp1_cmdt_param_draw_mode_set(&preamble_cmdt[ORDER_ERASE_INDEX], erase_draw_mode);
+        vdp1_cmdt_param_color_set(&preamble_cmdt[ORDER_ERASE_INDEX], COLOR_RGB1555(0, 0, 0, 0));
+
+        /* The clear polygon is cut in half due to the VDP1 not having enough
+         * time to clear the bottom half of the framebuffer in time */
+        preamble_cmdt[ORDER_ERASE_INDEX].cmd_xa = -SCREEN_WIDTH / 2;
+        preamble_cmdt[ORDER_ERASE_INDEX].cmd_ya = -18;
+        preamble_cmdt[ORDER_ERASE_INDEX].cmd_xb = (SCREEN_WIDTH / 2) - 1;
+        preamble_cmdt[ORDER_ERASE_INDEX].cmd_yb = -18;
+        preamble_cmdt[ORDER_ERASE_INDEX].cmd_xc = (SCREEN_WIDTH / 2) - 1;
+        preamble_cmdt[ORDER_ERASE_INDEX].cmd_yc = SCREEN_HEIGHT - 1;
+        preamble_cmdt[ORDER_ERASE_INDEX].cmd_xd = -SCREEN_WIDTH / 2;
+        preamble_cmdt[ORDER_ERASE_INDEX].cmd_yd = (SCREEN_HEIGHT / 2) - 1;
+
+        vdp1_cmdt_end_set(&preamble_cmdt[ORDER_SEGA3D_INDEX]);
+
+        vdp1_cmdt_orderlist_init(_cmdt_orderlist, VDP1_VRAM_CMDT_COUNT);
+
+        vdp1_cmdt_orderlist_vram_patch(_cmdt_orderlist,
+            (const vdp1_cmdt_t *)VDP1_CMD_TABLE(ORDER_SEGA3D_INDEX, 0),
+            VDP1_VRAM_CMDT_COUNT - ORDER_SEGA3D_INDEX);
+
+        scu_ic_ihr_set(SCU_IC_INTERRUPT_SPRITE_END, _sprite_end_handler);
+}
+
+static void
+_perf_print(const char *name, const perf_counter_t *perf_counter)
+{
+        dbgio_printf("%s: %10lu/%10lu\n", name, perf_counter->ticks, perf_counter->max_ticks);
+
+        if ((dbgio_dev_selected_get()) == DBGIO_DEV_USB_CART) {
+                dbgio_flush();
+        }
 }
 
 void
@@ -316,49 +289,10 @@ static void
 _vblank_out_handler(void *work __unused)
 {
         smpc_peripheral_intback_issue();
-
-        _vblanks++;
-
-        if (_vblanks > 1024) {
-                cpu_intc_mask_set(0);
-
-                smpc_smc_resenab_call();
-                smpc_smc_sysres_call();
-
-                while (true) {
-                }
-        }
 }
 
 static void
-_frt_ovi_handler(void)
+_sprite_end_handler(void)
 {
-        _frt_ovf_count++;
-}
-
-static void
-_timing_start(void)
-{
-        cpu_frt_count_set(0);
-        _frt_ovf_count = 0;
-}
-
-static fix16_t
-_timing_get(void)
-{
-        const uint32_t ticks_rem = cpu_frt_count_get();
-
-        const uint32_t overflow_count =
-            ((65536 / CPU_FRT_NTSC_320_128_COUNT_1MS) * _frt_ovf_count);
-
-        const uint32_t total_ticks =
-            (fix16_int32_from(overflow_count) + (fix16_int32_from(ticks_rem) / CPU_FRT_NTSC_320_128_COUNT_1MS));
-
-        return total_ticks;
-}
-
-static void
-_timing_print(const fix16_t time __unused)
-{
-        dbgio_printf("time: %fms, ticks: %li\n", time, time);
+        perf_counter_end(&_perf_vdp1);
 }
