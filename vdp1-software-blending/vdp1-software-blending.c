@@ -49,13 +49,6 @@ main(void)
 {
         render_state_t render_state;
 
-        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
-        dbgio_dev_font_load();
-
-        /* Must be variable rate with no frame rate cap (<= -2). There seems to
-         * be issues */
-        vdp1_sync_interval_set(-1);
-
         _cmdt_list_init();
 
         /* Copy flare texture to VDP1 */
@@ -63,6 +56,9 @@ main(void)
         scu_dma_transfer_wait(0);
 
         vdp1_sync_render_set(_sync_render_handler, &render_state);
+
+        uint32_t frame_count;
+        frame_count = 0;
 
         while (true) {
                 smpc_peripheral_process();
@@ -83,10 +79,13 @@ main(void)
                 vdp1_sync_cmdt_list_put(_cmdt_list, 0);
                 vdp1_sync_render();
 
+                if (frame_count == 0) {
+                        vdp2_sync();
+                }
+
                 vdp1_sync();
-                vdp2_sync();
                 vdp1_sync_wait();
-                vdp2_sync_wait();
+                frame_count++;
         }
 
         return 0;
@@ -95,24 +94,26 @@ main(void)
 void
 user_init(void)
 {
+        dbgio_dev_default_init(DBGIO_DEV_USB_CART);
+        dbgio_dev_font_load();
+
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);
 
         vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 3, 15));
+            COLOR_RGB1555(1, 0, 0, 0));
 
         vdp2_sprite_priority_set(0, 7);
 
         vdp1_env_default_set();
-
-        vdp2_tvmd_display_set();
+        vdp1_vram_partitions_get(&_vdp1_vram_partitions);
+        /* Must be variable rate with no frame rate cap (<= -2). There seems to
+         * be issues */
+        vdp1_sync_interval_set(-1);
 
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
-        vdp1_vram_partitions_get(&_vdp1_vram_partitions);
-
-        vdp2_sync();
-        vdp2_sync_wait();
+        vdp2_tvmd_display_set();
 }
 
 static void
@@ -152,13 +153,13 @@ _cmdt_list_clear_init(void)
         };
 
         static const int16_vec2_t points[] = {
-                INT16_VEC2_INITIALIZER(-(SCREEN_WIDTH / 2) - 1, -(SCREEN_HEIGHT / 2) - 1),
-                INT16_VEC2_INITIALIZER( (SCREEN_WIDTH / 2) - 1, -(SCREEN_HEIGHT / 2) - 1),
+                INT16_VEC2_INITIALIZER(-(SCREEN_WIDTH / 2),     -(SCREEN_HEIGHT / 2)),
+                INT16_VEC2_INITIALIZER( (SCREEN_WIDTH / 2) - 1, -(SCREEN_HEIGHT / 2)),
                 INT16_VEC2_INITIALIZER( (SCREEN_WIDTH / 2) - 1,  (SCREEN_HEIGHT / 2) - 1),
-                INT16_VEC2_INITIALIZER(-(SCREEN_WIDTH / 2) - 1,  (SCREEN_HEIGHT / 2) - 1),
+                INT16_VEC2_INITIALIZER(-(SCREEN_WIDTH / 2),      (SCREEN_HEIGHT / 2) - 1),
         };
 
-        static const color_rgb1555_t color = COLOR_RGB1555(1, 0, 0, 0);
+        static const color_rgb1555_t color = COLOR_RGB1555(0, 0, 0, 0);
 
         vdp1_cmdt_t * const cmdt =
             &_cmdt_list->cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX];
@@ -201,7 +202,7 @@ _flare_blend(int16_t flare_x, int16_t flare_y)
                 for (int32_t x = 0; x < flare_texture_dim.x; x++, fb++, flare_texture_offset++) {
                         const color_rgb1555_t src_pixel = (color_rgb1555_t)*flare_texture_offset;
 
-                        if ((src_pixel.raw & 0x7FFF) == 0x0000) {
+                        if (src_pixel.raw == 0x0000) {
                                 continue;
                         }
 
@@ -210,11 +211,22 @@ _flare_blend(int16_t flare_x, int16_t flare_y)
                         if (!fb_pixel.msb) {
                                 *fb = src_pixel;
                         } else {
-                                const uint16_t r = min(src_pixel.r + fb_pixel.r, 31);
-                                const uint16_t g = min(src_pixel.g + fb_pixel.g, 31);
-                                const uint16_t b = min(src_pixel.b + fb_pixel.b, 31);
+                                const uint16_t fb_raw = fb_pixel.raw;
+                                const uint16_t src_raw = src_pixel.raw;
 
-                                fb->raw = (0x8000 | (b << 10) | (g << 5) | r);
+                                const uint16_t fb_r = fb_raw & 31;
+                                const uint16_t fb_g = fb_raw & (31 << 5);
+                                const uint16_t fb_b = fb_raw & (31 << 10);
+
+                                const uint16_t src_r = src_raw & 31;
+                                const uint16_t src_g = src_raw & (31 << 5);
+                                const uint16_t src_b = src_raw & (31 << 10);
+
+                                const uint16_t r = min(src_r + fb_r, 31);
+                                const uint16_t g = min(src_g + fb_g, 31 << 5);
+                                const uint16_t b = min(src_b + fb_b, 31 << 10);
+
+                                fb->raw = (0x8000 | b | g | r);
                         }
                 }
         }
