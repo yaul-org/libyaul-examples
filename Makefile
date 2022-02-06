@@ -17,7 +17,9 @@ EXAMPLES:= \
 	vdp1-interlace \
 	vdp1-mic3d \
 	vdp1-sega3d \
+	vdp1-software-blending \
 	vdp1-st-niccc \
+	vdp1-triangle-texture \
 	vdp1-uv-coords \
 	vdp1-zoom-sprite \
 	vdp2-24bpp-bitmap \
@@ -69,10 +71,13 @@ else
 endif
 export ECHO
 
-.PHONY: all clean
+.PHONY: all clean list-examples
 
 all clean:
 	$(ECHO)for example in $(EXAMPLES); do \
 		printf -- "[1;36m$@[m [1;32mexamples/$$example[m\n"; \
 		($(MAKE) -C $$example $@) || exit $$?; \
 	done
+
+list-examples:
+	$(ECHO)/usr/bin/find . -maxdepth 1 -type d | tail -n +2 | sed -E 's/^\.\///g;/^\./d;/^_/d;/^shared$$/d' | sort -n
