@@ -5,6 +5,7 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include <yaul.h>
@@ -61,7 +62,7 @@ menu_update(menu_state_t *menu_state)
         _menu_render_update(menu_state);
 
         if (menu_state->_input_fn != NULL) {
-                menu_state->_input_fn(menu_state);                
+                menu_state->_input_fn(menu_state);
         }
 }
 
@@ -109,25 +110,23 @@ menu_action_call(menu_state_t *menu_state)
 static void
 _menu_render_update(menu_state_t *menu_state)
 {
-        static char cursor_buffer[2];
+        static char cursor_buffer[2] = {
+                '',
+                '\0'
+        };
 
         const menu_entry_t *entry_ptr = menu_state->entries;
 
         menu_state->_entries_count = 0;
 
-        for (int8_t i = 0; entry_ptr->text != NULL; i++) {
-                const char cursor = (menu_state->_cursor == i) ? '' : ' ';
+        for (menu_cursor_t cursor = 0; entry_ptr->text != NULL; cursor++, entry_ptr++) {
+                cursor_buffer[0] = (menu_state->_cursor == cursor) ? '' : ' ';
 
-                cursor_buffer[0] = cursor;
-                cursor_buffer[1] = '\0';
+                dbgio_puts(cursor_buffer);
 
-                dbgio_printf(cursor_buffer);
-
-                dbgio_printf(entry_ptr->text);
-                dbgio_printf("\n");
+                dbgio_puts(entry_ptr->text);
+                dbgio_puts("\n");
 
                 menu_state->_entries_count++;
-
-                entry_ptr++;
         }
 }

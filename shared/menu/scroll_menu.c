@@ -145,7 +145,7 @@ _scroll(scroll_menu_state_t *menu_state, int8_t dir)
 
                 menu_state->_y += dir;
         } else if (menu_state->_gp > menu_state->view_height) {
-                menu_state->_gp = menu_state->view_height; 
+                menu_state->_gp = menu_state->view_height;
 
                 menu_state->_y += dir;
         }
