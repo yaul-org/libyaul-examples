@@ -17,7 +17,8 @@ main(void)
 
         dbgio_puts("Waiting to establish a connection with GDB\n");
         dbgio_flush();
-        vdp_sync();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         /* Unmask all interrupts just to be sure GDB works */
         cpu_intc_mask_set(0);
@@ -53,7 +54,8 @@ main(void)
                 dbgio_puts(buffer);
 
                 dbgio_flush();
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
 
                 gdb_break();
         }

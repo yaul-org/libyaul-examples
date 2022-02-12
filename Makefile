@@ -19,7 +19,6 @@ EXAMPLES:= \
 	vdp1-sega3d \
 	vdp1-software-blending \
 	vdp1-st-niccc \
-	vdp1-triangle-texture \
 	vdp1-uv-coords \
 	vdp1-zoom-sprite \
 	vdp2-24bpp-bitmap \
@@ -37,12 +36,10 @@ EXAMPLES:= \
 # Following examples are broken:
 #   arp-comm
 #   scu-timers
+#   fileserver
 
 # Either type of dev cartridge
 ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),$(filter $(YAUL_OPTION_DEV_CARTRIDGE),1 2))
-EXAMPLES+= \
-	fileserver
-
 ifeq ($(YAUL_OPTION_BUILD_GDB),1)
 EXAMPLES+= \
 	gdb
