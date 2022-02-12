@@ -513,8 +513,6 @@ main(void)
 
                 vdp1_sync();
                 vdp1_sync_wait();
-
-                MEMORY_WRITE(32, LWRAM(0), MEMORY_READ(32, LWRAM(0)) + 1);
         }
 }
 
