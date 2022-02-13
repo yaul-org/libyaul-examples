@@ -10,6 +10,7 @@ EXAMPLES:= \
 	dbgio-menu \
 	dma-queue \
 	dram-cart \
+	netlink-template \
 	romdisk \
 	scu-dsp \
 	vdp1-balls \
