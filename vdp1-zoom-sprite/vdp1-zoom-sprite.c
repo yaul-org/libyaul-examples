@@ -20,9 +20,6 @@
 #define STATE_ZOOM_RELEASE_BUTTONS      (3)
 #define STATE_ZOOM_SELECT_ANCHOR        (4)
 
-#define ZOOM_TEX_PATH   "ZOOM.TEX"
-#define ZOOM_PAL_PATH   "ZOOM.PAL"
-
 #define ZOOM_POINT_WIDTH                (64)
 #define ZOOM_POINT_HEIGHT               (102)
 #define ZOOM_POINT_POINTER_SIZE         (3)
@@ -41,8 +38,6 @@
 
 #define ANIMATION_FRAME_COUNT    (14)
 #define ANIMATION_FRAME_DURATION (3)
-
-extern uint8_t root_romdisk[];
 
 /* Zoom state */
 static int32_t _state_zoom = STATE_ZOOM_MOVE_ORIGIN;
@@ -69,7 +64,10 @@ static struct {
         vdp1_cmdt_t *cmdt;
 } _sprite;
 
-static void *_romdisk = NULL;
+extern uint8_t asset_zoom_tex[];
+extern uint8_t asset_zoom_tex_end[];
+extern const uint8_t asset_zoom_pal[];
+extern const uint8_t asset_zoom_pal_end[];
 
 static vdp1_cmdt_list_t *_cmdt_list = NULL;
 static vdp1_vram_partitions_t _vdp1_vram_partitions;
@@ -182,11 +180,6 @@ _init(void)
 {
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
-
-        romdisk_init();
-
-        _romdisk = romdisk_mount(root_romdisk);
-        assert(_romdisk != NULL);
 
         _cmdt_list_init();
 }
@@ -314,24 +307,8 @@ _sprite_init(void)
 
         vdp1_cmdt_param_size_set(_sprite.cmdt, ZOOM_POINT_WIDTH, ZOOM_POINT_HEIGHT);
 
-        void *fh[2];
-        void *p;
-        size_t len;
-
-        fh[0] = romdisk_open(_romdisk, ZOOM_TEX_PATH);
-        assert(fh[0] != NULL);
-        p = romdisk_direct(fh[0]);
-        len = romdisk_total(fh[0]);
-        scu_dma_transfer(0, _sprite.tex_base, p, len);
-
-        fh[1] = romdisk_open(_romdisk, ZOOM_PAL_PATH);
-        assert(fh[1] != NULL);
-        p = romdisk_direct(fh[1]);
-        len = romdisk_total(fh[1]);
-        scu_dma_transfer(0, _sprite.pal_base, p, len);
-
-        romdisk_close(fh[0]);
-        romdisk_close(fh[1]);
+        scu_dma_transfer(0, _sprite.tex_base, asset_zoom_tex, asset_zoom_tex_end - asset_zoom_tex);
+        scu_dma_transfer(0, _sprite.pal_base, asset_zoom_pal, asset_zoom_pal_end - asset_zoom_pal);
 }
 
 static void
