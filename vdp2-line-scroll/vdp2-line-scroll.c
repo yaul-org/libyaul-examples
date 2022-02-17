@@ -11,7 +11,14 @@
 
 #define BACK_SCREEN             VDP2_VRAM_ADDR(3, 0x1FFFE)
 
-extern uint8_t root_romdisk[];
+extern uint8_t asset_line_scroll_tbl[];
+extern uint8_t asset_line_scroll_tbl_end[];
+extern uint8_t asset_vf_cpd[];
+extern uint8_t asset_vf_cpd_end[];
+extern uint8_t asset_vf_pnd[];
+extern uint8_t asset_vf_pnd_end[];
+extern uint8_t asset_vf_pal[];
+extern uint8_t asset_vf_pal_end[];
 
 static vdp2_scrn_ls_format_t _ls_format = {
         .scroll_screen     = VDP2_SCRN_NBG0,
@@ -23,32 +30,11 @@ static vdp2_scrn_ls_format_t _ls_format = {
 void
 main(void)
 {
-        romdisk_init();
+        scu_dma_transfer(0, (void *)NBG0_CPD, asset_vf_cpd, asset_vf_cpd_end - asset_vf_cpd);
+        scu_dma_transfer(0, (void *)NBG0_PND, asset_vf_pnd, asset_vf_pnd_end - asset_vf_pnd);
+        scu_dma_transfer(0, (void *)NBG0_PAL, asset_vf_pal, asset_vf_pal_end - asset_vf_pal);
 
-        void *romdisk;
-        romdisk = romdisk_mount(root_romdisk);
-        assert(romdisk != NULL);
-
-        void *fh[4];
-
-        fh[0] = romdisk_open(romdisk, "/VF.CPD");
-        assert(fh[0] != NULL);
-        scu_dma_transfer(0, (void *)NBG0_CPD, romdisk_direct(fh[0]), romdisk_total(fh[0]));
-        romdisk_close(fh[0]);
-
-        fh[1] = romdisk_open(romdisk, "/VF.PND");
-        assert(fh[1] != NULL);
-        scu_dma_transfer(0, (void *)NBG0_PND, romdisk_direct(fh[1]), romdisk_total(fh[1]));
-        romdisk_close(fh[1]);
-
-        fh[2] = romdisk_open(romdisk, "/VF.PAL");
-        assert(fh[2] != NULL);
-        scu_dma_transfer(0, (void *)NBG0_PAL, romdisk_direct(fh[2]), romdisk_total(fh[2]));
-
-        fh[3] = romdisk_open(romdisk, "/LINE_SCROLL.TBL");
-        assert(fh[3] != NULL);
-        scu_dma_transfer(0, (void *)NBG0_LINE_SCROLL, romdisk_direct(fh[3]), romdisk_total(fh[3]));
-        romdisk_close(fh[2]);
+        scu_dma_transfer(0, (void *)NBG0_LINE_SCROLL, asset_line_scroll_tbl, asset_line_scroll_tbl_end - asset_line_scroll_tbl);
 
         vdp2_scrn_ls_set(&_ls_format);
 
