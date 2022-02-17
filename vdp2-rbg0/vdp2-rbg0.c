@@ -11,7 +11,12 @@
 
 #define BACK_SCREEN             VDP2_VRAM_ADDR(3, 0x1FFFE)
 
-extern uint8_t root_romdisk[];
+extern uint8_t asset_cpd[];
+extern uint8_t asset_cpd_end[];
+extern uint8_t asset_pnd[];
+extern uint8_t asset_pnd_end[];
+extern uint8_t asset_pal[];
+extern uint8_t asset_pal_end[];
 
 static const vdp2_scrn_rotation_table_t _rotation_table = {
         /* Screen start coordinates */
@@ -68,28 +73,9 @@ static const vdp2_scrn_rotation_table_t _rotation_table = {
 void
 main(void)
 {
-        romdisk_init();
-
-        void *romdisk;
-        romdisk = romdisk_mount(root_romdisk);
-        assert(romdisk != NULL);
-
-        void *fh[3];
-
-        fh[0] = romdisk_open(romdisk, "/CPD.BIN");
-        assert(fh[0] != NULL);
-        scu_dma_transfer(0, (void *)RBG0_CPD, romdisk_direct(fh[0]), romdisk_total(fh[0]));
-        romdisk_close(fh[0]);
-
-        fh[1] = romdisk_open(romdisk, "/PAL.BIN");
-        assert(fh[1] != NULL);
-        scu_dma_transfer(0, (void *)RBG0_PAL, romdisk_direct(fh[1]), romdisk_total(fh[1]));
-        romdisk_close(fh[1]);
-
-        fh[2] = romdisk_open(romdisk, "/PND.BIN");
-        assert(fh[2] != NULL);
-        scu_dma_transfer(0, (void *)RBG0_PND, romdisk_direct(fh[2]), romdisk_total(fh[2]));
-        romdisk_close(fh[2]);
+        scu_dma_transfer(0, (void *)RBG0_CPD, asset_cpd, asset_cpd_end - asset_cpd);
+        scu_dma_transfer(0, (void *)RBG0_PND, asset_pnd, asset_pnd_end - asset_pnd);
+        scu_dma_transfer(0, (void *)RBG0_PAL, asset_pal, asset_pal_end - asset_pal);
 
         scu_dma_transfer(0, (void *)RBG0_ROTATION_TABLE, (void *)&_rotation_table, sizeof(_rotation_table));
 
