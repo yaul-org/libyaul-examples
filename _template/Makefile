@@ -4,11 +4,12 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
+# Each asset follows the format: <path>;<symbol>. Duplicates are removed
+BUILTIN_ASSETS=
+
 SH_PROGRAM:= template
 SH_SRCS:= \
 	main.c
-ROMDISK_SYMBOLS=
-ROMDISK_DIRS=
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj
