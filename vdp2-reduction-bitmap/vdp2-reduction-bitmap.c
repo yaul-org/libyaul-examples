@@ -11,18 +11,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-extern uint8_t root_romdisk[];
+extern uint8_t asset_bitmap_cpd[];
+extern uint8_t asset_bitmap_cpd_end[];
+extern uint8_t asset_bitmap_pal[];
+extern uint8_t asset_bitmap_pal_end[];
 
 int
 main(void)
 {
-        void *romdisk;
-
-        romdisk_init();
-
-        romdisk = romdisk_mount(root_romdisk);
-        assert(romdisk != NULL);
-
         const vdp2_scrn_bitmap_format_t format = {
                 .scroll_screen      = VDP2_SCRN_NBG0,
                 .cc_count           = VDP2_SCRN_CCC_PALETTE_256,
@@ -85,21 +81,8 @@ main(void)
         /* Set for CRAM mode 1: RGB 555 2,048 colors */
         vdp2_cram_mode_set(1);
 
-        void *fh[2];
-        void *p;
-        int8_t ret __unused;
-
-        fh[0] = romdisk_open(romdisk, "/BITMAP.PAL");
-        assert(fh[0] != NULL);
-        p = romdisk_direct(fh[0]);
-        scu_dma_transfer(0, (void *)VDP2_CRAM_ADDR(0x0000), p, romdisk_total(fh[0]));
-        romdisk_close(fh[0]);
-
-        fh[1] = romdisk_open(romdisk, "/BITMAP.CPD");
-        assert(fh[1] != NULL);
-        p = romdisk_direct(fh[1]);
-        scu_dma_transfer(0, (void *)VDP2_VRAM_ADDR(0, 0x00000), p, romdisk_total(fh[0]));
-        romdisk_close(fh[1]);
+        scu_dma_transfer(0, (void *)VDP2_VRAM_ADDR(0, 0x00000), asset_bitmap_cpd, asset_bitmap_cpd_end - asset_bitmap_cpd);
+        scu_dma_transfer(0, (void *)VDP2_CRAM_ADDR(0x0000), asset_bitmap_pal, asset_bitmap_pal_end - asset_bitmap_pal);
 
         vdp2_tvmd_display_set();
 
