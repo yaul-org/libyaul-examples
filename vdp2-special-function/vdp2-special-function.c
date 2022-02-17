@@ -29,43 +29,21 @@
 #define NBG0_MAP_PLANE_C        VDP2_VRAM_ADDR(3, 0x00000)
 #define NBG0_MAP_PLANE_D        VDP2_VRAM_ADDR(3, 0x00000)
 
-extern uint8_t root_romdisk[];
+extern uint8_t asset_cpd_dat[];
+extern uint8_t asset_cpd_dat_end[];
+extern uint8_t asset_pnd_dat[];
+extern uint8_t asset_pnd_dat_end[];
+extern uint8_t asset_pal_dat[];
+extern uint8_t asset_pal_dat_end[];
 
 static void _cmdt_list_init(vdp1_cmdt_list_t *cmdt_list);
 
 void
 main(void)
 {
-        romdisk_init();
-
-        void *romdisk;
-        romdisk = romdisk_mount(root_romdisk);
-        assert(romdisk != NULL);
-
-        void *fh[3];
-        void *p;
-        size_t len;
-
-        fh[0] = romdisk_open(romdisk, "CHR.DAT");
-        assert(fh[0] != NULL);
-        p = romdisk_direct(fh[0]);
-        len = romdisk_total(fh[0]);
-        scu_dma_transfer(0, (void *)NBG0_CPD, p, len);
-        romdisk_close(fh[0]);
-
-        fh[1] = romdisk_open(romdisk, "PND.DAT");
-        assert(fh[1] != NULL);
-        p = romdisk_direct(fh[1]);
-        len = romdisk_total(fh[1]);
-        scu_dma_transfer(0, (void *)NBG0_MAP_PLANE_A, p, len);
-        romdisk_close(fh[1]);
-
-        fh[2] = romdisk_open(romdisk, "PAL.DAT");
-        assert(fh[2] != NULL);
-        p = romdisk_direct(fh[2]);
-        len = romdisk_total(fh[2]);
-        scu_dma_transfer(0, (void *)NBG0_PAL, p, len);
-        romdisk_close(fh[2]);
+        scu_dma_transfer(0, (void *)NBG0_CPD, asset_cpd_dat, asset_cpd_dat_end - asset_cpd_dat);
+        scu_dma_transfer(0, (void *)NBG0_MAP_PLANE_A, asset_pnd_dat, asset_pnd_dat_end - asset_pnd_dat);
+        scu_dma_transfer(0, (void *)NBG0_PAL, asset_pal_dat, asset_pal_dat_end - asset_pal_dat);
 
         vdp2_tvmd_display_set();
 
