@@ -4,11 +4,15 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
+# Each asset follows the format: <path>;<symbol>. Duplicates are removed
+BUILTIN_ASSETS+= \
+	assets/PAGE.CPD;asset_page_cpd \
+	assets/PAGE.MAP;asset_page_map \
+	assets/PAGE.PAL;asset_page_pal \
+
 SH_PROGRAM:= vdp2-2x2-plane
 SH_SRCS:= \
 	vdp2-2x2-plane.c
-ROMDISK_SYMBOLS= root
-ROMDISK_DIRS= romdisk
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj
@@ -22,7 +26,6 @@ IP_MASTER_STACK_ADDR:= 0x06004000
 IP_SLAVE_STACK_ADDR:= 0x06001E00
 IP_1ST_READ_ADDR:= 0x06004000
 
-M68K_PROGRAM:=
-M68K_OBJECTS:=
+include ../shared/assets.mk
 
 include $(YAUL_INSTALL_ROOT)/share/post.common.mk

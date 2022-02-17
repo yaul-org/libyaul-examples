@@ -10,17 +10,16 @@
 #include <assert.h>
 #include <stdbool.h>
 
-extern uint8_t root_romdisk[];
+extern uint8_t asset_page_cpd[];
+extern uint8_t asset_page_cpd_end[];
+extern uint8_t asset_page_map[];
+extern uint8_t asset_page_map_end[];
+extern uint8_t asset_page_pal[];
+extern uint8_t asset_page_pal_end[];
 
 int
 main(void)
 {
-        romdisk_init();
-
-        void *romdisk;
-        romdisk = romdisk_mount(root_romdisk);
-        assert(romdisk != NULL);
-
         uint16_t * const color_palette =
             (uint16_t *)VDP2_CRAM_MODE_1_OFFSET(0, 0, 0);
 
@@ -88,23 +87,8 @@ main(void)
 
         vdp2_vram_cycp_set(&vram_cycp);
 
-        void *fh[3];
-        int8_t ret __unused;
-
-        fh[0] = romdisk_open(romdisk, "/PAGE.PAL");
-        assert(fh[0] != NULL);
-        scu_dma_transfer(0, color_palette, romdisk_direct(fh[0]), romdisk_total(fh[0]));
-        romdisk_close(fh[0]);
-
-        fh[1] = romdisk_open(romdisk, "/PAGE.CPD");
-        assert(fh[1] != NULL);
-        scu_dma_transfer(0, cpd, romdisk_direct(fh[1]), romdisk_total(fh[1]));
-        romdisk_close(fh[1]);
-
-        fh[2] = romdisk_open(romdisk, "/PAGE.MAP");
-        assert(fh[2] != NULL);
-        void * const fh_p = romdisk_direct(fh[2]);
-        const uint32_t fh_len = romdisk_total(fh[2]);
+        scu_dma_transfer(0, color_palette, asset_page_pal, asset_page_pal_end - asset_page_pal);
+        scu_dma_transfer(0, cpd, asset_page_cpd, asset_page_cpd_end - asset_page_cpd);
 
         const uint16_t page_size = VDP2_SCRN_CALCULATE_PAGE_SIZE(&format);
 
@@ -114,13 +98,11 @@ main(void)
                 page = (uint32_t)planes[j];
 
                 for (uint32_t i = 0; i < (2 * 2); i++) {
-                        scu_dma_transfer(0, (void *)page, fh_p, fh_len);
+                        scu_dma_transfer(0, (void *)page, asset_page_map, asset_page_map_end - asset_page_map);
 
                         page += page_size;
                 }
         }
-
-        romdisk_close(fh[2]);
 
         vdp2_scrn_cell_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 7);
