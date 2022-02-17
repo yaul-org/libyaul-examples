@@ -4,12 +4,14 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
+# Each asset follows the format: <path>;<symbol>. Duplicates are removed
+BUILTIN_ASSETS+= \
+	assets/SCENE.BIN;asset_scene_bin
+
 SH_PROGRAM:= vdp1-st-niccc
 SH_SRCS:= \
 	vdp1-st-niccc.cxx \
 	scene.cxx
-ROMDISK_SYMBOLS= root
-ROMDISK_DIRS= romdisk
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -O2 -I. -save-temps=obj -Wno-error
@@ -23,7 +25,6 @@ IP_MASTER_STACK_ADDR:= 0x06004000
 IP_SLAVE_STACK_ADDR:= 0x06001E00
 IP_1ST_READ_ADDR:= 0x06004000
 
-M68K_PROGRAM:=
-M68K_OBJECTS:=
+include ../shared/assets.mk
 
 include $(YAUL_INSTALL_ROOT)/share/post.common.mk

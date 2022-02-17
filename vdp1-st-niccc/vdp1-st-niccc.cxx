@@ -38,9 +38,7 @@ static constexpr uint32_t _render_height = 200;
 static constexpr fix16_t _scale_width = FIX16(_render_width / static_cast<float>(_screen_width));
 static constexpr fix16_t _scale_height = FIX16(_render_height / static_cast<float>(_screen_height));
 
-static const char* _scene_file_path = "SCENE.BIN";
-
-static void* _romdisk;
+extern uint8_t asset_scene_bin[];
 
 static smpc_peripheral_digital_t _digital;
 
@@ -64,8 +62,6 @@ static volatile struct {
     .dropped_count = 0,
     .ovi_count     = 0
 };
-
-static void _romdisk_init(void);
 
 static void _draw_init(void);
 
@@ -97,17 +93,12 @@ static const draw_handler _draw_handlers[] = {
 };
 
 int main(void) {
-    _romdisk_init();
-
     dbgio_dev_default_init(DBGIO_DEV_VDP2);
     dbgio_dev_font_load();
 
     _draw_init();
 
-    void *fh = romdisk_open(_romdisk, _scene_file_path);
-    assert(fh != NULL);
-    void *scene_ptr = romdisk_direct(fh);
-    const uint8_t* scene_buffer = static_cast<uint8_t*>(scene_ptr);
+    const uint8_t* scene_buffer = asset_scene_bin;
 
     scene::callbacks callbacks;
     callbacks.on_start = _on_start;
@@ -280,15 +271,6 @@ void user_init(void) {
 
     cpu_frt_init(CPU_FRT_CLOCK_DIV_8);
     cpu_frt_ovi_set(_frt_ovi_handler);
-}
-
-static void _romdisk_init(void) {
-    extern uint8_t root_romdisk[];
-
-    romdisk_init();
-
-    _romdisk = romdisk_mount(root_romdisk);
-    assert(_romdisk != NULL);
 }
 
 static void _draw_cmdt_list_init(vdp1_cmdt_list_t* cmdt_list) {
