@@ -20,9 +20,6 @@
 #define STATE_UV_RELEASE_BUTTONS      (3)
 #define STATE_UV_SELECT_ANCHOR        (4)
 
-#define UV_TEX_PATH   "ZOOM.TEX"
-#define UV_PAL_PATH   "ZOOM.PAL"
-
 #define UV_POINT_WIDTH                (32)
 #define UV_POINT_HEIGHT               (32)
 #define UV_POINT_POINTER_SIZE         (3)
@@ -40,7 +37,8 @@
 #define VDP1_CMDT_ORDER_DRAW_END_INDEX                  7
 #define VDP1_CMDT_ORDER_COUNT                           8
 
-extern uint8_t root_romdisk[];
+extern uint8_t asset_zoom_tex[];
+extern const color_rgb1555_t asset_zoom_pal[];
 
 /* State */
 static int32_t _state_uv      = STATE_UV_MOVE_ORIGIN;
@@ -60,8 +58,6 @@ static struct {
 static struct {
         vdp1_cmdt_t *cmdt;
 } _sprite;
-
-static void *_romdisk = NULL;
 
 static vdp1_cmdt_list_t *_cmdt_list = NULL;
 static vdp1_vram_partitions_t _vdp1_vram_partitions;
@@ -174,11 +170,6 @@ _init(void)
 {
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
-
-        romdisk_init();
-
-        _romdisk = romdisk_mount(root_romdisk);
-        assert(_romdisk != NULL);
 
         _cmdt_list_init();
 
@@ -317,15 +308,8 @@ _sprite_init(void)
         vdp1_cmdt_param_color_set(_sprite.cmdt, COLOR_RGB1555(0, 16, 16, 0));
         vdp1_cmdt_param_gouraud_base_set(_sprite.cmdt, (vdp1_vram_t)gouraud_table_base);
 
-        void *fh[2];
-
-        fh[0] = romdisk_open(_romdisk, UV_TEX_PATH);
-        assert(fh[0] != NULL);
-        const uint8_t * const tex_ptr __unused = romdisk_direct(fh[0]);
-
-        fh[1] = romdisk_open(_romdisk, UV_PAL_PATH);
-        assert(fh[1] != NULL);
-        color_rgb1555_t * const pal_ptr __unused = romdisk_direct(fh[1]);
+        const uint8_t * const tex_ptr = asset_zoom_tex;
+        const color_rgb1555_t * const pal_ptr = asset_zoom_pal;
 
         for (uint32_t y = 0, cram_offset = 0; y < UV_POINT_HEIGHT; y++) {
                 for (uint32_t x = 0; x < UV_POINT_WIDTH; x++) {
@@ -340,9 +324,6 @@ _sprite_init(void)
                         cram_offset++;
                 }
         }
-
-        romdisk_close(fh[0]);
-        romdisk_close(fh[1]);
 }
 
 static void
