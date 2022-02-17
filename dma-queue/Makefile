@@ -4,11 +4,21 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
+# Each asset follows the format: <path>;<symbol>. Duplicates are removed
+BUILTIN_ASSETS+= \
+	assets/BITMAP1.TGA;asset_bitmap1_tga \
+	assets/BITMAP2.TGA;asset_bitmap2_tga \
+	assets/BITMAP3.TGA;asset_bitmap3_tga \
+	assets/BITMAP4.TGA;asset_bitmap4_tga \
+	assets/BITMAP5.TGA;asset_bitmap5_tga \
+	assets/BITMAP6.TGA;asset_bitmap6_tga \
+	assets/BITMAP7.TGA;asset_bitmap7_tga \
+	assets/BITMAP8.TGA;asset_bitmap8_tga \
+	assets/BITMAP9.TGA;asset_bitmap9_tga
+
 SH_PROGRAM:= dma-queue
 SH_SRCS:= \
 	dma-queue.c
-ROMDISK_SYMBOLS= root
-ROMDISK_DIRS= romdisk
 
 SH_LIBRARIES:= tga
 SH_CFLAGS+= -O2 -save-temps=obj
@@ -22,7 +32,6 @@ IP_MASTER_STACK_ADDR:= 0x06004000
 IP_SLAVE_STACK_ADDR:= 0x06001E00
 IP_1ST_READ_ADDR:= 0x06004000
 
-M68K_PROGRAM:=
-M68K_OBJECTS:=
+include ../shared/assets.mk
 
 include $(YAUL_INSTALL_ROOT)/share/post.common.mk

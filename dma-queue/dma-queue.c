@@ -13,10 +13,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-extern uint8_t root_romdisk[];
-
-static void *_romdisk;
-
 static vdp2_scrn_bitmap_format_t _format = {
         .scroll_screen      = VDP2_SCRN_NBG0,
         .cc_count           = VDP2_SCRN_CCC_RGB_32768,
@@ -75,54 +71,58 @@ static const vdp2_vram_cycp_t _vram_cycp = {
         }
 };
 
-static const char *_tga_files[] = {
-        "BITMAP1.TGA",
-        "BITMAP2.TGA",
-        "BITMAP3.TGA",
-        "BITMAP4.TGA",
-        "BITMAP5.TGA",
-        "BITMAP6.TGA",
-        "BITMAP7.TGA",
-        "BITMAP8.TGA",
-        "BITMAP9.TGA",
+extern uint8_t asset_bitmap1_tga[];
+extern uint8_t asset_bitmap2_tga[];
+extern uint8_t asset_bitmap3_tga[];
+extern uint8_t asset_bitmap4_tga[];
+extern uint8_t asset_bitmap5_tga[];
+extern uint8_t asset_bitmap6_tga[];
+extern uint8_t asset_bitmap7_tga[];
+extern uint8_t asset_bitmap8_tga[];
+extern uint8_t asset_bitmap9_tga[];
+
+static const void *_tgas[] = {
+        asset_bitmap1_tga,
+        asset_bitmap2_tga,
+        asset_bitmap3_tga,
+        asset_bitmap4_tga,
+        asset_bitmap5_tga,
+        asset_bitmap6_tga,
+        asset_bitmap7_tga,
+        asset_bitmap8_tga,
+        asset_bitmap9_tga,
         NULL
 };
 
-static uint8_t _intermediate_buffer[512 * 256 * 2] __aligned(4) __unused;
+static uint8_t _intermediate_buffer[512 * 256 * 2] __aligned(4);
 
-static void _romdisk_init(void);
-
-static uint32_t _tga_file_decode(const char *, void *, void *);
+static uint32_t _tga_file_decode(const void *asset_tga, void *buffer);
 
 static void _dma_queue_enqueue(void *, void *, const uint32_t);
 
 int
 main(void)
 {
-        _romdisk_init();
-
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
         vdp2_scrn_display_set(VDP2_SCRN_NBG0, /* no_trans = */ false);
 
         vdp2_vram_cycp_set(&_vram_cycp);
 
-        const char **current_file;
-        current_file = &_tga_files[0];
+        const void **current_tga;
+        current_tga = &_tgas[0];
 
         uint32_t bank;
         bank = 0;
 
         while (true) {
-                if (*current_file == NULL) {
-                        current_file = &_tga_files[0];
+                if (*current_tga == NULL) {
+                        current_tga = &_tgas[0];
                 }
 
-                void * const lwram = (void *)LWRAM(0x00000000);
                 void * const vram = (void *)VDP2_VRAM_ADDR(2 * bank, 0x00000);
 
-                uint32_t intermediate_size __unused;
-                intermediate_size = _tga_file_decode(*current_file, lwram,
-                    _intermediate_buffer);
+                const uint32_t intermediate_size =
+                    _tga_file_decode(*current_tga, _intermediate_buffer);
 
                 /* Set the back screen to its original color */
                 vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(2 * bank, 0x01FFFE),
@@ -141,7 +141,7 @@ main(void)
                 vdp2_sync();
                 vdp2_sync_wait();
 
-                current_file++;
+                current_tga++;
                 bank ^= 1;
         }
 
@@ -171,43 +171,22 @@ user_init(void)
         vdp2_tvmd_display_set();
 }
 
-static void
-_romdisk_init(void)
-{
-        romdisk_init();
-
-        _romdisk = romdisk_mount(root_romdisk);
-        assert(_romdisk != NULL);
-}
-
 static uint32_t
-_tga_file_decode(const char *file, void *tga_buffer, void *buffer)
+_tga_file_decode(const void *asset_tga, void *buffer)
 {
-        assert(file != NULL);
-        assert(tga_buffer != NULL);
+        assert(asset_tga != NULL);
         assert(buffer != NULL);
 
-        void *fh;
-
-        fh = romdisk_open(_romdisk, file);
-        assert(fh != NULL);
-
         tga_t tga;
-        int ret __unused;
 
-        const size_t len = romdisk_read(fh, tga_buffer, romdisk_total(fh));
-        assert(len == romdisk_total(fh));
-
-        ret = tga_read(&tga, tga_buffer);
-        assert(ret == TGA_FILE_OK);
-
-        romdisk_close(fh);
+        const int32_t tga_ret = tga_read(&tga, asset_tga);
+        assert(tga_ret == TGA_FILE_OK);
 
         const int32_t tga_size = tga_image_decode(&tga, buffer);
 
         /* XXX: The TGA library isn't very well written. The pixel count is
-         *      return, but because we're dealing with 16-BPP TGA images, it's 2
-         *      bytes per pixel */
+         *      returned, but because we're dealing with 16-BPP TGA images, it's
+         *      2 bytes per pixel */
         return (2 * tga_size);
 }
 
