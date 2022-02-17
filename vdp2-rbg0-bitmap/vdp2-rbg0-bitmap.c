@@ -14,7 +14,7 @@
 
 #define BACK_SCREEN             VDP2_VRAM_ADDR(3, 0x1FFFE)
 
-extern uint8_t root_romdisk[];
+extern uint8_t asset_bitmap_tga[];
 
 static const vdp2_scrn_bitmap_format_t format = {
         .scroll_screen       = VDP2_SCRN_RBG0,
@@ -38,19 +38,9 @@ static const vdp2_scrn_bitmap_format_t format = {
 int
 main(void)
 {
-        romdisk_init();
-
-        void *romdisk;
-        romdisk = romdisk_mount(root_romdisk);
-        assert(romdisk != NULL);
-
-        void *fh;
-        fh = romdisk_open(romdisk, "/BITMAP.TGA");
-        assert(fh != NULL);
-
         tga_t tga;
         int32_t ret __unused;
-        ret = tga_read(&tga, romdisk_direct(fh));
+        ret = tga_read(&tga, asset_bitmap_tga);
         assert(ret == TGA_FILE_OK);
 
         (void)tga_image_decode(&tga, (void *)RBG0_BPD);
