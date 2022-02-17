@@ -9,8 +9,10 @@
 /* #pragma GCC push_options */
 /* #pragma GCC optimize ("align-functions=16") */
 
-#define BALL_TEX_PATH   "BALL.TEX"
-#define BALL_PAL_PATH   "BALL.PAL"
+extern uint8_t asset_ball_tex[];
+extern uint8_t asset_ball_tex_end[];
+extern uint8_t asset_ball_pal[];
+extern uint8_t asset_ball_pal_end[];
 
 struct balls_handle {
         balls_config_t config;
@@ -52,25 +54,10 @@ balls_assets_init(balls_handle_t *handle __unused)
 void
 balls_assets_load(balls_handle_t *handle)
 {
-        void *fh[2];
-        void *p;
-        size_t len;
-
         handle->load_count = 2;
 
-        fh[0] = romdisk_open(_romdisk, BALL_TEX_PATH);
-        assert(fh[0] != NULL);
-        p = romdisk_direct(fh[0]);
-        len = romdisk_total(fh[0]);
-        scu_dma_transfer(0, (void *)_sprite_tex_base, p, len);
-        romdisk_close(fh[0]);
-
-        fh[1] = romdisk_open(_romdisk, BALL_PAL_PATH);
-        assert(fh[1] != NULL);
-        p = romdisk_direct(fh[1]);
-        len = romdisk_total(fh[1]);
-        scu_dma_transfer(0, (void *)_sprite_pal_base, p, len);
-        romdisk_close(fh[1]);
+        scu_dma_transfer(0, (void *)_sprite_tex_base, asset_ball_tex, asset_ball_tex_end - asset_ball_tex);
+        scu_dma_transfer(0, (void *)_sprite_pal_base, asset_ball_pal, asset_ball_pal_end - asset_ball_pal);
 }
 
 static inline q0_12_4_t

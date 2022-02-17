@@ -46,10 +46,6 @@
 
 #define BALL_SPEED (0x000E)
 
-extern uint8_t root_romdisk[];
-
-void *_romdisk;
-
 static q0_12_4_t _balls_pos_x[BALL_MAX_COUNT] __aligned(0x1000);
 static q0_12_4_t _balls_pos_y[BALL_MAX_COUNT] __aligned(0x1000);
 
@@ -62,8 +58,6 @@ struct buffer_context {
         balls_handle_t *balls_handle;
         vdp1_cmdt_t *cmdt_draw_end;
 };
-
-static void _romdisk_init(void);
 
 static void _vdp1_init(void);
 static void _vdp2_init(void);
@@ -240,8 +234,6 @@ main(void)
 void
 user_init(void)
 {
-        _romdisk_init();
-
         _vdp2_init();
         _vdp1_init();
 
@@ -254,15 +246,6 @@ user_init(void)
         vdp2_sync_wait();
 
         perf_init();
-}
-
-static void
-_romdisk_init(void)
-{
-        romdisk_init();
-
-        _romdisk = romdisk_mount(root_romdisk);
-        assert(_romdisk != NULL);
 }
 
 static void

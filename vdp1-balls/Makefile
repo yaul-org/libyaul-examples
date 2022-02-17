@@ -4,13 +4,16 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
+# Each asset follows the format: <path>;<symbol>. Duplicates are removed
+BUILTIN_ASSETS+= \
+	assets/BALL.TEX;asset_ball_tex \
+	assets/BALL.PAL;asset_ball_pal
+
 SH_PROGRAM:= vdp1-balls
 SH_SRCS:= \
 	vdp1-balls.c \
 	balls.c \
 	../shared/perf/perf.c
-ROMDISK_SYMBOLS= root
-ROMDISK_DIRS= romdisk
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -I. -I../shared/perf -Wno-error=unused-variable -Wno-error -O2 -save-temps=obj
@@ -24,7 +27,6 @@ IP_MASTER_STACK_ADDR:= 0x06004000
 IP_SLAVE_STACK_ADDR:= 0x06001E00
 IP_1ST_READ_ADDR:= 0x06004000
 
-M68K_PROGRAM:=
-M68K_OBJECTS:=
+include ../shared/assets.mk
 
 include $(YAUL_INSTALL_ROOT)/share/post.common.mk
