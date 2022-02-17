@@ -11,7 +11,6 @@ EXAMPLES:= \
 	dma-queue \
 	dram-cart \
 	netlink-template \
-	romdisk \
 	scu-dsp \
 	vdp1-balls \
 	vdp1-drawing \
