@@ -29,8 +29,6 @@
 #define ORDER_SEGA3D_INDEX              (4)
 #define ORDER_BASE_COUNT                (5)
 
-extern uint8_t root_romdisk[];
-
 static void _vblank_in_handler(void *);
 static void _vblank_out_handler(void *);
 static void _sprite_end_handler(void);

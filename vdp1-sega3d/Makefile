@@ -12,6 +12,9 @@ include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 # quake_split.s3d.o
 # sonic.s3d.o
 
+# Each asset follows the format: <path>;<symbol>. Duplicates are removed
+BUILTIN_ASSETS=
+
 MODEL_OBJECT?= quake_split
 
 SH_PROGRAM:= vdp1-sega3d
@@ -19,8 +22,6 @@ SH_SRCS:= \
 	vdp1-sega3d.c \
 	textures.tex.c \
 	s3d/$(MODEL_OBJECT).s3d.c
-ROMDISK_SYMBOLS= root
-ROMDISK_DIRS= romdisk
 
 # Important, libsega3d must be included
 SH_LIBRARIES:= sega3d
@@ -35,7 +36,6 @@ IP_MASTER_STACK_ADDR:= 0x06004000
 IP_SLAVE_STACK_ADDR:= 0x06001E00
 IP_1ST_READ_ADDR:= 0x06004000
 
-M68K_PROGRAM:=
-M68K_OBJECTS:=
+include ../shared/assets.mk
 
 include $(YAUL_INSTALL_ROOT)/share/post.common.mk
