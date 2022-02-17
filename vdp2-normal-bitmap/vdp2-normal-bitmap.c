@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-extern uint8_t root_romdisk[];
+extern uint8_t asset_bitmap_tga[];
 
 int
 main(void)
@@ -74,28 +74,9 @@ main(void)
 
         vdp2_vram_cycp_set(&vram_cycp);
 
-        void *romdisk;
-
-        romdisk_init();
-
-        romdisk = romdisk_mount(root_romdisk);
-        assert(romdisk != NULL);
-
-        void *fh;
-        fh = romdisk_open(romdisk, "/BITMAP.TGA");
-        assert(fh != NULL);
-
-        uint8_t *tga_file;
-        tga_file = (uint8_t *)LWRAM(0x00000000);
-        assert(tga_file != NULL);
-
-        size_t len __unused;
-        len = romdisk_read(fh, tga_file, romdisk_total(fh));
-        assert(len == romdisk_total(fh));
-
         tga_t tga;
         int ret __unused;
-        ret = tga_read(&tga, tga_file);
+        ret = tga_read(&tga, asset_bitmap_tga);
         assert(ret == TGA_FILE_OK);
 
         tga_image_decode(&tga, (void *)VDP2_VRAM_ADDR(0, 0x00000));
