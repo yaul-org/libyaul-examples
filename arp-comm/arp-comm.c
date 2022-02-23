@@ -12,31 +12,48 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-static void _local_arp_cb(const arp_callback_t *);
+static const char *_function[] = {
+        "INVALID",
+        "DOWNLOAD",
+        "UPLOAD",
+        "EXECUTE"
+};
+
+static void _arp_callback(const arp_callback_t *callback);
 
 int
 main(void)
 {
-        char *arp_ver;
-        arp_ver = arp_version_get();
+        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
+        dbgio_dev_font_load();
 
-        if (*arp_ver == '\0') {
+        char arp_version[ARP_VERSION_STRING_LEN];
+
+        arp_version_get(arp_version);
+
+        if (*arp_version == '\0') {
                 dbgio_puts("No ARP cartridge detected!\n");
                 abort();
         }
 
-        dbgio_printf("ARP version \"%s\" detected!\n", arp_ver);
+        dbgio_printf("ARP version \"%s\" detected!\n", arp_version);
 
         /* Register callback */
-        arp_function_callback_set(&_local_arp_cb);
+        arp_function_callback_set(&_arp_callback);
 
-        dbgio_puts("Ready...\n");
+        uint32_t frame_count;
+        frame_count = 0;
 
         while (true) {
-                arp_function_nonblock();
+                arp_nonblock_function();
+
+                dbgio_printf("[4;1H[1JReady... %lu\n", frame_count);
 
                 dbgio_flush();
-                vdp_sync();
+                vdp2_sync();
+                vdp2_sync_wait();
+
+                frame_count++;
         }
 
         return 0;
@@ -55,15 +72,14 @@ user_init(void)
 }
 
 static void
-_local_arp_cb(const struct arp_callback *arp_cb)
+_arp_callback(const arp_callback_t *callback)
 {
-        dbgio_printf("[2;1H[1JCallback\n"
-                     "ptr: %p\n"
-                     "len: 0x%04X\n"
-                     "function: 0x%02X\n"
-                     "execute: %s[5;1H;",
-                     arp_cb->ptr,
-                     arp_cb->len,
-                     arp_cb->function,
-                     (arp_cb->exec ? "yes" : "no"));
+        dbgio_printf("[6;1H[1JCallback\n"
+                     "function: %s\n"
+                     "ptr:      0x%08X\n"
+                     "len:      0x%08X\n",
+                     _function[callback->function_type],
+                     callback->ptr,
+                     callback->len);
+        dbgio_flush();
 }
