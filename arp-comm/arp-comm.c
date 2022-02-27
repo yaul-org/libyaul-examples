@@ -74,7 +74,7 @@ user_init(void)
 static void
 _arp_callback(const arp_callback_t *callback)
 {
-        dbgio_printf("[6;1H[1JCallback\n"
+        dbgio_printf("[6;1H[2JCallback\n"
                      "function: %s\n"
                      "ptr:      0x%08X\n"
                      "len:      0x%08X\n",
