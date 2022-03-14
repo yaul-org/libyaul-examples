@@ -9,9 +9,13 @@
 #define NBG0_CPD         VDP2_VRAM_ADDR(0, 0x00000)
 #define NBG0_PND         VDP2_VRAM_ADDR(0, 0x02000)
 #define NBG0_PAL         VDP2_CRAM_MODE_1_OFFSET(1, 0, 0)
-#define NBG0_LINE_SCROLL VDP2_VRAM_ADDR(0, 0x10000)
+#define NBG0_LINE_SCROLL VDP2_VRAM_ADDR(0, 0x03000)
 
+#define LNCL_SCREEN      VDP2_VRAM_ADDR(0, 0x04000)
 #define BACK_SCREEN      VDP2_VRAM_ADDR(3, 0x1FFFE)
+
+#define SCREEN_WIDTH  320
+#define SCREEN_HEIGHT 240
 
 extern uint8_t asset_vf_cpd[];
 extern uint8_t asset_vf_cpd_end[];
@@ -19,6 +23,8 @@ extern uint8_t asset_vf_pnd[];
 extern uint8_t asset_vf_pnd_end[];
 extern uint8_t asset_vf_pal[];
 extern uint8_t asset_vf_pal_end[];
+
+static void _lncl_init(void);
 
 static void _vblank_out_handler(void *work);
 
@@ -36,7 +42,9 @@ static menu_entry_t _menu_entries[] = {
 
 static fix16_vec2_t _scroll = FIX16_VEC2_INITIALIZER(0.0f, 0.0f);
 static fix16_vec2_t _scroll_amount = FIX16_VEC2_INITIALIZER(0.5f, 0.0f);
-static fix16_t _zoom = FIX16(0.4f);
+static fix16_t _zoom = FIX16(0.2f);
+
+static uint16_t _lncl_buffer[SCREEN_HEIGHT];
 
 void
 main(void)
@@ -70,15 +78,15 @@ main(void)
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
 
-                dbgio_printf("[H[2J");
+                dbgio_printf("[H[2J[2;1H");
 
                 _menu_update(&state);
 
-                for (uint32_t i = 0; i < 240; i++) {
-                        const fix16_t value = fix16_mul(fix16_int32_from(i), FIX16(M_PI / 240.0f));
+                for (uint32_t i = 0; i < SCREEN_HEIGHT; i++) {
+                        const fix16_t value = fix16_mul(fix16_int32_from(i), FIX16(M_PI / (float)SCREEN_HEIGHT));
 
-                        _line_scroll_tbl[i].horz = _scroll.x + fix16_mul(FIX16(-120), fix16_sin(value));
-                        _line_scroll_tbl[i].vert = _scroll.y + fix16_int32_from((240 - 1) - i);
+                        _line_scroll_tbl[i].horz = _scroll.x + fix16_mul(FIX16(-160), fix16_sin(value));
+                        _line_scroll_tbl[i].vert = _scroll.y + fix16_int32_from((SCREEN_HEIGHT - 1) - i);
                         _line_scroll_tbl[i].horz_incr = _zoom + fix16_sin(value);
                 }
 
@@ -111,15 +119,10 @@ user_init(void)
                 .map_bases.plane_d = NBG0_PND
         };
 
-        vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
-            VDP2_TVMD_VERT_240);
-
-        vdp2_scrn_back_screen_color_set(BACK_SCREEN, COLOR_RGB1555(1, 5, 5, 7));
-
         vdp2_scrn_cell_format_set(&format);
 
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 3);
-        vdp2_scrn_display_set(VDP2_SCRN_NBG0, /* transparent = */ false);
+        vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
 
         vdp2_sprite_priority_set(0, 0);
         vdp2_sprite_priority_set(1, 0);
@@ -155,6 +158,13 @@ user_init(void)
         };
 
         vdp2_vram_cycp_bank_set(2, &vram_cycp_bank_b0);
+
+        _lncl_init();
+
+        vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
+            VDP2_TVMD_VERT_240);
+
+        vdp2_scrn_back_color_set(BACK_SCREEN, COLOR_RGB1555(1, 0, 0, 0));
 
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 

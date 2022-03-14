@@ -117,7 +117,7 @@ user_init(void)
 
         vdp2_scrn_cell_format_set(&format);
 
-        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
+        vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB1555(1, 0, 0, 7));
 
         /* The special priority function only toggles the LSB, so the priority
@@ -148,7 +148,7 @@ user_init(void)
             VDP2_SCRN_SF_CODE_0x0A_0x0B |
             VDP2_SCRN_SF_CODE_0x0E_0x0F);
 
-        vdp2_scrn_display_set(VDP2_SCRN_NBG0, /* transparent = */ false);
+        vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
 
         /* Each cell is 128 bytes (8x8 cell, at 2-bytes per pixel). To fill a
          * 40x30 cell background, 0x25800 bytes is needed. A single VRAM bank

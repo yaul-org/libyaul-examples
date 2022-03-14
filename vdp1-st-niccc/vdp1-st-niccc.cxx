@@ -252,11 +252,11 @@ static void _vdp2_init(void) {
     vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_B,
                               VDP2_TVMD_VERT_240);
 
-    vdp2_scrn_back_screen_color_set(BACK_SCREEN, COLOR_RGB1555(1, 7, 7, 7));
+    vdp2_scrn_back_color_set(BACK_SCREEN, COLOR_RGB1555(1, 7, 7, 7));
 
     vdp2_scrn_bitmap_format_set(&rbg0_format);
     vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);
-    vdp2_scrn_display_set(VDP2_SCRN_RBG0, /* no_trans = */ true);
+    vdp2_scrn_display_set(VDP2_SCRN_RBG0_TPDISP);
 
     (void)memcpy((void *)RBG0_ROTATION_TABLE, &rbg0_rotation_table, sizeof(rbg0_rotation_table));
 

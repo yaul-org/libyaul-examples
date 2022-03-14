@@ -71,7 +71,7 @@ main(void)
 
         vdp2_scrn_cell_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
-        vdp2_scrn_display_set(VDP2_SCRN_NBG0, /* transparent = */ false);
+        vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
 
         _copy_cpd((uint8_t *)format.cp_table);
         _copy_color_palette((color_rgb1555_t *)format.color_palette);
@@ -89,7 +89,7 @@ main(void)
 void
 user_init(void)
 {
-        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(2, 0x01FFFE),
+        vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(2, 0x01FFFE),
             COLOR_RGB1555(1, 0, 0, 7));
 
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,

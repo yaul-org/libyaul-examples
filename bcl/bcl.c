@@ -33,7 +33,7 @@ main(void)
 
         vdp2_scrn_bitmap_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
-        vdp2_scrn_display_set(VDP2_SCRN_NBG0, /* no_trans = */ false);
+        vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
 
         const vdp2_vram_cycp_t vram_cycp = {
                 .pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
@@ -78,7 +78,7 @@ main(void)
         color_rgb1555_t bs_color;
         bs_color = COLOR_RGB1555(1, 5, 5, 7);
 
-        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
+        vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             bs_color);
 
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,

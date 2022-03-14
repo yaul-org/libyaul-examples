@@ -36,7 +36,7 @@ main(void)
         vdp2_scrn_reduction_set(VDP2_SCRN_NBG0, VDP2_SCRN_REDUCTION_HALF);
         vdp2_scrn_reduction_x_set(VDP2_SCRN_NBG0, Q0_3_8(2.0f));
         vdp2_scrn_reduction_y_set(VDP2_SCRN_NBG0, Q0_3_8(1.0f / (1.0f - (240.0f / 512.0f))));
-        vdp2_scrn_display_set(VDP2_SCRN_NBG0, /* no_trans = */ false);
+        vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
 
         vdp2_vram_cycp_t vram_cycp;
 
@@ -101,6 +101,6 @@ user_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);
 
-        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
+        vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             COLOR_RGB1555(1, 0, 3, 15));
 }

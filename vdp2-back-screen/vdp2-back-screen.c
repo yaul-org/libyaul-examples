@@ -45,7 +45,7 @@ main(void)
                         buffer_count = 1;
                 }
 
-                vdp2_scrn_back_screen_buffer_set(VDP2_VRAM_ADDR(0, 0x00000), buffer,
+                vdp2_scrn_back_buffer_set(VDP2_VRAM_ADDR(0, 0x00000), buffer,
                     buffer_count);
 
                 for (uint16_t i = 0; i < buffer_count; i++) {

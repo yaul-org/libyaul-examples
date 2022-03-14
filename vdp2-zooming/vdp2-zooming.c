@@ -87,7 +87,7 @@ main(void)
 void
 user_init(void)
 {
-        vdp2_scrn_back_screen_color_set(VDP2_VRAM_ADDR(2, 0x01FFFE),
+        vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(2, 0x01FFFE),
             COLOR_RGB1555(1, 0, 0, 7));
 
         const vdp2_scrn_cell_format_t format = {
@@ -111,7 +111,7 @@ user_init(void)
 
         vdp2_scrn_cell_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 6);
-        vdp2_scrn_display_set(VDP2_SCRN_NBG1, /* transparent = */ false);
+        vdp2_scrn_display_set(VDP2_SCRN_NBG1_DISP);
 
         vdp2_vram_cycp_bank_t vram_cycp_bank[2];
 

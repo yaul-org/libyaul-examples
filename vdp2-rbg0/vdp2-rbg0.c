@@ -133,12 +133,12 @@ user_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);
 
-        vdp2_scrn_back_screen_color_set(BACK_SCREEN, COLOR_RGB1555(1, 5, 5, 7));
+        vdp2_scrn_back_color_set(BACK_SCREEN, COLOR_RGB1555(1, 5, 5, 7));
 
         vdp2_scrn_cell_format_set(&format);
 
         vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 3);
-        vdp2_scrn_display_set(VDP2_SCRN_RBG0, /* transparent = */ false);
+        vdp2_scrn_display_set(VDP2_SCRN_RBG0_DISP);
 
         vdp2_sprite_priority_set(0, 0);
         vdp2_sprite_priority_set(1, 0);
