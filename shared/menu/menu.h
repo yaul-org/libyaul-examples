@@ -23,7 +23,7 @@ typedef void (*menu_action_t)(void *, menu_entry_t *);
 typedef void (*menu_fn_t)(menu_state_t *);
 
 struct menu_entry {
-        const char *text;
+        char *text;
         menu_action_t action;
 };
 
@@ -36,6 +36,7 @@ typedef enum {
 } menu_state_flags_t;
 
 struct menu_state {
+        menu_entry_t *current_entry;
         menu_entry_t *entries;
         menu_state_flags_t flags;
         void *data;
@@ -43,7 +44,7 @@ struct menu_state {
         /* Private */
         menu_cursor_t _cursor;
         uint16_t _entries_count;
-        menu_fn_t _input_fn;  
+        menu_fn_t _input_fn;
 };
 
 void menu_init(menu_state_t *);

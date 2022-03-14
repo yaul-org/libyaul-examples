@@ -59,6 +59,8 @@ menu_update(menu_state_t *menu_state)
                 return;
         }
 
+        menu_state->current_entry = &menu_state->entries[menu_state->_cursor];
+
         _menu_render_update(menu_state);
 
         if (menu_state->_input_fn != NULL) {
