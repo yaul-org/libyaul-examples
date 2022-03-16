@@ -15,13 +15,13 @@
 #define MENU_ENTRY_COUNT (16)
 
 static void _frt_ovi_handler(void);
-static void _vblank_out_handler(void *);
+static void _vblank_out_handler(void *work);
 
-static void _menu_input(scroll_menu_state_t *);
-static void _menu_update(scroll_menu_state_t *);
-static void _menu_action(void *, menu_entry_t *);
+static void _menu_input(scroll_menu_t *menu);
+static void _menu_update(scroll_menu_t *menu);
+static void _menu_action(void *work, menu_entry_t *menu_entry);
 
-static menu_entry_t _menu_entries[MENU_ENTRY_COUNT + 1];
+static menu_entry_t _menu_entries[MENU_ENTRY_COUNT];
 
 static smpc_peripheral_digital_t _digital;
 
@@ -41,18 +41,18 @@ main(void)
         iso9660_filelist_default_init(&_filelist, filelist_entries, -1);
         iso9660_filelist_root_read(&_filelist);
 
-        scroll_menu_state_t menu_state;
+        scroll_menu_t menu;
 
-        scroll_menu_init(&menu_state);
-        scroll_menu_input_set(&menu_state, _menu_input);
-        scroll_menu_update_set(&menu_state, _menu_update);
-        scroll_menu_entries_set(&menu_state, _menu_entries);
+        scroll_menu_init(&menu);
+        scroll_menu_input_set(&menu, _menu_input);
+        scroll_menu_update_set(&menu, _menu_update);
+        scroll_menu_entries_set(&menu, _menu_entries, MENU_ENTRY_COUNT);
 
-        menu_state.view_height = MENU_ENTRY_COUNT - 1;
-        menu_state.top_index = 0;
-        menu_state.bottom_index = _filelist.entries_count;
+        menu.view_height = MENU_ENTRY_COUNT - 1;
+        menu.top_index = 0;
+        menu.bottom_index = _filelist.entries_count;
 
-        menu_state.flags = SCROLL_MENU_STATE_ENABLED | SCROLL_MENU_STATE_INPUT_ENABLED;
+        menu.flags = SCROLL_MENU_ENABLED | SCROLL_MENU_INPUT_ENABLED;
 
         while (true) {
                 smpc_peripheral_process();
@@ -60,7 +60,7 @@ main(void)
 
                 dbgio_printf("[H[2J");
 
-                scroll_menu_update(&menu_state);
+                scroll_menu_update(&menu);
 
                 dbgio_flush();
                 vdp2_sync();
@@ -100,49 +100,46 @@ _frt_ovi_handler(void)
 }
 
 static void
-_menu_input(scroll_menu_state_t *menu_state)
+_menu_input(scroll_menu_t *menu)
 {
         if ((_digital.held.button.down) != 0) {
-                scroll_menu_cursor_down(menu_state);
+                scroll_menu_cursor_down(menu);
         } else if ((_digital.held.button.up) != 0) {
-                scroll_menu_cursor_up(menu_state);
+                scroll_menu_cursor_up(menu);
         } else if ((_digital.held.button.a) != 0) {
-                scroll_menu_action_call(menu_state);
+                scroll_menu_action_call(menu);
         }
 }
 
 static void
-_menu_update(scroll_menu_state_t *menu_state)
+_menu_update(scroll_menu_t *menu)
 {
-        for (int8_t i = 0; i <= menu_state->view_height; i++) {
+        for (int8_t i = 0; i <= menu->view_height; i++) {
                 menu_entry_t * const menu_entry = &_menu_entries[i];
 
-                const uint32_t y = scroll_menu_local_cursor(menu_state) + i;
+                const uint32_t y = scroll_menu_local_cursor(menu) + i;
 
                 char * const name = _filelist.entries[y].name;
 
                 if ((name == NULL) || (*name == '\0')) {
-                        menu_entry->text = NULL;
-                        menu_entry->action = NULL;
+                        *menu_entry->label = '\0';
+                        menu_entry->action_fn = NULL;
 
                         continue;
                 }
 
-                menu_entry->text = name;
-                menu_entry->action = _menu_action;
+                strncpy(menu_entry->label, name, sizeof(menu_entry->label));
+                menu_entry->action_fn = _menu_action;
         }
-
-        _menu_entries[MENU_ENTRY_COUNT].text = NULL;
-        _menu_entries[MENU_ENTRY_COUNT].action = NULL;
 }
 
 static void
 _menu_action(void *state_ptr, menu_entry_t *menu_entry __unused)
 {
-        scroll_menu_state_t *menu_state;
-        menu_state = state_ptr;
+        scroll_menu_t *menu;
+        menu = state_ptr;
 
-        uint32_t i = scroll_menu_cursor(menu_state);
+        uint32_t i = scroll_menu_cursor(menu);
 
         iso9660_filelist_entry_t *file_entry;
         file_entry = &_filelist.entries[i];

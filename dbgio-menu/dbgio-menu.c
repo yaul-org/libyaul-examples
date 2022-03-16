@@ -14,20 +14,19 @@
 
 static void _vblank_out_handler(void *);
 
-static void _menu_input(menu_state_t *);
+static void _menu_input(menu_t *menu);
 
-static void _input_1(void *, menu_entry_t *);
-static void _input_2(void *, menu_entry_t *);
+static void _input_1(void *work, menu_entry_t *menu_entry);
+static void _input_2(void *work, menu_entry_t *menu_entry);
 
 static smpc_peripheral_digital_t _digital;
 
-static menu_entry_t _entries[] = {
-        MENU_ENTRY("Item 1", _input_1),
-        MENU_ENTRY("Item 2", _input_2),
-        MENU_ENTRY("Item 3", NULL),
-        MENU_ENTRY("Item 4", NULL),
-        MENU_ENTRY("Item 5", NULL),
-        MENU_END
+static menu_entry_t _menu_entries[] = {
+        MENU_ACTION_ENTRY("Item 1", _input_1),
+        MENU_ACTION_ENTRY("Item 2", _input_2),
+        MENU_ACTION_ENTRY("Item 3", NULL),
+        MENU_ACTION_ENTRY("Item 4", NULL),
+        MENU_ACTION_ENTRY("Item 5", NULL)
 };
 
 int
@@ -36,15 +35,15 @@ main(void)
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
-        menu_state_t state;
+        menu_t state;
 
         menu_init(&state);
-        menu_entries_set(&state, _entries);
+        menu_entries_set(&state, _menu_entries, sizeof(_menu_entries) / sizeof(*_menu_entries));
         menu_input_set(&state, _menu_input);
 
         state.data = NULL;
 
-        state.flags = MENU_STATE_ENABLED | MENU_STATE_INPUT_ENABLED;
+        state.flags = MENU_ENABLED | MENU_INPUT_ENABLED;
 
         while (true) {
                 smpc_peripheral_process();
@@ -81,14 +80,14 @@ _vblank_out_handler(void *work __unused)
 }
 
 static void
-_menu_input(menu_state_t *menu_state)
+_menu_input(menu_t *menu)
 {
         if ((_digital.held.button.down) != 0) {
-                menu_cursor_down(menu_state);
+                menu_cursor_down_move(menu);
         } else if ((_digital.held.button.up) != 0) {
-                menu_cursor_up(menu_state);
+                menu_cursor_up_move(menu);
         } else if ((_digital.held.button.a) != 0) {
-                menu_action_call(menu_state);
+                menu_action_call(menu);
         }
 }
 

@@ -7,11 +7,11 @@
 #include "menu.h"
 
 #define NBG0_CPD         VDP2_VRAM_ADDR(0, 0x00000)
-#define NBG0_PND         VDP2_VRAM_ADDR(0, 0x02000)
+#define NBG0_PND         VDP2_VRAM_ADDR(0, 0x13000)
 #define NBG0_PAL         VDP2_CRAM_MODE_1_OFFSET(1, 0, 0)
-#define NBG0_LINE_SCROLL VDP2_VRAM_ADDR(0, 0x03000)
+#define NBG0_LINE_SCROLL VDP2_VRAM_ADDR(0, 0x14000)
 
-#define LNCL_SCREEN      VDP2_VRAM_ADDR(0, 0x04000)
+#define LNCL_SCREEN      VDP2_VRAM_ADDR(0, 0x15000)
 #define BACK_SCREEN      VDP2_VRAM_ADDR(3, 0x1FFFE)
 
 #define SCREEN_WIDTH  320
@@ -30,49 +30,45 @@ static void _lncl_init(void);
 
 static void _vblank_out_handler(void *work);
 
-static void _menu_input(menu_state_t *menu_state);
-static void _menu_update(menu_state_t *menu_state);
+static void _menu_input(menu_t *menu);
 
-typedef struct menu_input_entry menu_input_entry_t;
+static void _menu_zoom_cycle(void *work, menu_entry_t *menu_entry, int32_t direction);
+static void _menu_zoom_scale_cycle(void *work, menu_entry_t *menu_entry, int32_t direction);
+static void _menu_scroll_x_cycle(void *work, menu_entry_t *menu_entry, int32_t direction);
+static void _menu_scroll_y_cycle(void *work, menu_entry_t *menu_entry, int32_t direction);
 
-struct menu_input_entry {
-        char text[32];
-        const char *text_format;
-        void (*update)(menu_input_entry_t *input);
-        void (*input)(menu_entry_t *menu_entry, int32_t direction);
-};
+static void _menu_zoom_update(void *work, menu_entry_t *menu_entry);
+static void _menu_zoom_scale_update(void *work, menu_entry_t *menu_entry);
+static void _menu_scroll_x_update(void *work, menu_entry_t *menu_entry);
+static void _menu_scroll_y_update(void *work, menu_entry_t *menu_entry);
 
-static void _menu_zoom_input(menu_entry_t *menu_entry, int32_t direction);
-static void _menu_zoom_scale_input(menu_entry_t *menu_entry, int32_t direction);
-static void _menu_scroll_x_input(menu_entry_t *menu_entry, int32_t direction);
-static void _menu_scroll_y_input(menu_entry_t *menu_entry, int32_t direction);
-
-static void _menu_zoom_update(menu_input_entry_t *input);
-static void _menu_zoom_scale_update(menu_input_entry_t *input);
-static void _menu_scroll_x_update(menu_input_entry_t *input);
-static void _menu_scroll_y_update(menu_input_entry_t *input);
+static void _menu_reset(void *work, menu_entry_t *menu_entry);
 
 static smpc_peripheral_digital_t _digital;
 
-static menu_input_entry_t _menu_input_entries[] = {
-        { "Zoom",       "Zoom       %f", _menu_zoom_update,       _menu_zoom_input },
-        { "Zoom Scale", "Zoom Scale %f", _menu_zoom_scale_update, _menu_zoom_scale_input },
-        { "Scroll X",   "Scroll X   %f", _menu_scroll_x_update,   _menu_scroll_x_input },
-        { "Scroll Y",   "Scroll Y   %f", _menu_scroll_y_update,   _menu_scroll_y_input },
-};
-
 static menu_entry_t _menu_entries[] = {
-        MENU_ENTRY(_menu_input_entries[0].text, NULL),
-        MENU_ENTRY(_menu_input_entries[1].text, NULL),
-        MENU_ENTRY(_menu_input_entries[2].text, NULL),
-        MENU_ENTRY(_menu_input_entries[3].text, NULL),
-        MENU_END
+        MENU_CYCLE_ENTRY( "Zoom       %f", _menu_zoom_cycle,       _menu_zoom_update),
+        MENU_CYCLE_ENTRY( "Zoom Scale %f", _menu_zoom_scale_cycle, _menu_zoom_scale_update),
+        MENU_CYCLE_ENTRY( "Scroll X   %f", _menu_scroll_x_cycle,   _menu_scroll_x_update),
+        MENU_CYCLE_ENTRY( "Scroll Y   %f", _menu_scroll_y_cycle,   _menu_scroll_y_update),
+        MENU_ACTION_ENTRY(" Reset",            _menu_reset)
 };
 
-static fix16_vec2_t _scroll = FIX16_VEC2_INITIALIZER(0.0f, 0.0f);
-static fix16_vec2_t _scroll_amount = FIX16_VEC2_INITIALIZER(0.5f, 0.0f);
-static fix16_t _zoom = FIX16(0.2f);
-static fix16_t _zoom_scale = FIX16(0.333f);
+typedef struct values {
+        fix16_vec2_t scroll;
+        fix16_vec2_t scroll_amount;
+        fix16_t zoom;
+        fix16_t zoom_scale;
+} values_t;
+
+static const values_t _default_values = {
+        .scroll        = FIX16_VEC2_INITIALIZER(0.0f, 0.0f),
+        .scroll_amount = FIX16_VEC2_INITIALIZER(0.5f, 0.0f),
+        .zoom          = FIX16(0.7f),
+        .zoom_scale    = FIX16(0.3f)
+};
+
+static values_t _values;
 
 static uint16_t _lncl_buffer[SCREEN_HEIGHT];
 
@@ -92,14 +88,16 @@ main(void)
         /* XXX: Hack: Modify the font palette directly */
         MEMORY_WRITE(16, VDP2_CRAM_ADDR(0x0007), 0xFFFF);
 
-        menu_state_t state;
+        menu_t state;
 
         menu_init(&state);
-        menu_entries_set(&state, _menu_entries);
+        menu_entries_set(&state, _menu_entries, sizeof(_menu_entries) / sizeof(*_menu_entries));
         menu_input_set(&state, _menu_input);
 
         state.data = NULL;
-        state.flags = MENU_STATE_ENABLED | MENU_STATE_INPUT_ENABLED;
+        state.flags = MENU_ENABLED | MENU_INPUT_ENABLED;
+
+        _values = _default_values;
 
         volatile vdp2_scrn_ls_hvz_t *_line_scroll_tbl =
             (volatile vdp2_scrn_ls_hvz_t *)NBG0_LINE_SCROLL;
@@ -110,17 +108,17 @@ main(void)
 
                 dbgio_printf("[H[2J[2;1H");
 
-                _menu_update(&state);
+                menu_update(&state);
 
                 for (uint32_t i = 0; i < SCREEN_HEIGHT; i++) {
                         const fix16_t value = fix16_mul(fix16_int32_from(i), FIX16(M_PI / (float)SCREEN_HEIGHT));
 
-                        const fix16_t shift = fix16_mul(FIX16(-SCREEN_WIDTH * 0.5f), _zoom_scale);
+                        const fix16_t shift = fix16_mul(FIX16(-SCREEN_WIDTH * 0.5f), _values.zoom_scale);
                         const fix16_t sin = fix16_sin(value);
 
-                        _line_scroll_tbl[i].horz = _scroll.x + fix16_mul(shift, sin);
-                        _line_scroll_tbl[i].vert = _scroll.y + fix16_int32_from((SCREEN_HEIGHT - 1) - i);
-                        _line_scroll_tbl[i].horz_incr = _zoom + fix16_mul(_zoom_scale, sin);
+                        _line_scroll_tbl[i].horz = _values.scroll.x + fix16_mul(shift, sin);
+                        _line_scroll_tbl[i].vert = _values.scroll.y + fix16_int32_from((SCREEN_HEIGHT - 1) - i);
+                        _line_scroll_tbl[i].horz_incr = _values.zoom + fix16_mul(_values.zoom_scale, sin);
                 }
 
                 vdp2_scrn_ls_set(&ls_format);
@@ -129,8 +127,8 @@ main(void)
                 vdp2_sync();
                 vdp2_sync_wait();
 
-                _scroll.x += _scroll_amount.x;
-                _scroll.y += _scroll_amount.y;
+                _values.scroll.x += _values.scroll_amount.x;
+                _values.scroll.y += _values.scroll_amount.y;
         }
 }
 
@@ -155,7 +153,7 @@ user_init(void)
         vdp2_scrn_cell_format_set(&format);
 
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 6);
-        vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
+        vdp2_scrn_display_set(VDP2_SCRN_NBG0_TPDISP);
 
         vdp2_sprite_priority_set(0, 0);
         vdp2_sprite_priority_set(1, 0);
@@ -233,79 +231,71 @@ _vblank_out_handler(void *work __unused)
 }
 
 static void
-_menu_zoom_update(menu_input_entry_t *input)
+_menu_reset(void *work __unused, menu_entry_t *menu_entry __unused)
 {
-        (void)sprintf(input->text, input->text_format, _zoom);
+        _values = _default_values;
 }
 
 static void
-_menu_zoom_input(menu_entry_t *menu_entry __unused, int32_t direction)
+_menu_zoom_update(void *work __unused, menu_entry_t *menu_entry)
 {
-        _zoom += fix16_int16_mul(INCR_VALUE, direction);
+        (void)sprintf(menu_entry->label, menu_entry->label_format, _values.zoom);
 }
 
 static void
-_menu_zoom_scale_update(menu_input_entry_t *input)
+_menu_zoom_cycle(void *work __unused, menu_entry_t *menu_entry __unused, int32_t direction)
 {
-        (void)sprintf(input->text, input->text_format, _zoom_scale);
+        _values.zoom += fix16_int16_mul(INCR_VALUE, direction);
 }
 
 static void
-_menu_zoom_scale_input(menu_entry_t *menu_entry __unused, int32_t direction)
+_menu_zoom_scale_update(void *work __unused, menu_entry_t *menu_entry)
 {
-        _zoom_scale += fix16_int16_mul(INCR_VALUE, direction);
+        (void)sprintf(menu_entry->label, menu_entry->label_format, _values.zoom_scale);
 }
 
 static void
-_menu_scroll_x_update(menu_input_entry_t *input)
+_menu_zoom_scale_cycle(void *work __unused, menu_entry_t *menu_entry __unused, int32_t direction)
 {
-        (void)sprintf(input->text, input->text_format, _scroll_amount.x);
+        _values.zoom_scale += fix16_int16_mul(INCR_VALUE, direction);
 }
 
 static void
-_menu_scroll_x_input(menu_entry_t *menu_entry __unused, int32_t direction)
+_menu_scroll_x_update(void *work __unused, menu_entry_t *menu_entry)
 {
-        _scroll_amount.x += fix16_int16_mul(INCR_VALUE, direction);
+        (void)sprintf(menu_entry->label, menu_entry->label_format, _values.scroll_amount.x);
 }
 
 static void
-_menu_scroll_y_update(menu_input_entry_t *input)
+_menu_scroll_x_cycle(void *work __unused, menu_entry_t *menu_entry __unused, int32_t direction)
 {
-        (void)sprintf(input->text, input->text_format, _scroll_amount.y);
+        _values.scroll_amount.x += fix16_int16_mul(INCR_VALUE, direction);
 }
 
 static void
-_menu_scroll_y_input(menu_entry_t *menu_entry __unused, int32_t direction)
+_menu_scroll_y_update(void *work __unused, menu_entry_t *menu_entry)
 {
-        _scroll_amount.y += fix16_int16_mul(INCR_VALUE, direction);
-}
-
-void
-_menu_cycle_input(menu_state_t *menu_state, int32_t direction)
-{
-        _menu_input_entries[menu_state->_cursor].input(menu_state->current_entry, direction);
+        (void)sprintf(menu_entry->label, menu_entry->label_format, _values.scroll_amount.y);
 }
 
 static void
-_menu_input(menu_state_t *menu_state)
+_menu_scroll_y_cycle(void *work __unused, menu_entry_t *menu_entry __unused, int32_t direction)
 {
-        if ((_digital.held.button.down) != 0) {
-                menu_cursor_down(menu_state);
-        } else if ((_digital.held.button.up) != 0) {
-                menu_cursor_up(menu_state);
-        } else if ((_digital.held.button.left) != 0) {
-                _menu_cycle_input(menu_state, -1);
-        } else if ((_digital.held.button.right) != 0) {
-                _menu_cycle_input(menu_state,  1);
+        _values.scroll_amount.y += fix16_int16_mul(INCR_VALUE, direction);
+}
+
+static void
+_menu_input(menu_t *menu)
+{
+        if (_digital.held.button.down) {
+                menu_cursor_down_move(menu);
+        } else if (_digital.held.button.up) {
+                menu_cursor_up_move(menu);
+        } else if (_digital.held.button.left) {
+                menu_cycle_call(menu, -1);
+        } else if (_digital.held.button.right) {
+                menu_cycle_call(menu,  1);
+        } else if (_digital.held.button.a || _digital.held.button.c) {
+                menu_action_call(menu);
         }
-}
-
-static void
-_menu_update(menu_state_t *menu_state)
-{
-        for (uint32_t i = 0; i < 4; i++) {
-                _menu_input_entries[i].update(&_menu_input_entries[i]);
-        }
-
-        menu_update(menu_state);
 }

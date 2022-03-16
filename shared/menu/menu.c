@@ -12,123 +12,145 @@
 
 #include "menu.h"
 
-static void _menu_render_update(menu_state_t *);
+static void _menu_render_update(menu_t *);
 
 static inline void __always_inline
-_menu_cursor_clamp(menu_state_t *menu_state, int8_t dir)
+_menu_cursor_clamp(menu_t *menu, int8_t direction)
 {
-        int8_t cursor = menu_state->_cursor + dir;
+        int8_t cursor = menu->_cursor + direction;
 
         if (cursor < 0) {
                 cursor = 0;
-        } else if (cursor >= menu_state->_entries_count) {
-                cursor = menu_state->_entries_count - 1;
+        } else if (cursor >= menu->_entries_count) {
+                cursor = menu->_entries_count - 1;
         }
 
-        menu_state->_cursor = cursor;
+        menu->_cursor = cursor;
 }
 
 void
-menu_init(menu_state_t *menu_state)
+menu_init(menu_t *menu)
 {
-        menu_state->entries = NULL;
-        menu_state->flags = MENU_STATE_NONE;
-        menu_state->data = NULL;
+        menu->entries = NULL;
+        menu->flags = MENU_NONE;
+        menu->data = NULL;
 
-        menu_state->_cursor = 0;
-        menu_state->_entries_count = 0;
-        menu_state->_input_fn = NULL;
+        menu->_cursor = 0;
+        menu->_entries_count = 0;
+        menu->_input_fn = NULL;
 }
 
 void
-menu_input_set(menu_state_t *menu_state, menu_fn_t input_fn)
+menu_input_set(menu_t *menu, menu_input_fn_t input_fn)
 {
-        menu_state->_input_fn = input_fn;
+        menu->_input_fn = input_fn;
 }
 
 void
-menu_entries_set(menu_state_t *menu_state, menu_entry_t *entries)
+menu_entries_set(menu_t *menu, menu_entry_t *entries, uint32_t count)
 {
-        menu_state->entries = entries;
-}
+        menu->entries = entries;
 
-void
-menu_update(menu_state_t *menu_state)
-{
-        if ((menu_state->flags & MENU_STATE_ENABLED) != MENU_STATE_ENABLED) {
+        if (menu->entries == NULL) {
                 return;
         }
 
-        menu_state->current_entry = &menu_state->entries[menu_state->_cursor];
+        menu->_entries_count = count;
+}
 
-        _menu_render_update(menu_state);
+void
+menu_update(menu_t *menu)
+{
+        if ((menu->flags & MENU_ENABLED) != MENU_ENABLED) {
+                return;
+        }
 
-        if (menu_state->_input_fn != NULL) {
-                menu_state->_input_fn(menu_state);
+        menu->current_entry = &menu->entries[menu->_cursor];
+
+        for (menu_cursor_t cursor = 0; cursor < menu->_entries_count; cursor++) {
+                menu_entry_t * const menu_entry = &menu->entries[cursor];
+
+                if (menu_entry->update_fn != NULL) {
+                        menu_entry->update_fn(menu, menu_entry);
+                }
+        }
+
+        _menu_render_update(menu);
+
+        if (menu->_input_fn != NULL) {
+                menu->_input_fn(menu);
         }
 }
 
 menu_cursor_t
-menu_cursor(menu_state_t *menu_state)
+menu_cursor(menu_t *menu)
 {
-        return menu_state->_cursor;
+        return menu->_cursor;
 }
 
 void
-menu_cursor_up(menu_state_t *menu_state)
+menu_cursor_up_move(menu_t *menu)
 {
-        if ((menu_state->flags & MENU_STATE_ENABLED) != MENU_STATE_ENABLED) {
+        if ((menu->flags & MENU_ENABLED) != MENU_ENABLED) {
                 return;
         }
 
-        _menu_cursor_clamp(menu_state, -1);
+        _menu_cursor_clamp(menu, -1);
 }
 
 void
-menu_cursor_down(menu_state_t *menu_state)
+menu_cursor_down_move(menu_t *menu)
 {
-        if ((menu_state->flags & MENU_STATE_ENABLED) != MENU_STATE_ENABLED) {
+        if ((menu->flags & MENU_ENABLED) != MENU_ENABLED) {
                 return;
         }
 
-        _menu_cursor_clamp(menu_state, 1);
+        _menu_cursor_clamp(menu, 1);
 }
 
 void
-menu_action_call(menu_state_t *menu_state)
+menu_cycle_call(menu_t *menu, int32_t direction)
 {
-        if ((menu_state->flags & MENU_STATE_ENABLED) != MENU_STATE_ENABLED) {
+        if ((menu->flags & MENU_ENABLED) != MENU_ENABLED) {
                 return;
         }
 
-        menu_entry_t *menu_entry = &menu_state->entries[menu_state->_cursor];
-        menu_action_t action = menu_entry->action;
+        menu_entry_t * const menu_entry = &menu->entries[menu->_cursor];
+        menu_cycle_t cycle = menu_entry->cycle_fn;
+
+        if (cycle != NULL) {
+                cycle(menu, menu_entry, (direction < 0) ? -1 : 1);
+        }
+}
+
+void
+menu_action_call(menu_t *menu)
+{
+        if ((menu->flags & MENU_ENABLED) != MENU_ENABLED) {
+                return;
+        }
+
+        menu_entry_t * const menu_entry = &menu->entries[menu->_cursor];
+        menu_action_t action = menu_entry->action_fn;
 
         if (action != NULL) {
-                action(menu_state, menu_entry);
+                action(menu, menu_entry);
         }
 }
 
 static void
-_menu_render_update(menu_state_t *menu_state)
+_menu_render_update(menu_t *menu)
 {
-        static char cursor_buffer[2] = {
-                '',
-                '\0'
-        };
+        char cursor_buffer[2];
 
-        const menu_entry_t *entry_ptr = menu_state->entries;
-
-        menu_state->_entries_count = 0;
-
-        for (menu_cursor_t cursor = 0; entry_ptr->text != NULL; cursor++, entry_ptr++) {
-                cursor_buffer[0] = (menu_state->_cursor == cursor) ? '' : ' ';
+        for (menu_cursor_t cursor = 0; cursor < menu->_entries_count; cursor++) {
+                *cursor_buffer = (menu->_cursor == cursor) ? '' : ' ';
 
                 dbgio_puts(cursor_buffer);
 
-                dbgio_puts(entry_ptr->text);
-                dbgio_puts("\n");
+                const menu_entry_t * const menu_entry = &menu->entries[cursor];
 
-                menu_state->_entries_count++;
+                dbgio_puts(menu_entry->label);
+                dbgio_puts("\n");
         }
 }
