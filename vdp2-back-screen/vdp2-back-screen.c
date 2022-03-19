@@ -47,6 +47,7 @@ main(void)
 
                 vdp2_scrn_back_buffer_set(VDP2_VRAM_ADDR(0, 0x00000), buffer,
                     buffer_count);
+                vdp2_scrn_back_sync();
 
                 for (uint16_t i = 0; i < buffer_count; i++) {
                         buffer[i] = COLOR_RGB1555(1, i + count, i + count, i + count);

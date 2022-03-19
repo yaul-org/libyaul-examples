@@ -97,20 +97,6 @@ main(void)
                 .delta_kax = 0
         };
 
-        scu_dma_handle_t dma_handle;
-
-        const scu_dma_level_cfg_t scu_dma_level_cfg = {
-                .xfer.direct.len = sizeof(vdp2_scrn_rotation_table_t),
-                .xfer.direct.dst = RBG0_ROTATION_TABLE,
-                .xfer.direct.src = (uint32_t)&rotation_table,
-                .space           = SCU_DMA_SPACE_BUS_B,
-                .mode            = SCU_DMA_MODE_DIRECT,
-                .stride          = SCU_DMA_STRIDE_2_BYTES,
-                .update          = SCU_DMA_UPDATE_NONE
-        };
-
-        scu_dma_config_buffer(&dma_handle, &scu_dma_level_cfg);
-
         while (true) {
                 /* Scale */
                 rotation_table.matrix.raw[0][0] = 0x00019980; /* int(1.6*1024.0)<<6 */
@@ -120,9 +106,9 @@ main(void)
                 rotation_table.mx += FIX16(1.0f);
                 rotation_table.my += FIX16(1.0f);
 
-                int8_t ret __unused;
-                ret = dma_queue_enqueue(&dma_handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
-                assert(ret == 0);
+                vdp_dma_enqueue((void *)RBG0_ROTATION_TABLE,
+                    &rotation_table,
+                    sizeof(vdp2_scrn_rotation_table_t));
 
                 vdp2_sync();
                 vdp2_sync_wait();

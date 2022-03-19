@@ -98,8 +98,6 @@ static uint8_t _intermediate_buffer[512 * 256 * 2] __aligned(4);
 
 static uint32_t _tga_file_decode(const void *asset_tga, void *buffer);
 
-static void _dma_queue_enqueue(void *, void *, const uint32_t);
-
 int
 main(void)
 {
@@ -136,7 +134,7 @@ main(void)
 
                 vdp2_tvmd_vblank_in_next_wait(15);
 
-                _dma_queue_enqueue(vram, _intermediate_buffer, intermediate_size);
+                vdp_dma_enqueue(vram, _intermediate_buffer, intermediate_size);
 
                 vdp2_sync();
                 vdp2_sync_wait();
@@ -188,25 +186,4 @@ _tga_file_decode(const void *asset_tga, void *buffer)
          *      returned, but because we're dealing with 16-BPP TGA images, it's
          *      2 bytes per pixel */
         return (2 * tga_size);
-}
-
-static void
-_dma_queue_enqueue(void *dst, void *src, const uint32_t size)
-{
-        static struct scu_dma_level_cfg dma_cfg = {
-                .mode   = SCU_DMA_MODE_DIRECT,
-                .space  = SCU_DMA_SPACE_BUS_B,
-                .stride = SCU_DMA_STRIDE_2_BYTES,
-                .update = SCU_DMA_UPDATE_NONE
-        };
-
-        dma_cfg.xfer.direct.len = size;
-        dma_cfg.xfer.direct.dst = (uint32_t)dst;
-        dma_cfg.xfer.direct.src = CPU_CACHE_THROUGH | (uint32_t)src;
-
-        scu_dma_handle_t dma_handle;
-
-        scu_dma_config_buffer(&dma_handle, &dma_cfg);
-
-        dma_queue_enqueue(&dma_handle, DMA_QUEUE_TAG_VBLANK_IN, NULL, NULL);
 }
