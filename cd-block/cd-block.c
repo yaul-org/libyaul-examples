@@ -25,7 +25,7 @@ static menu_entry_t _menu_entries[MENU_ENTRY_COUNT];
 
 static smpc_peripheral_digital_t _digital;
 
-static iso9660_filelist_t _filelist;
+static cdfs_filelist_t _filelist;
 
 static uint16_t _frt_overflow_count = 0;
 
@@ -34,12 +34,12 @@ main(void)
 {
         /* Load the maximum number. We have to free the allocated filelist
          * entries, but since we never exit, we don't have to */
-        iso9660_filelist_entry_t * const filelist_entries =
-            iso9660_entries_alloc(-1);
+        cdfs_filelist_entry_t * const filelist_entries =
+            cdfs_entries_alloc(-1);
         assert(filelist_entries != NULL);
 
-        iso9660_filelist_default_init(&_filelist, filelist_entries, -1);
-        iso9660_filelist_root_read(&_filelist);
+        cdfs_filelist_default_init(&_filelist, filelist_entries, -1);
+        cdfs_filelist_root_read(&_filelist);
 
         scroll_menu_t menu;
 
@@ -141,7 +141,7 @@ _menu_action(void *state_ptr, menu_entry_t *menu_entry __unused)
 
         uint32_t i = scroll_menu_cursor(menu);
 
-        iso9660_filelist_entry_t *file_entry;
+        cdfs_filelist_entry_t *file_entry;
         file_entry = &_filelist.entries[i];
 
         dbgio_printf("\n\nLoading %s, FAD: %li, %i sectors...\n",

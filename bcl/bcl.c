@@ -13,8 +13,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static iso9660_filelist_t _filelist;
-static iso9660_filelist_entry_t _filelist_entries[ISO9660_FILELIST_ENTRIES_COUNT];
+static cdfs_filelist_t _filelist;
+static cdfs_filelist_entry_t _filelist_entries[CDFS_FILELIST_ENTRIES_COUNT];
 
 int
 main(void)
@@ -91,17 +91,17 @@ main(void)
 
         /* Load the maximum number. We have to free the allocated filelist
          * entries, but since we never exit, we don't have to */
-        iso9660_filelist_entry_t * const filelist_entries =
-            iso9660_entries_alloc(-1);
+        cdfs_filelist_entry_t * const filelist_entries =
+            cdfs_entries_alloc(-1);
         assert(filelist_entries != NULL);
 
-        iso9660_filelist_default_init(&_filelist, filelist_entries, -1);
+        cdfs_filelist_default_init(&_filelist, filelist_entries, -1);
 
         uint32_t i;
         i = 0;
 
         while (true) {
-                iso9660_filelist_entry_t *file_entry;
+                cdfs_filelist_entry_t *file_entry;
 
                 for (; ; i++) {
                         if (i >= _filelist.entries_count) {
@@ -110,7 +110,7 @@ main(void)
 
                         file_entry = &_filelist.entries[i];
 
-                        if (file_entry->type == ISO9660_ENTRY_TYPE_FILE) {
+                        if (file_entry->type == CDFS_ENTRY_TYPE_FILE) {
                                 if ((strchr(file_entry->name, 'Z')) != NULL) {
                                         i++;
                                         break;
