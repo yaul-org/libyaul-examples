@@ -4,24 +4,12 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
-# plane.s3d.o
-# cube.s3d.o
-# sms.s3d.o
-# quake.s3d.o
-# torus.s3d.o
-# quake_split.s3d.o
-# sonic.s3d.o
-
 # Each asset follows the format: <path>;<symbol>. Duplicates are removed
-BUILTIN_ASSETS=
-
-MODEL_OBJECT?= quake_split
+BUILTIN_ASSETS+= S3D/out.s3d;asset_s3d
 
 SH_PROGRAM:= vdp1-sega3d
 SH_SRCS:= \
-	vdp1-sega3d.c \
-	textures.tex.c \
-	s3d/$(MODEL_OBJECT).s3d.c
+	vdp1-sega3d.c
 
 # Important, libsega3d must be included
 SH_LIBRARIES:= sega3d
