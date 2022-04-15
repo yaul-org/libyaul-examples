@@ -27,11 +27,9 @@ main(void)
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
-        char arp_version[ARP_VERSION_STRING_LEN];
+        const char * const arp_version = arp_version_get();
 
-        arp_version_get(arp_version);
-
-        if (*arp_version == '\0') {
+        if (arp_version == NULL) {
                 dbgio_puts("No ARP cartridge detected!\n");
                 abort();
         }
@@ -45,7 +43,7 @@ main(void)
         frame_count = 0;
 
         while (true) {
-                arp_nonblock_function();
+                arp_function_nonblock();
 
                 dbgio_printf("[4;1H[1JReady... %lu\n", frame_count);
 
