@@ -5,7 +5,7 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
 # Each asset follows the format: <path>;<symbol>. Duplicates are removed
-BUILTIN_ASSETS+= S3D/out.s3d;asset_s3d
+BUILTIN_ASSETS+= assets/test.s3d;asset_s3d
 
 SH_PROGRAM:= vdp1-sega3d
 SH_SRCS:= \
