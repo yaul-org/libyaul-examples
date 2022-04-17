@@ -14,9 +14,9 @@ EXAMPLES:= \
 	scu-dsp \
 	vdp1-balls \
 	vdp1-drawing \
+	vdp1-g3d \
 	vdp1-interlace \
 	vdp1-mic3d \
-	vdp1-sega3d \
 	vdp1-software-blending \
 	vdp1-st-niccc \
 	vdp1-uv-coords \
