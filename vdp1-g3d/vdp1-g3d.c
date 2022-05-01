@@ -6,7 +6,7 @@
  */
 
 #include <yaul.h>
-#include <sega3d.h>
+#include <g3d.h>
 
 #include <assert.h>
 #include <stdlib.h>
@@ -28,10 +28,11 @@
 #define ORDER_USER_CLIP_INDEX          (1)
 #define ORDER_LOCAL_COORDS_INDEX       (2)
 #define ORDER_ERASE_INDEX              (3)
-#define ORDER_SEGA3D_INDEX             (4)
+#define ORDER_G3D_INDEX                (4)
 #define ORDER_BASE_COUNT               (5)
 
-extern uint8_t asset_s3d[];
+extern uint8_t asset_test_s3d[];
+extern uint8_t asset_rooms_s3d[];
 
 static void _vblank_in_handler(void *);
 static void _vblank_out_handler(void *);
@@ -65,29 +66,29 @@ main(void)
 {
         _vdp1_init();
 
-        sega3d_init();
-        sega3d_display_level_set(3);
-        sega3d_tlist_set(_textures, 1024);
-        sega3d_plist_set(_palettes, 512);
+        g3d_init();
+        g3d_display_level_set(3);
+        g3d_tlist_set(_textures, 1024);
+        g3d_plist_set(_palettes, 512);
 
-        sega3d_s3d_t * const s3d = (sega3d_s3d_t *)asset_s3d;
+        g3d_s3d_t * const s3d = (g3d_s3d_t *)asset_rooms_s3d;
 
-        sega3d_s3d_object_t * const s3d_objects =
-            sega3d_s3d_objects_get(s3d);
+        g3d_s3d_object_t * const s3d_objects =
+            g3d_s3d_objects_get(s3d);
 
-        sega3d_s3d_memory_usage_t memory_usage = {
+        g3d_s3d_memory_usage_t memory_usage = {
                 .texture       = _vram_partitions.texture_base,
                 .clut          = _vram_partitions.clut_base,
                 .gouraud_table = _vram_partitions.gouraud_base,
                 .cram          = (vdp2_cram_t *)VDP2_CRAM(0x0200)
         };
 
-        sega3d_s3d_patch(s3d, &memory_usage);
+        g3d_s3d_patch(s3d, &memory_usage);
 
         /* Copy over gouraud tables */
         if (s3d_objects[0].gouraud_table_count > 0) {
                 vdp1_gouraud_table_t * const gouraud_table_base =
-                    sega3d_s3d_object_gtb_base_get(&s3d_objects[0]);
+                    g3d_s3d_object_gtb_base_get(&s3d_objects[0]);
 
                 scu_dma_transfer(2,
                     gouraud_table_base,
@@ -107,22 +108,24 @@ main(void)
 
         dbgio_printf("Texture VRAM: 0x%p\n", _vram_partitions.texture_base);
 
+        /* _sync(); */
+
         for (uint32_t i = 0; i < s3d_objects[0].picture_count; i++) {
                 PICTURE * const picture = s3d_objects[0].pictures;
-                sega3d_s3d_texture_t * const texture = picture->pcsrc;
+                g3d_s3d_texture_t * const texture = picture->pcsrc;
 
                 TEXTURE * const texturesgl = &s3d->textures[picture->texno];
 
                 dbgio_printf("texture [%04i]: 0x%p/0x%04X -> (%ix%i) 0x%08X\n",
                     picture->texno,
-                    (uintptr_t)sega3d_s3d_texture_base_get(texture),
-                    sega3d_s3d_texture_size_get(texture),
+                    (uintptr_t)g3d_s3d_texture_base_get(texture),
+                    g3d_s3d_texture_size_get(texture),
                     texturesgl->Hsize,
                     texturesgl->Vsize,
                     VDP1_VRAM(texturesgl->CGadr << 3));
         }
 
-        sega3d_s3d_texture_t * texture;
+        g3d_s3d_texture_t * texture;
         texture = s3d->texture_datas;
 
         for (uint32_t tex_no = 0; ; tex_no++) {
@@ -131,12 +134,12 @@ main(void)
                 dbgio_printf("Transfer TEXNO%i -> 0x%08X (0x%04X)\n",
                     tex_no,
                     (void *)VDP1_VRAM(texturesgl->CGadr << 3),
-                    sega3d_s3d_texture_size_get(texture));
+                    g3d_s3d_texture_size_get(texture));
 
                 scu_dma_transfer(0,
                     (void *)VDP1_VRAM(texturesgl->CGadr << 3),
-                    sega3d_s3d_texture_base_get(texture),
-                    sega3d_s3d_texture_size_get(texture));
+                    g3d_s3d_texture_base_get(texture),
+                    g3d_s3d_texture_size_get(texture));
                 scu_dma_transfer_wait(0);
 
                 if (texture->eol) {
@@ -149,7 +152,7 @@ main(void)
         (void)memcpy(_textures, s3d->textures, min(s3d->textures_count, 1024UL) * sizeof(TEXTURE));
         (void)memcpy(_palettes, s3d->palettes, min(s3d->palettes_count, 512UL) * sizeof(PALETTE));
 
-        sega3d_s3d_palette_t *palette;
+        g3d_s3d_palette_t *palette;
         palette = s3d->palette_datas;
 
         for (uint32_t pal_no = 0; ; pal_no++) {
@@ -166,13 +169,13 @@ main(void)
                 dbgio_printf("Transfer PALNO%i -> 0x%08X (0x%04X) (0x%04X)\n",
                     pal_no,
                     addr,
-                    sega3d_s3d_palette_size_get(palette),
+                    g3d_s3d_palette_size_get(palette),
                     *(uint16_t *)palettesgl);
 
                 scu_dma_transfer(0,
                     addr,
-                    sega3d_s3d_palette_base_get(palette),
-                    sega3d_s3d_palette_size_get(palette));
+                    g3d_s3d_palette_base_get(palette),
+                    g3d_s3d_palette_size_get(palette));
                 scu_dma_transfer_wait(0);
 
                 if (palette->eol) {
@@ -184,15 +187,16 @@ main(void)
 
         /* _sync(); */
 
-        /* sega3d_cull_aabb_t aabb; */
+        /* g3d_cull_aabb_t aabb; */
 
-        XPDATA xpdatas[1];
+        XPDATA xpdatas[s3d->object_count];
 
-        memcpy(xpdatas, &s3d_objects[0].xpdata, sizeof(XPDATA));
-        /* xpdatas[0] = s3d_objects[0].xpdata; */
+        for (uint32_t i = 0; i < s3d->object_count; i++) {
+                memcpy(&xpdatas[i], &s3d_objects[i].xpdata, sizeof(XPDATA));
+        }
 
-        sega3d_object_t object;
-        object.flags = SEGA3D_OBJECT_FLAGS_CULL_SCREEN | SEGA3D_OBJECT_FLAGS_FOG_EXCLUDE;
+        g3d_object_t object;
+        object.flags = G3D_OBJECT_FLAGS_CULL_SCREEN;
         object.xpdatas = xpdatas;
         object.xpdata_count = s3d->object_count;
         object.cull_shape = NULL;
@@ -203,7 +207,7 @@ main(void)
         rot[Y] = DEGtoANG(0.0f);
         rot[Z] = DEGtoANG(0.0f);
 
-        sega3d_results_t results;
+        g3d_results_t results;
 
         POINT camera_pos;
         VECTOR rot_x;
@@ -212,7 +216,7 @@ main(void)
 
         camera_pos[X] = toFIXED(0.0f);
         camera_pos[Y] = toFIXED(0.0f);
-        camera_pos[Z] = toFIXED(-100.0f);
+        camera_pos[Z] = toFIXED(-50.0f);
 
         rot_x[X] = rot_x[Y] = rot_x[Z] = toFIXED(0.0f);
         rot_y[X] = rot_y[Y] = rot_y[Z] = toFIXED(0.0f);
@@ -228,23 +232,23 @@ main(void)
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
 
-                sega3d_start(_cmdt_orderlist, 0, &_cmdts[0]);
+                g3d_start(_cmdt_orderlist, 0, &_cmdts[0]);
 
-                sega3d_matrix_push(SEGA3D_MATRIX_TYPE_PUSH); {
-                        sega3d_frustum_camera_set(camera_pos, rot_x, rot_y, rot_z);
+                g3d_matrix_push(G3D_MATRIX_TYPE_PUSH); {
+                        g3d_frustum_camera_set(camera_pos, rot_x, rot_y, rot_z);
 
-                        sega3d_matrix_push(SEGA3D_MATRIX_TYPE_PUSH); {
-                                sega3d_matrix_rot_y(rot[Y]);
-                                sega3d_matrix_rot_x(rot[X]);
-                                sega3d_matrix_rot_z(rot[Z]);
+                        g3d_matrix_push(G3D_MATRIX_TYPE_PUSH); {
+                                g3d_matrix_rot_y(rot[Y]);
+                                g3d_matrix_rot_x(rot[X]);
+                                g3d_matrix_rot_z(rot[Z]);
 
                                 for (uint32_t i = 0; i < object.xpdata_count; i++) {
-                                        sega3d_object_transform(&object, i);
+                                        g3d_object_transform(&object, i);
                                 }
-                        } sega3d_matrix_pop();
-                } sega3d_matrix_pop();
+                        } g3d_matrix_pop();
+                } g3d_matrix_pop();
 
-                sega3d_finish(&results);
+                g3d_finish(&results);
 
                 perf_counter_start(&_perf_vdp1);
                 vdp1_sync_render();
@@ -285,9 +289,9 @@ main(void)
                 }
 
                 if ((_digital.held.raw & PERIPHERAL_DIGITAL_A) != 0) {
-                        object.flags = object.flags ^ SEGA3D_OBJECT_FLAGS_CULL_SCREEN;
+                        object.flags = object.flags ^ G3D_OBJECT_FLAGS_CULL_SCREEN;
                 } else if ((_digital.held.raw & PERIPHERAL_DIGITAL_B) != 0) {
-                        object.flags = object.flags ^ SEGA3D_OBJECT_FLAGS_WIREFRAME;
+                        object.flags = object.flags ^ G3D_OBJECT_FLAGS_WIREFRAME;
                 }
 
 
@@ -410,13 +414,13 @@ _vdp1_init(void)
         preamble_cmdt[ORDER_ERASE_INDEX].cmd_xd = -SCREEN_WIDTH / 2;
         preamble_cmdt[ORDER_ERASE_INDEX].cmd_yd = (SCREEN_HEIGHT / 2) - 1;
 
-        vdp1_cmdt_end_set(&preamble_cmdt[ORDER_SEGA3D_INDEX]);
+        vdp1_cmdt_end_set(&preamble_cmdt[ORDER_G3D_INDEX]);
 
         vdp1_cmdt_orderlist_init(_cmdt_orderlist, VDP1_VRAM_CMDT_COUNT);
 
         vdp1_cmdt_orderlist_vram_patch(_cmdt_orderlist,
-            (const vdp1_cmdt_t *)VDP1_CMD_TABLE(ORDER_SEGA3D_INDEX, 0),
-            VDP1_VRAM_CMDT_COUNT - ORDER_SEGA3D_INDEX);
+            (const vdp1_cmdt_t *)VDP1_CMD_TABLE(ORDER_G3D_INDEX, 0),
+            VDP1_VRAM_CMDT_COUNT - ORDER_G3D_INDEX);
 
         scu_ic_ihr_set(SCU_IC_INTERRUPT_SPRITE_END, _sprite_end_handler);
 }
