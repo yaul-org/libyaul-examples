@@ -5,7 +5,30 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
+#include <stdint.h>
+
 #include <yaul.h>
+
+/* This is a weak function. Overwrite */
+void
+gdb_device_init(void)
+{
+        usb_cart_init();
+}
+
+/* This is a weak function. Overwrite */
+uint8_t
+gdb_device_byte_read(void)
+{
+        return usb_cart_byte_read();
+}
+
+/* This is a weak function. Overwrite */
+void
+gdb_device_byte_write(uint8_t value)
+{
+        usb_cart_byte_send(value);
+}
 
 int
 main(void)

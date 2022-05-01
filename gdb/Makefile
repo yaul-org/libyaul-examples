@@ -4,10 +4,6 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
-ifneq ($(OPTION_DEV_CARTRIDGE),$(filter $(OPTION_DEV_CARTRIDGE),1 2))
-  $(error Wrong development cartridge value (see `OPTION_DEV_CARTRIDGE'))
-endif
-
 SH_PROGRAM:= gdb
 SH_SRCS:= \
 	gdb.c

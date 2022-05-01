@@ -1,4 +1,5 @@
 EXAMPLES:= \
+	arp-comm \
 	bcl \
 	c++ \
 	cd-block \
@@ -8,11 +9,14 @@ EXAMPLES:= \
 	cpu-frt \
 	cpu-wdt \
 	dbgio-menu \
+	dbgio-usb-cart \
 	dma-queue \
 	dram-cart \
+	gdb \
 	mm-stats \
 	netlink-template \
 	scu-dsp \
+	usb-cart \
 	vdp1-balls \
 	vdp1-drawing \
 	vdp1-g3d \
@@ -38,27 +42,6 @@ EXAMPLES:= \
 # Following examples are broken:
 #   scu-timers
 #   fileserver
-
-# Either type of dev cartridge
-ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),$(filter $(YAUL_OPTION_DEV_CARTRIDGE),1 2))
-ifeq ($(YAUL_OPTION_BUILD_GDB),1)
-EXAMPLES+= \
-	gdb
-endif
-endif
-
-# USB cartridge
-ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),1)
-EXAMPLES+= \
-	dbgio-usb-cart \
-	usb-cart
-endif
-
-# AR
-ifeq ($(YAUL_OPTION_DEV_CARTRIDGE),2)
-EXAMPLES+= \
-	arp-comm
-endif
 
 ifeq ($(strip $(YAUL_INSTALL_ROOT)),)
   $(error Undefined YAUL_INSTALL_ROOT (install root directory))
