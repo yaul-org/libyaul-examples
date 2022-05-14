@@ -135,6 +135,8 @@ main(void)
 void
 user_init(void)
 {
+        smpc_peripheral_init();
+
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);
 
@@ -168,6 +170,7 @@ user_init(void)
 static void
 _init(void)
 {
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 

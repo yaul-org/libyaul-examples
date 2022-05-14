@@ -10,7 +10,7 @@ SH_SRCS:= \
 	../shared/menu/menu.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps=obj
+SH_CFLAGS+= -O2 -I. -I../shared/menu
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

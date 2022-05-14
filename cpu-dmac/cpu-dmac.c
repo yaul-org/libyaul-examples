@@ -22,6 +22,7 @@ static volatile bool _done = false;
 int
 main(void)
 {
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 

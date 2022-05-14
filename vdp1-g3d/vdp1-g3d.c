@@ -369,15 +369,19 @@ user_init(void)
 
         vdp2_sprite_priority_set(0, 6);
 
-        cpu_cache_purge();
 
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
+
+        smpc_peripheral_init();
 
         vdp2_tvmd_display_set();
 
         vdp2_sync();
         vdp2_sync_wait();
+
+        cpu_cache_purge();
 }
 
 static void

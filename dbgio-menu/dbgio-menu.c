@@ -32,6 +32,7 @@ static menu_entry_t _menu_entries[] = {
 int
 main(void)
 {
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
@@ -62,6 +63,8 @@ main(void)
 void
 user_init(void)
 {
+        smpc_peripheral_init();
+
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);
 
@@ -96,7 +99,6 @@ _input_1(void *state __unused, menu_entry_t *menu_entry __unused)
 {
         dbgio_printf("Input 1 pressed\n");
 }
-
 
 static void
 _input_2(void *state __unused, menu_entry_t *menu_entry __unused)

@@ -19,12 +19,12 @@
 #define ORDER_DRAW_END_INDEX            3
 #define ORDER_COUNT                     4
 
-static void _vblank_out_handler(void *);
+static void _vblank_out_handler(void *work);
 
-static void _vdp1_drawing_list_init(vdp1_cmdt_list_t *);
-static void _vdp1_drawing_list_set(const uint8_t, vdp1_cmdt_list_t *);
-static void _vdp1_drawing_env_toggle(const uint8_t);
-static void _vdp2_resolution_toggle(const uint8_t);
+static void _vdp1_drawing_list_init(vdp1_cmdt_list_t *cmdt_list);
+static void _vdp1_drawing_list_set(const uint8_t switch_env, vdp1_cmdt_list_t *cmdt_list);
+static void _vdp1_drawing_env_toggle(const uint8_t switch_env);
+static void _vdp2_resolution_toggle(const uint8_t switch_env);
 
 static color_rgb1555_t _palette[16] = {
         COLOR_RGB1555_INITIALIZER(1, 0, 0, 0),
@@ -51,6 +51,7 @@ static color_rgb1555_t _palette[16] = {
 void
 main(void)
 {
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
@@ -64,8 +65,7 @@ main(void)
 
         smpc_peripheral_digital_t digital;
 
-        vdp1_cmdt_list_t *cmdt_list;
-        cmdt_list = vdp1_cmdt_list_alloc(5);
+        vdp1_cmdt_list_t * const cmdt_list = vdp1_cmdt_list_alloc(5);
 
         _vdp1_drawing_list_init(cmdt_list);
 
@@ -83,11 +83,9 @@ main(void)
                         smpc_smc_sysres_call();
                 }
 
-                uint32_t speed_int;
-                speed_int = fix16_int32_to(speed);
+                volatile color_rgb1555_t * const palette_ptr = &_palette[0];
 
-                volatile color_rgb1555_t *palette_ptr;
-                palette_ptr = &_palette[0];
+                const uint32_t speed_int = fix16_int32_to(speed);
 
                 palette_ptr->r = speed_int;
                 palette_ptr->g = speed_int;
@@ -96,7 +94,10 @@ main(void)
                 MEMORY_WRITE(16, VDP2_CRAM(0x20), _palette[0].raw);
 
                 char buffer[64];
-                dbgio_puts("[H[2Jspeed: ");
+                dbgio_puts("[H[2J"
+                           "Switch resolution (A)\n"
+                           "\n"
+                           "speed: ");
                 fix16_str(speed, buffer, 7);
                 dbgio_puts(buffer);
                 dbgio_puts("\n");
@@ -117,6 +118,7 @@ main(void)
                 vdp1_sync_cmdt_list_put(cmdt_list, 0);
                 vdp1_sync_render();
                 vdp1_sync();
+                vdp2_sync();
                 vdp1_sync_wait();
         }
 }
@@ -124,6 +126,8 @@ main(void)
 void
 user_init(void)
 {
+        smpc_peripheral_init();
+
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_DOUBLE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);
 
@@ -142,6 +146,8 @@ user_init(void)
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
         vdp2_tvmd_display_set();
+
+        vdp2_sync();
 }
 
 static void
@@ -154,8 +160,7 @@ static void
 _vdp1_drawing_list_init(vdp1_cmdt_list_t *cmdt_list)
 {
         static const int16_vec2_t local_coord_ul =
-            INT16_VEC2_INITIALIZER(0,
-                                      0);
+            INT16_VEC2_INITIALIZER(0, 0);
 
         static const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
                 .raw = 0x0000,

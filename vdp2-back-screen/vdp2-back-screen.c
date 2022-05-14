@@ -63,6 +63,8 @@ main(void)
 void
 user_init(void)
 {
+        smpc_peripheral_init();
+
         vdp2_vram_cycp_clear();
 
         vdp2_sprite_priority_set(0, 0);

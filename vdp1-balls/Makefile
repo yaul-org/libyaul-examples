@@ -16,7 +16,7 @@ SH_SRCS:= \
 	../shared/perf/perf.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -I. -I../shared/perf -Wno-error=unused-variable -Wno-error -O2 -save-temps=obj
+SH_CFLAGS+= -I. -I../shared/perf -O2
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

@@ -93,6 +93,7 @@ static const draw_handler _draw_handlers[] = {
 };
 
 int main(void) {
+    dbgio_init();
     dbgio_dev_default_init(DBGIO_DEV_VDP2);
     dbgio_dev_font_load();
 
@@ -256,7 +257,7 @@ static void _vdp2_init(void) {
 
     vdp2_scrn_bitmap_format_set(&rbg0_format);
     vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);
-    vdp2_scrn_display_set(VDP2_SCRN_RBG0_TPDISP);
+    vdp2_scrn_display_set(VDP2_SCRN_RBG0_DISP);
 
     (void)memcpy((void *)RBG0_ROTATION_TABLE, &rbg0_rotation_table, sizeof(rbg0_rotation_table));
 
@@ -264,6 +265,8 @@ static void _vdp2_init(void) {
 }
 
 void user_init(void) {
+    smpc_peripheral_init();
+
     _vdp2_init();
     _vdp1_init();
 

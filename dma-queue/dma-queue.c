@@ -177,7 +177,7 @@ _tga_file_decode(const void *asset_tga, void *buffer)
 
         tga_t tga;
 
-        const int32_t tga_ret = tga_read(&tga, asset_tga);
+        const int32_t tga_ret __unused = tga_read(&tga, asset_tga);
         assert(tga_ret == TGA_FILE_OK);
 
         const int32_t tga_size = tga_image_decode(&tga, buffer);

@@ -81,10 +81,15 @@ user_init(void)
 
         cpu_frt_init(CPU_FRT_CLOCK_DIV_128);
 
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
         vdp2_tvmd_display_set();
+
+        cd_block_init();
+
+        smpc_peripheral_init();
 }
 
 static void

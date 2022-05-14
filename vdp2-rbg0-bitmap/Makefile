@@ -13,7 +13,7 @@ SH_SRCS:= \
 	vdp2-rbg0-bitmap.c
 
 SH_LIBRARIES:= tga
-SH_CFLAGS+= -O2 -I. -save-temps=obj
+SH_CFLAGS+= -O2 -I.
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

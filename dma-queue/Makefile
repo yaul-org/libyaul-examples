@@ -21,7 +21,7 @@ SH_SRCS:= \
 	dma-queue.c
 
 SH_LIBRARIES:= tga
-SH_CFLAGS+= -O2 -save-temps=obj
+SH_CFLAGS+= -O2
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

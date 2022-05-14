@@ -5,9 +5,9 @@
  * Israel Jacquez <mrkotfw@gmail.com>
  */
 
-#include <stdint.h>
-
 #include <yaul.h>
+
+#include <stdint.h>
 
 /* This is a weak function. Overwrite */
 void
@@ -35,6 +35,7 @@ main(void)
 {
         static const uint32_t _columns = 40;
 
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 

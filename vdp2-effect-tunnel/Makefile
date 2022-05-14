@@ -16,7 +16,7 @@ SH_SRCS:= \
 	../shared/menu/menu.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -I../shared/menu -save-temps=obj -Wno-error
+SH_CFLAGS+= -O2 -I. -I../shared/menu
 
 IP_VERSION:= V0.001
 IP_RELEASE_DATE:= 20180214

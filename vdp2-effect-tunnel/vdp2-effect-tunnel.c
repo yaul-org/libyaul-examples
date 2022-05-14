@@ -82,6 +82,7 @@ main(void)
                 .enable        = VDP2_SCRN_LS_VERT | VDP2_SCRN_LS_HORZ | VDP2_SCRN_LS_ZOOM_HORZ
         };
 
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
@@ -149,6 +150,8 @@ user_init(void)
                 .map_bases.plane_c = NBG0_PND,
                 .map_bases.plane_d = NBG0_PND
         };
+
+        smpc_peripheral_init();
 
         vdp2_scrn_cell_format_set(&format);
 

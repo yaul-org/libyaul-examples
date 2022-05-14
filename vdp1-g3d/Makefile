@@ -14,7 +14,7 @@ SH_SRCS:= \
 
 # Important, libg3d must be included
 SH_LIBRARIES:= g3d
-SH_CFLAGS+= -O2 -I. -save-temps=obj -ggdb3 -Wno-error
+SH_CFLAGS+= -O2 -I.
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

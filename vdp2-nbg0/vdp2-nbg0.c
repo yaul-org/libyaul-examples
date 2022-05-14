@@ -7,9 +7,9 @@
 
 #include <yaul.h>
 
-static void _copy_cpd(uint8_t *cpd);
-static void _copy_color_palette(color_rgb1555_t *pal);
-static void _copy_map(const vdp2_scrn_cell_format_t *format);
+static void _cpd_copy(uint8_t *cpd);
+static void _color_palette_copy(color_rgb1555_t *pal);
+static void _map_copy(const vdp2_scrn_cell_format_t *format);
 
 int
 main(void)
@@ -73,9 +73,9 @@ main(void)
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
         vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
 
-        _copy_cpd((uint8_t *)format.cp_table);
-        _copy_color_palette((color_rgb1555_t *)format.color_palette);
-        _copy_map(&format);
+        _cpd_copy((uint8_t *)format.cp_table);
+        _color_palette_copy((color_rgb1555_t *)format.color_palette);
+        _map_copy(&format);
 
         vdp2_tvmd_display_set();
 
@@ -97,21 +97,21 @@ user_init(void)
 }
 
 static void
-_copy_cpd(uint8_t *cpd)
+_cpd_copy(uint8_t *cpd)
 {
         (void)memset(cpd + 0x00, 0x00, 0x20);
         (void)memset(cpd + 0x20, 0x11, 0x20);
 }
 
 static void
-_copy_color_palette(color_rgb1555_t *color_palette)
+_color_palette_copy(color_rgb1555_t *color_palette)
 {
         color_palette[0] = COLOR_RGB1555(1, 31, 31, 31);
         color_palette[1] = COLOR_RGB1555(1, 31,  0,  0);
 }
 
 static void
-_copy_map(const vdp2_scrn_cell_format_t *format)
+_map_copy(const vdp2_scrn_cell_format_t *format)
 {
         const uint32_t page_width = VDP2_SCRN_CALCULATE_PAGE_WIDTH(format);
         const uint32_t page_height = VDP2_SCRN_CALCULATE_PAGE_HEIGHT(format);

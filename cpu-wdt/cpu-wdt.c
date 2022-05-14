@@ -13,7 +13,7 @@
 #define CPU_WDT_INTERRUPT_PRIORITY_LEVEL 8
 
 static void _cpu_wdt_handler(void);
-static void _vblank_in_handler(void *);
+static void _vblank_in_handler(void *work);
 
 void
 main(void)
@@ -27,6 +27,7 @@ main(void)
         cpu_wdt_timer_mode_set(CPU_WDT_MODE_INTERVAL, _cpu_wdt_handler);
         cpu_wdt_enable();
 
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 

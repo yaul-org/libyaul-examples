@@ -12,12 +12,13 @@
 static void _master_entry(void);
 static void _slave_entry(void);
 
-static uint32_t _master_counter __section (".uncached") = 0;
-static uint32_t _slave_counter __section (".uncached") = 0;
+static uint32_t _master_counter __uncached = 0;
+static uint32_t _slave_counter __uncached = 0;
 
 int
 main(void)
 {
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 

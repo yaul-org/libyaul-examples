@@ -234,11 +234,14 @@ main(void)
 void
 user_init(void)
 {
+        smpc_peripheral_init();
+
         _vdp2_init();
         _vdp1_init();
 
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 

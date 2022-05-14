@@ -24,17 +24,29 @@ static void _arp_callback(const arp_callback_t *callback);
 int
 main(void)
 {
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
-        const char * const arp_version = arp_version_get();
-
-        if (arp_version == NULL) {
+        if (!(arp_detect())) {
                 dbgio_puts("No ARP cartridge detected!\n");
+                dbgio_flush();
+                vdp2_sync();
+                vdp2_sync_wait();
+
                 abort();
         }
 
-        dbgio_printf("ARP version \"%s\" detected!\n", arp_version);
+        const char * const version_str = arp_version_string_get();
+
+        const uint16_t vendor_id = flash_vendor_get();
+        const uint16_t device_id = flash_device_get();
+
+        dbgio_printf("Vendor:Device = %04X:%04X\n"
+                     "       String = \"%s\"\n",
+                     vendor_id,
+                     device_id,
+                     version_str);
 
         /* Register callback */
         arp_function_callback_set(&_arp_callback);
@@ -72,7 +84,7 @@ user_init(void)
 static void
 _arp_callback(const arp_callback_t *callback)
 {
-        dbgio_printf("[6;1H[2JCallback\n"
+        dbgio_printf("[6;1H[1JCallback\n"
                      "function: %s\n"
                      "ptr:      0x%08X\n"
                      "len:      0x%08X\n",

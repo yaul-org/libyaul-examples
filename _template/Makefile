@@ -12,7 +12,7 @@ SH_SRCS:= \
 	main.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -save-temps=obj
+SH_CFLAGS+= -O2 -I.
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 19940101

@@ -14,10 +14,55 @@
 #include <stdlib.h>
 
 static cdfs_filelist_t _filelist;
-static cdfs_filelist_entry_t _filelist_entries[CDFS_FILELIST_ENTRIES_COUNT];
 
 int
 main(void)
+{
+        /* Load the maximum number. We have to free the allocated filelist
+         * entries, but since we never exit, we don't have to */
+        cdfs_filelist_entry_t * const filelist_entries =
+            cdfs_entries_alloc(-1);
+        assert(filelist_entries != NULL);
+
+        cdfs_filelist_default_init(&_filelist, filelist_entries, -1);
+        cdfs_filelist_root_read(&_filelist);
+
+        uint32_t file_index;
+        file_index = 0;
+
+        while (true) {
+                cdfs_filelist_entry_t *file_entry;
+
+                for (; ; file_index++) {
+                        if (file_index >= _filelist.entries_count) {
+                                file_index = 0;
+                        }
+
+                        file_entry = &_filelist.entries[file_index];
+
+                        if (file_entry->type == CDFS_ENTRY_TYPE_FILE) {
+                                if ((strchr(file_entry->name, 'Z')) != NULL) {
+                                        file_index++;
+                                        break;
+                                }
+                        }
+                }
+
+                int ret __unused;
+                ret = cd_block_sectors_read(file_entry->starting_fad, (void *)LWRAM(0x00000000), file_entry->size);
+                assert(ret == 0);
+
+                bcl_prs_decompress((void *)LWRAM(0x00000000), (void *)VDP2_VRAM_ADDR(0, 0x00000));
+
+                vdp2_sync();
+                vdp2_sync_wait();
+        }
+
+        return 0;
+}
+
+void
+user_init(void)
 {
         const vdp2_scrn_bitmap_format_t format = {
                 .scroll_screen      = VDP2_SCRN_NBG0,
@@ -30,6 +75,8 @@ main(void)
                 .sf_code            = VDP2_SCRN_SF_CODE_A,
                 .sf_mode            = 0
         };
+
+        cd_block_init();
 
         vdp2_scrn_bitmap_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
@@ -83,50 +130,9 @@ main(void)
 
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);
+
         vdp2_tvmd_display_set();
 
-        _filelist.entries = _filelist_entries;
-        _filelist.entries_count = 0;
-        _filelist.entries_pooled_count = 0;
-
-        /* Load the maximum number. We have to free the allocated filelist
-         * entries, but since we never exit, we don't have to */
-        cdfs_filelist_entry_t * const filelist_entries =
-            cdfs_entries_alloc(-1);
-        assert(filelist_entries != NULL);
-
-        cdfs_filelist_default_init(&_filelist, filelist_entries, -1);
-
-        uint32_t i;
-        i = 0;
-
-        while (true) {
-                cdfs_filelist_entry_t *file_entry;
-
-                for (; ; i++) {
-                        if (i >= _filelist.entries_count) {
-                                i = 0;
-                        }
-
-                        file_entry = &_filelist.entries[i];
-
-                        if (file_entry->type == CDFS_ENTRY_TYPE_FILE) {
-                                if ((strchr(file_entry->name, 'Z')) != NULL) {
-                                        i++;
-                                        break;
-                                }
-                        }
-                }
-
-                int ret __unused;
-                ret = cd_block_sectors_read(file_entry->starting_fad, (void *)LWRAM(0x00000000), file_entry->size);
-                assert(ret == 0);
-
-                bcl_prs_decompress((void *)LWRAM(0x00000000), (void *)VDP2_VRAM_ADDR(0, 0x00000));
-
-                vdp2_sync();
-                vdp2_sync_wait();
-        }
-
-        return 0;
+        vdp2_sync();
+        vdp2_sync_wait();
 }

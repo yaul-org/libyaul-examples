@@ -94,6 +94,9 @@ main(void)
 void
 user_init(void)
 {
+        smpc_peripheral_init();
+
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_USB_CART);
         dbgio_dev_font_load();
 

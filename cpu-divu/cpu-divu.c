@@ -13,6 +13,7 @@
 int
 main(void)
 {
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
@@ -30,8 +31,8 @@ main(void)
         dbgio_puts("\n");
 
         dbgio_flush();
-        vdp1_sync();
-        vdp1_sync_wait();
+        vdp2_sync();
+        vdp2_sync_wait();
 
         free(text);
 

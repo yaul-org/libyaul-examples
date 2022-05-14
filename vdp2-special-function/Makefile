@@ -15,7 +15,7 @@ SH_SRCS:= \
 	vdp2-special-function.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -save-temps=obj
+SH_CFLAGS+= -O2 -I.
 
 IP_VERSION:= V0.001
 IP_RELEASE_DATE:= 20180214
