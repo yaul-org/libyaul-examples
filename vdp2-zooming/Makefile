@@ -9,7 +9,7 @@ SH_SRCS:= \
 	vdp2-zooming.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I.
+SH_CFLAGS+= -Os -I.
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

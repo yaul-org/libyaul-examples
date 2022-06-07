@@ -227,6 +227,7 @@ main(void)
         rot_z[Z] = toFIXED(0.0f);
 
         dbgio_puts("[H[2J");
+        dbgio_flush();
 
         while (true) {
                 smpc_peripheral_process();
@@ -258,7 +259,7 @@ main(void)
                 vdp2_sync();
                 vdp1_sync_wait();
 
-                dbgio_puts("[5;1H");
+                dbgio_puts("[H[2J[5;1H");
                 _perf_print("            sort", &results.perf_sort);
                 _perf_print("             dma", &results.perf_dma);
                 _perf_print("    aabb_culling", &results.perf_aabb_culling);

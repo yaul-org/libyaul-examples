@@ -16,7 +16,7 @@ SH_SRCS:= \
 	../shared/menu/menu.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -I../shared/menu
+SH_CFLAGS+= -Os -I. -I../shared/menu
 
 IP_VERSION:= V0.001
 IP_RELEASE_DATE:= 20180214

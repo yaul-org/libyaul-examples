@@ -15,7 +15,7 @@ SH_SRCS:= \
 	vdp2-line-scroll.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I.
+SH_CFLAGS+= -Os -I.
 
 IP_VERSION:= V0.001
 IP_RELEASE_DATE:= 20180214

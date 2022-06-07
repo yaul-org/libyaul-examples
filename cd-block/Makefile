@@ -10,7 +10,7 @@ SH_SRCS:= cd-block.c \
 	../shared/menu/menu.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -I../shared/menu
+SH_CFLAGS+= -Os -I. -I../shared/menu
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

@@ -9,7 +9,7 @@ SH_SRCS:= \
 	vdp2-back-screen.c
 
 SH_LIBRARIES:= tga
-SH_CFLAGS+= -O2 -I.
+SH_CFLAGS+= -Os -I.
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
