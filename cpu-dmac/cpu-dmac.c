@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void _dmac_handler(void *);
+static void _dmac_handler(void *work);
 static void _frt_ovi_handler(void);
 
 static volatile uint16_t _frt = 0;
@@ -35,31 +35,33 @@ main(void)
         ch = 0;
 
         cpu_dmac_cfg_t cfg __unused = {
-                .channel= ch,
+                .channel  = ch,
                 .src_mode = CPU_DMAC_SOURCE_INCREMENT,
-                .dst = 0x20000000,
+                .dst      = 0x20000000,
                 .dst_mode = CPU_DMAC_DESTINATION_INCREMENT,
-                .src = 0x26000000,
-                .len = 0x00100000,
-                .stride = CPU_DMAC_STRIDE_1_BYTE,
+                .src      = 0x26000000,
+                .len      = 0x00100000,
+                .stride   = CPU_DMAC_STRIDE_1_BYTE,
                 .bus_mode = CPU_DMAC_BUS_MODE_BURST,
-                .ihr = _dmac_handler,
+                .ihr      = _dmac_handler,
                 .ihr_work = NULL
         };
 
         while (true) {
                 dbgio_puts("[H");
 
-                uint32_t xfer;
-                for (xfer = 0; xfer < 3; xfer++) {
+                for (uint32_t xfer = 0; xfer < 3; xfer++) {
                         cfg.stride = xfer;
 
-                        while ((xfer > 0) && !_done);
+                        while ((xfer > 0) && !_done) {
+                        }
+
                         _done = false;
 
                         cpu_dmac_channel_config_set(&cfg);
 
-                        dbgio_printf("\n DAR%lu:  0x%08lX\n"
+                        dbgio_printf("\n"
+                                     " DAR%lu:  0x%08lX\n"
                                      " SAR%lu:  0x%08lX\n"
                                      " TCR%lu:  0x%08lX\n"
                                      " DRCR%lu: 0x%08X\n"
@@ -86,10 +88,10 @@ main(void)
                         vdp2_sync();
                         vdp2_sync_wait();
 
-                        while (!_done);
+                        while (!_done) {
+                        }
 
-                        uint32_t ticks;
-                        ticks = (uint32_t)(_frt + ((0xFFFF + 1) * _ovf));
+                        const uint32_t ticks = (uint32_t)(_frt + ((0xFFFF + 1) * _ovf));
 
                         dbgio_printf(" Completed in %lu ticks\n", ticks);
 
