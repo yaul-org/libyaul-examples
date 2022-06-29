@@ -21,6 +21,7 @@ EXAMPLES:= \
 	vdp1-drawing \
 	vdp1-g3d \
 	vdp1-interlace \
+	vdp1-mesh \
 	vdp1-mic3d \
 	vdp1-software-blending \
 	vdp1-st-niccc \
