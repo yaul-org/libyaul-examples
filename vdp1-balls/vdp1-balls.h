@@ -23,6 +23,5 @@
 
 #define BALL_MAX_COUNT  (4096)
 
-extern void *_romdisk;
 
 #endif /* !VDP1_BALLS_H */
