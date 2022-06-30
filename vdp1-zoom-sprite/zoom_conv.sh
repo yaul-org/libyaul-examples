@@ -20,6 +20,6 @@ cd ..
 # Convert
 grit "data/zoom_appended.png" -g -gb -gB8 -m\! -p -pT1 -fh\! -ftb
 
-# Move to ROMDISK
-mv "zoom_appended.pal.bin" "romdisk/ZOOM.PAL"
-mv "zoom_appended.img.bin" "romdisk/ZOOM.TEX"
+# Move to assets/
+mv "zoom_appended.pal.bin" "assets/ZOOM.PAL"
+mv "zoom_appended.img.bin" "assets/ZOOM.TEX"
