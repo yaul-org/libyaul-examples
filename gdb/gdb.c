@@ -9,25 +9,43 @@
 
 #include <stdint.h>
 
-/* This is a weak function. Overwrite */
-void
-gdb_device_init(void)
+#include "gdbstub.h"
+
+static void
+_gdb_device_init(void)
 {
         usb_cart_init();
 }
 
-/* This is a weak function. Overwrite */
-uint8_t
-gdb_device_byte_read(void)
+static uint8_t
+_gdb_device_byte_read(void)
 {
         return usb_cart_byte_read();
 }
 
-/* This is a weak function. Overwrite */
 void
-gdb_device_byte_write(uint8_t value)
+_gdb_device_byte_write(uint8_t value)
 {
         usb_cart_byte_send(value);
+}
+
+static void
+_gdbstub_init(void)
+{
+        extern uint8_t gdbstub_bin[];
+        extern uint8_t gdbstub_bin_end[];
+
+        const size_t gdbstub_bin_size = gdbstub_bin_end - gdbstub_bin;
+
+        (void)memcpy((void *)GDBSTUB_LOAD_ADDRESS, gdbstub_bin, gdbstub_bin_size);
+
+        gdbstub_t * const gdbstub = (gdbstub_t *)gdbstub_bin;
+
+        gdbstub->device->init       = _gdb_device_init;
+        gdbstub->device->byte_read  = _gdb_device_byte_read;
+        gdbstub->device->byte_write = _gdb_device_byte_write;
+
+        gdbstub->init();
 }
 
 int
@@ -44,9 +62,10 @@ main(void)
         vdp2_sync();
         vdp2_sync_wait();
 
+        _gdbstub_init();
+
         /* Unmask all interrupts just to be sure GDB works */
         cpu_intc_mask_set(0);
-        gdb_init();
 
         char buffer[_columns + 1];
 

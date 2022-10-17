@@ -4,6 +4,10 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
 
+# Each asset follows the format: <path>;<symbol>. Duplicates are removed
+BUILTIN_ASSETS+= \
+	assets/gdbstub.bin;gdbstub_bin \
+
 SH_PROGRAM:= gdb
 SH_SRCS:= \
 	gdb.c
