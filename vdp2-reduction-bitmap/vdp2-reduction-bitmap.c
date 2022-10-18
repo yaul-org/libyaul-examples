@@ -34,8 +34,8 @@ main(void)
         vdp2_scrn_bitmap_format_set(&format);
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
         vdp2_scrn_reduction_set(VDP2_SCRN_NBG0, VDP2_SCRN_REDUCTION_HALF);
-        vdp2_scrn_reduction_x_set(VDP2_SCRN_NBG0, Q0_3_8(2.0f));
-        vdp2_scrn_reduction_y_set(VDP2_SCRN_NBG0, Q0_3_8(1.0f / (1.0f - (240.0f / 512.0f))));
+        vdp2_scrn_reduction_x_set(VDP2_SCRN_NBG0, FIX16(2.0f));
+        vdp2_scrn_reduction_y_set(VDP2_SCRN_NBG0, FIX16(1.0f / (1.0f - (240.0f / 512.0f))));
         vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
 
         vdp2_vram_cycp_t vram_cycp;
