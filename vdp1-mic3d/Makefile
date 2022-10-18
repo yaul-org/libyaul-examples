@@ -2,7 +2,7 @@ ifeq ($(strip $(YAUL_INSTALL_ROOT)),)
   $(error Undefined YAUL_INSTALL_ROOT (install root directory))
 endif
 
-include $(YAUL_INSTALL_ROOT)/share/pre.common.mk
+include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
 SH_PROGRAM:= vdp1-mic3d
 SH_SRCS:= \
@@ -19,5 +19,6 @@ IP_TITLE:= MIC 3D
 IP_MASTER_STACK_ADDR:= 0x06004000
 IP_SLAVE_STACK_ADDR:= 0x06001E00
 IP_1ST_READ_ADDR:= 0x06004000
+IP_1ST_READ_SIZE:= 0
 
-include $(YAUL_INSTALL_ROOT)/share/post.common.mk
+include $(YAUL_INSTALL_ROOT)/share/build.post.iso-cue.mk
