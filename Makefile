@@ -16,6 +16,7 @@ EXAMPLES:= \
 	mm-stats \
 	netlink-template \
 	scu-dsp \
+	smpc-rtc \
 	usb-cart \
 	vdp1-balls \
 	vdp1-drawing \
