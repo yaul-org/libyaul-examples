@@ -473,8 +473,8 @@ main(void)
                         uint8_t b;
                         b = 30 * k / 90 + 10;
 
-                        color_rgb1555_t color;
-                        color = COLOR_RGB1555(1, r, g, b);
+                        rgb1555_t color;
+                        color = RGB1555(1, r, g, b);
 
                         vdp1_cmdt_draw_mode_t draw_mode = {
                                 .raw = 0x0000
@@ -625,14 +625,14 @@ user_init(void)
             VDP2_TVMD_VERT_224);
 
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 3, 15));
+            RGB1555(1, 0, 3, 15));
 
         vdp2_sprite_priority_set(0, 6);
 
         vdp1_env_t env;
         vdp1_env_default_init(&env);
 
-        env.erase_color = COLOR_RGB1555(1, 0, 3, 15);
+        env.erase_color = RGB1555(1, 0, 3, 15);
 
         vdp1_env_set(&env);
 

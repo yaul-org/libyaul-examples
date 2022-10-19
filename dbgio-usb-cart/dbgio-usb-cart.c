@@ -27,7 +27,7 @@ main(void)
                 dbgio_printf("Hello 0x%02X\n", r);
 
                 vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-                    COLOR_RGB1555(1, 0, r, 15));
+                    RGB1555(1, 0, r, 15));
 
                 r++;
                 r &= 0x1F;
@@ -46,7 +46,7 @@ user_init(void)
             VDP2_TVMD_VERT_224);
 
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 3, 15));
+            RGB1555(1, 0, 3, 15));
 
         vdp2_tvmd_display_set();
 }

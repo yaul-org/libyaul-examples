@@ -38,7 +38,7 @@
 #define PRIMITIVE_HALF_WIDTH      (PRIMITIVE_WIDTH / 2)
 #define PRIMITIVE_HALF_HEIGHT     (PRIMITIVE_HEIGHT / 2)
 
-#define PRIMITIVE_COLOR           COLOR_RGB1555(1, 31, 0, 31)
+#define PRIMITIVE_COLOR           RGB1555(1, 31, 0, 31)
 
 #define ORDER_SYSTEM_CLIP_COORDS_INDEX  0
 #define ORDER_LOCAL_COORDS_INDEX        1
@@ -54,7 +54,7 @@ static vdp1_vram_partitions_t _vdp1_vram_partitions;
 static struct {
         int8_t type;
         int8_t draw_mode;
-        color_rgb1555_t color;
+        rgb1555_t color;
         int16_vec2_t points[4];
 } _primitive;
 
@@ -259,13 +259,13 @@ user_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 3, 15));
+            RGB1555(1, 0, 3, 15));
         vdp2_sprite_priority_set(0, 6);
 
         vdp1_env_t env;
         vdp1_env_default_init(&env);
 
-        env.erase_color = COLOR_RGB1555(1, 0, 3, 15);
+        env.erase_color = RGB1555(1, 0, 3, 15);
 
         vdp1_env_set(&env);
 
@@ -341,10 +341,10 @@ _primitive_init(void)
         vdp1_gouraud_table_t *gouraud_base;
         gouraud_base = _vdp1_vram_partitions.gouraud_base;
 
-        gouraud_base->colors[0] = COLOR_RGB1555(1, 31,  0,  0);
-        gouraud_base->colors[1] = COLOR_RGB1555(1,  0, 31,  0);
-        gouraud_base->colors[2] = COLOR_RGB1555(1,  0,  0, 31);
-        gouraud_base->colors[3] = COLOR_RGB1555(1, 31, 31, 31);
+        gouraud_base->colors[0] = RGB1555(1, 31,  0,  0);
+        gouraud_base->colors[1] = RGB1555(1,  0, 31,  0);
+        gouraud_base->colors[2] = RGB1555(1,  0,  0, 31);
+        gouraud_base->colors[3] = RGB1555(1, 31, 31, 31);
 
         vdp1_cmdt_polyline_set(cmdt_polygon);
         vdp1_cmdt_param_color_set(cmdt_polygon, _primitive.color);

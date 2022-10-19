@@ -8,7 +8,7 @@
 #include <yaul.h>
 
 static void _cpd_copy(uint8_t *cpd);
-static void _color_palette_copy(color_rgb1555_t *pal);
+static void _color_palette_copy(rgb1555_t *pal);
 static void _map_copy(const vdp2_scrn_cell_format_t *format);
 
 int
@@ -74,7 +74,7 @@ main(void)
         vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
 
         _cpd_copy((uint8_t *)format.cp_table);
-        _color_palette_copy((color_rgb1555_t *)format.color_palette);
+        _color_palette_copy((rgb1555_t *)format.color_palette);
         _map_copy(&format);
 
         vdp2_tvmd_display_set();
@@ -90,7 +90,7 @@ void
 user_init(void)
 {
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(2, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 0, 7));
+            RGB1555(1, 0, 0, 7));
 
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);
@@ -104,10 +104,10 @@ _cpd_copy(uint8_t *cpd)
 }
 
 static void
-_color_palette_copy(color_rgb1555_t *color_palette)
+_color_palette_copy(rgb1555_t *color_palette)
 {
-        color_palette[0] = COLOR_RGB1555(1, 31, 31, 31);
-        color_palette[1] = COLOR_RGB1555(1, 31,  0,  0);
+        color_palette[0] = RGB1555(1, 31, 31, 31);
+        color_palette[1] = RGB1555(1, 31,  0,  0);
 }
 
 static void

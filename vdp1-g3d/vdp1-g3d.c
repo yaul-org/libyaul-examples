@@ -342,7 +342,7 @@ user_init(void)
             VDP2_TVMD_VERT_240);
 
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 3, 15));
+            RGB1555(1, 0, 3, 15));
 
         vdp_sync_vblank_in_set(_vblank_in_handler, NULL);
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
@@ -357,7 +357,7 @@ user_init(void)
         vdp1_sync_interval_set(-1);
 
         const vdp1_env_t vdp1_env = {
-                .erase_color     = COLOR_RGB1555(0, 0, 0, 0),
+                .erase_color     = RGB1555(0, 0, 0, 0),
                 .erase_points[0] = INT16_VEC2_INITIALIZER(0, 0),
                 .erase_points[1] = INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1),
                 .bpp             = VDP1_ENV_BPP_16,
@@ -406,7 +406,7 @@ _vdp1_init(void)
 
         vdp1_cmdt_polygon_set(&preamble_cmdt[ORDER_ERASE_INDEX]);
         vdp1_cmdt_param_draw_mode_set(&preamble_cmdt[ORDER_ERASE_INDEX], erase_draw_mode);
-        vdp1_cmdt_param_color_set(&preamble_cmdt[ORDER_ERASE_INDEX], COLOR_RGB1555(0, 0, 0, 0));
+        vdp1_cmdt_param_color_set(&preamble_cmdt[ORDER_ERASE_INDEX], RGB1555(0, 0, 0, 0));
 
         /* The clear polygon is cut in half due to the VDP1 not having enough
          * time to clear the bottom half of the framebuffer in time */

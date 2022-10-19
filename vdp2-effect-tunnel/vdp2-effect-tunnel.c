@@ -185,7 +185,7 @@ user_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);
 
-        vdp2_scrn_back_color_set(BACK_SCREEN, COLOR_RGB1555(1, 0, 0, 0));
+        vdp2_scrn_back_color_set(BACK_SCREEN, RGB1555(1, 0, 0, 0));
 
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
@@ -200,11 +200,11 @@ user_init(void)
 static void
 _lncl_init(void)
 {
-        volatile color_rgb1555_t *cram_gradient =
-            (volatile color_rgb1555_t *)VDP2_CRAM_MODE_1_OFFSET(3, 0, 0);
+        volatile rgb1555_t *cram_gradient =
+            (volatile rgb1555_t *)VDP2_CRAM_MODE_1_OFFSET(3, 0, 0);
 
         for (uint32_t i = 0; i < 32; i++) {
-                cram_gradient[i] = COLOR_RGB1555(1, i, i, i);
+                cram_gradient[i] = RGB1555(1, i, i, i);
         }
 
         for (uint32_t i = 0; i < SCREEN_HEIGHT; i++) {

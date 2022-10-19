@@ -118,7 +118,7 @@ user_init(void)
         vdp2_scrn_cell_format_set(&format);
 
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 0, 7));
+            RGB1555(1, 0, 0, 7));
 
         /* The special priority function only toggles the LSB, so the priority
          * must be even */
@@ -190,7 +190,7 @@ user_init(void)
         vdp2_vram_cycp_bank_set(3, &vram_cycp_bank[1]);
 
         const vdp1_env_t vdp1_env = {
-                .erase_color  = COLOR_RGB1555_INITIALIZER(0, 0, 0, 0),
+                .erase_color  = RGB1555_INITIALIZER(0, 0, 0, 0),
                 .erase_points = {
                         INT16_VEC2_INITIALIZER(0, 0),
                         INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1)
@@ -263,7 +263,7 @@ _cmdt_list_init(vdp1_cmdt_list_t *cmdt_list)
         vdp1_cmdt_param_draw_mode_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX],
             polygon_draw_mode);
         vdp1_cmdt_param_color_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX],
-            COLOR_RGB1555(1, 15, 15, 15));
+            RGB1555(1, 15, 15, 15));
         vdp1_cmdt_param_vertices_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX],
             polygon_points);
 

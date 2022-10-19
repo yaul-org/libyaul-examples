@@ -124,7 +124,7 @@ user_init(void)
         vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);
         vdp2_scrn_display_set(VDP2_SCRN_RBG0_DISP);
 
-        vdp2_scrn_back_color_set(BACK_SCREEN, COLOR_RGB1555(1, 5, 5, 7));
+        vdp2_scrn_back_color_set(BACK_SCREEN, RGB1555(1, 5, 5, 7));
 
         vdp2_sprite_priority_set(0, 0);
         vdp2_sprite_priority_set(1, 0);

@@ -20,8 +20,8 @@ main(void)
         uint16_t height;
         vdp2_tvmd_display_res_get(&width, &height);
 
-        color_rgb1555_t * const buffer =
-            malloc(sizeof(color_rgb1555_t) * height);
+        rgb1555_t * const buffer =
+            malloc(sizeof(rgb1555_t) * height);
         assert(buffer != NULL);
 
         uint16_t buffer_count;
@@ -50,7 +50,7 @@ main(void)
                 vdp2_scrn_back_sync();
 
                 for (uint16_t i = 0; i < buffer_count; i++) {
-                        buffer[i] = COLOR_RGB1555(1, i + count, i + count, i + count);
+                        buffer[i] = RGB1555(1, i + count, i + count, i + count);
                 }
 
                 count++;

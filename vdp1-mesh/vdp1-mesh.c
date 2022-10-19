@@ -18,8 +18,8 @@
 #define PRIMITIVE_HALF_WIDTH      (PRIMITIVE_WIDTH / 2)
 #define PRIMITIVE_HALF_HEIGHT     (PRIMITIVE_HEIGHT / 2)
 
-#define PRIMITIVE_0_COLOR COLOR_RGB1555(1, 31,  0, 31)
-#define PRIMITIVE_1_COLOR COLOR_RGB1555(1, 31, 31,  0)
+#define PRIMITIVE_0_COLOR RGB1555(1, 31,  0, 31)
+#define PRIMITIVE_1_COLOR RGB1555(1, 31, 31,  0)
 
 #define ORDER_SYSTEM_CLIP_COORDS_INDEX  0
 #define ORDER_LOCAL_COORDS_INDEX        1
@@ -107,13 +107,13 @@ user_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 3, 15));
+            RGB1555(1, 0, 3, 15));
         vdp2_sprite_priority_set(0, 6);
 
         vdp1_env_t env;
         vdp1_env_default_init(&env);
 
-        env.erase_color = COLOR_RGB1555(1, 0, 3, 15);
+        env.erase_color = RGB1555(1, 0, 3, 15);
 
         vdp1_env_set(&env);
 

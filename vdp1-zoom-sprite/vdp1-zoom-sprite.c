@@ -23,9 +23,9 @@
 #define ZOOM_POINT_WIDTH                (64)
 #define ZOOM_POINT_HEIGHT               (102)
 #define ZOOM_POINT_POINTER_SIZE         (3)
-#define ZOOM_POINT_COLOR_SELECT         COLOR_RGB1555(1,  0,  0, 31)
-#define ZOOM_POINT_COLOR_WAIT           COLOR_RGB1555(1, 31,  0,  0)
-#define ZOOM_POINT_COLOR_HIGHLIGHT      COLOR_RGB1555(1,  0, 31,  0)
+#define ZOOM_POINT_COLOR_SELECT         RGB1555(1,  0,  0, 31)
+#define ZOOM_POINT_COLOR_WAIT           RGB1555(1, 31,  0,  0)
+#define ZOOM_POINT_COLOR_HIGHLIGHT      RGB1555(1,  0, 31,  0)
 
 #define VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX        0
 #define VDP1_CMDT_ORDER_CLEAR_LOCAL_COORDS_INDEX        1
@@ -49,7 +49,7 @@ static smpc_peripheral_digital_t _digital;
 
 static struct {
         int16_vec2_t position;
-        color_rgb1555_t color;
+        rgb1555_t color;
 
         vdp1_cmdt_t *cmdt;
 } _polygon_pointer;
@@ -157,7 +157,7 @@ user_init(void)
             VDP2_TVMD_VERT_240);
 
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 3, 15));
+            RGB1555(1, 0, 3, 15));
 
         vdp2_sprite_priority_set(0, 6);
 

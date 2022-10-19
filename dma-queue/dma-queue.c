@@ -124,7 +124,7 @@ main(void)
 
                 /* Set the back screen to its original color */
                 vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(2 * bank, 0x01FFFE),
-                    COLOR_RGB1555(1, 7, 7, 7));
+                    RGB1555(1, 7, 7, 7));
 
                 /* XXX: Hopefully one day, parts of the screen config can be
                  *      set, not the whole thing every time */
@@ -161,7 +161,7 @@ user_init(void)
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 6);
 
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 7, 7, 7));
+            RGB1555(1, 7, 7, 7));
 
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);

@@ -104,7 +104,7 @@ user_init(void)
             VDP2_TVMD_VERT_240);
 
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 0, 0));
+            RGB1555(1, 0, 0, 0));
 
         vdp2_sprite_priority_set(0, 7);
 
@@ -162,7 +162,7 @@ _cmdt_list_clear_init(void)
                 INT16_VEC2_INITIALIZER(-(SCREEN_WIDTH / 2),      (SCREEN_HEIGHT / 2) - 1),
         };
 
-        static const color_rgb1555_t color = COLOR_RGB1555(0, 0, 0, 0);
+        static const rgb1555_t color = RGB1555(0, 0, 0, 0);
 
         vdp1_cmdt_t * const cmdt =
             &_cmdt_list->cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX];
@@ -189,27 +189,27 @@ _cmdt_list_populate(void)
 static inline uint16_t * __always_inline
 _fb_offset_calc(uint32_t x, uint32_t y)
 {
-        return (uint16_t *)VDP1_FB(((y * 512) + x) * sizeof(color_rgb1555_t));
+        return (uint16_t *)VDP1_FB(((y * 512) + x) * sizeof(rgb1555_t));
 }
 
 static void
 _flare_blend(int16_t flare_x, int16_t flare_y)
 {
         for (int32_t y = 0; y < flare_texture_dim.y; y++) {
-                volatile color_rgb1555_t *fb =
-                    (volatile color_rgb1555_t *)_fb_offset_calc(flare_x, flare_y + y);
+                volatile rgb1555_t *fb =
+                    (volatile rgb1555_t *)_fb_offset_calc(flare_x, flare_y + y);
 
-                const color_rgb1555_t *flare_texture_offset =
-                    (const color_rgb1555_t *)&flare_texture[y * flare_texture_dim.x];
+                const rgb1555_t *flare_texture_offset =
+                    (const rgb1555_t *)&flare_texture[y * flare_texture_dim.x];
 
                 for (int32_t x = 0; x < flare_texture_dim.x; x++, fb++, flare_texture_offset++) {
-                        const color_rgb1555_t src_pixel = (color_rgb1555_t)*flare_texture_offset;
+                        const rgb1555_t src_pixel = (rgb1555_t)*flare_texture_offset;
 
                         if (src_pixel.raw == 0x0000) {
                                 continue;
                         }
 
-                        const color_rgb1555_t fb_pixel = *fb;
+                        const rgb1555_t fb_pixel = *fb;
 
                         if (!fb_pixel.msb) {
                                 *fb = src_pixel;

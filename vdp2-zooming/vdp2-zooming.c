@@ -26,23 +26,23 @@ static void _pnd_transfer(uint32_t page_width, uint32_t page_height, uint32_t pa
 
 static void _pnd_fill(uint16_t *map, uint16_t page_width, uint16_t page_height, uint16_t tile);
 
-static const color_rgb1555_t _palette[] __unused = {
-        COLOR_RGB888_RGB1555_INITIALIZER(1,   0,   0,   0),
-        COLOR_RGB888_RGB1555_INITIALIZER(1,   0,   0, 170),
-        COLOR_RGB888_RGB1555_INITIALIZER(1,   0, 170,   0),
-        COLOR_RGB888_RGB1555_INITIALIZER(1,   0, 170, 170),
-        COLOR_RGB888_RGB1555_INITIALIZER(1,  85,  85,  85),
-        COLOR_RGB888_RGB1555_INITIALIZER(1,  85,  85, 255),
-        COLOR_RGB888_RGB1555_INITIALIZER(1,  85, 255,  85),
-        COLOR_RGB888_RGB1555_INITIALIZER(1,  85, 255, 255),
-        COLOR_RGB888_RGB1555_INITIALIZER(1, 170,   0,   0),
-        COLOR_RGB888_RGB1555_INITIALIZER(1, 170,   0, 170),
-        COLOR_RGB888_RGB1555_INITIALIZER(1, 170,  85,   0),
-        COLOR_RGB888_RGB1555_INITIALIZER(1, 170, 170, 170),
-        COLOR_RGB888_RGB1555_INITIALIZER(1, 255,  85,  85),
-        COLOR_RGB888_RGB1555_INITIALIZER(1, 255,  85, 255),
-        COLOR_RGB888_RGB1555_INITIALIZER(1, 255, 255,  85),
-        COLOR_RGB888_RGB1555_INITIALIZER(1, 255, 255, 255)
+static const rgb1555_t _palette[] __unused = {
+        RGB888_RGB1555_INITIALIZER(1,   0,   0,   0),
+        RGB888_RGB1555_INITIALIZER(1,   0,   0, 170),
+        RGB888_RGB1555_INITIALIZER(1,   0, 170,   0),
+        RGB888_RGB1555_INITIALIZER(1,   0, 170, 170),
+        RGB888_RGB1555_INITIALIZER(1,  85,  85,  85),
+        RGB888_RGB1555_INITIALIZER(1,  85,  85, 255),
+        RGB888_RGB1555_INITIALIZER(1,  85, 255,  85),
+        RGB888_RGB1555_INITIALIZER(1,  85, 255, 255),
+        RGB888_RGB1555_INITIALIZER(1, 170,   0,   0),
+        RGB888_RGB1555_INITIALIZER(1, 170,   0, 170),
+        RGB888_RGB1555_INITIALIZER(1, 170,  85,   0),
+        RGB888_RGB1555_INITIALIZER(1, 170, 170, 170),
+        RGB888_RGB1555_INITIALIZER(1, 255,  85,  85),
+        RGB888_RGB1555_INITIALIZER(1, 255,  85, 255),
+        RGB888_RGB1555_INITIALIZER(1, 255, 255,  85),
+        RGB888_RGB1555_INITIALIZER(1, 255, 255, 255)
 };
 
 int
@@ -89,7 +89,7 @@ void
 user_init(void)
 {
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(2, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 0, 7));
+            RGB1555(1, 0, 0, 7));
 
         const vdp2_scrn_cell_format_t format = {
                 .scroll_screen  = VDP2_SCRN_NBG1,

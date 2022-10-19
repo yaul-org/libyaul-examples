@@ -78,7 +78,7 @@ user_init(void)
             VDP2_TVMD_VERT_224);
 
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 3, 15));
+            RGB1555(1, 0, 3, 15));
 
         vdp2_tvmd_display_set();
 

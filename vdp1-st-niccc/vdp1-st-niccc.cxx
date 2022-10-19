@@ -48,7 +48,7 @@ static struct {
 
     vdp1_cmdt_list_t* cmdt_list;
 
-    color_rgb1555_t palette[16];
+    rgb1555_t palette[16];
 } __aligned(16) _scene;
 
 static volatile struct {
@@ -166,7 +166,7 @@ static void _vdp1_init(void) {
 
     vdp1_env_t vdp1_env;
 
-    vdp1_env.erase_color = COLOR_RGB1555(0, 0, 0, 0);
+    vdp1_env.erase_color = RGB1555(0, 0, 0, 0);
     vdp1_env.erase_points[0].x = 0;
     vdp1_env.erase_points[0].y = 0;
     vdp1_env.erase_points[1].x = _render_width - 1;
@@ -253,7 +253,7 @@ static void _vdp2_init(void) {
     vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_B,
                               VDP2_TVMD_VERT_240);
 
-    vdp2_scrn_back_color_set(BACK_SCREEN, COLOR_RGB1555(1, 7, 7, 7));
+    vdp2_scrn_back_color_set(BACK_SCREEN, RGB1555(1, 7, 7, 7));
 
     vdp2_scrn_bitmap_format_set(&rbg0_format);
     vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);
@@ -423,8 +423,8 @@ static void _on_update_palette(uint8_t palette_index,
     const uint8_t scaled_g = color.g << 2;
     const uint8_t scaled_b = color.b << 2;
 
-    const color_rgb1555_t rgb1555_color =
-        COLOR_RGB1555(1, scaled_r, scaled_g, scaled_b);
+    const rgb1555_t rgb1555_color =
+        RGB1555(1, scaled_r, scaled_g, scaled_b);
 
     _scene.palette[palette_index] = rgb1555_color;
 

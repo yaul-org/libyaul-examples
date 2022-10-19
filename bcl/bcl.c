@@ -122,8 +122,8 @@ user_init(void)
 
         vdp2_vram_cycp_set(&vram_cycp);
 
-        color_rgb1555_t bs_color;
-        bs_color = COLOR_RGB1555(1, 5, 5, 7);
+        rgb1555_t bs_color;
+        bs_color = RGB1555(1, 5, 5, 7);
 
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             bs_color);

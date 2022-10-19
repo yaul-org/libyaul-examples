@@ -23,9 +23,9 @@
 #define UV_POINT_WIDTH                (32)
 #define UV_POINT_HEIGHT               (32)
 #define UV_POINT_POINTER_SIZE         (3)
-#define UV_POINT_COLOR_SELECT         COLOR_RGB1555(1,  0,  0, 31)
-#define UV_POINT_COLOR_WAIT           COLOR_RGB1555(1, 31,  0,  0)
-#define UV_POINT_COLOR_HIGHLIGHT      COLOR_RGB1555(1,  0, 31,  0)
+#define UV_POINT_COLOR_SELECT         RGB1555(1,  0,  0, 31)
+#define UV_POINT_COLOR_WAIT           RGB1555(1, 31,  0,  0)
+#define UV_POINT_COLOR_HIGHLIGHT      RGB1555(1,  0, 31,  0)
 
 #define VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX        0
 #define VDP1_CMDT_ORDER_USER_CLIP_COORDS_INDEX          1
@@ -38,7 +38,7 @@
 #define VDP1_CMDT_ORDER_COUNT                           8
 
 extern uint8_t asset_zoom_tex[];
-extern const color_rgb1555_t asset_zoom_pal[];
+extern const rgb1555_t asset_zoom_pal[];
 
 /* State */
 static int32_t _state_uv      = STATE_UV_MOVE_ORIGIN;
@@ -50,7 +50,7 @@ static smpc_peripheral_digital_t _digital;
 
 static struct {
         int16_vec2_t position;
-        color_rgb1555_t color;
+        rgb1555_t color;
 
         vdp1_cmdt_t *cmdt;
 } _polygon_pointer;
@@ -141,7 +141,7 @@ user_init(void)
             VDP2_TVMD_VERT_224);
 
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            COLOR_RGB1555(1, 0, 3, 15));
+            RGB1555(1, 0, 3, 15));
 
         vdp2_sprite_priority_set(0, 7);
         vdp2_sprite_priority_set(1, 7);
@@ -278,8 +278,8 @@ _sprite_init(void)
         vdp1_gouraud_table_t * const gouraud_table_base =
             _vdp1_vram_partitions.gouraud_base;
 
-        color_rgb1555_t * const cram_base __unused =
-            (color_rgb1555_t *)VDP2_CRAM_MODE_0_OFFSET(0, 0, 0x0000);
+        rgb1555_t * const cram_base __unused =
+            (rgb1555_t *)VDP2_CRAM_MODE_0_OFFSET(0, 0, 0x0000);
 
         const vdp1_cmdt_draw_mode_t draw_mode = {
                 .bits.hss_enable = true,
@@ -308,11 +308,11 @@ _sprite_init(void)
         _sprite.cmdt->cmd_xd = -UV_POINT_WIDTH;
         _sprite.cmdt->cmd_yd =  UV_POINT_HEIGHT;
 
-        vdp1_cmdt_param_color_set(_sprite.cmdt, COLOR_RGB1555(0, 16, 16, 0));
+        vdp1_cmdt_param_color_set(_sprite.cmdt, RGB1555(0, 16, 16, 0));
         vdp1_cmdt_param_gouraud_base_set(_sprite.cmdt, (vdp1_vram_t)gouraud_table_base);
 
         const uint8_t * const tex_ptr = asset_zoom_tex;
-        const color_rgb1555_t * const pal_ptr = asset_zoom_pal;
+        const rgb1555_t * const pal_ptr = asset_zoom_pal;
 
         for (uint32_t y = 0, cram_offset = 0; y < UV_POINT_HEIGHT; y++) {
                 for (uint32_t x = 0; x < UV_POINT_WIDTH; x++) {
@@ -320,7 +320,7 @@ _sprite_init(void)
                         const uint32_t tex_offset = 16 + x + ((y + 48) * 64);
 
                         const uint32_t tex_index = tex_ptr[tex_offset];
-                        const color_rgb1555_t color = pal_ptr[tex_index];
+                        const rgb1555_t color = pal_ptr[tex_index];
 
                         cram_base[cram_offset] = color;
 
@@ -336,7 +336,7 @@ _sprite_config(void)
             _vdp1_vram_partitions.gouraud_base;
 
         for (uint32_t i = 0; i < 4; i++) {
-                gouraud_table_base->colors[i] = COLOR_RGB1555(1, _uv_coords[i].x, _uv_coords[i].y, 0);
+                gouraud_table_base->colors[i] = RGB1555(1, _uv_coords[i].x, _uv_coords[i].y, 0);
         }
 }
 
