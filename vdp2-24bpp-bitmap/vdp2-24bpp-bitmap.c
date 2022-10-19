@@ -66,8 +66,8 @@ main(void)
 
         vdp2_vram_cycp_set(&vram_cycp);
 
-        volatile uint32_t * const vram =
-            (volatile uint32_t *)VDP2_VRAM_ADDR(0, 0x00000);
+        volatile color_rgb888_t * const vram =
+            (volatile color_rgb888_t *)VDP2_VRAM_ADDR(0, 0x00000);
 
         for (uint32_t y = 0; y < 256; y++) {
                 for (uint32_t x = 0; x < 512; x++) {

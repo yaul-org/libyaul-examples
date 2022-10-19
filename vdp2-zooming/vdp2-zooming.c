@@ -11,37 +11,38 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
-#define NBG1_CPD                VDP2_VRAM_ADDR(2, 0x00000)
-#define NBG1_PAL                VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
-#define NBG1_MAP_PLANE_A        VDP2_VRAM_ADDR(0, 0x00000)
-#define NBG1_MAP_PLANE_B        VDP2_VRAM_ADDR(0, 0x08000)
-#define NBG1_MAP_PLANE_C        VDP2_VRAM_ADDR(0, 0x10000)
-#define NBG1_MAP_PLANE_D        VDP2_VRAM_ADDR(0, 0x18000)
+#define NBG1_CPD         VDP2_VRAM_ADDR(2, 0x00000)
+#define NBG1_PAL         VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
+#define NBG1_MAP_PLANE_A VDP2_VRAM_ADDR(0, 0x00000)
+#define NBG1_MAP_PLANE_B VDP2_VRAM_ADDR(0, 0x08000)
+#define NBG1_MAP_PLANE_C VDP2_VRAM_ADDR(0, 0x10000)
+#define NBG1_MAP_PLANE_D VDP2_VRAM_ADDR(0, 0x18000)
 
-static void _transfer_cpd(void);
-static void _transfer_pal(void);
-static void _transfer_pnd(uint32_t page_width, uint32_t page_height, uint32_t page_size);
+static void _cpd_transfer(void);
+static void _pal_transfer(void);
+static void _pnd_transfer(uint32_t page_width, uint32_t page_height, uint32_t page_size);
 
-static void _fill_map_pnd(uint16_t *map, uint16_t page_width, uint16_t page_height, uint16_t tile);
+static void _pnd_fill(uint16_t *map, uint16_t page_width, uint16_t page_height, uint16_t tile);
 
 static const color_rgb1555_t _palette[] __unused = {
-        COLOR_RGB1888_RGB1555_INITIALIZER(1,   0,   0,   0),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1,   0,   0, 170),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1,   0, 170,   0),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1,   0, 170, 170),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1,  85,  85,  85),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1,  85,  85, 255),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1,  85, 255,  85),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1,  85, 255, 255),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1, 170,   0,   0),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1, 170,   0, 170),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1, 170,  85,   0),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1, 170, 170, 170),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1, 255,  85,  85),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1, 255,  85, 255),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1, 255, 255,  85),
-        COLOR_RGB1888_RGB1555_INITIALIZER(1, 255, 255, 255)
+        COLOR_RGB888_RGB1555_INITIALIZER(1,   0,   0,   0),
+        COLOR_RGB888_RGB1555_INITIALIZER(1,   0,   0, 170),
+        COLOR_RGB888_RGB1555_INITIALIZER(1,   0, 170,   0),
+        COLOR_RGB888_RGB1555_INITIALIZER(1,   0, 170, 170),
+        COLOR_RGB888_RGB1555_INITIALIZER(1,  85,  85,  85),
+        COLOR_RGB888_RGB1555_INITIALIZER(1,  85,  85, 255),
+        COLOR_RGB888_RGB1555_INITIALIZER(1,  85, 255,  85),
+        COLOR_RGB888_RGB1555_INITIALIZER(1,  85, 255, 255),
+        COLOR_RGB888_RGB1555_INITIALIZER(1, 170,   0,   0),
+        COLOR_RGB888_RGB1555_INITIALIZER(1, 170,   0, 170),
+        COLOR_RGB888_RGB1555_INITIALIZER(1, 170,  85,   0),
+        COLOR_RGB888_RGB1555_INITIALIZER(1, 170, 170, 170),
+        COLOR_RGB888_RGB1555_INITIALIZER(1, 255,  85,  85),
+        COLOR_RGB888_RGB1555_INITIALIZER(1, 255,  85, 255),
+        COLOR_RGB888_RGB1555_INITIALIZER(1, 255, 255,  85),
+        COLOR_RGB888_RGB1555_INITIALIZER(1, 255, 255, 255)
 };
 
 int
@@ -53,7 +54,7 @@ main(void)
         fix16_t scroll_y;
         scroll_y = FIX16(0.0f);
 
-        q0_3_8_t zoom;
+        fix16_t zoom;
         zoom = VDP2_SCRN_REDUCTION_MIN;
 
         int32_t zoom_dir;
@@ -69,7 +70,7 @@ main(void)
                 scroll_x = scroll_x + FIX16(16.0f);
                 scroll_y = scroll_y + FIX16(16.0f);
 
-                zoom = zoom + (zoom_dir * Q0_3_8(0.125f));
+                zoom = zoom + (zoom_dir * FIX16(0.125f));
 
                 if (zoom >= VDP2_SCRN_REDUCTION_MAX) {
                         zoom = VDP2_SCRN_REDUCTION_MAX;
@@ -143,14 +144,14 @@ user_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);
 
-        _transfer_cpd();
-        _transfer_pal();
+        _cpd_transfer();
+        _pal_transfer();
 
         const uint32_t page_width = VDP2_SCRN_CALCULATE_PAGE_WIDTH(&format);
         const uint32_t page_height = VDP2_SCRN_CALCULATE_PAGE_HEIGHT(&format);
         const uint32_t page_size = VDP2_SCRN_CALCULATE_PAGE_SIZE(&format);
 
-        _transfer_pnd(page_width, page_height, page_size);
+        _pnd_transfer(page_width, page_height, page_size);
 
         vdp2_tvmd_display_set();
 
@@ -159,26 +160,24 @@ user_init(void)
 }
 
 static void
-_transfer_cpd(void)
+_cpd_transfer(void)
 {
         for (uint16_t tile = 0; tile < 16; tile++) {
                 const uint8_t byte = (tile << 4) | tile;
 
-                (void)memset((void *)((uint32_t)NBG1_CPD | (tile << 5)), byte, 32);
+                (void)memset((void *)(NBG1_CPD | (tile << 5)), byte, 32);
         }
 }
 
 static void
-_transfer_pal(void)
+_pal_transfer(void)
 {
         (void)memcpy((void *)NBG1_PAL, _palette, sizeof(_palette));
 }
 
 static void
-_transfer_pnd(uint32_t page_width, uint32_t page_height, uint32_t page_size)
+_pnd_transfer(uint32_t page_width, uint32_t page_height, uint32_t page_size)
 {
-
-
         uint16_t * const map = malloc(page_size);
         assert(map != NULL);
 
@@ -186,7 +185,7 @@ _transfer_pnd(uint32_t page_width, uint32_t page_height, uint32_t page_size)
         pnd = NBG1_MAP_PLANE_A;
 
         for (uint32_t tile = 0; tile < 16; tile++) {
-                _fill_map_pnd(map, page_width, page_height, tile);
+                _pnd_fill(map, page_width, page_height, tile);
 
                 scu_dma_transfer(0, (void *)pnd, map, page_size);
 
@@ -197,15 +196,12 @@ _transfer_pnd(uint32_t page_width, uint32_t page_height, uint32_t page_size)
 }
 
 static void
-_fill_map_pnd(uint16_t *map, uint16_t page_width, uint16_t page_height, uint16_t tile)
+_pnd_fill(uint16_t *map, uint16_t page_width, uint16_t page_height, uint16_t tile)
 {
         for (uint16_t x = 0; x < page_width; x++) {
                 for (uint16_t y = 0; y < page_height; y++) {
-                        uint32_t cpd;
-                        cpd = (uint32_t)NBG1_CPD | (tile << 5);
-
-                        uint16_t pnd;
-                        pnd = VDP2_SCRN_PND_CONFIG_1(1, cpd, NBG1_PAL);
+                        const uint32_t cpd = (uint32_t)NBG1_CPD | (tile << 5);
+                        const uint16_t pnd = VDP2_SCRN_PND_CONFIG_1(1, cpd, NBG1_PAL);
 
                         map[x + (y * page_width)] = pnd;
                 }
