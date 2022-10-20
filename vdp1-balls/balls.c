@@ -16,8 +16,6 @@ extern uint8_t asset_ball_pal_end[];
 
 struct balls_handle {
         balls_config_t config;
-
-        int8_t load_count;
 };
 
 static vdp1_vram_t _sprite_tex_base;
@@ -33,8 +31,23 @@ balls_init(const balls_config_t config)
         handle->config = config;
 
         for (uint32_t i = 0; i < handle->config.count; i++) {
-                handle->config.balls->pos_x[i] = 0;
-                handle->config.balls->pos_y[i] = 0;
+                const int16_t rand_x = rand();
+                const int16_t rand_y = rand();
+
+                /* Bitwise AND 511 gives a maximum integer value of 31. Scale
+                 * the value the ((SCREEN_WIDTH / 2) / 31).
+                 *
+                 * Bit 0 is mapped as the direction */
+                const int16_t neg_x = ((rand_x & 2) == 0) ? 1 : -1;
+                const int16_t pos_x = (rand_x & 511) * (neg_x * 5);
+                const int16_t dir_x = rand_x & 1;
+
+                const int16_t neg_y = ((rand_y & 2) == 0) ? 1 : -1;
+                const int16_t pos_y = (rand_y & 511) * (neg_y * 3);
+                const int16_t dir_y = rand_y & 1;
+
+                handle->config.balls->pos_x[i] = pos_x | dir_x;
+                handle->config.balls->pos_y[i] = pos_y | dir_y;
         }
 
         return handle;
@@ -48,14 +61,12 @@ balls_assets_init(balls_handle_t *handle __unused)
         vdp1_vram_partitions_get(&vdp1_vram_partitions);
 
         _sprite_tex_base = (vdp1_vram_t)vdp1_vram_partitions.texture_base;
-        _sprite_pal_base = VDP2_CRAM_MODE_1_OFFSET(0, 1, 0x0000);
+        _sprite_pal_base = VDP2_CRAM_MODE_1_OFFSET(1, 0, 0x0000);
 }
 
 void
-balls_assets_load(balls_handle_t *handle)
+balls_assets_load(balls_handle_t *handle __unused)
 {
-        handle->load_count = 2;
-
         scu_dma_transfer(0, (void *)_sprite_tex_base, asset_ball_tex, asset_ball_tex_end - asset_ball_tex);
         scu_dma_transfer(0, (void *)_sprite_pal_base, asset_ball_pal, asset_ball_pal_end - asset_ball_pal);
 }
@@ -166,15 +177,6 @@ balls_cmdts_put(balls_handle_t *handle __unused, uint16_t index, uint16_t count)
                 .bits.end_code_disable     = false
         };
 
-        const uint16_t offset =
-            (uint32_t)_sprite_pal_base & (VDP2_CRAM_SIZE - 1);
-        const uint16_t palette_number = offset >> 1;
-
-        const vdp1_cmdt_color_bank_t color_bank ={
-                .raw = 0x0000,
-                .type_0.data.dc = palette_number & VDP2_SPRITE_TYPE_0_DC_MASK
-        };
-
         vdp1_cmdt_t *cmdt;
         cmdt = (vdp1_cmdt_t *)VDP1_CMD_TABLE(index, 0);
 
@@ -182,6 +184,17 @@ balls_cmdts_put(balls_handle_t *handle __unused, uint16_t index, uint16_t count)
                 vdp1_cmdt_normal_sprite_set(cmdt);
 
                 vdp1_cmdt_param_draw_mode_set(cmdt, draw_mode);
+
+                const uint32_t rand_index = rand() & 15;
+                const uint16_t palette_offset =
+                    (_sprite_pal_base + (rand_index << 5)) & (VDP2_CRAM_SIZE - 1);
+                const uint16_t palette_number = palette_offset >> 1;
+
+                const vdp1_cmdt_color_bank_t color_bank ={
+                        .raw            = 0x0000,
+                        .type_0.data.dc = palette_number & VDP2_SPRITE_TYPE_0_DC_MASK
+                };
+
                 vdp1_cmdt_param_color_mode0_set(cmdt, color_bank);
                 vdp1_cmdt_param_size_set(cmdt, BALL_WIDTH, BALL_HEIGHT);
                 vdp1_cmdt_param_char_base_set(cmdt, _sprite_tex_base);

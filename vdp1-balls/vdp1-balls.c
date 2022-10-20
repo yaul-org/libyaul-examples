@@ -112,6 +112,9 @@ main(void)
         balls_handle_t *balls_handle[2];
         smpc_peripheral_digital_t digital;
 
+        /* XXX: Seed properly */
+        srand(0xBEEFCAFE);
+
         balls_handle[0] = balls_init(_balls_configs[0]);
         balls_handle[1] = balls_init(_balls_configs[1]);
 
@@ -288,7 +291,6 @@ _vdp1_init(void)
         vdp1_cmdt_local_coord_set(&cmdt[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX]);
         vdp1_cmdt_param_vertex_set(&cmdt[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX],
             CMDT_VTX_LOCAL_COORD, &local_coords);
-
 
         vdp1_env_set(&vdp1_env);
 
