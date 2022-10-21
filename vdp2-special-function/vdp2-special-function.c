@@ -13,21 +13,23 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SCREEN_WIDTH    320
-#define SCREEN_HEIGHT   240
+#define SCREEN_WIDTH  320
+#define SCREEN_HEIGHT 240
 
-#define VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX  0
-#define VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX        1
-#define VDP1_CMDT_ORDER_POLYGON_INDEX             2
-#define VDP1_CMDT_ORDER_DRAW_END_INDEX            3
-#define VDP1_CMDT_ORDER_COUNT                     (VDP1_CMDT_ORDER_DRAW_END_INDEX + 1)
+#define VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX 0
+#define VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX       1
+#define VDP1_CMDT_ORDER_POLYGON_INDEX            2
+#define VDP1_CMDT_ORDER_DRAW_END_INDEX           3
+#define VDP1_CMDT_ORDER_COUNT                    (VDP1_CMDT_ORDER_DRAW_END_INDEX + 1)
 
-#define NBG0_CPD                VDP2_VRAM_ADDR(0, 0x00000)
-#define NBG0_PAL                VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
-#define NBG0_MAP_PLANE_A        VDP2_VRAM_ADDR(3, 0x00000)
-#define NBG0_MAP_PLANE_B        VDP2_VRAM_ADDR(3, 0x00000)
-#define NBG0_MAP_PLANE_C        VDP2_VRAM_ADDR(3, 0x00000)
-#define NBG0_MAP_PLANE_D        VDP2_VRAM_ADDR(3, 0x00000)
+#define NBG0_CPD         VDP2_VRAM_ADDR(0, 0x00000)
+#define NBG0_PAL         VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
+#define NBG0_MAP_PLANE_A VDP2_VRAM_ADDR(3, 0x00000)
+#define NBG0_MAP_PLANE_B VDP2_VRAM_ADDR(3, 0x00000)
+#define NBG0_MAP_PLANE_C VDP2_VRAM_ADDR(3, 0x00000)
+#define NBG0_MAP_PLANE_D VDP2_VRAM_ADDR(3, 0x00000)
+
+#define BACK_SCREEN      VDP2_VRAM_ADDR(3, 0x01FFFE)
 
 extern uint8_t asset_cpd_dat[];
 extern uint8_t asset_cpd_dat_end[];
@@ -95,30 +97,29 @@ void
 user_init(void)
 {
         const vdp2_scrn_cell_format_t format = {
-                .scroll_screen  = VDP2_SCRN_NBG0,
-                .cc_count       = VDP2_SCRN_CCC_PALETTE_2048,
-                .character_size = 1 * 1,
-                .pnd_size       = 2,
-                .auxiliary_mode = 1,
-                .sf_mode        = 2,
-                .sf_code        = VDP2_SCRN_SF_CODE_A,
-                .plane_size     = 1 * 1,
-                .cp_table       = NBG0_CPD,
-                .color_palette  = NBG0_PAL,
-                .map_bases      = {
-                        .planes = {
-                                NBG0_MAP_PLANE_A,
-                                NBG0_MAP_PLANE_B,
-                                NBG0_MAP_PLANE_C,
-                                NBG0_MAP_PLANE_D
-                        }
-                }
+                .scroll_screen = VDP2_SCRN_NBG0,
+                .ccc           = VDP2_SCRN_CCC_PALETTE_2048,
+                .char_size     = VDP2_SCRN_CHAR_SIZE_1X1,
+                .pnd_size      = 2,
+                .aux_mode      = VDP2_SCRN_AUX_MODE_1,
+                .plane_size    = VDP2_SCRN_PLANE_SIZE_1X1,
+                .cpd_base      = NBG0_CPD,
+                .palette_base  = NBG0_PAL
         };
 
-        vdp2_scrn_cell_format_set(&format);
+        const vdp2_scrn_normal_map_t normal_map = {
+                .plane_a = NBG0_MAP_PLANE_A,
+                .plane_b = NBG0_MAP_PLANE_B,
+                .plane_c = NBG0_MAP_PLANE_C,
+                .plane_d = NBG0_MAP_PLANE_D
+        };
 
-        vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            RGB1555(1, 0, 0, 7));
+        vdp2_scrn_cell_format_set(&format, &normal_map);
+
+        vdp2_scrn_sf_set(VDP2_SCRN_NBG0, VDP2_SCRN_SF_MODE_2,
+            VDP2_SCRN_SF_TYPE_CELL_PRIORITY, VDP2_SCRN_SF_CODE_A);
+
+        vdp2_scrn_back_color_set(BACK_SCREEN, RGB1555(1, 0, 0, 7));
 
         /* The special priority function only toggles the LSB, so the priority
          * must be even */
@@ -143,10 +144,10 @@ user_init(void)
          */
 
         vdp2_scrn_sf_codes_set(VDP2_SCRN_SF_CODE_A,
-            VDP2_SCRN_SF_CODE_0x02_0x03 |
-            VDP2_SCRN_SF_CODE_0x06_0x07 |
-            VDP2_SCRN_SF_CODE_0x0A_0x0B |
-            VDP2_SCRN_SF_CODE_0x0E_0x0F);
+                               VDP2_SCRN_SF_CODE_0x02_0x03 |
+                               VDP2_SCRN_SF_CODE_0x06_0x07 |
+                               VDP2_SCRN_SF_CODE_0x0A_0x0B |
+                               VDP2_SCRN_SF_CODE_0x0E_0x0F);
 
         vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
 
@@ -162,25 +163,27 @@ user_init(void)
 
         vdp2_cram_mode_set(1);
 
-        vdp2_vram_cycp_bank_t vram_cycp_bank[2];
-
-        vram_cycp_bank[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp_bank[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp_bank[0].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp_bank[0].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp_bank[0].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[0].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[0].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[0].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
-
-        vram_cycp_bank[1].t0 = VDP2_VRAM_CYCP_PNDR_NBG0;
-        vram_cycp_bank[1].t1 = VDP2_VRAM_CYCP_PNDR_NBG0;
-        vram_cycp_bank[1].t2 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[1].t3 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[1].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[1].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[1].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp_bank[1].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
+        const vdp2_vram_cycp_bank_t vram_cycp_bank[2] = {
+                {
+                        .t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                        .t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                        .t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                        .t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                        .t4 = VDP2_VRAM_CYCP_NO_ACCESS,
+                        .t5 = VDP2_VRAM_CYCP_NO_ACCESS,
+                        .t6 = VDP2_VRAM_CYCP_NO_ACCESS,
+                        .t7 = VDP2_VRAM_CYCP_NO_ACCESS
+                }, {
+                        .t0 = VDP2_VRAM_CYCP_PNDR_NBG0,
+                        .t1 = VDP2_VRAM_CYCP_PNDR_NBG0,
+                        .t2 = VDP2_VRAM_CYCP_NO_ACCESS,
+                        .t3 = VDP2_VRAM_CYCP_NO_ACCESS,
+                        .t4 = VDP2_VRAM_CYCP_NO_ACCESS,
+                        .t5 = VDP2_VRAM_CYCP_NO_ACCESS,
+                        .t6 = VDP2_VRAM_CYCP_NO_ACCESS,
+                        .t7 = VDP2_VRAM_CYCP_NO_ACCESS
+                }
+        };
 
         /* When bank A (or B) is not parted, cycle patterns for bank A1 does not
          * need to be set */

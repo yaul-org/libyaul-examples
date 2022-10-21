@@ -13,17 +13,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static vdp2_scrn_bitmap_format_t _format = {
-        .scroll_screen      = VDP2_SCRN_NBG0,
-        .cc_count           = VDP2_SCRN_CCC_RGB_32768,
-        .bitmap_size.width  = 512,
-        .bitmap_size.height = 256,
-        .color_palette      = 0x00000000,
-        .bitmap_pattern     = VDP2_VRAM_ADDR(0, 0x00000),
-        .rp_mode            = 0,
-        .sf_type            = VDP2_SCRN_SF_TYPE_NONE,
-        .sf_code            = VDP2_SCRN_SF_CODE_A,
-        .sf_mode            = 0
+static vdp2_scrn_bitmap_format_t _bitmap_format = {
+        .scroll_screen = VDP2_SCRN_NBG0,
+        .ccc           = VDP2_SCRN_CCC_RGB_32768,
+        .bitmap_size   = VDP2_SCRN_BITMAP_SIZE_512X256,
+        .palette_base  = 0x00000000,
+        .bitmap_base   = VDP2_VRAM_ADDR(0, 0x00000)
 };
 
 /* Setting the no-access timing cycles from 0xF to 0xE increased performance
@@ -101,6 +96,8 @@ static uint32_t _tga_file_decode(const void *asset_tga, void *buffer);
 int
 main(void)
 {
+        vdp2_scrn_bitmap_format_set(&_bitmap_format);
+
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
         vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
 
@@ -126,11 +123,9 @@ main(void)
                 vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(2 * bank, 0x01FFFE),
                     RGB1555(1, 7, 7, 7));
 
-                /* XXX: Hopefully one day, parts of the screen config can be
-                 *      set, not the whole thing every time */
-                _format.bitmap_pattern = VDP2_VRAM_ADDR(2 * bank, 0x00000);
+                _bitmap_format.bitmap_base = VDP2_VRAM_ADDR(2 * bank, 0x00000);
 
-                vdp2_scrn_bitmap_format_set(&_format);
+                vdp2_scrn_bitmap_base_set(&_bitmap_format);
 
                 vdp2_tvmd_vblank_in_next_wait(15);
 

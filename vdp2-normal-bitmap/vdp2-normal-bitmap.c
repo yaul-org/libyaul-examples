@@ -19,15 +19,11 @@ int
 main(void)
 {
         const vdp2_scrn_bitmap_format_t format = {
-                .scroll_screen      = VDP2_SCRN_NBG0,
-                .cc_count           = VDP2_SCRN_CCC_RGB_32768,
-                .bitmap_size.width  = 512,
-                .bitmap_size.height = 256,
-                .color_palette      = 0x00000000,
-                .bitmap_pattern     = VDP2_VRAM_ADDR(0, 0x00000),
-                .sf_type            = VDP2_SCRN_SF_TYPE_NONE,
-                .sf_code            = VDP2_SCRN_SF_CODE_A,
-                .sf_mode            = 0
+                .scroll_screen = VDP2_SCRN_NBG0,
+                .ccc           = VDP2_SCRN_CCC_RGB_32768,
+                .bitmap_size   = VDP2_SCRN_BITMAP_SIZE_512X256,
+                .palette_base  = 0x00000000,
+                .bitmap_base   = VDP2_VRAM_ADDR(0, 0x00000)
         };
 
         vdp2_scrn_bitmap_format_set(&format);
@@ -81,11 +77,8 @@ main(void)
 
         tga_image_decode(&tga, (void *)VDP2_VRAM_ADDR(0, 0x00000));
 
-        rgb1555_t bs_color;
-        bs_color = RGB1555(1, 5, 5, 7);
-
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            bs_color);
+            RGB1555(1, 5, 5, 7));
 
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);

@@ -21,14 +21,10 @@ main(void)
 {
         const vdp2_scrn_bitmap_format_t format = {
                 .scroll_screen      = VDP2_SCRN_NBG0,
-                .cc_count           = VDP2_SCRN_CCC_PALETTE_256,
-                .bitmap_size.width  = 1024,
-                .bitmap_size.height = 512,
-                .color_palette      = VDP2_CRAM_ADDR(0x0300),
-                .bitmap_pattern     = VDP2_VRAM_ADDR(0, 0x00000),
-                .sf_type            = VDP2_SCRN_SF_TYPE_NONE,
-                .sf_code            = VDP2_SCRN_SF_CODE_A,
-                .sf_mode            = 0
+                .ccc                = VDP2_SCRN_CCC_PALETTE_256,
+                .bitmap_size        = VDP2_SCRN_BITMAP_SIZE_1024X512,
+                .palette_base       = VDP2_CRAM_ADDR(0x0300),
+                .bitmap_base        = VDP2_VRAM_ADDR(0, 0x00000)
         };
 
         vdp2_scrn_bitmap_format_set(&format);
@@ -38,43 +34,43 @@ main(void)
         vdp2_scrn_reduction_y_set(VDP2_SCRN_NBG0, FIX16(1.0f / (1.0f - (240.0f / 512.0f))));
         vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
 
-        vdp2_vram_cycp_t vram_cycp;
+        const vdp2_vram_cycp_t vram_cycp = {
+                .pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[0].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[0].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[0].t4 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[0].t5 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[0].t6 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[0].t7 = VDP2_VRAM_CYCP_NO_ACCESS,
 
-        vram_cycp.pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[0].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[0].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[0].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[0].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp.pt[0].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp.pt[0].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp.pt[0].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
+                .pt[1].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[1].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[1].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[1].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[1].t4 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[1].t5 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[1].t6 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[1].t7 = VDP2_VRAM_CYCP_NO_ACCESS,
 
-        vram_cycp.pt[1].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[1].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[1].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[1].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[1].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp.pt[1].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp.pt[1].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp.pt[1].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
+                .pt[2].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[2].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[2].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[2].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[2].t4 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[2].t5 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[2].t6 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[2].t7 = VDP2_VRAM_CYCP_NO_ACCESS,
 
-        vram_cycp.pt[2].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[2].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[2].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[2].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[2].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp.pt[2].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp.pt[2].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp.pt[2].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
-
-        vram_cycp.pt[3].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[3].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[3].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[3].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0;
-        vram_cycp.pt[3].t4 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp.pt[3].t5 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp.pt[3].t6 = VDP2_VRAM_CYCP_NO_ACCESS;
-        vram_cycp.pt[3].t7 = VDP2_VRAM_CYCP_NO_ACCESS;
+                .pt[3].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[3].t1 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[3].t2 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[3].t3 = VDP2_VRAM_CYCP_CHPNDR_NBG0,
+                .pt[3].t4 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[3].t5 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[3].t6 = VDP2_VRAM_CYCP_NO_ACCESS,
+                .pt[3].t7 = VDP2_VRAM_CYCP_NO_ACCESS
+        };
 
         vdp2_vram_cycp_set(&vram_cycp);
 

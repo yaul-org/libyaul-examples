@@ -22,8 +22,9 @@
 #define VDP1_CMDT_ORDER_DRAW_END_INDEX              (VDP1_CMDT_ORDER_BUFFER_END_INDEX + 1)
 #define VDP1_CMDT_ORDER_COUNT                       VDP1_CMDT_ORDER_DRAW_END_INDEX
 
-#define RBG0_BPD            VDP2_VRAM_ADDR(0, 0x000000)
-#define RBG0_ROTATION_TABLE VDP2_VRAM_ADDR(2, 0x000000)
+#define RBG0_BPD         VDP2_VRAM_ADDR(0, 0x000000)
+#define RBG0_RP_TABLE    VDP2_VRAM_ADDR(2, 0x000000)
+#define RBG0_COEFF_TABLE VDP2_VRAM_ADDR(1, 0x000000)
 
 #define BACK_SCREEN         VDP2_VRAM_ADDR(1, 0x01FFFE)
 
@@ -181,25 +182,21 @@ static void _vdp1_init(void) {
 
 static void _vdp2_init(void) {
     static const vdp2_scrn_bitmap_format_t rbg0_format = {
-            .scroll_screen       = VDP2_SCRN_RBG0,
-            .cc_count            = VDP2_SCRN_CCC_PALETTE_256,
-            .bitmap_size         = { 512, 512 },
-            .color_palette       = 0x00000000,
-            .bitmap_pattern      = RBG0_BPD,
-            .sf_type             = VDP2_SCRN_SF_TYPE_NONE,
-            .sf_code             = VDP2_SCRN_SF_CODE_A,
-            .sf_mode             = 0,
-            .rp_mode             = 0, /* Mode 0: Rotation Parameter A */
-            .rotation_table_base = RBG0_ROTATION_TABLE,
-            .usage_banks         = {
-                    .a0 = VDP2_VRAM_USAGE_TYPE_BPD,
-                    .a1 = VDP2_VRAM_USAGE_TYPE_NONE,
-                    .b0 = VDP2_VRAM_USAGE_TYPE_NONE,
-                    .b1 = VDP2_VRAM_USAGE_TYPE_NONE
-            }
+            .scroll_screen = VDP2_SCRN_RBG0_PA,
+            .ccc           = VDP2_SCRN_CCC_PALETTE_256,
+            .bitmap_size   = VDP2_SCRN_BITMAP_SIZE_512X256,
+            .palette_base  = 0x00000000,
+            .bitmap_base   = RBG0_BPD
     };
 
-    static const vdp2_scrn_rotation_table_t rbg0_rotation_table __used = {
+    const vdp2_vram_usage_t vram_usage = {
+        .a0 = VDP2_VRAM_USAGE_TYPE_CPD_BPD,
+        .a1 = VDP2_VRAM_USAGE_TYPE_NONE,
+        .b0 = VDP2_VRAM_USAGE_TYPE_NONE,
+        .b1 = VDP2_VRAM_USAGE_TYPE_NONE
+    };
+
+    const vdp2_scrn_rp_table_t rp_table = {
             // Starting TV screen coordinates
             .xst = 0,
             .yst = 0,
@@ -243,11 +240,19 @@ static void _vdp2_init(void) {
             .ky = FIX16(1.0f),
 
             // Coefficient table start address
-            .kast = 0,
+            .kast = RBG0_COEFF_TABLE,
             // Addr. increment coeff. table (per line)
             .delta_kast = 0,
             // Addr. increment coeff. table (per dot)
             .delta_kax = 0,
+    };
+
+    const vdp2_scrn_rotation_params_t rotation_params = {
+        .rp_mode       = VDP2_SCRN_RP_MODE_0,
+        .rsop_type     = VDP2_SCRN_RSOP_TYPE_REPEAT,
+        .coeff_params  = { },
+        .rp_table      = &rp_table,
+        .rp_table_base = RBG0_RP_TABLE,
     };
 
     vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_B,
@@ -256,10 +261,13 @@ static void _vdp2_init(void) {
     vdp2_scrn_back_color_set(BACK_SCREEN, RGB1555(1, 7, 7, 7));
 
     vdp2_scrn_bitmap_format_set(&rbg0_format);
+    vdp2_scrn_rotation_rp_table_set(&rotation_params);
+    vdp2_vram_usage_set(&vram_usage);
+
     vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);
     vdp2_scrn_display_set(VDP2_SCRN_RBG0_DISP);
 
-    (void)memcpy((void *)RBG0_ROTATION_TABLE, &rbg0_rotation_table, sizeof(rbg0_rotation_table));
+    (void)memcpy((void *)RBG0_RP_TABLE, &rp_table, sizeof(rp_table));
 
     vdp2_tvmd_display_set();
 }

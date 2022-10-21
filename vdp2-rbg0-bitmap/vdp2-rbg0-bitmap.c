@@ -10,29 +10,30 @@
 #include <tga.h>
 
 #define RBG0_BPD                VDP2_VRAM_ADDR(0, 0x00000)
-#define RBG0_ROTATION_TABLE     VDP2_VRAM_ADDR(2, 0x00000)
+#define RBG0_RP_TABLE     VDP2_VRAM_ADDR(2, 0x00000)
 
 #define BACK_SCREEN             VDP2_VRAM_ADDR(3, 0x1FFFE)
 
 extern uint8_t asset_bitmap_tga[];
 
-static const vdp2_scrn_bitmap_format_t format = {
-        .scroll_screen       = VDP2_SCRN_RBG0,
-        .cc_count            = VDP2_SCRN_CCC_RGB_32768,
-        .bitmap_size         = { 512, 256 },
-        .color_palette       = 0x00000000,
-        .bitmap_pattern      = RBG0_BPD,
-        .rp_mode             = 0,
-        .sf_type             = VDP2_SCRN_SF_TYPE_NONE,
-        .sf_code             = VDP2_SCRN_SF_CODE_A,
-        .sf_mode             = 0,
-        .rotation_table_base = RBG0_ROTATION_TABLE,
-        .usage_banks         = {
-                .a0 = VDP2_VRAM_USAGE_TYPE_BPD,
-                .a1 = VDP2_VRAM_USAGE_TYPE_BPD,
-                .b0 = VDP2_VRAM_USAGE_TYPE_NONE,
-                .b1 = VDP2_VRAM_USAGE_TYPE_NONE
-        }
+static const vdp2_scrn_bitmap_format_t _bitmap_format = {
+        .scroll_screen = VDP2_SCRN_RBG0,
+        .ccc           = VDP2_SCRN_CCC_RGB_32768,
+        .bitmap_size   = VDP2_SCRN_BITMAP_SIZE_512X256,
+        .palette_base  = 0x00000000,
+        .bitmap_base   = RBG0_BPD
+};
+
+static const vdp2_vram_usage_t _vram_usage = {
+        .a0 = VDP2_VRAM_USAGE_TYPE_CPD_BPD,
+        .a1 = VDP2_VRAM_USAGE_TYPE_CPD_BPD,
+        .b0 = VDP2_VRAM_USAGE_TYPE_NONE,
+        .b1 = VDP2_VRAM_USAGE_TYPE_NONE
+};
+
+static const vdp2_scrn_rotation_params_t _rotation_params = {
+        .rp_mode       = VDP2_SCRN_RP_MODE_0,
+        .rp_table_base = RBG0_RP_TABLE
 };
 
 int
@@ -45,7 +46,7 @@ main(void)
 
         (void)tga_image_decode(&tga, (void *)RBG0_BPD);
 
-        vdp2_scrn_rotation_table_t rotation_table = {
+        vdp2_scrn_rp_table_t rp_table = {
                 /* Screen start coordinates */
                 .xst = 0,
                 .yst = 0,
@@ -90,7 +91,7 @@ main(void)
                 .ky = FIX16(1.0f),
 
                 /* Coefficient table start address */
-                .kast = 0,
+                .kast = 0x00000000,
                 /* Addr. increment coeff. table (per line) */
                 .delta_kast = 0,
                 /* Addr. increment coeff. table (per dot) */
@@ -99,16 +100,16 @@ main(void)
 
         while (true) {
                 /* Scale */
-                rotation_table.matrix.raw[0][0] = 0x00019980; /* int(1.6*1024.0)<<6 */
-                rotation_table.matrix.raw[1][1] = 0x00011100; /* int(1.0666666666666667*1024.0)<<6 */
+                rp_table.matrix.raw[0][0] = 0x00019980; /* int(1.6*1024.0)<<6 */
+                rp_table.matrix.raw[1][1] = 0x00011100; /* int(1.0666666666666667*1024.0)<<6 */
 
                 /* Translate */
-                rotation_table.mx += FIX16(1.0f);
-                rotation_table.my += FIX16(1.0f);
+                rp_table.mx += FIX16(1.0f);
+                rp_table.my += FIX16(1.0f);
 
-                vdp_dma_enqueue((void *)RBG0_ROTATION_TABLE,
-                    &rotation_table,
-                    sizeof(vdp2_scrn_rotation_table_t));
+                vdp_dma_enqueue((void *)RBG0_RP_TABLE,
+                    &rp_table,
+                    sizeof(vdp2_scrn_rp_table_t));
 
                 vdp2_sync();
                 vdp2_sync_wait();
@@ -120,8 +121,11 @@ main(void)
 void
 user_init(void)
 {
-        vdp2_scrn_bitmap_format_set(&format);
-        vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);
+        vdp2_scrn_bitmap_format_set(&_bitmap_format);
+        vdp2_scrn_rotation_rp_table_set(&_rotation_params);
+        vdp2_vram_usage_set(&_vram_usage);
+
+        vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7); /*  */
         vdp2_scrn_display_set(VDP2_SCRN_RBG0_DISP);
 
         vdp2_scrn_back_color_set(BACK_SCREEN, RGB1555(1, 5, 5, 7));

@@ -137,23 +137,26 @@ void
 user_init(void)
 {
         const vdp2_scrn_cell_format_t format = {
-                .scroll_screen     = VDP2_SCRN_NBG0,
-                .cc_count          = VDP2_SCRN_CCC_PALETTE_256,
-                .character_size    = 2 * 2,
-                .pnd_size          = 1, /* 1-word */
-                .auxiliary_mode    = 1,
-                .plane_size        = 1 * 1,
-                .cp_table          = NBG0_CPD,
-                .color_palette     = NBG0_PAL,
-                .map_bases.plane_a = NBG0_PND,
-                .map_bases.plane_b = NBG0_PND,
-                .map_bases.plane_c = NBG0_PND,
-                .map_bases.plane_d = NBG0_PND
+                .scroll_screen = VDP2_SCRN_NBG0,
+                .ccc           = VDP2_SCRN_CCC_PALETTE_256,
+                .char_size     = VDP2_SCRN_CHAR_SIZE_2X2,
+                .pnd_size      = 1,
+                .aux_mode      = VDP2_SCRN_AUX_MODE_1,
+                .plane_size    = VDP2_SCRN_PLANE_SIZE_1X1,
+                .cpd_base      = NBG0_CPD,
+                .palette_base  = NBG0_PAL
+        };
+
+        const vdp2_scrn_normal_map_t normal_map = {
+                .plane_a = NBG0_PND,
+                .plane_b = NBG0_PND,
+                .plane_c = NBG0_PND,
+                .plane_d = NBG0_PND
         };
 
         smpc_peripheral_init();
 
-        vdp2_scrn_cell_format_set(&format);
+        vdp2_scrn_cell_format_set(&format, &normal_map);
 
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 6);
         vdp2_scrn_display_set(VDP2_SCRN_NBG0_TPDISP);

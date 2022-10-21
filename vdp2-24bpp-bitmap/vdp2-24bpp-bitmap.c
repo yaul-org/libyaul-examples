@@ -11,15 +11,11 @@ int
 main(void)
 {
         const vdp2_scrn_bitmap_format_t format = {
-                .scroll_screen      = VDP2_SCRN_NBG0,
-                .cc_count           = VDP2_SCRN_CCC_RGB_16770000,
-                .bitmap_size.width  = 512,
-                .bitmap_size.height = 256,
-                .color_palette      = 0x00000000,
-                .bitmap_pattern     = VDP2_VRAM_ADDR(0, 0x00000),
-                .sf_type            = VDP2_SCRN_SF_TYPE_NONE,
-                .sf_code            = VDP2_SCRN_SF_CODE_A,
-                .sf_mode            = 0
+                .scroll_screen = VDP2_SCRN_NBG0,
+                .ccc           = VDP2_SCRN_CCC_RGB_16770000,
+                .bitmap_size   = VDP2_SCRN_BITMAP_SIZE_512X256,
+                .palette_base  = 0x00000000,
+                .bitmap_base   = VDP2_VRAM_ADDR(0, 0x00000)
         };
 
         vdp2_scrn_bitmap_format_set(&format);
