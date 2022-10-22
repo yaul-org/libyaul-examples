@@ -117,9 +117,9 @@ _palette_copy(rgb1555_t *palette_base)
 static void
 _map_copy(const vdp2_scrn_cell_format_t *format, const vdp2_scrn_normal_map_t *normal_map)
 {
-        const uint32_t page_width = VDP2_SCRN_CALCULATE_PAGE_WIDTH(format);
-        const uint32_t page_height = VDP2_SCRN_CALCULATE_PAGE_HEIGHT(format);
-        const uint32_t page_size = VDP2_SCRN_CALCULATE_PAGE_SIZE(format);
+        const uint32_t page_width = VDP2_SCRN_PAGE_WIDTH_CALCULATE(format);
+        const uint32_t page_height = VDP2_SCRN_PAGE_HEIGHT_CALCULATE(format);
+        const uint32_t page_size = VDP2_SCRN_PAGE_SIZE_CALCULATE(format);
 
         uint16_t * const a_pages[4] = {
                 (uint16_t *)normal_map->base_addr[0],

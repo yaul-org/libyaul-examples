@@ -149,9 +149,9 @@ user_init(void)
         _cpd_transfer();
         _pal_transfer();
 
-        const uint32_t page_width = VDP2_SCRN_CALCULATE_PAGE_WIDTH(&format);
-        const uint32_t page_height = VDP2_SCRN_CALCULATE_PAGE_HEIGHT(&format);
-        const uint32_t page_size = VDP2_SCRN_CALCULATE_PAGE_SIZE(&format);
+        const uint32_t page_width = VDP2_SCRN_PAGE_WIDTH_CALCULATE(&format);
+        const uint32_t page_height = VDP2_SCRN_PAGE_HEIGHT_CALCULATE(&format);
+        const uint32_t page_size = VDP2_SCRN_PAGE_SIZE_CALCULATE(&format);
 
         _pnd_transfer(page_width, page_height, page_size);
 
