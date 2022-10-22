@@ -6,9 +6,9 @@ include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
 # Each asset follows the format: <path>;<symbol>. Duplicates are removed
 BUILTIN_ASSETS+= \
-	assets/VF.CPD;asset_vf_cpd \
-	assets/VF.PND;asset_vf_pnd \
-	assets/VF.PAL;asset_vf_pal
+	assets/NBG0.CPD;asset_nbg0_cpd \
+	assets/NBG0.PND;asset_nbg0_pnd \
+	assets/NBG0.PAL;asset_nbg0_pal
 
 SH_PROGRAM:= vdp2-effect-tunnel
 SH_SRCS:= \

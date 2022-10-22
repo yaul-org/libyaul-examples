@@ -19,12 +19,12 @@
 
 #define INCR_VALUE FIX16(0.1f)
 
-extern uint8_t asset_vf_cpd[];
-extern uint8_t asset_vf_cpd_end[];
-extern uint8_t asset_vf_pnd[];
-extern uint8_t asset_vf_pnd_end[];
-extern uint8_t asset_vf_pal[];
-extern uint8_t asset_vf_pal_end[];
+extern uint8_t asset_nbg0_cpd[];
+extern uint8_t asset_nbg0_cpd_end[];
+extern uint8_t asset_nbg0_pnd[];
+extern uint8_t asset_nbg0_pnd_end[];
+extern uint8_t asset_nbg0_pal[];
+extern uint8_t asset_nbg0_pal_end[];
 
 static void _lncl_init(void);
 
@@ -192,9 +192,9 @@ user_init(void)
 
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
-        scu_dma_transfer(0, (void *)NBG0_CPD, asset_vf_cpd, asset_vf_cpd_end - asset_vf_cpd);
-        scu_dma_transfer(0, (void *)NBG0_PND, asset_vf_pnd, asset_vf_pnd_end - asset_vf_pnd);
-        scu_dma_transfer(0, (void *)NBG0_PAL, asset_vf_pal, asset_vf_pal_end - asset_vf_pal);
+        scu_dma_transfer(0, (void *)NBG0_CPD, asset_nbg0_cpd, asset_nbg0_cpd_end - asset_nbg0_cpd);
+        scu_dma_transfer(0, (void *)NBG0_PND, asset_nbg0_pnd, asset_nbg0_pnd_end - asset_nbg0_pnd);
+        scu_dma_transfer(0, (void *)NBG0_PAL, asset_nbg0_pal, asset_nbg0_pal_end - asset_nbg0_pal);
         scu_dma_transfer_wait(0);
 
         vdp2_tvmd_display_set();
