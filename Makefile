@@ -29,7 +29,7 @@ EXAMPLES:= \
 	vdp1-uv-coords \
 	vdp1-zoom-sprite \
 	vdp2-24bpp-bitmap \
-	vdp2-2x2-plane \
+	vdp2-all-nbgs \
 	vdp2-back-screen \
 	vdp2-effect-tunnel \
 	vdp2-line-scroll \
