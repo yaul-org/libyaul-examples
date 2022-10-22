@@ -4,10 +4,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define RBG0_CPD         VDP2_VRAM_ADDR(0, 0x10000)
+#define RBG0_CPD         VDP2_VRAM_ADDR(0, 0x00000)
+#define RBG0_PND         VDP2_VRAM_ADDR(1, 0x02000)
 #define RBG0_PAL         VDP2_CRAM_MODE_1_OFFSET(0, 0, 0)
-#define RBG0_PND         VDP2_VRAM_ADDR(1, 0x00000)
-#define RBG0_RP_TABLE    VDP2_VRAM_ADDR(2, 0x00000)
+#define RBG0_RP_TABLE    VDP2_VRAM_ADDR(1, 0x00000)
 #define RBG0_COEFF_TABLE 0x00000000
 
 #define BACK_SCREEN      VDP2_VRAM_ADDR(3, 0x1FFFE)
@@ -96,7 +96,7 @@ user_init(void)
                 .char_size     = VDP2_SCRN_CHAR_SIZE_2X2,
                 .pnd_size      = 1,
                 .aux_mode      = VDP2_SCRN_AUX_MODE_0,
-                .plane_size    = VDP2_SCRN_PLANE_SIZE_2X2,
+                .plane_size    = VDP2_SCRN_PLANE_SIZE_1X1,
                 .cpd_base      = RBG0_CPD,
                 .palette_base  = RBG0_PAL
         };

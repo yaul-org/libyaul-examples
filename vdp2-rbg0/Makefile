@@ -6,9 +6,9 @@ include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
 # Each asset follows the format: <path>;<symbol>. Duplicates are removed
 BUILTIN_ASSETS+= \
-	assets/CPD.BIN;asset_cpd \
-	assets/PND.BIN;asset_pnd \
-	assets/PAL.BIN;asset_pal
+	assets/RBG0.CPD;asset_cpd \
+	assets/RBG0.PND;asset_pnd \
+	assets/RBG0.PAL;asset_pal
 
 SH_PROGRAM:= vdp2-rbg0
 SH_SRCS:= \
