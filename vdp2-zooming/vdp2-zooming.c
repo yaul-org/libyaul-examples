@@ -112,7 +112,7 @@ user_init(void)
 
         vdp2_scrn_cell_format_set(&format, &normal_map);
         vdp2_scrn_priority_set(VDP2_SCRN_NBG1, 6);
-        vdp2_scrn_display_set(VDP2_SCRN_NBG1_DISP);
+        vdp2_scrn_display_set(VDP2_SCRN_DISP_NBG1);
 
         const vdp2_vram_cycp_bank_t vram_cycp_bank[2] = {
                 {

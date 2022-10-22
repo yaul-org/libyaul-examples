@@ -99,7 +99,7 @@ main(void)
         vdp2_scrn_bitmap_format_set(&_bitmap_format);
 
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
-        vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
+        vdp2_scrn_display_set(VDP2_SCRN_DISP_NBG0);
 
         vdp2_vram_cycp_set(&_vram_cycp);
 

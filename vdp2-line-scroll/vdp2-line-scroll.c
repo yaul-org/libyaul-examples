@@ -28,9 +28,9 @@ main(void)
 {
         vdp2_scrn_ls_format_t ls_format = {
                 .scroll_screen = VDP2_SCRN_NBG0,
-                .table         = NBG0_LINE_SCROLL,
+                .table_base    = NBG0_LINE_SCROLL,
                 .interval      = 0,
-                .enable        = VDP2_SCRN_LS_HORZ
+                .type          = VDP2_SCRN_LS_TYPE_HORZ
         };
 
         fix16_t speed;
@@ -86,7 +86,7 @@ user_init(void)
         vdp2_scrn_cell_format_set(&format, &normal_map);
 
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
-        vdp2_scrn_display_set(VDP2_SCRN_NBG0_TPDISP);
+        vdp2_scrn_display_set(VDP2_SCRN_DISPTP_NBG0);
 
         vdp2_sprite_priority_set(0, 0);
         vdp2_sprite_priority_set(1, 0);

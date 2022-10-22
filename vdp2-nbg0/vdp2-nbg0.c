@@ -75,7 +75,7 @@ main(void)
 
         vdp2_scrn_cell_format_set(&format, &normal_map);
         vdp2_scrn_priority_set(VDP2_SCRN_NBG0, 7);
-        vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
+        vdp2_scrn_display_set(VDP2_SCRN_DISP_NBG0);
 
         _cpd_copy((uint8_t *)format.cpd_base);
         _palette_copy((rgb1555_t *)format.palette_base);

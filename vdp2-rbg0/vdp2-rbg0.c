@@ -129,7 +129,7 @@ user_init(void)
         vdp2_vram_usage_set(&vram_usage);
 
         vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 3);
-        vdp2_scrn_display_set(VDP2_SCRN_RBG0_DISP);
+        vdp2_scrn_display_set(VDP2_SCRN_DISP_RBG0);
 
         vdp2_sprite_priority_set(0, 0);
         vdp2_sprite_priority_set(1, 0);

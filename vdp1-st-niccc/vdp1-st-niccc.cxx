@@ -265,7 +265,7 @@ static void _vdp2_init(void) {
     vdp2_vram_usage_set(&vram_usage);
 
     vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);
-    vdp2_scrn_display_set(VDP2_SCRN_RBG0_DISP);
+    vdp2_scrn_display_set(VDP2_SCRN_DISP_RBG0);
 
     (void)memcpy((void *)RBG0_RP_TABLE, &rp_table, sizeof(rp_table));
 

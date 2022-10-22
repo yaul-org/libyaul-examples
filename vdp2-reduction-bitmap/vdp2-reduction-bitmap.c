@@ -32,7 +32,7 @@ main(void)
         vdp2_scrn_reduction_set(VDP2_SCRN_NBG0, VDP2_SCRN_REDUCTION_HALF);
         vdp2_scrn_reduction_x_set(VDP2_SCRN_NBG0, FIX16(2.0f));
         vdp2_scrn_reduction_y_set(VDP2_SCRN_NBG0, FIX16(1.0f / (1.0f - (240.0f / 512.0f))));
-        vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
+        vdp2_scrn_display_set(VDP2_SCRN_DISP_NBG0);
 
         const vdp2_vram_cycp_t vram_cycp = {
                 .pt[0].t0 = VDP2_VRAM_CYCP_CHPNDR_NBG0,

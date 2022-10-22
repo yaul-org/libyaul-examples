@@ -149,7 +149,7 @@ user_init(void)
                                VDP2_SCRN_SF_CODE_0x0A_0x0B |
                                VDP2_SCRN_SF_CODE_0x0E_0x0F);
 
-        vdp2_scrn_display_set(VDP2_SCRN_NBG0_DISP);
+        vdp2_scrn_display_set(VDP2_SCRN_DISP_NBG0);
 
         /* Each cell is 128 bytes (8x8 cell, at 2-bytes per pixel). To fill a
          * 40x30 cell background, 0x25800 bytes is needed. A single VRAM bank
