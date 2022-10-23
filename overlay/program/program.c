@@ -44,7 +44,7 @@ main(void)
         cdfs_filelist_root_read(&_filelist);
 
         /* Call OVL2.BIN to repeat a message */
-        uint32_t repeat_times = 5;
+        uint32_t repeat_times = 3;
         const int32_t overlay_ret = _overlay_exec("OVL2.BIN", &repeat_times);
         dbgio_printf("overlay_ret: %i\n", overlay_ret);
 
@@ -62,6 +62,7 @@ main(void)
 
         dbgio_puts("\n");
         dbgio_printf("Back on main prog\n");
+        dbgio_puts("Done\n");
 
         dbgio_flush();
         vdp2_sync();
@@ -91,6 +92,8 @@ _overlay_exec(const char *overlay_filename, void *work)
                         assert(ret == 0);
 
                         overlay_start_t const overlay_start = (overlay_start_t)_overlay_start;
+
+                        cpu_cache_purge();
 
                         return overlay_start(work);
                 }

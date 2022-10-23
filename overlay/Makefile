@@ -11,9 +11,6 @@ BUILTIN_ASSETS+= \
 
 SH_PROGRAM:= overlay
 
-SH_LDFLAGS:= \
-	-Wl,-Map,$(SH_BUILD_PATH)/$(SH_PROGRAM).map
-
 SH_SRCS:= \
 	program/program.c \
 \
@@ -40,21 +37,31 @@ IP_SLAVE_STACK_ADDR:= 0x06001E00
 IP_1ST_READ_ADDR:= 0x06004000
 IP_1ST_READ_SIZE:= 0
 
-cd/OVL1.BIN: $(SH_BUILD_PATH)/$(SH_PROGRAM).elf
-	$(ECHO)sh2eb-elf-objcopy -O binary -j ".overlay1" $< $@
+$(SH_BUILD_PATH)/ovl1.elf: $(SH_BUILD_PATH)/$(SH_PROGRAM).elf
+	$(YAUL_INSTALL_ROOT)/share/wrap-error $(SH_OBJCOPY) -O elf32-sh -j ".overlay1" -j ".overlay1.*" $< $@
 
-cd/OVL2.BIN: $(SH_BUILD_PATH)/$(SH_PROGRAM).elf
-	$(ECHO)sh2eb-elf-objcopy -O binary -j ".overlay2" $< $@
+cd/OVL1.BIN: $(SH_BUILD_PATH)/ovl1.elf
+	$(YAUL_INSTALL_ROOT)/share/wrap-error $(SH_OBJCOPY) -O binary $< $@
 
-cd/OVL3.BIN: $(SH_BUILD_PATH)/$(SH_PROGRAM).elf
-	$(ECHO)sh2eb-elf-objcopy -O binary -j ".overlay3" $< $@
+$(SH_BUILD_PATH)/ovl2.elf: $(SH_BUILD_PATH)/$(SH_PROGRAM).elf
+	$(YAUL_INSTALL_ROOT)/share/wrap-error $(SH_OBJCOPY) -O elf32-sh -j ".overlay2" -j ".overlay2.*" $< $@
+
+cd/OVL2.BIN: $(SH_BUILD_PATH)/ovl2.elf
+	$(YAUL_INSTALL_ROOT)/share/wrap-error $(SH_OBJCOPY) -O binary $< $@
+
+$(SH_BUILD_PATH)/ovl3.elf: $(SH_BUILD_PATH)/$(SH_PROGRAM).elf
+	$(YAUL_INSTALL_ROOT)/share/wrap-error $(SH_OBJCOPY) -O elf32-sh -j ".overlay3" -j ".overlay3.*" $< $@
+
+cd/OVL3.BIN: $(SH_BUILD_PATH)/ovl3.elf
+	$(YAUL_INSTALL_ROOT)/share/wrap-error $(SH_OBJCOPY) -O binary $< $@
+
+pre-build-iso: cd/OVL1.BIN cd/OVL2.BIN cd/OVL3.BIN
 
 # This is a hack:
-#   1. Strip out the overlays from the program binary
-#   2. Create the overlays and copy them
-pre-build-iso: cd/OVL1.BIN cd/OVL2.BIN cd/OVL3.BIN
-	$(ECHO)rm -f $(SH_BUILD_PATH)/$(SH_PROGRAM).bin
-	$(ECHO)sh2eb-elf-objcopy -O binary -R ".overlay1" -R ".overlay2" -R ".overlay3" $(SH_BUILD_PATH)/$(SH_PROGRAM).elf $(SH_BUILD_PATH)/$(SH_PROGRAM).bin
+#   Overwrite the executable copied to cd/. Doing it this way allows us to avoid
+#   repeating the same target more than once after a complete build
+post-build-iso:
+	$(YAUL_INSTALL_ROOT)/share/wrap-error $(SH_OBJCOPY) -O binary -R ".overlay1" -R ".overlay2" -R ".overlay3"  -R ".overlay1.*" -R ".overlay2.*" -R ".overlay3.*" $(SH_BUILD_PATH)/$(SH_PROGRAM).elf cd/A.BIN
 
 # Build the executable only
 include $(YAUL_INSTALL_ROOT)/share/build.post.iso-cue.mk
