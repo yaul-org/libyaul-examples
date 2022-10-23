@@ -1,0 +1,17 @@
+-.ccls-cache/
+-.rtags/
+-cd/
+-*.BIN
+-*.asm
+-*.bin
+-*.cue
+-*.d
+-*.elf
+-*.i
+-*.ii
+-*.iso
+-*.map
+-*.map
+-*.o
+-*.sym
+-*.s
