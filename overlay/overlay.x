@@ -15,10 +15,10 @@ GROUP (libyaul.a)
 GROUP (libgcc.a)
 
 MEMORY {
+  shared      (Wx) : ORIGIN = 0x06004000, LENGTH = 512K
   overlay     (Wx) : ORIGIN = 0x06080000, LENGTH = 256K
   master_stack (W) : ORIGIN = 0x06004000, LENGTH = 0x00002000
   slave_stack  (W) : ORIGIN = 0x06002000, LENGTH = 0x00001400
-  shared      (Wx) : ORIGIN = 0x06004000, LENGTH = 512K
 }
 
 PROVIDE (__master_stack = ORIGIN (master_stack));
@@ -26,11 +26,12 @@ PROVIDE (__master_stack_end = ORIGIN (master_stack) - LENGTH (master_stack));
 PROVIDE_HIDDEN (__slave_stack = ORIGIN (slave_stack));
 PROVIDE_HIDDEN (__slave_stack_end = ORIGIN (slave_stack) - LENGTH (slave_stack));
 
+PROVIDE (__overlay_start = ORIGIN (overlay));
+
 SECTIONS
 {
-  PROVIDE (__overlay_start = ORIGIN (overlay));
-
-  OVERLAY ORIGIN (overlay) : NOCROSSREFS
+  /* Place the overlays at the end (via __lma_end) */
+  OVERLAY ORIGIN (overlay) : NOCROSSREFS AT (__lma_end)
   {
      .overlay1
      {
@@ -63,12 +64,8 @@ SECTIONS
         "*@overlay3@*.o"(.bss .bss.* .gnu.linkonce.b.* .sbss .sbss.* .gnu.linkonce.sb.* .scommon COMMON)
      }
   }
-  /* This is a hack to get the "real" end of the overlay */
-  __overlay_end = . + MAX (SIZEOF (.overlay1),
-                           MAX (SIZEOF (.overlay2),
-                                SIZEOF (.overlay3)));
 
-  .program ORIGIN (shared) : AT (__overlay_end)
+  .program ORIGIN (shared) : AT (ORIGIN (overlay))
   {
      PROVIDE_HIDDEN (__program_start = .);
 
@@ -103,6 +100,7 @@ SECTIONS
      libgcc.a(.rdata .rodata .rodata.* .gnu.linkonce.r.*)
      libgcc.a(.data .data.* .gnu.linkonce.d.* .sdata .sdata.* .gnu.linkonce.s.*)
 
+     /* This is where the main program binary is located */
      "*@program@*.o"(.text .text.* .gnu.linkonce.t.*)
      "*@program@*.o"(.rdata .rodata .rodata.*)
      "*@program@*.o"(.data .data.* .gnu.linkonce.d.* .sdata .sdata.* .gnu.linkonce.s.*)
@@ -149,5 +147,6 @@ SECTIONS
      PROVIDE_HIDDEN (__uncached_end = .);
   }
 
-  __end = __bss_end + SIZEOF (.uncached);
+  __end = __bss_end + SIZEOF (.bss) + SIZEOF (.uncached);
+  __lma_end = LOADADDR (.bss) + SIZEOF(.bss) + SIZEOF(.uncached);
 }
