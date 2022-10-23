@@ -15,6 +15,7 @@ EXAMPLES:= \
 	gdb \
 	mm-stats \
 	netlink-template \
+	overlay \
 	scu-dsp \
 	smpc-rtc \
 	usb-cart \
