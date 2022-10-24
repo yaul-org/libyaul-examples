@@ -8,9 +8,14 @@
 
 #define BACK_SCREEN VDP2_VRAM_ADDR(3, 0x1FFFE)
 
+#define FILELIST_ENTRY_COUNT (16)
+
 extern uintptr_t _overlay_start[];
 
 typedef int32_t (*overlay_start_t)(void *work);
+
+/* XXX: user_init() does not work */
+static void _user_init(void);
 
 static int32_t _overlay_exec(const char *overlay_filename, void *work);
 
@@ -18,6 +23,51 @@ static cdfs_filelist_t _filelist;
 
 int
 main(void)
+{
+        _user_init();
+
+        cdfs_filelist_entry_t * const filelist_entries =
+            cdfs_entries_alloc(FILELIST_ENTRY_COUNT);
+        assert(filelist_entries != NULL);
+
+        cdfs_filelist_default_init(&_filelist, filelist_entries, FILELIST_ENTRY_COUNT);
+        cdfs_filelist_root_read(&_filelist);
+
+        int32_t overlay_ret;
+
+        /* The overlay function signature can be changed. For this example, a
+         * void pointer to work is used */
+        uint32_t repeat_count = 3;
+        overlay_ret = _overlay_exec("OVL2.BIN", &repeat_count);
+
+        dbgio_puts("\n");
+        dbgio_printf("Ret: %i. Back on main program\n", overlay_ret);
+        dbgio_puts("\n");
+
+        overlay_ret = _overlay_exec("OVL1.BIN", NULL);
+
+        dbgio_puts("\n");
+        dbgio_printf("Ret: %i. Back on main program\n", overlay_ret);
+        dbgio_puts("\n");
+
+        overlay_ret = _overlay_exec("OVL3.BIN", NULL);
+
+        dbgio_puts("\n");
+        dbgio_printf("Ret: %i. Back on main program\n", overlay_ret);
+        dbgio_puts("Done\n");
+
+        dbgio_flush();
+        vdp2_sync();
+        vdp2_sync_wait();
+
+        while (true) {
+        }
+
+        return 0;
+}
+
+static void
+_user_init(void)
 {
         cd_block_init();
 
@@ -33,45 +83,6 @@ main(void)
 
         vdp2_sync();
         vdp2_sync_wait();
-
-        /* Load the maximum number. We have to free the allocated filelist
-         * entries, but since we never exit, we don't have to */
-        cdfs_filelist_entry_t * const filelist_entries =
-            cdfs_entries_alloc(16);
-        assert(filelist_entries != NULL);
-
-        cdfs_filelist_default_init(&_filelist, filelist_entries, 16);
-        cdfs_filelist_root_read(&_filelist);
-
-        /* Call OVL2.BIN to repeat a message */
-        uint32_t repeat_times = 3;
-        const int32_t overlay_ret = _overlay_exec("OVL2.BIN", &repeat_times);
-        dbgio_printf("overlay_ret: %i\n", overlay_ret);
-
-        dbgio_puts("\n");
-        dbgio_printf("Back on main prog\n");
-        dbgio_puts("\n");
-
-        _overlay_exec("OVL1.BIN", NULL);
-
-        dbgio_puts("\n");
-        dbgio_printf("Back on main prog\n");
-        dbgio_puts("\n");
-
-        _overlay_exec("OVL3.BIN", NULL);
-
-        dbgio_puts("\n");
-        dbgio_printf("Back on main prog\n");
-        dbgio_puts("Done\n");
-
-        dbgio_flush();
-        vdp2_sync();
-        vdp2_sync_wait();
-
-        while (true) {
-        }
-
-        return 0;
 }
 
 static int32_t
@@ -93,6 +104,12 @@ _overlay_exec(const char *overlay_filename, void *work)
 
                         overlay_start_t const overlay_start = (overlay_start_t)_overlay_start;
 
+                        /* The cache needs to be purged as the overlay may make
+                         * use of uncached variables/functions */
+
+                        /* It's easier to just purge the overlay area, than it
+                         * is to purge the overlay region, cache line by cache
+                         * line */
                         cpu_cache_purge();
 
                         return overlay_start(work);

@@ -340,6 +340,8 @@ static int32_t _face_order[MODEL_FACE_COUNT];
 
 static point _camera;
 
+static void _user_init(void);
+
 static void _rotate(point *, point *, int32_t, int32_t);
 static void _transform(point *, point *, int32_t, int32_t, int32_t, int32_t);
 static void _project(point *, point *, int32_t);
@@ -348,7 +350,7 @@ static void _sort_quads(quad *, point *, int32_t *, int32_t);
 int32_t
 overlay3(void *work __unused)
 {
-        user_init();
+        _user_init();
 
         const int16_vec2_t system_clip_coord =
             INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,
@@ -626,8 +628,8 @@ _sort_quads(quad *f, point *p, int32_t *order, int32_t n)
         }
 }
 
-void
-user_init(void)
+static void
+_user_init(void)
 {
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_224);

@@ -26,6 +26,7 @@ PROVIDE (__master_stack_end = ORIGIN (master_stack) - LENGTH (master_stack));
 PROVIDE_HIDDEN (__slave_stack = ORIGIN (slave_stack));
 PROVIDE_HIDDEN (__slave_stack_end = ORIGIN (slave_stack) - LENGTH (slave_stack));
 
+/* Use this to find where the overlay executable address is */
 PROVIDE (__overlay_start = ORIGIN (overlay));
 
 SECTIONS
@@ -191,7 +192,7 @@ SECTIONS
       *(.bss .bss.* .gnu.linkonce.b.* .sbss .sbss.* .gnu.linkonce.sb.* .scommon COMMON)
 
       /* crt0.s BSS initialization assumes the section size of .bss is in
-      multiples of 16 */
+       * multiples of 16 */
       . = ALIGN (16);
       PROVIDE (__bss_end = .);
    }
@@ -209,5 +210,6 @@ SECTIONS
    }
 
    __end = __bss_end + SIZEOF (.bss) + SIZEOF (.uncached);
+   /* The overlays will be placed right after the main program */
    __lma_end = LOADADDR (.bss) + SIZEOF (.bss) + SIZEOF (.uncached);
 }
