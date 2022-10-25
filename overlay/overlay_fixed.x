@@ -21,99 +21,7 @@ MEMORY {
 
 SECTIONS
 {
-   .overlay1.uncached (0x20000000 | __overlay1_end) : AT (__overlay1_load_end)
-   {
-      . = ALIGN (4);
-      "*@overlay1@*.o"(.uncached .uncached.*)
-      . = ALIGN (4);
-   }
-   __overlay1_uncached_start = LOADADDR (.overlay1.uncached);
-   __overlay1_uncached_end = LOADADDR (.overlay1.uncached) + SIZEOF (.overlay1.uncached);
-   __overlay1_uncached_size = SIZEOF (.overlay1.uncached);
-
-   .overlay2.uncached (0x20000000 | __overlay2_end) : AT (__overlay2_load_end)
-   {
-      . = ALIGN (4);
-      "*@overlay2@*.o"(.uncached .uncached.*)
-      . = ALIGN (4);
-   }
-   __overlay2_uncached_start = LOADADDR (.overlay2.uncached);
-   __overlay2_uncached_end = LOADADDR (.overlay2.uncached) + SIZEOF (.overlay2.uncached);
-   __overlay2_uncached_size = SIZEOF (.overlay2.uncached);
-
-   .overlay3.uncached (0x20000000 | __overlay3_end) : AT (__overlay3_load_end)
-   {
-      . = ALIGN (4);
-      "*@overlay3@*.o"(.uncached .uncached.*)
-      . = ALIGN (4);
-   }
-   __overlay3_uncached_start = LOADADDR (.overlay3.uncached);
-   __overlay3_uncached_end = LOADADDR (.overlay3.uncached) + SIZEOF (.overlay3.uncached);
-   __overlay3_uncached_size = SIZEOF (.overlay3.uncached);
-
-   __overlay_load_offset = __lma_end;
-
-   .overlay1 ___overlay_start : AT (__overlay_load_offset)
-   {
-      . = ALIGN (4);
-
-      /* Wildcard the overlay1/ directory. Recall that @ is being used in
-       * place of the Unix/Windows path delimeter */
-      KEEP ("*@overlay1@*.o"(.text.overlay1))
-      "*@overlay1@*.o"(.text .text.* .gnu.linkonce.t.*)
-      "*@overlay1@*.o"(.rdata .rodata .rodata.* .gnu.linkonce.r.*)
-      "*@overlay1@*.o"(.data .data.* .gnu.linkonce.d.* .sdata .sdata.* .gnu.linkonce.s.*)
-      "*@overlay1@*.o"(.bss .bss.* .gnu.linkonce.b.* .sbss .sbss.* .gnu.linkonce.sb.* .scommon COMMON)
-
-      *(.overlay1.uncached)
-
-      . = ALIGN (4);
-   }
-   __overlay1_start = ADDR (.overlay1);
-   __overlay1_end = ADDR (.overlay1) + SIZEOF (.overlay1);
-   __overlay1_size = SIZEOF (.overlay1) + __overlay1_uncached_size;
-   __overlay1_load_end = LOADADDR (.overlay1) + SIZEOF (.overlay1);
-   __overlay_load_offset += __overlay1_size;
-
-   .overlay2 ___overlay_start : AT (__overlay_load_offset)
-   {
-      . = ALIGN (4);
-
-      KEEP ("*@overlay2@*.o"(.text.overlay2))
-      "*@overlay2@*.o"(.text .text .text.* .gnu.linkonce.t.*)
-      "*@overlay2@*.o"(.rdata .rodata .rodata.* .gnu.linkonce.r.*)
-      "*@overlay2@*.o"(.data .data.* .gnu.linkonce.d.* .sdata .sdata.* .gnu.linkonce.s.*)
-      "*@overlay2@*.o"(.bss .bss.* .gnu.linkonce.b.* .sbss .sbss.* .gnu.linkonce.sb.* .scommon COMMON)
-
-      *(.overlay2.uncached)
-
-      . = ALIGN (4);
-   }
-   __overlay2_start = ADDR (.overlay2);
-   __overlay2_end = ADDR (.overlay2) + SIZEOF (.overlay2);
-   __overlay2_size = SIZEOF (.overlay2) + __overlay2_uncached_size;
-   __overlay2_load_end = LOADADDR (.overlay2) + SIZEOF (.overlay2);
-   __overlay_load_offset += __overlay2_size;
-
-   .overlay3 ___overlay_start : AT (__overlay_load_offset)
-   {
-      . = ALIGN (4);
-
-      KEEP ("*@overlay3@*.o"(.text.overlay3))
-      "*@overlay3@*.o"(.text .text.* .gnu.linkonce.t.*)
-      "*@overlay3@*.o"(.rdata .rodata .rodata.* .gnu.linkonce.r.*)
-      "*@overlay3@*.o"(.data .data.* .gnu.linkonce.d.* .sdata .sdata.* .gnu.linkonce.s.*)
-      "*@overlay3@*.o"(.bss .bss.* .gnu.linkonce.b.* .sbss .sbss.* .gnu.linkonce.sb.* .scommon COMMON)
-
-      *(.overlay3.uncached)
-
-      . = ALIGN (4);
-   }
-   __overlay3_start = ADDR (.overlay3);
-   __overlay3_end = ADDR (.overlay3) + SIZEOF (.overlay3);
-   __overlay3_size = SIZEOF (.overlay3) + __overlay3_uncached_size;
-   __overlay3_load_end = LOADADDR (.overlay3) + SIZEOF (.overlay3);
-   __overlay_load_offset += __overlay3_size;
+   INCLUDE ./build/overlays.x
 
    .program ORIGIN (shared) : AT (___overlay_start)
    {
@@ -125,6 +33,7 @@ SECTIONS
       /* This is where the main program binary is located */
       KEEP ("*@program@*.o"(.text.user_init)) /* Force keep user_init */
       "*@program@*.o"(.text .text.* .gnu.linkonce.t.*)
+      INCLUDE ldscripts/yaul-c++.x
       "*@program@*.o"(.rdata .rodata .rodata.*)
       "*@program@*.o"(.data .data.* .gnu.linkonce.d.* .sdata .sdata.* .gnu.linkonce.s.*)
 

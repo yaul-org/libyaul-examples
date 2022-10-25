@@ -37,6 +37,14 @@ IP_SLAVE_STACK_ADDR:= 0x06001E00
 IP_1ST_READ_ADDR:= 0x06004000
 IP_1ST_READ_SIZE:= 0
 
+# We need to depend on any changes made to $(THIS_ROOT)/overlay.specs in case
+# there is a change in which linkerscript is used
+$(SH_BUILD_PATH)/overlays.x: overlays.lst $(THIS_ROOT)/overlay.specs
+	@printf -- "$(V_BEGIN_YELLOW)$(@F)$(V_END)\n"
+	$(ECHO)cat $< | awk -f tools/generate-ldscript.awk > $@
+
+$(SH_BUILD_PATH)/$(SH_PROGRAM).elf: $(SH_BUILD_PATH)/overlays.x
+
 $(SH_BUILD_PATH)/ovl1.elf: $(SH_BUILD_PATH)/$(SH_PROGRAM).elf
 	$(YAUL_INSTALL_ROOT)/share/wrap-error $(SH_OBJCOPY) -O elf32-sh -j ".overlay1" -j ".overlay1.*" $< $@
 
@@ -62,6 +70,12 @@ pre-build-iso: cd/OVL1.BIN cd/OVL2.BIN cd/OVL3.BIN
 #   repeating the same target more than once after a complete build
 post-build-iso:
 	$(YAUL_INSTALL_ROOT)/share/wrap-error $(SH_OBJCOPY) -O binary -R ".overlay1" -R ".overlay2" -R ".overlay3"  -R ".overlay1.*" -R ".overlay2.*" -R ".overlay3.*" $(SH_BUILD_PATH)/$(SH_PROGRAM).elf cd/A.BIN
+
+.PHONY: .clean-overlays.x
+.clean-overlays.x:
+	@$(RM) -f $(SH_BUILD_PATH)/overlays.x
+
+clean: .clean-overlays.x
 
 # Build the executable only
 include $(YAUL_INSTALL_ROOT)/share/build.post.iso-cue.mk

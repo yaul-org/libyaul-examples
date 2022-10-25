@@ -49,4 +49,4 @@
 
 %rename link old_link
 *link:
--T ./overlay_variable.x
+-T ./overlay_fixed.x
