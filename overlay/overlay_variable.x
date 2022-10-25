@@ -15,10 +15,9 @@ GROUP (libyaul.a)
 GROUP (libgcc.a)
 
 MEMORY {
-  shared      (Wx) : ORIGIN = 0x06004000, LENGTH = 512K
-  overlay     (Wx) : ORIGIN = 0x06080000, LENGTH = 256K
-  master_stack (W) : ORIGIN = 0x06004000, LENGTH = 0x00002000
-  slave_stack  (W) : ORIGIN = 0x06002000, LENGTH = 0x00001400
+  shared       (Wx) : ORIGIN = 0x06004000, LENGTH = 512K
+  master_stack  (W) : ORIGIN = 0x06004000, LENGTH = 0x00002000
+  slave_stack   (W) : ORIGIN = 0x06002000, LENGTH = 0x00001400
 }
 
 PROVIDE (__master_stack = ORIGIN (master_stack));
@@ -26,8 +25,13 @@ PROVIDE (__master_stack_end = ORIGIN (master_stack) - LENGTH (master_stack));
 PROVIDE_HIDDEN (__slave_stack = ORIGIN (slave_stack));
 PROVIDE_HIDDEN (__slave_stack_end = ORIGIN (slave_stack) - LENGTH (slave_stack));
 
-/* Use this to find where the overlay executable address is */
-PROVIDE (__overlay_start = ORIGIN (overlay));
+/* This linkerscript places the overlay start address right at the very end of
+ * the main program (including the shared region). */
+
+/* This implies that the overlay start address changes. The heap is also
+ * calculated to be at the end of the biggest overlay. For example, if there are
+ * 10 overlays, and the biggest one is at 128KiB while the others are 64KiB, then
+ * the heap will start 128KiB after the main program (and shared region) */
 
 SECTIONS
 {
@@ -63,7 +67,7 @@ SECTIONS
 
    __overlay_load_offset = __lma_end;
 
-   .overlay1 ORIGIN (overlay) : AT (__overlay_load_offset)
+   .overlay1 __overlay_start : AT (__overlay_load_offset)
    {
       . = ALIGN (16);
 
@@ -85,7 +89,7 @@ SECTIONS
    __overlay1_load_end = LOADADDR (.overlay1) + SIZEOF (.overlay1);
    __overlay_load_offset += __overlay1_size;
 
-   .overlay2 ORIGIN (overlay) : AT (__overlay_load_offset)
+   .overlay2 __overlay_start : AT (__overlay_load_offset)
    {
       . = ALIGN (16);
 
@@ -105,7 +109,7 @@ SECTIONS
    __overlay2_load_end = LOADADDR (.overlay2) + SIZEOF (.overlay2);
    __overlay_load_offset += __overlay2_size;
 
-   .overlay3 ORIGIN (overlay) : AT (__overlay_load_offset)
+   .overlay3 __overlay_start : AT (__overlay_load_offset)
    {
       . = ALIGN (16);
 
@@ -125,7 +129,9 @@ SECTIONS
    __overlay3_load_end = LOADADDR (.overlay3) + SIZEOF (.overlay3);
    __overlay_load_offset += __overlay3_size;
 
-   .program ORIGIN (shared) : AT (ORIGIN (overlay))
+   __overlay_load_size = __overlay_load_offset - __lma_end;
+
+   .program ORIGIN (shared) : AT (ORIGIN (shared))
    {
       . = ALIGN (4);
       PROVIDE_HIDDEN (__program_start = .);
@@ -162,6 +168,7 @@ SECTIONS
       libgcc.a(.data .data.* .gnu.linkonce.d.* .sdata .sdata.* .gnu.linkonce.s.*)
 
       /* This is where the main program binary is located */
+      KEEP ("*@program@*.o"(.text.user_init))
       "*@program@*.o"(.text .text.* .gnu.linkonce.t.*)
       "*@program@*.o"(.rdata .rodata .rodata.*)
       "*@program@*.o"(.data .data.* .gnu.linkonce.d.* .sdata .sdata.* .gnu.linkonce.s.*)
@@ -209,7 +216,10 @@ SECTIONS
       PROVIDE_HIDDEN (__uncached_end = .);
    }
 
-   __end = __bss_end + SIZEOF (.bss) + SIZEOF (.uncached);
    /* The overlays will be placed right after the main program */
    __lma_end = LOADADDR (.bss) + SIZEOF (.bss) + SIZEOF (.uncached);
+   __end = (__bss_end + SIZEOF (.uncached)) + __overlay_load_size;
+
+   /* Use this to find where the overlay executable address is */
+   PROVIDE (__overlay_start = __bss_end + SIZEOF (.uncached));
 }
