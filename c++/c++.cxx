@@ -50,7 +50,7 @@ public:
     }
 
     ~C() {
-        *_dtor++ = 'A';
+        *_dtor++ = 'C';
     }
 };
 
@@ -61,7 +61,7 @@ public:
     }
 
     ~D() {
-        *_dtor++ = 'A';
+        *_dtor++ = 'D';
     }
 };
 
@@ -127,6 +127,7 @@ int main(void) {
     while (true) {
     }
 }
+
 void user_init(void) {
     vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
                               VDP2_TVMD_VERT_224);
