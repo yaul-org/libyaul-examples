@@ -10,12 +10,7 @@
 
 #define FILELIST_ENTRY_COUNT (16)
 
-extern uintptr_t _overlay_start[];
-
 typedef int32_t (*overlay_start_t)(void *work);
-
-/* XXX: user_init() does not work */
-static void _user_init(void);
 
 static int32_t _overlay_exec(const char *overlay_filename, void *work);
 
@@ -24,8 +19,6 @@ static cdfs_filelist_t _filelist;
 int
 main(void)
 {
-        _user_init();
-
         cdfs_filelist_entry_t * const filelist_entries =
             cdfs_entries_alloc(FILELIST_ENTRY_COUNT);
         assert(filelist_entries != NULL);
@@ -66,8 +59,8 @@ main(void)
         return 0;
 }
 
-static void
-_user_init(void)
+void
+user_init(void)
 {
         cd_block_init();
 
@@ -88,6 +81,8 @@ _user_init(void)
 static int32_t
 _overlay_exec(const char *overlay_filename, void *work)
 {
+        extern uintptr_t __overlay_start[];
+
         for (uint32_t i = 0; i < _filelist.entries_count; i++) {
                 cdfs_filelist_entry_t * const file_entry = &_filelist.entries[i];
 
@@ -99,10 +94,10 @@ _overlay_exec(const char *overlay_filename, void *work)
                         dbgio_printf("Loading \"%s\"...\n", overlay_filename);
 
                         int ret __unused;
-                        ret = cd_block_sectors_read(file_entry->starting_fad, _overlay_start, file_entry->size);
+                        ret = cd_block_sectors_read(file_entry->starting_fad, __overlay_start, file_entry->size);
                         assert(ret == 0);
 
-                        overlay_start_t const overlay_start = (overlay_start_t)_overlay_start;
+                        overlay_start_t const overlay_start = (overlay_start_t)__overlay_start;
 
                         /* The cache needs to be purged as the overlay may make
                          * use of uncached variables/functions */

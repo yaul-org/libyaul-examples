@@ -16,26 +16,16 @@ GROUP (libgcc.a)
 
 MEMORY {
   shared      (Wx) : ORIGIN = 0x06004000, LENGTH = 512K
-  overlay     (Wx) : ORIGIN = 0x06080000, LENGTH = 256K
-  master_stack (W) : ORIGIN = 0x06004000, LENGTH = 0x00002000
-  slave_stack  (W) : ORIGIN = 0x06002000, LENGTH = 0x00001400
+  overlay     (Wx) : ORIGIN = 0x06080000, LENGTH = 496K
 }
-
-PROVIDE (__master_stack = ORIGIN (master_stack));
-PROVIDE (__master_stack_end = ORIGIN (master_stack) - LENGTH (master_stack));
-PROVIDE_HIDDEN (__slave_stack = ORIGIN (slave_stack));
-PROVIDE_HIDDEN (__slave_stack_end = ORIGIN (slave_stack) - LENGTH (slave_stack));
-
-/* Use this to find where the overlay executable address is */
-PROVIDE (__overlay_start = ORIGIN (overlay));
 
 SECTIONS
 {
    .overlay1.uncached (0x20000000 | __overlay1_end) : AT (__overlay1_load_end)
    {
-      . = ALIGN (16);
+      . = ALIGN (4);
       "*@overlay1@*.o"(.uncached .uncached.*)
-      . = ALIGN (16);
+      . = ALIGN (4);
    }
    __overlay1_uncached_start = LOADADDR (.overlay1.uncached);
    __overlay1_uncached_end = LOADADDR (.overlay1.uncached) + SIZEOF (.overlay1.uncached);
@@ -43,9 +33,9 @@ SECTIONS
 
    .overlay2.uncached (0x20000000 | __overlay2_end) : AT (__overlay2_load_end)
    {
-      . = ALIGN (16);
+      . = ALIGN (4);
       "*@overlay2@*.o"(.uncached .uncached.*)
-      . = ALIGN (16);
+      . = ALIGN (4);
    }
    __overlay2_uncached_start = LOADADDR (.overlay2.uncached);
    __overlay2_uncached_end = LOADADDR (.overlay2.uncached) + SIZEOF (.overlay2.uncached);
@@ -53,9 +43,9 @@ SECTIONS
 
    .overlay3.uncached (0x20000000 | __overlay3_end) : AT (__overlay3_load_end)
    {
-      . = ALIGN (16);
+      . = ALIGN (4);
       "*@overlay3@*.o"(.uncached .uncached.*)
-      . = ALIGN (16);
+      . = ALIGN (4);
    }
    __overlay3_uncached_start = LOADADDR (.overlay3.uncached);
    __overlay3_uncached_end = LOADADDR (.overlay3.uncached) + SIZEOF (.overlay3.uncached);
@@ -63,9 +53,9 @@ SECTIONS
 
    __overlay_load_offset = __lma_end;
 
-   .overlay1 ORIGIN (overlay) : AT (__overlay_load_offset)
+   .overlay1 ___overlay_start : AT (__overlay_load_offset)
    {
-      . = ALIGN (16);
+      . = ALIGN (4);
 
       /* Wildcard the overlay1/ directory. Recall that @ is being used in
        * place of the Unix/Windows path delimeter */
@@ -77,7 +67,7 @@ SECTIONS
 
       *(.overlay1.uncached)
 
-      . = ALIGN (16);
+      . = ALIGN (4);
    }
    __overlay1_start = ADDR (.overlay1);
    __overlay1_end = ADDR (.overlay1) + SIZEOF (.overlay1);
@@ -85,9 +75,9 @@ SECTIONS
    __overlay1_load_end = LOADADDR (.overlay1) + SIZEOF (.overlay1);
    __overlay_load_offset += __overlay1_size;
 
-   .overlay2 ORIGIN (overlay) : AT (__overlay_load_offset)
+   .overlay2 ___overlay_start : AT (__overlay_load_offset)
    {
-      . = ALIGN (16);
+      . = ALIGN (4);
 
       KEEP ("*@overlay2@*.o"(.text.overlay2))
       "*@overlay2@*.o"(.text .text .text.* .gnu.linkonce.t.*)
@@ -97,7 +87,7 @@ SECTIONS
 
       *(.overlay2.uncached)
 
-      . = ALIGN (16);
+      . = ALIGN (4);
    }
    __overlay2_start = ADDR (.overlay2);
    __overlay2_end = ADDR (.overlay2) + SIZEOF (.overlay2);
@@ -105,9 +95,9 @@ SECTIONS
    __overlay2_load_end = LOADADDR (.overlay2) + SIZEOF (.overlay2);
    __overlay_load_offset += __overlay2_size;
 
-   .overlay3 ORIGIN (overlay) : AT (__overlay_load_offset)
+   .overlay3 ___overlay_start : AT (__overlay_load_offset)
    {
-      . = ALIGN (16);
+      . = ALIGN (4);
 
       KEEP ("*@overlay3@*.o"(.text.overlay3))
       "*@overlay3@*.o"(.text .text.* .gnu.linkonce.t.*)
@@ -117,7 +107,7 @@ SECTIONS
 
       *(.overlay3.uncached)
 
-      . = ALIGN (16);
+      . = ALIGN (4);
    }
    __overlay3_start = ADDR (.overlay3);
    __overlay3_end = ADDR (.overlay3) + SIZEOF (.overlay3);
@@ -125,92 +115,63 @@ SECTIONS
    __overlay3_load_end = LOADADDR (.overlay3) + SIZEOF (.overlay3);
    __overlay_load_offset += __overlay3_size;
 
-   .program ORIGIN (shared) : AT (ORIGIN (overlay))
+   .program ORIGIN (shared) : AT (___overlay_start)
    {
-      . = ALIGN (4);
-      PROVIDE_HIDDEN (__program_start = .);
-
       /* This should be first */
       crt0.o(.text .text.* .gnu.linkonce.t.*)
       crt0.o(.rdata .rodata .rodata.* .gnu.linkonce.r.*)
       crt0.o(.data .data.* .gnu.linkonce.d.* .sdata .sdata.* .gnu.linkonce.s.*)
 
-      . = ALIGN (16);
-      __INIT_SECTION__ = .;
-      KEEP (*(.init))
-
-      . = ALIGN (16);
-      __FINI_SECTION__ = .;
-      KEEP (*(.fini))
-      SHORT (0x000B) /* RTS */
-      SHORT (0x0009) /* NOP */
-
-      . = ALIGN (16);
-      __CTOR_SECTION__ = .;
-      KEEP (*(.ctor))
-      SHORT (0x000B) /* RTS */
-      SHORT (0x0009) /* NOP */
-
-      . = ALIGN (16);
-      __DTOR_SECTION__ = .;
-      KEEP (*(.dtor))
-      SHORT (0x000B) /* RTS */
-      SHORT (0x0009) /* NOP */
-
-      libgcc.a(.text .text.* .gnu.linkonce.t.*)
-      libgcc.a(.rdata .rodata .rodata.* .gnu.linkonce.r.*)
-      libgcc.a(.data .data.* .gnu.linkonce.d.* .sdata .sdata.* .gnu.linkonce.s.*)
-
       /* This is where the main program binary is located */
-      KEEP ("*@program@*.o"(.text.user_init))
+      KEEP ("*@program@*.o"(.text.user_init)) /* Force keep user_init */
       "*@program@*.o"(.text .text.* .gnu.linkonce.t.*)
       "*@program@*.o"(.rdata .rodata .rodata.*)
       "*@program@*.o"(.data .data.* .gnu.linkonce.d.* .sdata .sdata.* .gnu.linkonce.s.*)
 
       . = ALIGN (4);
-      PROVIDE_HIDDEN (__program_end = .);
+      __program_end = .;
    }
 
    /* Everything that hasn't been placed in a section goes here */
    .shared __program_end : AT (LOADADDR (.program) + SIZEOF (.program))
    {
-      . = ALIGN (4);
-      PROVIDE_HIDDEN (__shared_start = .);
-
       *(.text .text.* .gnu.linkonce.t.*)
       *(.rdata .rodata .rodata.* .gnu.linkonce.r.*)
       *(.data .data.* .gnu.linkonce.d.* .sdata .sdata.* .gnu.linkonce.s.*)
 
+      libgcc.a(.text .text.* .gnu.linkonce.t.*)
+      libgcc.a(.rdata .rodata .rodata.* .gnu.linkonce.r.*)
+      libgcc.a(.data .data.* .gnu.linkonce.d.* .sdata .sdata.* .gnu.linkonce.s.*)
+
       . = ALIGN (4);
-      PROVIDE_HIDDEN (__shared_end = .);
+      __shared_end = .;
    }
 
    .bss __shared_end : AT (LOADADDR (.shared) + SIZEOF (.shared))
    {
       . = ALIGN (16);
-      PROVIDE (__bss_start = .);
+      PROVIDE (___bss_start = .);
 
       *(.bss .bss.* .gnu.linkonce.b.* .sbss .sbss.* .gnu.linkonce.sb.* .scommon COMMON)
 
       /* crt0.s BSS initialization assumes the section size of .bss is in
        * multiples of 16 */
       . = ALIGN (16);
-      PROVIDE (__bss_end = .);
+      PROVIDE (___bss_end = .);
    }
 
-   .uncached (0x20000000 | __bss_end) : AT (LOADADDR (.bss) + SIZEOF (.bss))
+   .uncached (0x20000000 | ___bss_end) : AT (LOADADDR (.bss) + SIZEOF (.bss))
    {
-      . = ALIGN (16);
-      PROVIDE_HIDDEN (__uncached_start = .);
-
       *(.uncached)
       *(.uncached.*)
 
-      . = ALIGN (16);
-      PROVIDE_HIDDEN (__uncached_end = .);
+      . = ALIGN (4);
    }
 
-   __end = __bss_end + SIZEOF (.uncached);
+   ___end = ___bss_end + SIZEOF (.uncached);
    /* The overlays will be placed right after the main program */
    __lma_end = LOADADDR (.bss) + SIZEOF (.bss) + SIZEOF (.uncached);
+
+   /* Use this to find where the overlay executable address is */
+   PROVIDE (___overlay_start = ORIGIN (overlay));
 }
