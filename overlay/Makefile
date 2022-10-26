@@ -71,10 +71,17 @@ pre-build-iso: cd/OVL1.BIN cd/OVL2.BIN cd/OVL3.BIN
 post-build-iso:
 	$(YAUL_INSTALL_ROOT)/share/wrap-error $(SH_OBJCOPY) -O binary -R ".overlay1" -R ".overlay2" -R ".overlay3"  -R ".overlay1.*" -R ".overlay2.*" -R ".overlay3.*" $(SH_BUILD_PATH)/$(SH_PROGRAM).elf cd/A.BIN
 
+.PHONY: .clean-overlays.elfs
+.clean-overlays.elfs:
+	@$(RM) -f $(SH_BUILD_PATH)/ovl1.elf \
+	    $(SH_BUILD_PATH)/ovl2.elf \
+	    $(SH_BUILD_PATH)/ovl3.elf
+
 .PHONY: .clean-overlays.x
 .clean-overlays.x:
 	@$(RM) -f $(SH_BUILD_PATH)/overlays.x
 
+clean: .clean-overlays.elfs
 clean: .clean-overlays.x
 
 # Build the executable only
