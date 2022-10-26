@@ -12,6 +12,7 @@ EXAMPLES:= \
 	dbgio-usb-cart \
 	dma-queue \
 	dram-cart \
+	fibers \
 	gdb \
 	mm-stats \
 	netlink-template \
