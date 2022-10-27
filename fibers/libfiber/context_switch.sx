@@ -57,6 +57,5 @@ ___context_switch:
         add #4, r14                     ! Skip restoring pc
         ldc.l @r14+, sr
         add #-(23-15)*4, r14            ! Offset 23 (due to post-increment) to offset 15 (r14)
-        mov.l @r14, r14                 ! Restore r14
         rts
-        nop
+        mov.l @r14, r14                 ! Restore r14

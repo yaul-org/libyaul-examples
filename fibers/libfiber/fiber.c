@@ -62,6 +62,18 @@ fiber_fiber_init(fiber_t *fiber, ssize_t stack_size, fiber_entry_t entry)
 }
 
 void
+fiber_fiber_deinit(fiber_t *fiber)
+{
+        uint32_t * const sp = &fiber->reg_file.sp;
+
+        if (sp != NULL) {
+                _stack_free(sp);
+
+                *sp = 0x00000000;
+        }
+}
+
+void
 fiber_yield(fiber_t *to)
 {
         const uint8_t sr_mask = cpu_intc_mask_get();
