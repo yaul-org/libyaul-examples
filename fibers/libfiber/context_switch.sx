@@ -17,12 +17,9 @@ ___context_switch:
         mov r4, r15                     ! Pointer to fiber context
         add #23*4, r15                  ! Byte offset to &cpu_registers_t::sr + 1 for pre-decrement
         stc.l sr, @-r15                 ! Offset 22*4
-        add #-4, r15                    ! Offset 21*4. Skip writing pc into register file
+        add #-4, r15                    ! Offset 21*4
         sts.l pr, @-r15                 ! Offset 20*4
-        stc.l gbr, @-r15                ! Offset 19*4. Do we need to save this?
-        stc.l vbr, @-r15                ! Offset 18*4. "
-        sts.l mach, @-r15               ! Offset 17*4. "
-        sts.l macl, @-r15               ! Offset 16*4. "
+        add #-4*4, r15                  ! Skip writing pc, macl, mach, vbr, gbr
         mov.l r14, @-r15                ! Offset 15*4
         mov.l r13, @-r15                ! Offset 14*4
         mov.l r12, @-r15
@@ -55,11 +52,7 @@ ___context_switch:
         mov.l @r14+, r11
         mov.l @r14+, r12
         mov.l @r14+, r13
-        add #4, r14                     ! Skip restoring r14
-        lds.l @r14+, macl               ! Do we need to restore this?
-        lds.l @r14+, mach               ! Do we need to restore this?
-        ldc.l @r14+, vbr                ! Do we need to restore this?
-        ldc.l @r14+, gbr                ! Do we need to restore this?
+        add #4*5, r14                   ! Skip restoring r14, macl, mach, vbr, gbr
         lds.l @r14+, pr
         add #4, r14                     ! Skip restoring pc
         ldc.l @r14+, sr

@@ -26,6 +26,10 @@ static fiber_stack_free_t _stack_free   = free;
 void
 fiber_init(void)
 {
+        extern uintptr_t __master_stack;
+
+        _fiber_parent.reg_file.sp = (uintptr_t)&__master_stack;
+        _fiber_parent.reg_file.vbr = cpu_reg_vbr_get();
 }
 
 void
@@ -70,6 +74,7 @@ fiber_yield(fiber_t *to)
         fiber_t * const fiber_previous = _fiber_current;
 
         _fiber_current = to;
+
         __context_switch(fiber_previous, _fiber_current);
 
         cpu_intc_mask_set(sr_mask);
