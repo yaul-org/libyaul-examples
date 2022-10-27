@@ -51,8 +51,8 @@ main(void)
         fiber_init();
         fiber_stack_allocator_set(memalign, free);
 
-        fiber_fiber_init(&_fiber1, 2048, _fiber_entry1);
-        fiber_fiber_init(&_fiber2, 2048, _fiber_entry2);
+        fiber_fiber_init(&_fiber1, 256, _fiber_entry1);
+        fiber_fiber_init(&_fiber2, 256, _fiber_entry2);
 
         while (true) {
                 fiber_yield(&_fiber1);
