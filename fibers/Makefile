@@ -11,11 +11,11 @@ SH_PROGRAM:= fibers
 SH_SRCS:= \
 	fibers.c \
 \
-	fiber.c \
-	context_switch.sx
+	libfiber/fiber.c \
+	libfiber/context_switch.sx
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -I. -Os
+SH_CFLAGS+= -I. -I./libfiber -Os
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

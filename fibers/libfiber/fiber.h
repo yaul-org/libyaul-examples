@@ -1,5 +1,5 @@
-#ifndef FIBER_H
-#define FIBER_H
+#ifndef _FIBER_H_
+#define _FIBER_H_
 
 #include <sys/cdefs.h>
 
@@ -29,4 +29,4 @@ extern void fiber_stack_allocator_set(fiber_stack_alloc_t stack_alloc, fiber_sta
 extern int32_t fiber_fiber_init(fiber_t *fiber, ssize_t stack_size, fiber_entry_t entry);
 extern void fiber_yield(fiber_t *to);
 
-#endif /* !FIBER_H */
+#endif /* !_FIBER_H_ */
