@@ -11,8 +11,6 @@ include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 SH_PROGRAM:= netlink-template
 SH_SRCS:= \
 	netlink-template.c
-ROMDISK_SYMBOLS=
-ROMDISK_DIRS=
 
 SH_LIBRARIES:=
 SH_CFLAGS+= -Os -I.

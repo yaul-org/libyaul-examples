@@ -61,6 +61,9 @@ main(void)
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
+        vdp2_sync();
+        vdp2_sync_wait();
+
         const smpc_time_t * const time = smpc_rtc_time_get();
         smpc_time_dec_t time_dec;
 
@@ -103,7 +106,7 @@ main(void)
                     _month_strings[time_dec.month],
                     time_dec.year);
 
-                dbgio_printf("Random value, %lu\n", (rand() & 15));
+                dbgio_printf("\nRandom value, %lu\n", (rand() & 15));
 
                 dbgio_flush();
                 vdp2_sync();
@@ -121,7 +124,7 @@ user_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);
 
-        vdp2_scrn_back_color_set(BACK_SCREEN, RGB1555(1, 7, 7, 7));
+        vdp2_scrn_back_color_set(BACK_SCREEN, RGB1555(1, 0, 7, 7));
 
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 

@@ -10,11 +10,10 @@ SH_PROGRAM:= vdp1-software-blending
 SH_SRCS:= \
 	flare_texture.c \
 	vdp1-software-blending.c
-ROMDISK_SYMBOLS=
-ROMDISK_DIRS=
+
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -Os -I$(THIS_ROOT) -ggdb3
+SH_CFLAGS+= -Os -I$(THIS_ROOT) -g
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

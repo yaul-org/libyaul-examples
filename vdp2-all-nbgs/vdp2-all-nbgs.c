@@ -179,10 +179,10 @@ main(void)
         vdp2_scrn_scroll_y_set(VDP2_SCRN_NBG3, FIX16(0.0f));
 
         vdp2_scrn_disp_t disp_mask;
-        disp_mask = VDP2_SCRN_DISP_NBG0 |
-                    VDP2_SCRN_DISP_NBG1 |
-                    VDP2_SCRN_DISP_NBG2 |
-                    VDP2_SCRN_DISP_NBG3;
+        disp_mask = VDP2_SCRN_DISPTP_NBG0 |
+                    VDP2_SCRN_DISPTP_NBG1 |
+                    VDP2_SCRN_DISPTP_NBG2 |
+                    VDP2_SCRN_DISPTP_NBG3;
 
         vdp2_scrn_display_set(disp_mask);
 

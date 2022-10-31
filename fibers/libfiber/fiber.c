@@ -26,9 +26,7 @@ static fiber_stack_free_t _stack_free   = free;
 void
 fiber_init(void)
 {
-        extern uintptr_t __master_stack;
-
-        _fiber_parent.reg_file.sp = (uintptr_t)&__master_stack;
+        _fiber_parent.reg_file.sp = (uintptr_t)cpu_dual_master_stack_get();
         _fiber_parent.reg_file.vbr = cpu_reg_vbr_get();
 }
 

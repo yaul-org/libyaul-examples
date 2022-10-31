@@ -14,13 +14,13 @@
 // #pragma GCC push_options
 // #pragma GCC optimize ("align-functions=16")
 
-#define VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX    0
-#define VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX          1
-#define VDP1_CMDT_ORDER_ERASE_INDEX                 2
-#define VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX       3
-#define VDP1_CMDT_ORDER_BUFFER_END_INDEX            (VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX + 512)
-#define VDP1_CMDT_ORDER_DRAW_END_INDEX              (VDP1_CMDT_ORDER_BUFFER_END_INDEX + 1)
-#define VDP1_CMDT_ORDER_COUNT                       VDP1_CMDT_ORDER_DRAW_END_INDEX
+#define VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX 0
+#define VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX       1
+#define VDP1_CMDT_ORDER_ERASE_INDEX              2
+#define VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX    3
+#define VDP1_CMDT_ORDER_BUFFER_END_INDEX         (VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX + 512)
+#define VDP1_CMDT_ORDER_DRAW_END_INDEX           (VDP1_CMDT_ORDER_BUFFER_END_INDEX + 1)
+#define VDP1_CMDT_ORDER_COUNT                    VDP1_CMDT_ORDER_DRAW_END_INDEX
 
 #define RBG0_BPD         VDP2_VRAM_ADDR(0, 0x000000)
 #define RBG0_RP_TABLE    VDP2_VRAM_ADDR(2, 0x000000)
@@ -30,10 +30,10 @@
 
 typedef uint32_t (*draw_handler)(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_buffer, vdp1_cmdt_color_bank_t color_bank);
 
-static constexpr uint32_t _screen_width = 352;
+static constexpr uint32_t _screen_width  = 352;
 static constexpr uint32_t _screen_height = 240;
 
-static constexpr uint32_t _render_width = 256;
+static constexpr uint32_t _render_width  = 256;
 static constexpr uint32_t _render_height = 200;
 
 static constexpr fix16_t _scale_width = FIX16(_render_width / static_cast<float>(_screen_width));
@@ -265,7 +265,7 @@ static void _vdp2_init(void) {
     vdp2_vram_usage_set(&vram_usage);
 
     vdp2_scrn_priority_set(VDP2_SCRN_RBG0, 7);
-    vdp2_scrn_display_set(VDP2_SCRN_DISP_RBG0);
+    vdp2_scrn_display_set(VDP2_SCRN_DISPTP_RBG0);
 
     (void)memcpy((void *)RBG0_RP_TABLE, &rp_table, sizeof(rp_table));
 

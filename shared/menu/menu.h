@@ -1,6 +1,8 @@
 #ifndef _SHARED_MENU_MENU_H_
 #define _SHARED_MENU_MENU_H_
 
+#include <sys/cdefs.h>
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -39,12 +41,14 @@ typedef menu_action_t menu_update_t;
 typedef void (*menu_input_fn_t)(menu_t *menu);
 
 struct menu_entry {
-        char label[32];
+        char label[48];
         char *label_format;
         menu_action_t action_fn;
         menu_cycle_t cycle_fn;
         menu_update_t update_fn;
 };
+
+static_assert(sizeof(struct menu_entry) == 64);
 
 #define MENU_MASK (0x0003)
 

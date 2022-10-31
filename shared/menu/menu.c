@@ -12,8 +12,6 @@
 
 #include "menu.h"
 
-static void _menu_render_update(menu_t *);
-
 static inline void __always_inline
 _menu_cursor_clamp(menu_t *menu, int8_t direction)
 {
@@ -70,12 +68,20 @@ menu_update(menu_t *menu)
         for (menu_cursor_t cursor = 0; cursor < menu->_entries_count; cursor++) {
                 menu_entry_t * const menu_entry = &menu->entries[cursor];
 
+                const char cursor_buffer[2] = {
+                        (menu->_cursor == cursor) ? '' : ' ',
+                        '\0'
+                };
+
+                dbgio_puts(cursor_buffer);
+
                 if (menu_entry->update_fn != NULL) {
                         menu_entry->update_fn(menu, menu_entry);
                 }
-        }
 
-        _menu_render_update(menu);
+                dbgio_puts(menu_entry->label);
+                dbgio_puts("\n");
+        }
 
         if (menu->_input_fn != NULL) {
                 menu->_input_fn(menu);
@@ -135,22 +141,5 @@ menu_action_call(menu_t *menu)
 
         if (action != NULL) {
                 action(menu, menu_entry);
-        }
-}
-
-static void
-_menu_render_update(menu_t *menu)
-{
-        char cursor_buffer[2];
-
-        for (menu_cursor_t cursor = 0; cursor < menu->_entries_count; cursor++) {
-                *cursor_buffer = (menu->_cursor == cursor) ? '' : ' ';
-
-                dbgio_puts(cursor_buffer);
-
-                const menu_entry_t * const menu_entry = &menu->entries[cursor];
-
-                dbgio_puts(menu_entry->label);
-                dbgio_puts("\n");
         }
 }
