@@ -1,0 +1,1 @@
+t21 mrc_square_16x16.bmp
