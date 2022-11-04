@@ -28,14 +28,22 @@ IP_1ST_READ_SIZE:= 0
 
 include $(YAUL_INSTALL_ROOT)/share/build.post.iso-cue.mk
 
-assets/mrc_square_16x16.cpd: work/mrc_square_16x16.bmp
-	@printf -- "$(V_BEGIN_MAGENTA)$@$(V_END)\n"
+work/mrc_squa.cpd work/mrc_squa.pal: work/mrc_square_16x16.bmp
 	$(ECHO)cd work; satconv assets.txt
 	$(ECHO)python work/strip_tle.py work/mrc_squa.tle work/mrc_squa.cpd work/mrc_squa.pal
-	$(ECHO)python work/4bpp_to_1bpp.py work/mrc_squa.cpd $@
 	$(ECHO)rm -f work/mrc_squa.tle
-	$(ECHO)rm -f work/mrc_squa.cpd
+
+assets/mrc_square_16x16.cpd: work/mrc_squa.cpd work/mrc_squa.pal
+	@printf -- "$(V_BEGIN_MAGENTA)$@$(V_END)\n"
+	$(ECHO)python work/4bpp_to_1bpp.py work/mrc_squa.cpd $@
 
 assets/mrc_square_16x16.pal: assets/mrc_square_16x16.cpd
 	@printf -- "$(V_BEGIN_MAGENTA)$@$(V_END)\n"
-	$(ECHO)mv work/mrc_squa.pal $@
+	$(ECHO)cp work/mrc_squa.pal $@
+
+.PHONY: .clean-assets
+.clean-assets:
+	$(ECHO)rm -f work/mrc_squa.cpd \
+	    work/mrc_squa.pal
+
+clean: .clean-assets
