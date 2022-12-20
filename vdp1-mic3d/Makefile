@@ -6,10 +6,20 @@ include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
 SH_PROGRAM:= vdp1-mic3d
 SH_SRCS:= \
-	vdp1-mic3d.c
+	vdp1-mic3d.c \
+\
+	mic3d/render.c \
+	mic3d/sort.c \
+	mic3d/state.c \
+	mic3d/workarea.c \
+	mic3d/mic3d.c \
+\
+	meshes/mesh_m.c \
+	meshes/mesh_i.c \
+	meshes/mesh_c.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -Os -I.
+SH_CFLAGS+= -Os -I. -I./mic3d -DDEBUG
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
