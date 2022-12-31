@@ -14,12 +14,12 @@ static const fix16_vec3_t point_cube1[] = {
 };
 
 static const attribute_t polygon_attributes[] = {
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 31,  0,  0)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1,  0, 31,  0)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1,  0,  0, 31)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 31, 31,  0)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1,  0, 31, 31)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 31, 31, 31)}
+        {.draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .texture_slot = 0, .base_color = RGB1555(1, 31,  0,  0)},
+        {.draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .texture_slot = 1, .base_color = RGB1555(1,  0, 31,  0)},
+        {.draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .texture_slot = 2, .base_color = RGB1555(1,  0,  0, 31)},
+        {.draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .texture_slot = 0, .base_color = RGB1555(1, 31, 31,  0)},
+        {.draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .texture_slot = 1, .base_color = RGB1555(1,  0, 31, 31)},
+        {.draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .texture_slot = 2, .base_color = RGB1555(1, 31, 31, 31)}
 };
 
 static const polygon_t polygon_cube1[] = {

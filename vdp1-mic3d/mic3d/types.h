@@ -76,6 +76,10 @@ typedef struct {
 static_assert(sizeof(attribute_t) == 12);
 
 typedef struct {
+        fix16_vec3_t position;
+} camera_t;
+
+typedef struct {
         const fix16_vec3_t *points;
         uint32_t points_count;
         const polygon_t *polygons;
@@ -84,9 +88,21 @@ typedef struct {
 } mesh_t;
 
 typedef struct {
-        fix16_vec3_t position;
-} camera_t;
+        const void *data;
+        uint16_t data_size;
+        int16_vec2_t dim;
+} picture_t;
 
+static_assert(sizeof(picture_t) == 12);
+
+typedef struct {
+        uint16_t vram_index;
+        uint16_t size;
+} texture_t;
+
+static_assert(sizeof(texture_t) == 4);
+
+/* XXX: This should move up to Yaul */
 typedef int16_t angle_t;
 
 #endif /* MIC3D_TYPES_H */

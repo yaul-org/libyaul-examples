@@ -1,6 +1,6 @@
 #include "mic3d.h"
 
-#define INDICES(a, b, c, d) {.p0 = a, .p1 = b, .p2 = c, .p3 = d}
+#define INDICES(a, b, c, d) { .p0 = a, .p1 = b, .p2 = c, .p3 = d }
 
 static const fix16_vec3_t _points_m[28] = {
         FIX16_VEC3_INITIALIZER(-5, -3, -2),
@@ -35,29 +35,29 @@ static const fix16_vec3_t _points_m[28] = {
 };
 
 static const attribute_t _attributes_m[] = {
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)},
-        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15)}
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.plane_type = PLANE_TYPE_DOUBLE, .base_color = RGB1555(1, 15, 15, 15)}
 };
 
 static const polygon_t _polygons_m[23] = {

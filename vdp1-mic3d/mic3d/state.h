@@ -7,10 +7,12 @@
 
 #include "render.h"
 #include "sort.h"
+#include "tlist.h"
 
 typedef struct {
         render_t *render;
         sort_t *sort;
+        tlist_t *tlist;
 } state_t;
 
 extern state_t __state;

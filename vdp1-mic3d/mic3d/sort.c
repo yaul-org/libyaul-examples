@@ -21,15 +21,21 @@ _singles_alloc(void)
 void
 __sort_init(void)
 {
-        _singles_reset();
+        extern sort_list_t __pool_sort_lists[];
+        extern sort_single_t __pool_sort_singles[];
 
-        __state.sort->max_depth = 0;
+        __state.sort->singles_pool = __pool_sort_singles;
+        __state.sort->sort_lists_pool = __pool_sort_lists;
+
+        __sort_start();
 }
 
 void
 __sort_start(void)
 {
-        __sort_init();
+        _singles_reset();
+
+        __state.sort->max_depth = 0;
 }
 
 void

@@ -7,10 +7,12 @@
  * Shazz
  */
 
-#include <yaul.h>
-
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <cpu/registers.h>
+#include <cpu/divu.h>
 
 #include "state.h"
 
@@ -21,8 +23,13 @@
 
 static void _x_rotate(fix16_vec3_t *out_points, const fix16_vec3_t *in_points, fix16_t angle, uint32_t points_count);
 static void _xyz_rotate(fix16_vec3_t *out_points, const fix16_vec3_t *in_points, fix16_t angle, uint32_t points_count);
+
 static void _transform(const camera_t *camera, render_mesh_t *render_mesh);
 static void _sort(void);
+
+static fix16_t _depth_min_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3);
+static fix16_t _depth_max_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3);
+static fix16_t _depth_center_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3);
 
 static bool _backface_cull_test(const int16_vec2_t *p0, const int16_vec2_t *p1, const int16_vec2_t *p2);
 static bool _frustrum_cull_test(const clip_flags_t *clip_flags);
@@ -50,6 +57,22 @@ _render_meshes_alloc(void)
 void
 __render_init(void)
 {
+        extern fix16_vec3_t __pool_points[];
+        extern int16_vec2_t __pool_screen_points[];
+        extern fix16_t __pool_depth_values[];
+        extern polygon_meta_t __pool_polygons[];
+
+        extern vdp1_cmdt_t __pool_cmdts[];
+
+        static render_mesh_t _pool_render_meshes[16];
+
+        __state.render->points_pool = __pool_points;
+        __state.render->screen_points_pool = __pool_screen_points;
+        __state.render->depth_values_pool = __pool_depth_values;
+        __state.render->polygons_pool = __pool_polygons;
+        __state.render->cmdts_pool = __pool_cmdts;
+        __state.render->render_meshes_pool = _pool_render_meshes;
+
         __state.render->render_mesh = NULL;
         __state.render->cmdts = NULL;
         __state.render->total_points_count = 0;
@@ -156,7 +179,7 @@ render_mesh_transform(const camera_t *camera)
             __state.render->render_mesh;
 
         fix16_vec3_t * const out_points = render_mesh->out_points;
-        int16_vec2_t * const out_screen_points = render_mesh->screen_points;
+        int16_vec2_t * const screen_points = render_mesh->screen_points;
 
         _transform(camera, render_mesh);
 
@@ -167,12 +190,17 @@ render_mesh_transform(const camera_t *camera)
         polygon_index = 0;
 
         for (uint32_t i = 0; i < render_mesh->mesh->polygons_count; i++) {
-                const int16_vec2_t * const screen_p0 = &out_screen_points[in_polygons[i].p0];
-                const int16_vec2_t * const screen_p1 = &out_screen_points[in_polygons[i].p1];
-                const int16_vec2_t * const screen_p2 = &out_screen_points[in_polygons[i].p2];
+                const attribute_t * const attribute =
+                    &render_mesh->mesh->attributes[i];
 
-                if ((_backface_cull_test(screen_p0, screen_p1, screen_p2))) {
-                        continue;
+                if (attribute->control.plane_type != PLANE_TYPE_DOUBLE) {
+                        const int16_vec2_t * const screen_p0 = &screen_points[in_polygons[i].p0];
+                        const int16_vec2_t * const screen_p1 = &screen_points[in_polygons[i].p1];
+                        const int16_vec2_t * const screen_p2 = &screen_points[in_polygons[i].p2];
+
+                        if ((_backface_cull_test(screen_p0, screen_p1, screen_p2))) {
+                                continue;
+                        }
                 }
 
                 const fix16_vec3_t * const view_p0 = &out_points[in_polygons[i].p0];
@@ -274,8 +302,8 @@ _transform(const camera_t *camera, render_mesh_t *render_mesh)
 {
         const fix16_vec3_t * const in_points = render_mesh->in_points;
         fix16_vec3_t * const out_points = render_mesh->out_points;
-        int16_vec2_t * const out_screen_points = render_mesh->screen_points;
-        fix16_t * const out_depth_values = render_mesh->depth_values;
+        int16_vec2_t * const screen_points = render_mesh->screen_points;
+        fix16_t * const depth_values = render_mesh->depth_values;
 
         for (uint32_t i = 0; i < render_mesh->mesh->points_count; i++) {
                 out_points[i].x = -camera->position.x + in_points[i].x;
@@ -284,10 +312,10 @@ _transform(const camera_t *camera, render_mesh_t *render_mesh)
 
                 cpu_divu_fix16_set(__state.render->view_distance, out_points[i].z);
 
-                out_depth_values[i] = cpu_divu_quotient_get();
+                depth_values[i] = cpu_divu_quotient_get();
 
-                out_screen_points[i].x = fix16_int16_muls(out_depth_values[i], out_points[i].x);
-                out_screen_points[i].y = fix16_int16_muls(out_depth_values[i], fix16_mul(SCREEN_RATIO, out_points[i].y));
+                screen_points[i].x = fix16_int16_muls(depth_values[i], out_points[i].x);
+                screen_points[i].y = fix16_int16_muls(depth_values[i], fix16_mul(SCREEN_RATIO, out_points[i].y));
         }
 }
 
@@ -304,14 +332,67 @@ _sort(void)
 
                 const polygon_t * const polygon =
                     &render_mesh->in_polygons[meta_polygon->index];
+                const attribute_t * const attribute =
+                    &render_mesh->mesh->attributes[meta_polygon->index];
 
-                const int32_t center_z = fix16_int32_to(depth_values[polygon->p0] +
-                                                        depth_values[polygon->p1] +
-                                                        depth_values[polygon->p2] +
-                                                        depth_values[polygon->p3]);
+                const fix16_t p0 = depth_values[polygon->p0];
+                const fix16_t p1 = depth_values[polygon->p1];
+                const fix16_t p2 = depth_values[polygon->p2];
+                const fix16_t p3 = depth_values[polygon->p3];
 
-                __sort_insert(render_mesh, meta_polygon, center_z);
+                int32_t z;
+
+                switch (attribute->control.sort_type) {
+                default:
+                case SORT_TYPE_CENTER:
+                        z = _depth_center_calculate(p0, p1, p2, p3);
+                        break;
+                case SORT_TYPE_MIN:
+                        z = _depth_min_calculate(p0, p1, p2, p3);
+                        break;
+                case SORT_TYPE_MAX:
+                        z = _depth_max_calculate(p0, p1, p2, p3);
+                        break;
+                /* case SORT_TYPE_BFR: */
+                /*         continue; */
+                }
+
+                z = fix16_int16_muls(z, FIX16(SORT_DEPTH / 0x40));
+
+                __sort_insert(render_mesh, meta_polygon, z);
         }
+}
+
+static int32_t
+_depth_min_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3)
+{
+        fix16_t z;
+        z = p0;
+
+        z = (p1 < z) ? p1 : z;
+        z = (p2 < z) ? p2 : z;
+        z = (p3 < z) ? p3 : z;
+
+        return z;
+}
+
+static fix16_t
+_depth_max_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3)
+{
+        fix16_t z;
+        z = p0;
+
+        z = (p1 > z) ? p1 : z;
+        z = (p2 > z) ? p2 : z;
+        z = (p3 > z) ? p3 : z;
+
+        return fix16_int32_to(z);
+}
+
+static int32_t
+_depth_center_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3)
+{
+        return fix16_int32_to(p0 + p1 + p2 + p3);
 }
 
 static clip_flags_t
@@ -354,25 +435,19 @@ _clip_flags_calculate(const fix16_vec3_t *point)
 static bool
 _backface_cull_test(const int16_vec2_t *p0, const int16_vec2_t *p1, const int16_vec2_t *p2)
 {
-        const int32_vec2_t u1 = {
+        const int32_vec2_t a = {
                 .x = p2->x - p0->x,
                 .y = p2->y - p0->y
         };
 
-        const int32_vec2_t v1 = {
+        const int32_vec2_t b = {
                 .x = p1->x - p0->x,
                 .y = p1->y - p0->y
         };
 
-        /* Ideally, we only need to do a cross product on one winding order, but
-         * in the case of triangles that combine two vertices, it's unknown
-         * which two vertices are joined. The easiest solution is to test one
-         * winding order, and if it fails, don't bother testing the other
-         * winding order */
+        const int32_t z = (a.x * b.y) - (a.y * b.x);
 
-        const int32_t z1 = (u1.x * v1.y) - (u1.y * v1.x);
-
-        return (z1 < 0);
+        return (z < 0);
 }
 
 static bool
@@ -400,6 +475,14 @@ _render_single(const sort_single_t *single)
 
         vdp1_cmdt_param_draw_mode_set(cmdt, attribute->draw_mode);
         vdp1_cmdt_param_color_set(cmdt, attribute->base_color);
+
+        if (attribute->control.use_texture) {
+                const texture_t * const textures = __state.tlist->list.list;
+                const texture_t * const texture = &textures[attribute->texture_slot];
+
+                cmdt->cmd_srca = texture->vram_index;
+                cmdt->cmd_size = texture->size;
+        }
 
         const polygon_t * const polygon =
             &render_mesh->in_polygons[meta_polygon->index];
