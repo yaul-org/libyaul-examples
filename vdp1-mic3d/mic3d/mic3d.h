@@ -37,8 +37,9 @@ void render_mesh_rotate(fix16_t angle);
 void render_process(void);
 void render(uint32_t cmdt_index);
 
-texture_t *tlist_alloc(uint32_t texture_count);
-void tlist_free(void);
+texture_t *tlist_acquire(uint32_t texture_count);
+void tlist_release(void);
 void tlist_set(texture_t *textures, uint16_t texture_count);
+texture_t *tlist_get(void);
 
 #endif /* MIC3D_H */

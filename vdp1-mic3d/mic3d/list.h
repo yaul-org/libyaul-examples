@@ -11,7 +11,7 @@ typedef enum {
 
 typedef struct {
         list_flags_t flags;
-        void *list;
+        void *buffer;
         uint16_t count;
         uint16_t size;
         void *default_element;

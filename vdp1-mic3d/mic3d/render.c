@@ -479,7 +479,7 @@ _render_single(const sort_single_t *single)
         vdp1_cmdt_param_color_set(cmdt, attribute->base_color);
 
         if (attribute->control.use_texture) {
-                const texture_t * const textures = __state.tlist->list.list;
+                const texture_t * const textures = tlist_get();
                 const texture_t * const texture = &textures[attribute->texture_slot];
 
                 cmdt->cmd_srca = texture->vram_index;
