@@ -8,7 +8,7 @@
 
 typedef struct sort_single {
         const render_mesh_t *render_mesh;
-        const  polygon_t *polygon;
+        const  polygon_meta_t *polygon;
         struct sort_single *next_single;
         unsigned int :32;
 } __aligned(4) sort_single_t;
@@ -33,7 +33,7 @@ typedef void (*sort_fn_t)(const sort_single_t *single);
 
 void __sort_init(void);
 void __sort_start(void);
-void __sort_insert(const render_mesh_t *render_mesh, const  polygon_t *polygon, int32_t z);
+void __sort_insert(const render_mesh_t *render_mesh, const polygon_meta_t *polygon, int32_t z);
 void __sort_iterate(sort_fn_t fn);
 
 #endif /* MIC3D_SORT_H */

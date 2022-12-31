@@ -11,11 +11,12 @@ typedef struct {
 } __aligned(4) point_t;
 
 typedef struct {
-        uint32_t p0;
-        uint32_t p1;
-        uint32_t p2;
-        uint32_t p3;
-}  polygon_t;
+        fix16_vec3_t normal;
+        uint16_t p0;
+        uint16_t p1;
+        uint16_t p2;
+        uint16_t p3;
+} __aligned(4) polygon_t;
 
 typedef struct {
         const point_t *points;
