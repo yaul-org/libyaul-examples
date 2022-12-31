@@ -19,15 +19,15 @@
 #define MIN_FOV_ANGLE DEG2ANGLE( 60.0f)
 #define MAX_FOV_ANGLE DEG2ANGLE(120.0f)
 
-static void _x_rotate(point_t *out_points, const point_t *in_points, fix16_t angle, uint32_t points_count);
-static void _xyz_rotate(point_t *out_points, const point_t *in_points, fix16_t angle, uint32_t points_count);
+static void _x_rotate(fix16_vec3_t *out_points, const fix16_vec3_t *in_points, fix16_t angle, uint32_t points_count);
+static void _xyz_rotate(fix16_vec3_t *out_points, const fix16_vec3_t *in_points, fix16_t angle, uint32_t points_count);
 static void _transform(const camera_t *camera, render_mesh_t *render_mesh);
 static void _sort(void);
 
 static bool _backface_cull_test(const int16_vec2_t *p0, const int16_vec2_t *p1, const int16_vec2_t *p2);
 static bool _frustrum_cull_test(const clip_flags_t *clip_flags);
 
-static clip_flags_t _clip_flags_calculate(const point_t *point);
+static clip_flags_t _clip_flags_calculate(const fix16_vec3_t *point);
 
 static void _render_single(const sort_single_t *single);
 
@@ -80,6 +80,7 @@ render_mesh_start(const mesh_t *mesh)
         render_mesh->in_points = mesh->points;
         render_mesh->out_points = &__state.render->points_pool[__state.render->total_points_count];
         render_mesh->screen_points = &__state.render->screen_points_pool[__state.render->total_points_count];
+        render_mesh->depth_values = &__state.render->depth_values_pool[__state.render->total_points_count];
 
         render_mesh->in_polygons = mesh->polygons;
         render_mesh->out_polygons = &__state.render->polygons_pool[__state.render->total_polygons_count];
@@ -108,8 +109,8 @@ render_mesh_translate(fix16_t x, fix16_t y, fix16_t z)
         render_mesh_t * const render_mesh =
             __state.render->render_mesh;
 
-        const point_t * const in_points = render_mesh->in_points;
-        point_t * const out_points = render_mesh->out_points;
+        const fix16_vec3_t * const in_points = render_mesh->in_points;
+        fix16_vec3_t * const out_points = render_mesh->out_points;
 
         for (uint32_t i = 0; i < render_mesh->mesh->points_count; i++) {
                 out_points[i].x = in_points[i].x + x;
@@ -126,8 +127,8 @@ render_mesh_rotate_x(angle_t angle)
         render_mesh_t * const render_mesh =
             __state.render->render_mesh;
 
-        const point_t * const in_points = render_mesh->in_points;
-        point_t * const out_points = render_mesh->out_points;
+        const fix16_vec3_t * const in_points = render_mesh->in_points;
+        fix16_vec3_t * const out_points = render_mesh->out_points;
 
         _x_rotate(out_points, in_points, angle, render_mesh->mesh->points_count);
 
@@ -140,8 +141,8 @@ render_mesh_rotate(fix16_t angle)
         render_mesh_t * const render_mesh =
             __state.render->render_mesh;
 
-        const point_t * const in_points = render_mesh->in_points;
-        point_t * const out_points = render_mesh->out_points;
+        const fix16_vec3_t * const in_points = render_mesh->in_points;
+        fix16_vec3_t * const out_points = render_mesh->out_points;
 
         _xyz_rotate(out_points, in_points, angle, render_mesh->mesh->points_count);
 
@@ -154,7 +155,7 @@ render_mesh_transform(const camera_t *camera)
         render_mesh_t * const render_mesh =
             __state.render->render_mesh;
 
-        point_t * const out_points = render_mesh->out_points;
+        fix16_vec3_t * const out_points = render_mesh->out_points;
         int16_vec2_t * const out_screen_points = render_mesh->screen_points;
 
         _transform(camera, render_mesh);
@@ -174,10 +175,10 @@ render_mesh_transform(const camera_t *camera)
                         continue;
                 }
 
-                const point_t * const view_p0 = &out_points[in_polygons[i].p0];
-                const point_t * const view_p1 = &out_points[in_polygons[i].p1];
-                const point_t * const view_p2 = &out_points[in_polygons[i].p2];
-                const point_t * const view_p3 = &out_points[in_polygons[i].p3];
+                const fix16_vec3_t * const view_p0 = &out_points[in_polygons[i].p0];
+                const fix16_vec3_t * const view_p1 = &out_points[in_polygons[i].p1];
+                const fix16_vec3_t * const view_p2 = &out_points[in_polygons[i].p2];
+                const fix16_vec3_t * const view_p3 = &out_points[in_polygons[i].p3];
 
                 clip_flags_t clip_flags[4];
 
@@ -190,7 +191,8 @@ render_mesh_transform(const camera_t *camera)
                         continue;
                 }
 
-                out_polygons[polygon_index].polygon = &in_polygons[i];
+                out_polygons[polygon_index].index = i;
+
                 polygon_index++;
         }
 
@@ -226,7 +228,7 @@ render(uint32_t cmdt_index)
 }
 
 static void
-_x_rotate(point_t *out_points, const point_t *in_points, fix16_t angle, uint32_t points_count)
+_x_rotate(fix16_vec3_t *out_points, const fix16_vec3_t *in_points, fix16_t angle, uint32_t points_count)
 {
         const int32_t bradians = fix16_int16_muls(angle, FIX16(FIX16_LUT_SIN_TABLE_COUNT));
 
@@ -243,7 +245,7 @@ _x_rotate(point_t *out_points, const point_t *in_points, fix16_t angle, uint32_t
 }
 
 static void
-_xyz_rotate(point_t *out_points, const point_t *in_points, fix16_t angle, uint32_t points_count)
+_xyz_rotate(fix16_vec3_t *out_points, const fix16_vec3_t *in_points, fix16_t angle, uint32_t points_count)
 {
         const int32_t bradians = fix16_int16_muls(angle, FIX16(FIX16_LUT_SIN_TABLE_COUNT));
 
@@ -270,9 +272,10 @@ _xyz_rotate(point_t *out_points, const point_t *in_points, fix16_t angle, uint32
 static void
 _transform(const camera_t *camera, render_mesh_t *render_mesh)
 {
-        const point_t * const in_points = render_mesh->in_points;
-        point_t * const out_points = render_mesh->out_points;
+        const fix16_vec3_t * const in_points = render_mesh->in_points;
+        fix16_vec3_t * const out_points = render_mesh->out_points;
         int16_vec2_t * const out_screen_points = render_mesh->screen_points;
+        fix16_t * const out_depth_values = render_mesh->depth_values;
 
         for (uint32_t i = 0; i < render_mesh->mesh->points_count; i++) {
                 out_points[i].x = -camera->position.x + in_points[i].x;
@@ -281,10 +284,10 @@ _transform(const camera_t *camera, render_mesh_t *render_mesh)
 
                 cpu_divu_fix16_set(__state.render->view_distance, out_points[i].z);
 
-                const fix16_t inv_z = cpu_divu_quotient_get();
+                out_depth_values[i] = cpu_divu_quotient_get();
 
-                out_screen_points[i].x = fix16_int16_muls(inv_z, out_points[i].x);
-                out_screen_points[i].y = fix16_int16_muls(inv_z, fix16_mul(SCREEN_RATIO, out_points[i].y));
+                out_screen_points[i].x = fix16_int16_muls(out_depth_values[i], out_points[i].x);
+                out_screen_points[i].y = fix16_int16_muls(out_depth_values[i], fix16_mul(SCREEN_RATIO, out_points[i].y));
         }
 }
 
@@ -294,22 +297,25 @@ _sort(void)
         render_mesh_t * const render_mesh =
             __state.render->render_mesh;
 
-        const point_t * const out_points = render_mesh->out_points;
+        const fix16_t * const depth_values = render_mesh->depth_values;
 
         for (uint32_t i = 0; i < render_mesh->polygons_count; i++) {
                 const polygon_meta_t * const meta_polygon = &render_mesh->out_polygons[i];
 
-                const fix16_t center_z = out_points[meta_polygon->polygon->p0].z +
-                                         out_points[meta_polygon->polygon->p1].z +
-                                         out_points[meta_polygon->polygon->p2].z +
-                                         out_points[meta_polygon->polygon->p3].z;
+                const polygon_t * const polygon =
+                    &render_mesh->in_polygons[meta_polygon->index];
+
+                const int32_t center_z = fix16_int32_to(depth_values[polygon->p0] +
+                                                        depth_values[polygon->p1] +
+                                                        depth_values[polygon->p2] +
+                                                        depth_values[polygon->p3]);
 
                 __sort_insert(render_mesh, meta_polygon, center_z);
         }
 }
 
 static clip_flags_t
-_clip_flags_calculate(const point_t *point)
+_clip_flags_calculate(const fix16_vec3_t *point)
 {
         clip_flags_t clip_flags;
         clip_flags = CLIP_FLAGS_NONE;
@@ -382,30 +388,33 @@ _render_single(const sort_single_t *single)
 
         __state.render->cmdts++;
 
-        const rgb1555_t color = RGB1555(1, 15, 15, 15);
-
-        vdp1_cmdt_draw_mode_t draw_mode = {
-                .raw = 0x0000
-        };
-
         const polygon_meta_t * const meta_polygon = single->polygon;
+
         const render_mesh_t * const render_mesh = single->render_mesh;
+
+        const attribute_t * const attribute =
+            &render_mesh->mesh->attributes[meta_polygon->index];
+
+        cmdt->cmd_ctrl &= 0x7FF0;
+        cmdt->cmd_ctrl |= attribute->control.raw & 0x3F;
+
+        vdp1_cmdt_param_draw_mode_set(cmdt, attribute->draw_mode);
+        vdp1_cmdt_param_color_set(cmdt, attribute->base_color);
+
+        const polygon_t * const polygon =
+            &render_mesh->in_polygons[meta_polygon->index];
 
         const int16_vec2_t * const screen_points = render_mesh->screen_points;
 
-        cmdt->cmd_xa = screen_points[meta_polygon->polygon->p0].x;
-        cmdt->cmd_ya = screen_points[meta_polygon->polygon->p0].y;
+        cmdt->cmd_xa = screen_points[polygon->p0].x;
+        cmdt->cmd_ya = screen_points[polygon->p0].y;
 
-        cmdt->cmd_xb = screen_points[meta_polygon->polygon->p3].x;
-        cmdt->cmd_yb = screen_points[meta_polygon->polygon->p3].y;
+        cmdt->cmd_xb = screen_points[polygon->p3].x;
+        cmdt->cmd_yb = screen_points[polygon->p3].y;
 
-        cmdt->cmd_xc = screen_points[meta_polygon->polygon->p2].x;
-        cmdt->cmd_yc = screen_points[meta_polygon->polygon->p2].y;
+        cmdt->cmd_xc = screen_points[polygon->p2].x;
+        cmdt->cmd_yc = screen_points[polygon->p2].y;
 
-        cmdt->cmd_xd = screen_points[meta_polygon->polygon->p1].x;
-        cmdt->cmd_yd = screen_points[meta_polygon->polygon->p1].y;
-
-        vdp1_cmdt_polyline_set(cmdt);
-        vdp1_cmdt_param_draw_mode_set(cmdt, draw_mode);
-        vdp1_cmdt_param_color_set(cmdt, color);
+        cmdt->cmd_xd = screen_points[polygon->p1].x;
+        cmdt->cmd_yd = screen_points[polygon->p1].y;
 }

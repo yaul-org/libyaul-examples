@@ -1,32 +1,40 @@
 #include "mic3d.h"
 
-#define POStoFIXED(x, y, z)  {FIX16(x), FIX16(y), FIX16(z)}
-#define NORMAL(x, y, z)
-#define VERTICES(a, b, c, d) {.p0 = a, .p1 = b, .p2 = c, .p3 = d}
+#define INDICES(a, b, c, d) {.p0 = a, .p1 = b, .p2 = c, .p3 = d}
 
-static const point_t point_cube1[] = {
-        POStoFIXED(-10.0, -10.0,  10.0), /* 0 */
-        POStoFIXED( 10.0, -10.0,  10.0), /* 1 */
-        POStoFIXED( 10.0,  10.0,  10.0), /* 2 */
-        POStoFIXED(-10.0,  10.0,  10.0), /* 3 */
-        POStoFIXED(-10.0, -10.0, -10.0), /* 4 */
-        POStoFIXED( 10.0, -10.0, -10.0), /* 5 */
-        POStoFIXED( 10.0,  10.0, -10.0), /* 6 */
-        POStoFIXED(-10.0,  10.0, -10.0)  /* 7 */
+static const fix16_vec3_t point_cube1[] = {
+        FIX16_VEC3_INITIALIZER(-10.0, -10.0,  10.0), /* 0 */
+        FIX16_VEC3_INITIALIZER( 10.0, -10.0,  10.0), /* 1 */
+        FIX16_VEC3_INITIALIZER( 10.0,  10.0,  10.0), /* 2 */
+        FIX16_VEC3_INITIALIZER(-10.0,  10.0,  10.0), /* 3 */
+        FIX16_VEC3_INITIALIZER(-10.0, -10.0, -10.0), /* 4 */
+        FIX16_VEC3_INITIALIZER( 10.0, -10.0, -10.0), /* 5 */
+        FIX16_VEC3_INITIALIZER( 10.0,  10.0, -10.0), /* 6 */
+        FIX16_VEC3_INITIALIZER(-10.0,  10.0, -10.0)  /* 7 */
+};
+
+static const attribute_t polygon_attributes[] = {
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 31,  0,  0)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1,  0, 31,  0)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1,  0,  0, 31)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 31, 31,  0)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1,  0, 31, 31)},
+        {.draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 31, 31, 31)}
 };
 
 static const polygon_t polygon_cube1[] = {
-        VERTICES(0, 1, 2, 3), /* Back */
-        VERTICES(4, 0, 3, 7), /* Left */
-        VERTICES(5, 4, 7, 6), /* Front */
-        VERTICES(1, 5, 6, 2), /* Right */
-        VERTICES(4, 5, 1, 0), /* Top */
-        VERTICES(3, 2, 6, 7)  /* Bottom */
+        INDICES(0, 1, 2, 3), /* Back */
+        INDICES(4, 0, 3, 7), /* Left */
+        INDICES(5, 4, 7, 6), /* Front */
+        INDICES(1, 5, 6, 2), /* Right */
+        INDICES(4, 5, 1, 0), /* Top */
+        INDICES(3, 2, 6, 7)  /* Bottom */
 };
 
 const mesh_t mesh_cube = {
         .points         = point_cube1,
         .points_count   = 8,
         .polygons       = polygon_cube1,
+        .attributes     = polygon_attributes,
         .polygons_count = 6
 };

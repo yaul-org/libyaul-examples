@@ -17,15 +17,16 @@ typedef enum {
 } clip_flags_t;
 
 typedef struct {
-        const polygon_t *polygon;
+        uint16_t index;
 } __aligned(4) polygon_meta_t;
 
 typedef struct {
         const mesh_t *mesh;
 
-        const point_t *in_points;
-        point_t *out_points;
+        const fix16_vec3_t *in_points;
+        fix16_vec3_t *out_points;
         int16_vec2_t *screen_points;
+        fix16_t *depth_values;
 
         const polygon_t *in_polygons;
         polygon_meta_t *out_polygons;
@@ -34,8 +35,9 @@ typedef struct {
 } __aligned(4) render_mesh_t;
 
 typedef struct {
-        point_t *points_pool;
+        fix16_vec3_t *points_pool;
         int16_vec2_t *screen_points_pool;
+        fix16_t *depth_values_pool;
         polygon_meta_t *polygons_pool;
         vdp1_cmdt_t *cmdts_pool;
         render_mesh_t *render_meshes_pool;

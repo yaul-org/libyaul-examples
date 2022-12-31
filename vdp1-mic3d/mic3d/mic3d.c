@@ -1,7 +1,8 @@
 #include "state.h"
 
-extern point_t __pool_points[];
+extern fix16_vec3_t __pool_points[];
 extern int16_vec2_t __pool_screen_points[];
+extern fix16_t __pool_depth_values[];
 extern polygon_meta_t __pool_polygons[];
 
 extern sort_list_t __pool_sort_lists[];
@@ -22,6 +23,7 @@ mic3d_init(void)
 
         _render.points_pool = __pool_points;
         _render.screen_points_pool = __pool_screen_points;
+        _render.depth_values_pool = __pool_depth_values;
         _render.polygons_pool = __pool_polygons;
         _render.cmdts_pool = __pool_cmdts;
         _render.render_meshes_pool = _pool_render_meshes;
