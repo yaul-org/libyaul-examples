@@ -15,10 +15,10 @@ typedef struct {
 } __aligned(4) polygon_t;
 
 typedef enum {
+        SORT_TYPE_BFR,
         SORT_TYPE_MIN,
         SORT_TYPE_MAX,
-        SORT_TYPE_CENTER,
-        SORT_TYPE_BFR
+        SORT_TYPE_CENTER
 } sort_type_t;
 
 typedef enum {

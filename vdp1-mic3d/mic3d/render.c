@@ -73,6 +73,12 @@ __render_init(void)
         __state.render->cmdts_pool = __pool_cmdts;
         __state.render->render_meshes_pool = _pool_render_meshes;
 
+        render_start();
+}
+
+void
+render_start(void)
+{
         __state.render->render_mesh = NULL;
         __state.render->cmdts = NULL;
         __state.render->total_points_count = 0;
@@ -84,12 +90,7 @@ __render_init(void)
 
         /* XXX: Actually calculate this */
         __state.render->clip_factor = FIX16(1.0f);
-}
 
-void
-render_start(void)
-{
-        __render_init();
         __sort_start();
 }
 
@@ -353,10 +354,11 @@ _sort(void)
                 case SORT_TYPE_MAX:
                         z = _depth_max_calculate(p0, p1, p2, p3);
                         break;
-                /* case SORT_TYPE_BFR: */
-                /*         continue; */
+                case SORT_TYPE_BFR:
+                        continue;
                 }
 
+                /* Dividing by 64 was pulled by the PSXSPX documents */
                 z = fix16_int16_muls(z, FIX16(SORT_DEPTH / 0x40));
 
                 __sort_insert(render_mesh, meta_polygon, z);

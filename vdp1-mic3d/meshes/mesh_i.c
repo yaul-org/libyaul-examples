@@ -15,12 +15,12 @@ static const fix16_vec3_t _points_i[9] = {
 };
 
 static const attribute_t _attributes_i[6] = {
-        { .draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15) },
-        { .draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15) },
-        { .draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15) },
-        { .draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15) },
-        { .draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15) },
-        { .draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .base_color = RGB1555(1, 15, 15, 15) }
+        { .draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .base_color = RGB1555(1, 15, 15, 15) },
+        { .draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .base_color = RGB1555(1, 15, 15, 15) },
+        { .draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .base_color = RGB1555(1, 15, 15, 15) },
+        { .draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .base_color = RGB1555(1, 15, 15, 15) },
+        { .draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .base_color = RGB1555(1, 15, 15, 15) },
+        { .draw_mode.raw = 0, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .base_color = RGB1555(1, 15, 15, 15) }
 };
 
 static const polygon_t _polygons_i[6] = {
