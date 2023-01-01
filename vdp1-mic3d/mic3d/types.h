@@ -65,9 +65,11 @@ typedef struct {
         attribute_control_t control;
 
         union {
+                uint16_t vram_index;
+                vdp1_color_bank_t color_bank;
+                uint16_t raw;
                 rgb1555_t base_color;
-                uint16_t palette_slot;
-        };
+        } palette;
 
         uint16_t texture_slot;
         uint16_t shading_slot;
@@ -91,9 +93,10 @@ typedef struct {
         const void *data;
         uint16_t data_size;
         int16_vec2_t dim;
+        uint16_t palette_index;
 } picture_t;
 
-static_assert(sizeof(picture_t) == 12);
+static_assert(sizeof(picture_t) == 16);
 
 typedef struct {
         uint16_t vram_index;
@@ -101,6 +104,13 @@ typedef struct {
 } texture_t;
 
 static_assert(sizeof(texture_t) == 4);
+
+typedef struct {
+        const void *data;
+        uint16_t data_size;
+} palette_t;
+
+static_assert(sizeof(palette_t) == 8);
 
 /* XXX: This should move up to Yaul */
 typedef int16_t angle_t;

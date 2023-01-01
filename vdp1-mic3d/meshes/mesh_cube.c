@@ -14,12 +14,12 @@ static const fix16_vec3_t point_cube1[] = {
 };
 
 static const attribute_t polygon_attributes[] = {
-        { .draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 0, .base_color = RGB1555(1, 31,  0,  0) },
-        { .draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 1, .base_color = RGB1555(1,  0, 31,  0) },
-        { .draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 0, .base_color = RGB1555(1,  0,  0, 31) },
-        { .draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 1, .base_color = RGB1555(1, 31, 31,  0) },
-        { .draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 0, .base_color = RGB1555(1,  0, 31, 31) },
-        { .draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 1, .base_color = RGB1555(1, 31, 31, 31) }
+        { .draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 0, .palette.base_color = RGB1555(1, 31,  0,  0) },
+        { .draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 1, .palette.base_color = RGB1555(1,  0, 31,  0) },
+        { .draw_mode.bits.color_mode = 4, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 2, .palette.color_bank.type_0.data.dc = 0x0000 },
+        { .draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 0, .palette.base_color = RGB1555(1, 31, 31,  0) },
+        { .draw_mode.bits.color_mode = 5, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 1, .palette.base_color = RGB1555(1,  0, 31, 31) },
+        { .draw_mode.bits.color_mode = 4, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 2, .palette.color_bank.type_0.data.dc = 0x0000 }
 };
 
 static const polygon_t polygon_cube1[] = {

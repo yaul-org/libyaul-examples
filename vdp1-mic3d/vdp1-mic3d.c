@@ -27,12 +27,16 @@ extern const mesh_t mesh_cube;
 
 extern const picture_t picture_mika;
 extern const picture_t picture_tails;
+extern const picture_t picture_baku;
+
+extern const palette_t palette_baku;
 
 static texture_t _textures[8];
 
 static void _vdp1_init(void);
 
-static size_t _load_texture(texture_t *textures, uint32_t slot, const picture_t *picture, vdp1_vram_t texture_base);
+static size_t _texture_load(texture_t *textures, uint32_t slot, const picture_t *picture, vdp1_vram_t texture_base);
+static void _palette_load(uint16_t bank_256, uint16_t bank_16, const palette_t *palette);
 
 void
 main(void)
@@ -61,8 +65,11 @@ main(void)
         vdp1_vram_t texture_base;
         texture_base = (vdp1_vram_t)vdp1_vram_partitions.texture_base;
 
-        texture_base += _load_texture(_textures, 0, &picture_mika, texture_base);
-        texture_base += _load_texture(_textures, 1, &picture_tails, texture_base);
+        texture_base += _texture_load(_textures, 0, &picture_mika, texture_base);
+        texture_base += _texture_load(_textures, 1, &picture_tails, texture_base);
+        texture_base += _texture_load(_textures, 2, &picture_baku, texture_base);
+
+        _palette_load(0, 0, &palette_baku);
 
         while (true) {
                 dbgio_puts("[H[2J");
@@ -145,7 +152,7 @@ _vdp1_init(void)
 }
 
 static size_t
-_load_texture(texture_t *textures, uint32_t slot, const picture_t *picture, vdp1_vram_t texture_base)
+_texture_load(texture_t *textures, uint32_t slot, const picture_t *picture, vdp1_vram_t texture_base)
 {
         texture_t * const texture = &textures[slot];
 
@@ -156,4 +163,11 @@ _load_texture(texture_t *textures, uint32_t slot, const picture_t *picture, vdp1
         scu_dma_transfer_wait(0);
 
         return picture->data_size;
+}
+
+static void
+_palette_load(uint16_t bank_256, uint16_t bank_16, const palette_t *palette)
+{
+        scu_dma_transfer(0, (void *)VDP2_CRAM_MODE_0_OFFSET(bank_256, bank_16, 0), palette->data, palette->data_size);
+        scu_dma_transfer_wait(0);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006-2022
+ * Copyright (c) 2006-2023
  * See LICENSE for details.
  *
  * Israel Jacquez <mrkotfw@gmail.com>
@@ -476,7 +476,6 @@ _render_single(const sort_single_t *single)
         cmdt->cmd_ctrl |= attribute->control.raw & 0x3F;
 
         vdp1_cmdt_param_draw_mode_set(cmdt, attribute->draw_mode);
-        vdp1_cmdt_param_color_set(cmdt, attribute->base_color);
 
         if (attribute->control.use_texture) {
                 const texture_t * const textures = tlist_get();
@@ -485,6 +484,8 @@ _render_single(const sort_single_t *single)
                 cmdt->cmd_srca = texture->vram_index;
                 cmdt->cmd_size = texture->size;
         }
+
+        cmdt->cmd_colr = attribute->palette.raw;
 
         const polygon_t * const polygon =
             &render_mesh->in_polygons[meta_polygon->index];

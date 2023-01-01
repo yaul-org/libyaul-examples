@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2020
- * See LICENSE for details.
- *
- * Israel Jacquez <mrkotfw@gmail.com>
- */
-
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>

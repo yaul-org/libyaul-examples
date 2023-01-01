@@ -28,10 +28,11 @@ SH_SRCS:= \
 \
 	graphics.c \
 	graphics_mika.c \
-	graphics_tails.c
+	graphics_tails.c \
+	graphics_baku.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -Os -I. -I$(THIS_ROOT)/mic3d -DDEBUG
+SH_CFLAGS+= -O2 -I. -I$(THIS_ROOT)/mic3d -DDEBUG
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
