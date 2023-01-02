@@ -299,38 +299,38 @@ static void _draw_cmdt_list_init(vdp1_cmdt_list_t* cmdt_list) {
 
     vdp1_cmdt_draw_mode_t polygon_draw_mode;
     polygon_draw_mode.raw = 0x0000;
-    polygon_draw_mode.bits.hss_enable = true;
-    polygon_draw_mode.bits.pre_clipping_disable = true;
-    polygon_draw_mode.bits.end_code_disable = true;
-    polygon_draw_mode.bits.trans_pixel_disable = true;
+    polygon_draw_mode.hss_enable = true;
+    polygon_draw_mode.pre_clipping_disable = true;
+    polygon_draw_mode.end_code_disable = true;
+    polygon_draw_mode.trans_pixel_disable = true;
 
     vdp1_cmdt_color_bank_t color_bank;
     color_bank.raw = 0x0000;
 
     vdp1_cmdt_draw_mode_t clear_draw_mode;
-    clear_draw_mode.raw = 0x0000;
-    clear_draw_mode.bits.hss_enable = true;
-    clear_draw_mode.bits.pre_clipping_disable = true;
-    clear_draw_mode.bits.end_code_disable = true;
-    clear_draw_mode.bits.trans_pixel_disable = true;
-    clear_draw_mode.bits.color_mode = 1;
+    clear_draw_mode.raw                  = 0x0000;
+    clear_draw_mode.hss_enable           = true;
+    clear_draw_mode.pre_clipping_disable = true;
+    clear_draw_mode.end_code_disable     = true;
+    clear_draw_mode.trans_pixel_disable  = true;
+    clear_draw_mode.color_mode           = VDP1_CMDT_CM_CLUT_16;
 
     vdp1_cmdt_t* const cmdts = cmdt_list->cmdts;
 
     (void)memset(&cmdts[0], 0x00, VDP1_CMDT_ORDER_COUNT * sizeof(vdp1_cmdt));
 
     vdp1_cmdt_system_clip_coord_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX]);
-    vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX], CMDT_VTX_SYSTEM_CLIP, &system_clip_coord);
+    vdp1_cmdt_vtx_system_clip_coord_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX], system_clip_coord);
 
     vdp1_cmdt_local_coord_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX]);
-    vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX], CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+    vdp1_cmdt_vtx_local_coord_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX], local_coord_ul);
 
     vdp1_cmdt_scaled_sprite_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX]);
     vdp1_cmdt_jump_skip_assign(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX);
-    vdp1_cmdt_param_draw_mode_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], clear_draw_mode);
-    vdp1_cmdt_param_size_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], 8, 1);
-    vdp1_cmdt_param_char_base_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], (vdp1_vram_t)vram_partitions.texture_base);
-    vdp1_cmdt_param_color_mode1_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], (vdp1_vram_t)vram_partitions.clut_base);
+    vdp1_cmdt_draw_mode_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], clear_draw_mode);
+    vdp1_cmdt_char_size_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], 8, 1);
+    vdp1_cmdt_char_base_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], (vdp1_vram_t)vram_partitions.texture_base);
+    vdp1_cmdt_color_mode1_set(&cmdts[VDP1_CMDT_ORDER_ERASE_INDEX], (vdp1_vram_t)vram_partitions.clut_base);
 
     // The clear polygon is cut in half due to the VDP1 not having enough time *
     // to clear the bottom half of the framebuffer in time
@@ -345,8 +345,8 @@ static void _draw_cmdt_list_init(vdp1_cmdt_list_t* cmdt_list) {
 
     for (uint32_t i = VDP1_CMDT_ORDER_BUFFER_STARTING_INDEX; i < VDP1_CMDT_ORDER_BUFFER_END_INDEX; i++) {
         vdp1_cmdt_polygon_set(&cmdts[i]);
-        vdp1_cmdt_param_draw_mode_set(&cmdts[i], polygon_draw_mode);
-        vdp1_cmdt_param_color_bank_set(&cmdts[i], color_bank);
+        vdp1_cmdt_draw_mode_set(&cmdts[i], polygon_draw_mode);
+        vdp1_cmdt_color_bank_set(&cmdts[i], color_bank);
         cmdts[i].cmd_xa = 0;
         cmdts[i].cmd_ya = 0;
         cmdts[i].cmd_xb = 0;
@@ -657,7 +657,7 @@ static void _on_draw(const uint8_vec2_t* vertex_buffer,
 
     vdp1_cmdt_color_bank_t color_bank;
     color_bank.raw = 0x0000;
-    color_bank.type_0.data.dc = palette_index + 16;
+    color_bank.type_0.dc = palette_index + 16;
 
     _scene.cmdt_list->count += draw_handler(cmdt, vertex_buffer, color_bank);
 }

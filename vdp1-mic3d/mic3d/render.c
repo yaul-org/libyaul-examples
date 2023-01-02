@@ -475,7 +475,7 @@ _render_single(const sort_single_t *single)
         cmdt->cmd_ctrl &= 0x7FF0;
         cmdt->cmd_ctrl |= attribute->control.raw & 0x3F;
 
-        vdp1_cmdt_param_draw_mode_set(cmdt, attribute->draw_mode);
+        vdp1_cmdt_draw_mode_set(cmdt, attribute->draw_mode);
 
         if (attribute->control.use_texture) {
                 const texture_t * const textures = tlist_get();

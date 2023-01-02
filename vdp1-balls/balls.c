@@ -170,11 +170,10 @@ void
 balls_cmdts_put(balls_handle_t *handle __unused, uint16_t index, uint16_t count)
 {
         const vdp1_cmdt_draw_mode_t draw_mode = {
-                .raw                       = 0x0000,
-                .bits.color_mode           = 0,
-                .bits.trans_pixel_disable  = false,
-                .bits.pre_clipping_disable = true,
-                .bits.end_code_disable     = false
+                .color_mode           = 0,
+                .trans_pixel_disable  = false,
+                .pre_clipping_disable = true,
+                .end_code_disable     = false
         };
 
         vdp1_cmdt_t *cmdt;
@@ -183,7 +182,7 @@ balls_cmdts_put(balls_handle_t *handle __unused, uint16_t index, uint16_t count)
         for (uint32_t i = 0; i < count; i++) {
                 vdp1_cmdt_normal_sprite_set(cmdt);
 
-                vdp1_cmdt_param_draw_mode_set(cmdt, draw_mode);
+                vdp1_cmdt_draw_mode_set(cmdt, draw_mode);
 
                 const uint32_t rand_index = rand() & 15;
                 const uint16_t palette_offset =
@@ -191,13 +190,12 @@ balls_cmdts_put(balls_handle_t *handle __unused, uint16_t index, uint16_t count)
                 const uint16_t palette_number = palette_offset >> 1;
 
                 const vdp1_cmdt_color_bank_t color_bank ={
-                        .raw            = 0x0000,
-                        .type_0.data.dc = palette_number & VDP2_SPRITE_TYPE_0_DC_MASK
+                        .type_0.dc = palette_number & VDP2_SPRITE_TYPE_0_DC_MASK
                 };
 
-                vdp1_cmdt_param_color_mode0_set(cmdt, color_bank);
-                vdp1_cmdt_param_size_set(cmdt, BALL_WIDTH, BALL_HEIGHT);
-                vdp1_cmdt_param_char_base_set(cmdt, _sprite_tex_base);
+                vdp1_cmdt_color_mode0_set(cmdt, color_bank);
+                vdp1_cmdt_char_size_set(cmdt, BALL_WIDTH, BALL_HEIGHT);
+                vdp1_cmdt_char_base_set(cmdt, _sprite_tex_base);
 
                 cmdt->cmd_xa = 0;
                 cmdt->cmd_ya = 0;
