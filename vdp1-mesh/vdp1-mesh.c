@@ -129,7 +129,7 @@ _cmdt_list_init(void)
 {
         static const int16_vec2_t system_clip_coord =
             INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,
-                                      SCREEN_HEIGHT - 1);
+                                   SCREEN_HEIGHT - 1);
 
         _cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
 
@@ -142,9 +142,8 @@ _cmdt_list_init(void)
         cmdts = &_cmdt_list->cmdts[0];
 
         vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX],
-            CMDT_VTX_SYSTEM_CLIP,
-            &system_clip_coord);
+        vdp1_cmdt_vtx_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX],
+            system_clip_coord);
 
         vdp1_cmdt_end_set(&cmdts[ORDER_DRAW_END_INDEX]);
 }
@@ -160,26 +159,25 @@ _primitives_init(void)
         cmdt_local_coords = &_cmdt_list->cmdts[ORDER_LOCAL_COORDS_INDEX];
 
         vdp1_cmdt_local_coord_set(cmdt_local_coords);
-        vdp1_cmdt_param_vertex_set(cmdt_local_coords, CMDT_VTX_LOCAL_COORD,
-            &local_coord_center);
+        vdp1_cmdt_vtx_local_coord_set(cmdt_local_coords,
+            local_coord_center);
 
         vdp1_cmdt_t *cmdt_polygon;
 
         const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
-                .raw = 0x0000,
-                .bits.mesh_enable = true
+                .mesh_enable = true
         };
 
         cmdt_polygon = &_cmdt_list->cmdts[ORDER_POLYGON_INDEX];
         vdp1_cmdt_polygon_set(cmdt_polygon);
-        vdp1_cmdt_param_color_set(cmdt_polygon, PRIMITIVE_0_COLOR);
-        vdp1_cmdt_param_draw_mode_set(cmdt_polygon, polygon_draw_mode);
+        vdp1_cmdt_color_set(cmdt_polygon, PRIMITIVE_0_COLOR);
+        vdp1_cmdt_draw_mode_set(cmdt_polygon, polygon_draw_mode);
         _primitive_move(cmdt_polygon, 0, 0);
 
         cmdt_polygon = &_cmdt_list->cmdts[ORDER_POLYGON_INDEX + 1];
         vdp1_cmdt_polygon_set(cmdt_polygon);
-        vdp1_cmdt_param_color_set(cmdt_polygon, PRIMITIVE_1_COLOR);
-        vdp1_cmdt_param_draw_mode_set(cmdt_polygon, polygon_draw_mode);
+        vdp1_cmdt_color_set(cmdt_polygon, PRIMITIVE_1_COLOR);
+        vdp1_cmdt_draw_mode_set(cmdt_polygon, polygon_draw_mode);
         _primitive_move(cmdt_polygon, 16, 16);
 }
 

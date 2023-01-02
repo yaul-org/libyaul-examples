@@ -398,10 +398,9 @@ _vdp1_init(void)
         vdp1_env_preamble_populate(&preamble_cmdt[ORDER_SYSTEM_CLIP_COORDS_INDEX], NULL);
 
         const vdp1_cmdt_draw_mode_t erase_draw_mode = {
-                .raw                       = 0x0000,
-                .bits.pre_clipping_disable = true,
-                .bits.end_code_disable     = true,
-                .bits.trans_pixel_disable  = true
+                .pre_clipping_disable = true,
+                .end_code_disable     = true,
+                .trans_pixel_disable  = true
         };
 
         vdp1_cmdt_polygon_set(&preamble_cmdt[ORDER_ERASE_INDEX]);

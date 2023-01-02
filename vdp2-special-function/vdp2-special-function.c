@@ -66,11 +66,10 @@ main(void)
         count_frames = 0;
 
         while (true) {
-                vdp1_cmdt_t *cmdt_polygon;
-                cmdt_polygon = &cmdt_list->cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX];
+                vdp1_cmdt_t * const cmdt_polygon = &cmdt_list->cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX];
 
                 if (show_polygon) {
-                        vdp1_cmdt_jump_clear(cmdt_polygon);
+                        vdp1_cmdt_jump_next(cmdt_polygon);
                 } else {
                         vdp1_cmdt_jump_skip_next(cmdt_polygon);
                 }
@@ -235,8 +234,7 @@ _cmdt_list_init(vdp1_cmdt_list_t *cmdt_list)
             INT16_VEC2_INITIALIZER(0, 0);
 
         const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
-                .raw                       = 0x0000,
-                .bits.pre_clipping_disable = true
+                .pre_clipping_disable = true
         };
 
         const int16_vec2_t polygon_points[] = {
@@ -254,20 +252,19 @@ _cmdt_list_init(vdp1_cmdt_list_t *cmdt_list)
         cmdt_list->count = VDP1_CMDT_ORDER_COUNT;
 
         vdp1_cmdt_system_clip_coord_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX],
-            CMDT_VTX_SYSTEM_CLIP,
-            &system_clip_coord);
+        vdp1_cmdt_vtx_system_clip_coord_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX],
+            system_clip_coord);
 
         vdp1_cmdt_local_coord_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX],
-            CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+        vdp1_cmdt_vtx_local_coord_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX],
+            local_coord_ul);
 
         vdp1_cmdt_polygon_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX]);
-        vdp1_cmdt_param_draw_mode_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX],
+        vdp1_cmdt_draw_mode_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX],
             polygon_draw_mode);
-        vdp1_cmdt_param_color_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX],
+        vdp1_cmdt_color_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX],
             RGB1555(1, 15, 15, 15));
-        vdp1_cmdt_param_vertices_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX],
+        vdp1_cmdt_vtx_set(&cmdts[VDP1_CMDT_ORDER_POLYGON_INDEX],
             polygon_points);
 
         vdp1_cmdt_end_set(&cmdts[VDP1_CMDT_ORDER_DRAW_END_INDEX]);

@@ -163,8 +163,7 @@ _vdp1_drawing_list_init(vdp1_cmdt_list_t *cmdt_list)
             INT16_VEC2_INITIALIZER(0, 0);
 
         static const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
-                .raw = 0x0000,
-                .bits.pre_clipping_disable = true
+                .pre_clipping_disable = true
         };
 
         assert(cmdt_list != NULL);
@@ -177,13 +176,13 @@ _vdp1_drawing_list_init(vdp1_cmdt_list_t *cmdt_list)
         cmdt_list->count = ORDER_COUNT;
 
         vdp1_cmdt_polygon_set(&cmdts[ORDER_POLYGON_INDEX]);
-        vdp1_cmdt_param_draw_mode_set(&cmdts[ORDER_POLYGON_INDEX], polygon_draw_mode);
+        vdp1_cmdt_draw_mode_set(&cmdts[ORDER_POLYGON_INDEX], polygon_draw_mode);
 
         vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
 
         vdp1_cmdt_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_LOCAL_COORDS_INDEX],
-            CMDT_VTX_LOCAL_COORD, &local_coord_ul);
+        vdp1_cmdt_vtx_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX],
+            local_coord_ul);
 
         vdp1_cmdt_end_set(&cmdts[ORDER_DRAW_END_INDEX]);
 }
@@ -191,27 +190,24 @@ _vdp1_drawing_list_init(vdp1_cmdt_list_t *cmdt_list)
 static void
 _vdp1_drawing_list_set(const uint8_t switch_env, vdp1_cmdt_list_t *cmdt_list)
 {
-        static vdp1_cmdt_color_bank_t polygon_color_bank = {
-                .type_0.data.dc = 16
-        };
-
         assert(cmdt_list != NULL);
 
         vdp1_cmdt_t *cmdts;
         cmdts = &cmdt_list->cmdts[0];
 
-        vdp1_cmdt_t *cmdt_polygon;
-        cmdt_polygon = &cmdts[ORDER_POLYGON_INDEX];
+        vdp1_cmdt_t * const cmdt_polygon = &cmdts[ORDER_POLYGON_INDEX];
+        vdp1_cmdt_t * const cmdt_system_clip_coord = &cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX];
 
-        vdp1_cmdt_t *cmdt_system_clip_coords;
-        cmdt_system_clip_coords = &cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX];
+        vdp1_cmdt_color_bank_t polygon_color_bank;
+        polygon_color_bank.type_0.dc = 16;
+
+        int16_vec2_t system_clip_coord;
+        system_clip_coord.x = SCREEN_WIDTH - 1;
+        system_clip_coord.y = SCREEN_HEIGHT - 1;
 
         switch (switch_env & 0x01) {
         case 0:
-                cmdt_system_clip_coords->cmd_xc = SCREEN_WIDTH - 1;
-                cmdt_system_clip_coords->cmd_yc = SCREEN_HEIGHT - 1;
-
-                polygon_color_bank.type_8.data.dc = 16;
+                polygon_color_bank.type_8.dc = 16;
 
                 cmdt_polygon->cmd_xa = 0;
                 cmdt_polygon->cmd_ya = SCREEN_HEIGHT - 1;
@@ -224,12 +220,15 @@ _vdp1_drawing_list_set(const uint8_t switch_env, vdp1_cmdt_list_t *cmdt_list)
 
                 cmdt_polygon->cmd_xd = 0;
                 cmdt_polygon->cmd_yd = 0;
+
+                vdp1_cmdt_vtx_system_clip_coord_set(cmdt_system_clip_coord,
+                    system_clip_coord);
                 break;
         case 1:
-                cmdt_system_clip_coords->cmd_xc = (SCREEN_WIDTH / 2) - 1;
-                cmdt_system_clip_coords->cmd_yc = (SCREEN_HEIGHT / 2) - 1;
+                system_clip_coord.x /= 2;
+                system_clip_coord.y /= 2;
 
-                polygon_color_bank.type_0.data.dc = 16;
+                polygon_color_bank.type_0.dc = 16;
 
                 cmdt_polygon->cmd_xa = 0;
                 cmdt_polygon->cmd_ya = (SCREEN_HEIGHT / 2) - 1;
@@ -245,7 +244,10 @@ _vdp1_drawing_list_set(const uint8_t switch_env, vdp1_cmdt_list_t *cmdt_list)
                 break;
         }
 
-        vdp1_cmdt_param_color_bank_set(cmdt_polygon, polygon_color_bank);
+        vdp1_cmdt_vtx_system_clip_coord_set(cmdt_system_clip_coord,
+            system_clip_coord);
+
+        vdp1_cmdt_color_bank_set(cmdt_polygon, polygon_color_bank);
 }
 
 static void

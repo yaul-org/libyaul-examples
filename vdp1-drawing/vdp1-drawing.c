@@ -10,8 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define SCREEN_WIDTH    320
-#define SCREEN_HEIGHT   224
+#define SCREEN_WIDTH  320
+#define SCREEN_HEIGHT 224
 
 #define STATE_IDLE              (-1)
 #define STATE_TYPE_SET          (0)
@@ -19,9 +19,9 @@
 #define STATE_VERTEX_SELECT     (2)
 #define STATE_VERTEX_RESET      (3)
 
-#define PRIMITIVE_TYPE_POLYLINE   (0)
-#define PRIMITIVE_TYPE_POLYGON    (1)
-#define PRIMITIVE_TYPE_COUNT      (2)
+#define PRIMITIVE_TYPE_POLYLINE (0)
+#define PRIMITIVE_TYPE_POLYGON  (1)
+#define PRIMITIVE_TYPE_COUNT    (2)
 
 #define PRIMITIVE_DRAW_MODE_NORMAL                (0)
 #define PRIMITIVE_DRAW_MODE_MESH                  (1)
@@ -46,6 +46,11 @@
 #define ORDER_DRAW_END_INDEX            3
 #define ORDER_COUNT                     4
 
+#define CMDT_VTX_POLYGON_A 0
+#define CMDT_VTX_POLYGON_B 1
+#define CMDT_VTX_POLYGON_C 2
+#define CMDT_VTX_POLYGON_D 3
+
 static smpc_peripheral_digital_t _digital;
 
 static vdp1_cmdt_list_t *_cmdt_list = NULL;
@@ -65,32 +70,25 @@ static vdp1_cmdt_draw_mode_t _primitive_draw_modes[] = {
                 .raw = 0x0000
         },
         {
-                .raw = 0x0000,
-                .bits.mesh_enable = true
+                .mesh_enable = true
         },
         {
-                .raw = 0x0000,
-                .bits.cc_mode = 1
+                .cc_mode = 1
         },
         {
-                .raw = 0x0000,
-                .bits.cc_mode = 2
+                .cc_mode = 2
         },
         {
-                .raw = 0x0000,
-                .bits.cc_mode = 3
+                .cc_mode = 3
         },
         {
-                .raw = 0x0000,
-                .bits.cc_mode = 4
+                .cc_mode = 4
         },
         {
-                .raw = 0x0000,
-                .bits.cc_mode = 6
+                .cc_mode = 6
         },
         {
-                .raw = 0x0000,
-                .bits.cc_mode = 7
+                .cc_mode = 7
         }
 };
 
@@ -143,7 +141,8 @@ main(void)
                 smpc_peripheral_process();
                 smpc_peripheral_digital_port(1, &_digital);
 
-                uint32_t vertex_index = CMDT_VTX_POLYGON_A;
+                uint32_t vertex_index;
+                vertex_index = CMDT_VTX_POLYGON_A;
 
                 _state = STATE_IDLE;
 
@@ -239,9 +238,9 @@ main(void)
 
                 dbgio_flush();
 
-                vdp1_cmdt_param_draw_mode_set(cmdt_polygon,
+                vdp1_cmdt_draw_mode_set(cmdt_polygon,
                     _primitive_draw_modes[_primitive.draw_mode]);
-                vdp1_cmdt_param_vertices_set(cmdt_polygon, &_primitive.points[0]);
+                vdp1_cmdt_vtx_set(cmdt_polygon, &_primitive.points[0]);
 
                 vdp1_sync_cmdt_list_put(_cmdt_list, 0);
                 vdp1_sync_render();
@@ -284,7 +283,7 @@ _cmdt_list_init(void)
 {
         static const int16_vec2_t system_clip_coord =
             INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,
-                                      SCREEN_HEIGHT - 1);
+                                   SCREEN_HEIGHT - 1);
 
         _cmdt_list = vdp1_cmdt_list_alloc(ORDER_COUNT);
 
@@ -297,9 +296,8 @@ _cmdt_list_init(void)
         cmdts = &_cmdt_list->cmdts[0];
 
         vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX],
-            CMDT_VTX_SYSTEM_CLIP,
-            &system_clip_coord);
+        vdp1_cmdt_vtx_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX],
+            system_clip_coord);
 
         vdp1_cmdt_end_set(&cmdts[ORDER_DRAW_END_INDEX]);
 }
@@ -309,7 +307,7 @@ _primitive_init(void)
 {
         static const int16_vec2_t local_coord_center =
             INT16_VEC2_INITIALIZER((SCREEN_WIDTH / 2) - PRIMITIVE_HALF_WIDTH - 1,
-                                      (SCREEN_HEIGHT / 2) - PRIMITIVE_HALF_HEIGHT - 1);
+                                   (SCREEN_HEIGHT / 2) - PRIMITIVE_HALF_HEIGHT - 1);
 
         _primitive.type = PRIMITIVE_TYPE_POLYLINE;
         _primitive.draw_mode = PRIMITIVE_DRAW_MODE_NORMAL;
@@ -332,8 +330,8 @@ _primitive_init(void)
         cmdt_local_coords = &_cmdt_list->cmdts[ORDER_LOCAL_COORDS_INDEX];
 
         vdp1_cmdt_local_coord_set(cmdt_local_coords);
-        vdp1_cmdt_param_vertex_set(cmdt_local_coords, CMDT_VTX_LOCAL_COORD,
-            &local_coord_center);
+        vdp1_cmdt_vtx_local_coord_set(cmdt_local_coords,
+            local_coord_center);
 
         vdp1_cmdt_t *cmdt_polygon;
         cmdt_polygon = &_cmdt_list->cmdts[ORDER_POLYGON_INDEX];
@@ -347,12 +345,12 @@ _primitive_init(void)
         gouraud_base->colors[3] = RGB1555(1, 31, 31, 31);
 
         vdp1_cmdt_polyline_set(cmdt_polygon);
-        vdp1_cmdt_param_color_set(cmdt_polygon, _primitive.color);
-        vdp1_cmdt_param_draw_mode_set(cmdt_polygon,
+        vdp1_cmdt_color_set(cmdt_polygon, _primitive.color);
+        vdp1_cmdt_draw_mode_set(cmdt_polygon,
             _primitive_draw_modes[_primitive.draw_mode]);
-        vdp1_cmdt_param_vertices_set(cmdt_polygon, &_primitive.points[0]);
+        vdp1_cmdt_vtx_set(cmdt_polygon, &_primitive.points[0]);
 
-        vdp1_cmdt_param_gouraud_base_set(cmdt_polygon, (uint32_t)gouraud_base);
+        vdp1_cmdt_gouraud_base_set(cmdt_polygon, (uint32_t)gouraud_base);
 }
 
 static void

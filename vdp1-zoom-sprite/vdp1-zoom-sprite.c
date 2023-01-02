@@ -202,8 +202,7 @@ _cmdt_list_init(void)
                                    SCREEN_HEIGHT / 2);
 
         static const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
-                .raw                       = 0x0000,
-                .bits.pre_clipping_disable = true
+                .pre_clipping_disable = true
         };
 
         static const int16_vec2_t polygon_points[] = {
@@ -229,26 +228,23 @@ _cmdt_list_init(void)
         _sprite_init();
 
         vdp1_cmdt_system_clip_coord_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX],
-            CMDT_VTX_SYSTEM_CLIP,
-            &system_clip_coord);
+        vdp1_cmdt_vtx_system_clip_coord_set(&cmdts[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX],
+            system_clip_coord);
 
         vdp1_cmdt_local_coord_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_LOCAL_COORDS_INDEX],
-            CMDT_VTX_LOCAL_COORD,
-            &local_coord_ul);
+        vdp1_cmdt_vtx_local_coord_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_LOCAL_COORDS_INDEX],
+            local_coord_ul);
 
         vdp1_cmdt_polygon_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX]);
-        vdp1_cmdt_param_draw_mode_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX],
+        vdp1_cmdt_draw_mode_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX],
             polygon_draw_mode);
-        vdp1_cmdt_param_vertices_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX],
+        vdp1_cmdt_vtx_set(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX],
             polygon_points);
         vdp1_cmdt_jump_skip_next(&cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX]);
 
         vdp1_cmdt_local_coord_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX],
-            CMDT_VTX_LOCAL_COORD,
-            &local_coord_center);
+        vdp1_cmdt_vtx_local_coord_set(&cmdts[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX],
+            local_coord_center);
 
         vdp1_cmdt_end_set(&cmdts[VDP1_CMDT_ORDER_DRAW_END_INDEX]);
 }
@@ -295,20 +291,20 @@ _sprite_init(void)
         _sprite.pal_base = (void *)VDP2_CRAM_MODE_1_OFFSET(1, 0, 0x0000);
 
         const vdp1_cmdt_draw_mode_t draw_mode = {
-                .bits.trans_pixel_disable = true,
-                .bits.pre_clipping_disable = true,
-                .bits.end_code_disable = true
+                .trans_pixel_disable  = true,
+                .pre_clipping_disable = true,
+                .end_code_disable     = true
         };
 
         const vdp1_cmdt_color_bank_t color_bank = {
-                .type_0.data.dc = 0x0100
+                .type_0.dc = 0x0100
         };
 
         vdp1_cmdt_scaled_sprite_set(_sprite.cmdt);
-        vdp1_cmdt_param_draw_mode_set(_sprite.cmdt, draw_mode);
-        vdp1_cmdt_param_color_mode4_set(_sprite.cmdt, color_bank);
+        vdp1_cmdt_draw_mode_set(_sprite.cmdt, draw_mode);
+        vdp1_cmdt_color_mode4_set(_sprite.cmdt, color_bank);
 
-        vdp1_cmdt_param_size_set(_sprite.cmdt, ZOOM_POINT_WIDTH, ZOOM_POINT_HEIGHT);
+        vdp1_cmdt_char_size_set(_sprite.cmdt, ZOOM_POINT_WIDTH, ZOOM_POINT_HEIGHT);
 
         scu_dma_transfer(0, _sprite.tex_base, asset_zoom_tex, asset_zoom_tex_end - asset_zoom_tex);
         scu_dma_transfer(0, _sprite.pal_base, asset_zoom_pal, asset_zoom_pal_end - asset_zoom_pal);
@@ -320,11 +316,11 @@ _sprite_config(void)
         const uint32_t offset =
             _sprite.anim_frame * (ZOOM_POINT_WIDTH * ZOOM_POINT_HEIGHT);
 
-        vdp1_cmdt_param_char_base_set(_sprite.cmdt, (uint32_t)_sprite.tex_base + offset);
+        vdp1_cmdt_char_base_set(_sprite.cmdt, (uint32_t)_sprite.tex_base + offset);
 
-        vdp1_cmdt_param_zoom_set(_sprite.cmdt, _zoom_point_value);
-        vdp1_cmdt_param_vertex_set(_sprite.cmdt, CMDT_VTX_ZOOM_SPRITE_POINT, &_zoom_point);
-        vdp1_cmdt_param_vertex_set(_sprite.cmdt, CMDT_VTX_ZOOM_SPRITE_DISPLAY, &_display);
+        vdp1_cmdt_zoom_set(_sprite.cmdt, _zoom_point_value);
+        vdp1_cmdt_vtx_zoom_point_set(_sprite.cmdt, _zoom_point);
+        vdp1_cmdt_vtx_zoom_display_set(_sprite.cmdt, _display);
 
         if (_sprite.anim_counter == 0) {
                 _sprite.anim_counter = ANIMATION_FRAME_DURATION;
@@ -342,12 +338,11 @@ static void
 _polygon_pointer_init(void)
 {
         static const vdp1_cmdt_draw_mode_t draw_mode = {
-                .raw = 0x0000,
-                .bits.pre_clipping_disable = true
+                .pre_clipping_disable = true
         };
 
         vdp1_cmdt_polygon_set(_polygon_pointer.cmdt);
-        vdp1_cmdt_param_draw_mode_set(_polygon_pointer.cmdt, draw_mode);
+        vdp1_cmdt_draw_mode_set(_polygon_pointer.cmdt, draw_mode);
 }
 
 static void
@@ -355,21 +350,18 @@ _polygon_pointer_config(void)
 {
         int16_vec2_t points[4];
 
-        points[0].x = ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x - 1;
+        points[0].x =  ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x - 1;
         points[0].y = -ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y;
-        points[1].x = ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x - 1;
-        points[1].y = ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y - 1;
+        points[1].x =  ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x - 1;
+        points[1].y =  ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y - 1;
         points[2].x = -ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x;
-        points[2].y = ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y - 1;
+        points[2].y =  ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y - 1;
         points[3].x = -ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.x;
         points[3].y = -ZOOM_POINT_POINTER_SIZE + _polygon_pointer.position.y;
 
-        vdp1_cmdt_param_color_set(_polygon_pointer.cmdt, _polygon_pointer.color);
+        vdp1_cmdt_vtx_set(_polygon_pointer.cmdt, points);
 
-        vdp1_cmdt_param_vertex_set(_polygon_pointer.cmdt, CMDT_VTX_POLYGON_A, &points[0]);
-        vdp1_cmdt_param_vertex_set(_polygon_pointer.cmdt, CMDT_VTX_POLYGON_B, &points[1]);
-        vdp1_cmdt_param_vertex_set(_polygon_pointer.cmdt, CMDT_VTX_POLYGON_C, &points[2]);
-        vdp1_cmdt_param_vertex_set(_polygon_pointer.cmdt, CMDT_VTX_POLYGON_D, &points[3]);
+        vdp1_cmdt_color_set(_polygon_pointer.cmdt, _polygon_pointer.color);
 }
 
 static void

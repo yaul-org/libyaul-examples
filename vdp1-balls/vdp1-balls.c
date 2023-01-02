@@ -285,12 +285,12 @@ _vdp1_init(void)
         vdp1_cmdt_t * const cmdt = (vdp1_cmdt_t *)VDP1_CMD_TABLE(0, 0);
 
         vdp1_cmdt_system_clip_coord_set(&cmdt[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdt[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX],
-            CMDT_VTX_SYSTEM_CLIP, &system_clip_coords);
+        vdp1_cmdt_vtx_system_clip_coord_set(&cmdt[VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX],
+            system_clip_coords);
 
         vdp1_cmdt_local_coord_set(&cmdt[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdt[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX],
-            CMDT_VTX_LOCAL_COORD, &local_coords);
+        vdp1_cmdt_vtx_local_coord_set(&cmdt[VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX],
+            local_coords);
 
         vdp1_env_set(&vdp1_env);
 

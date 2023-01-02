@@ -134,14 +134,13 @@ _cmdt_list_sprite_init(void)
         vdp1_cmdt_t * const cmdt = &_cmdt_list->cmdts[VDP1_CMDT_ORDER_SPRITE_INDEX];
 
         const vdp1_cmdt_draw_mode_t draw_mode = {
-                .raw = 0x0000,
-                .bits.color_mode = 5
+                .color_mode = 5
         };
 
         vdp1_cmdt_normal_sprite_set(cmdt);
-        vdp1_cmdt_param_draw_mode_set(cmdt, draw_mode);
-        vdp1_cmdt_param_size_set(cmdt, flare_texture_dim.x, flare_texture_dim.y);
-        vdp1_cmdt_param_char_base_set(cmdt, (uint32_t)_vdp1_vram_partitions.texture_base);
+        vdp1_cmdt_draw_mode_set(cmdt, draw_mode);
+        vdp1_cmdt_char_size_set(cmdt, flare_texture_dim.x, flare_texture_dim.y);
+        vdp1_cmdt_char_base_set(cmdt, (uint32_t)_vdp1_vram_partitions.texture_base);
 
         cmdt->cmd_xa = (-flare_texture_dim.x / 2) - 1;
         cmdt->cmd_ya = (-flare_texture_dim.y / 2) - 1;
@@ -151,8 +150,7 @@ static void
 _cmdt_list_clear_init(void)
 {
         static const vdp1_cmdt_draw_mode_t draw_mode = {
-                .raw                       = 0x0000,
-                .bits.pre_clipping_disable = true
+                .pre_clipping_disable = true
         };
 
         static const int16_vec2_t points[] = {
@@ -168,9 +166,9 @@ _cmdt_list_clear_init(void)
             &_cmdt_list->cmdts[VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX];
 
         vdp1_cmdt_polygon_set(cmdt);
-        vdp1_cmdt_param_draw_mode_set(cmdt, draw_mode);
-        vdp1_cmdt_param_color_set(cmdt, color);
-        vdp1_cmdt_param_vertices_set(cmdt, points);
+        vdp1_cmdt_draw_mode_set(cmdt, draw_mode);
+        vdp1_cmdt_color_set(cmdt, color);
+        vdp1_cmdt_vtx_set(cmdt, points);
 }
 
 static void

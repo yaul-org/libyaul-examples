@@ -364,12 +364,12 @@ main(void)
         vdp1_cmdt_t * const cmdts = &cmdt_list->cmdts[0];
 
         vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX],
-            CMDT_VTX_SYSTEM_CLIP, &system_clip_coord);
+        vdp1_cmdt_vtx_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX],
+            system_clip_coord);
 
         vdp1_cmdt_local_coord_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_param_vertex_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX],
-            CMDT_VTX_LOCAL_COORD, &local_coord_center);
+        vdp1_cmdt_vtx_local_coord_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX],
+            local_coord_center);
 
         uint32_t i;
         uint32_t j;
@@ -499,8 +499,8 @@ main(void)
                         cmdt->cmd_yd = _all_points[_faces[j].p1].y;
 
                         vdp1_cmdt_polygon_set(cmdt);
-                        vdp1_cmdt_param_draw_mode_set(cmdt, draw_mode);
-                        vdp1_cmdt_param_color_set(cmdt, color);
+                        vdp1_cmdt_draw_mode_set(cmdt, draw_mode);
+                        vdp1_cmdt_color_set(cmdt, color);
                 }
 
                 vdp1_cmdt_end_set(&cmdt_list->cmdts[ORDER_BUFFER_STARTING_INDEX + 47]);
