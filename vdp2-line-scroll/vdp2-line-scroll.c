@@ -33,21 +33,21 @@ main(void)
                 .type          = VDP2_SCRN_LS_TYPE_HORZ
         };
 
-        fix16_t speed;
-        speed = FIX16(0.0f);
+        angle_t speed;
+        speed = DEG2ANGLE(0.0f);
 
         const fix16_t amplitude = FIX16(120.0f);
 
         while (true) {
                 for (uint32_t i = 0; i < SCREEN_HEIGHT; i++) {
-                        const fix16_t value = fix16_mul(fix16_int32_from(i), FIX16(M_PI / (float)SCREEN_HEIGHT)) + speed;
+                        const angle_t value = fix16_mul(fix16_int32_from(i), FIX16(1.0f / (2.0f * (float)SCREEN_HEIGHT))) + speed;
 
                         _line_scroll_table[i].horz = fix16_mul(amplitude, fix16_sin(value));
                 }
 
-                speed += FIX16(M_PI / (float)SCREEN_HEIGHT);
+                speed += FIX16(1.0f / (float)SCREEN_HEIGHT);
 
-                if (speed >= FIX16(2 * M_PI)) {
+                if (speed >= DEG2ANGLE(180.0f)) {
                         speed = FIX16(0.0f);
                 }
 
