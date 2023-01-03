@@ -112,7 +112,7 @@ main(void)
                 menu_update(&state);
 
                 for (uint32_t i = 0; i < SCREEN_HEIGHT; i++) {
-                        const fix16_t value = fix16_mul(fix16_int32_from(i), FIX16(M_PI / (float)SCREEN_HEIGHT));
+                        const angle_t value = fix16_mul(fix16_int32_from(i), FIX16(1.0f / (2.0f * (float)SCREEN_HEIGHT)));
 
                         const fix16_t shift = fix16_mul(FIX16(-SCREEN_WIDTH * 0.5f), _values.zoom_scale);
                         const fix16_t sin = fix16_sin(value);
@@ -211,7 +211,7 @@ _lncl_init(void)
         }
 
         for (uint32_t i = 0; i < SCREEN_HEIGHT; i++) {
-                const fix16_t value = fix16_mul(fix16_int32_from(i), FIX16(M_PI / (float)SCREEN_HEIGHT));
+                const angle_t value = fix16_mul(fix16_int32_from(i), FIX16(1.0f / (2.0f * (float)SCREEN_HEIGHT)));
                 const uint16_t cram_base = (uintptr_t)cram_gradient >> 1;
                 const uint16_t cram_offset = (31 - fix16_int32_to(fix16_mul(FIX16(31.0f), fix16_sin(value))));
 
