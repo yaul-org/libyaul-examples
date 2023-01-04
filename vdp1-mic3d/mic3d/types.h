@@ -78,6 +78,8 @@ typedef struct {
 static_assert(sizeof(attribute_t) == 12);
 
 typedef struct {
+        fix16_vec3_t target;
+        fix16_vec3_t up;
         fix16_vec3_t position;
 } camera_t;
 
@@ -111,8 +113,5 @@ typedef struct {
 } palette_t;
 
 static_assert(sizeof(palette_t) == 8);
-
-/* XXX: This should move up to Yaul */
-typedef int16_t angle_t;
 
 #endif /* MIC3D_TYPES_H */

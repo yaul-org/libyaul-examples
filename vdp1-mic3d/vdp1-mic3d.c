@@ -45,12 +45,6 @@ main(void)
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
-        camera_t camera;
-
-        camera.position.x = FIX16(  0.0f);
-        camera.position.y = FIX16(  0.0f);
-        camera.position.z = FIX16(-30.0f);
-
         angle_t theta;
         theta = DEG2ANGLE(0.0f);
 
@@ -71,28 +65,55 @@ main(void)
 
         _palette_load(0, 0, &palette_baku);
 
+        camera_t camera __unused;
+
+        camera.position.x = FIX16(  0.0f);
+        camera.position.y = FIX16(  0.0f);
+        camera.position.z = FIX16(-30.0f);
+
+        camera.target.x = FIX16_ZERO;
+        camera.target.y = FIX16_ZERO;
+        camera.target.z = FIX16_ZERO;
+
+        camera.up.x =  FIX16_ZERO;
+        camera.up.y = -FIX16_ONE;
+
+        camera_lookat(&camera);
+
         while (true) {
                 dbgio_puts("[H[2J");
                 render_start();
 
+                matrix_push();
+                matrix_x_rotate(theta);
+                matrix_y_rotate(theta);
+                matrix_z_rotate(theta);
+
                 render_mesh_start(&mesh_cube);
-                render_mesh_rotate(theta);
-                render_mesh_translate(FIX16( 0), FIX16(40), FIX16(100));
-                render_mesh_transform(&camera);
+                matrix_push();
+                matrix_y_translate(FIX16( 40));
+                matrix_z_translate(FIX16(100));
+                render_mesh_transform();
+                matrix_pop();
 
                 render_mesh_start(&mesh_m);
-                render_mesh_rotate(theta);
-                render_mesh_translate(FIX16(-8), FIX16(0), FIX16( 0));
-                render_mesh_transform(&camera);
+                matrix_push();
+                matrix_x_translate(FIX16( -8));
+                render_mesh_transform();
+                matrix_pop();
 
                 render_mesh_start(&mesh_i);
-                render_mesh_rotate(theta);
-                render_mesh_transform(&camera);
+                matrix_push();
+                render_mesh_transform();
+                matrix_pop();
 
                 render_mesh_start(&mesh_c);
-                render_mesh_rotate(theta);
-                render_mesh_translate(FIX16( 5), FIX16(0), FIX16( 0));
-                render_mesh_transform(&camera);
+                matrix_push();
+                matrix_x_translate(FIX16(  5));
+                render_mesh_transform();
+                matrix_pop();
+
+                matrix_pop();
 
                 theta += DEG2ANGLE(1.0f);
 

@@ -4,6 +4,8 @@
 
 #include "list.h"
 
+#define LIST_ALLOC_ALIGN (16)
+
 void
 __list_alloc(list_t *list, uint16_t count)
 {
@@ -14,7 +16,7 @@ __list_alloc(list_t *list, uint16_t count)
                         free(list->buffer);
                 }
 
-                list->buffer = memalign(list->size * count, 16);
+                list->buffer = memalign(list->size * count, LIST_ALLOC_ALIGN);
                 assert(list->buffer);
 
                 list->count = count;

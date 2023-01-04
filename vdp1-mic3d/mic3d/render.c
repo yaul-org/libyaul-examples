@@ -18,13 +18,11 @@
 
 #define SCREEN_RATIO FIX16(SCREEN_WIDTH / (float)SCREEN_HEIGHT)
 
-#define MIN_FOV_ANGLE DEG2ANGLE( 60.0f)
+#define MIN_FOV_ANGLE DEG2ANGLE( 20.0f)
 #define MAX_FOV_ANGLE DEG2ANGLE(120.0f)
 
-static void _x_rotate(fix16_vec3_t *out_points, const fix16_vec3_t *in_points, fix16_t angle, uint32_t points_count);
-static void _xyz_rotate(fix16_vec3_t *out_points, const fix16_vec3_t *in_points, fix16_t angle, uint32_t points_count);
-
-static void _transform(const camera_t *camera, render_mesh_t *render_mesh);
+static void _view_transform(render_mesh_t *render_mesh);
+static void _projection_transform(render_mesh_t *render_mesh);
 static void _sort(void);
 
 static fix16_t _depth_min_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3);
@@ -121,60 +119,13 @@ render_perspective_set(angle_t fov_angle)
 {
         fov_angle = fix16_clamp(fov_angle, MIN_FOV_ANGLE, MAX_FOV_ANGLE);
 
-        /* Since angle_t already divides by 360, just multiply by 2π */
-        const fix16_t hfov_angle = fix16_mul(fov_angle, FIX16_2PI) >> 1;
+        const angle_t hfov_angle = fov_angle >> 1;
 
         __state.render->view_distance = fix16_mul(FIX16(0.5f * (SCREEN_WIDTH - 1)), fix16_tan(hfov_angle));
 }
 
 void
-render_mesh_translate(fix16_t x, fix16_t y, fix16_t z)
-{
-        render_mesh_t * const render_mesh =
-            __state.render->render_mesh;
-
-        const fix16_vec3_t * const in_points = render_mesh->in_points;
-        fix16_vec3_t * const out_points = render_mesh->out_points;
-
-        for (uint32_t i = 0; i < render_mesh->mesh->points_count; i++) {
-                out_points[i].x = in_points[i].x + x;
-                out_points[i].y = in_points[i].y + y;
-                out_points[i].z = in_points[i].z + z;
-        }
-
-        render_mesh->in_points = out_points;
-}
-
-void
-render_mesh_rotate_x(angle_t angle)
-{
-        render_mesh_t * const render_mesh =
-            __state.render->render_mesh;
-
-        const fix16_vec3_t * const in_points = render_mesh->in_points;
-        fix16_vec3_t * const out_points = render_mesh->out_points;
-
-        _x_rotate(out_points, in_points, angle, render_mesh->mesh->points_count);
-
-        render_mesh->in_points = out_points;
-}
-
-void
-render_mesh_rotate(fix16_t angle)
-{
-        render_mesh_t * const render_mesh =
-            __state.render->render_mesh;
-
-        const fix16_vec3_t * const in_points = render_mesh->in_points;
-        fix16_vec3_t * const out_points = render_mesh->out_points;
-
-        _xyz_rotate(out_points, in_points, angle, render_mesh->mesh->points_count);
-
-        render_mesh->in_points = out_points;
-}
-
-void
-render_mesh_transform(const camera_t *camera)
+render_mesh_transform(void)
 {
         render_mesh_t * const render_mesh =
             __state.render->render_mesh;
@@ -182,7 +133,8 @@ render_mesh_transform(const camera_t *camera)
         fix16_vec3_t * const out_points = render_mesh->out_points;
         int16_vec2_t * const screen_points = render_mesh->screen_points;
 
-        _transform(camera, render_mesh);
+        _view_transform(render_mesh);
+        _projection_transform(render_mesh);
 
         const polygon_t * const in_polygons = render_mesh->in_polygons;
         polygon_meta_t * const out_polygons = render_mesh->out_polygons;
@@ -257,66 +209,46 @@ render(uint32_t cmdt_index)
 }
 
 static void
-_x_rotate(fix16_vec3_t *out_points, const fix16_vec3_t *in_points, fix16_t angle, uint32_t points_count)
+_view_transform(render_mesh_t *render_mesh)
 {
-        const int32_t bradians = fix16_int16_muls(angle, FIX16(FIX16_LUT_SIN_TABLE_COUNT));
+        const fix16_mat_t * const world_matrix = matrix_top();
 
-        const int32_t sin = fix16_bradians_sin(bradians);
-        const int32_t cos = fix16_bradians_cos(bradians);
+        fix16_mat_t inv_view_matrix __aligned(16);
+        __camera_view_invert(&inv_view_matrix);
 
-        for (uint32_t i = 0; i < points_count; i++) {
-                /* About X */
-                out_points[i].x = in_points[i].x;
-                out_points[i].y = (fix16_mul(in_points[i].y, cos) - fix16_mul(in_points[i].z, sin));
-                out_points[i].z = fix16_mul(in_points[i].y, sin) + fix16_mul(in_points[i].z, cos);
-        }
+        fix16_mat_t matrix __aligned(16);
+        fix16_mat_mul(&inv_view_matrix, world_matrix, &matrix);
 
-}
+        const fix16_vec3_t * const m0 = (const fix16_vec3_t *)&matrix.row[0];
+        const fix16_vec3_t * const m1 = (const fix16_vec3_t *)&matrix.row[1];
+        const fix16_vec3_t * const m2 = (const fix16_vec3_t *)&matrix.row[2];
 
-static void
-_xyz_rotate(fix16_vec3_t *out_points, const fix16_vec3_t *in_points, fix16_t angle, uint32_t points_count)
-{
-        const int32_t bradians = fix16_int16_muls(angle, FIX16(FIX16_LUT_SIN_TABLE_COUNT));
-
-        const int32_t sin = fix16_bradians_sin(bradians);
-        const int32_t cos = fix16_bradians_cos(bradians);
-
-        for (uint32_t i = 0; i < points_count; i++) {
-                /* About X */
-                out_points[i].y = (fix16_mul(in_points[i].y, cos) - fix16_mul(in_points[i].z, sin));
-                out_points[i].z = fix16_mul(in_points[i].y, sin) + fix16_mul(in_points[i].z, cos);
-
-                /* About Y */
-                out_points[i].x = fix16_mul(in_points[i].x, cos) - fix16_mul(out_points[i].z, sin);
-                out_points[i].z = fix16_mul(in_points[i].x, sin) + fix16_mul(out_points[i].z, cos);
-
-                /* About Z */
-                const int32_t tmp = out_points[i].x;
-                out_points[i].x = fix16_mul(out_points[i].x, cos) - fix16_mul(out_points[i].y, sin);
-                out_points[i].y = fix16_mul(tmp, sin) + fix16_mul(out_points[i].y, cos);
-        }
-
-}
-
-static void
-_transform(const camera_t *camera, render_mesh_t *render_mesh)
-{
         const fix16_vec3_t * const in_points = render_mesh->in_points;
+        fix16_vec3_t * const out_points = render_mesh->out_points;
+
+        for (uint32_t i = 0; i < render_mesh->mesh->points_count; i++) {
+                out_points[i].x = fix16_vec3_dot(m0, &in_points[i]) + matrix.frow[0][3];
+                out_points[i].y = fix16_vec3_dot(m1, &in_points[i]) + matrix.frow[1][3];
+                out_points[i].z = fix16_vec3_dot(m2, &in_points[i]) + matrix.frow[2][3];
+        }
+
+        render_mesh->in_points = out_points;
+}
+
+static void
+_projection_transform(render_mesh_t *render_mesh)
+{
         fix16_vec3_t * const out_points = render_mesh->out_points;
         int16_vec2_t * const screen_points = render_mesh->screen_points;
         fix16_t * const depth_values = render_mesh->depth_values;
 
         for (uint32_t i = 0; i < render_mesh->mesh->points_count; i++) {
-                out_points[i].x = -camera->position.x + in_points[i].x;
-                out_points[i].y = -camera->position.y + in_points[i].y;
-                out_points[i].z = -camera->position.z + in_points[i].z;
-
                 cpu_divu_fix16_set(__state.render->view_distance, out_points[i].z);
 
                 depth_values[i] = cpu_divu_quotient_get();
 
-                screen_points[i].x = fix16_int16_muls(depth_values[i], out_points[i].x);
-                screen_points[i].y = fix16_int16_muls(depth_values[i], fix16_mul(SCREEN_RATIO, out_points[i].y));
+                screen_points[i].x = fix16_int32_mul(depth_values[i], out_points[i].x);
+                screen_points[i].y = fix16_int32_mul(depth_values[i], fix16_mul(SCREEN_RATIO, out_points[i].y));
         }
 }
 
@@ -359,7 +291,7 @@ _sort(void)
                 }
 
                 /* Dividing by 64 was pulled by the PSXSPX documents */
-                z = fix16_int16_muls(z, FIX16(SORT_DEPTH / 0x40));
+                z = fix16_int32_mul(z, FIX16(SORT_DEPTH / 0x40));
 
                 __sort_insert(render_mesh, meta_polygon, z);
         }

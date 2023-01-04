@@ -19,7 +19,7 @@ static const attribute_t _attributes[] = {
         { .draw_mode.color_mode = VDP1_CMDT_CM_CB_256,    .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 2, .palette.color_bank.type_0.dc = 0x0000 },
         { .draw_mode.color_mode = VDP1_CMDT_CM_RGB_32768, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 0, .palette.base_color = RGB1555(1, 31, 31,  0) },
         { .draw_mode.color_mode = VDP1_CMDT_CM_RGB_32768, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 1, .palette.base_color = RGB1555(1,  0, 31, 31) },
-        { .draw_mode.color_mode = VDP1_CMDT_CM_RGB_32768, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 2, .palette.color_bank.type_0.dc = 0x0000 }
+        { .draw_mode.color_mode = VDP1_CMDT_CM_CB_256,    .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .texture_slot = 2, .palette.color_bank.type_0.dc = 0x0000 }
 };
 
 static const polygon_t _polygons[] = {

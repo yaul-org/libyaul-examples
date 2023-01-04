@@ -13,13 +13,15 @@ SH_PROGRAM:= vdp1-mic3d
 SH_SRCS:= \
 	vdp1-mic3d.c \
 \
+	mic3d/camera.c \
+	mic3d/list.c \
+	mic3d/matrix.c \
+	mic3d/mic3d.c \
 	mic3d/render.c \
 	mic3d/sort.c \
-	mic3d/list.c \
-	mic3d/tlist.c \
 	mic3d/state.c \
+	mic3d/tlist.c \
 	mic3d/workarea.c \
-	mic3d/mic3d.c \
 \
 	meshes/mesh_m.c \
 	meshes/mesh_i.c \
