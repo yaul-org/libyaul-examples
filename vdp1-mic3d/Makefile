@@ -1,15 +1,40 @@
+THIS_ROOT:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
 ifeq ($(strip $(YAUL_INSTALL_ROOT)),)
   $(error Undefined YAUL_INSTALL_ROOT (install root directory))
 endif
 
 include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
+# Each asset follows the format: <path>;<symbol>. Duplicates are removed
+BUILTIN_ASSETS+=
+
 SH_PROGRAM:= vdp1-mic3d
 SH_SRCS:= \
-	vdp1-mic3d.c
+	vdp1-mic3d.c \
+\
+	mic3d/camera.c \
+	mic3d/list.c \
+	mic3d/matrix.c \
+	mic3d/mic3d.c \
+	mic3d/render.c \
+	mic3d/sort.c \
+	mic3d/state.c \
+	mic3d/tlist.c \
+	mic3d/workarea.c \
+\
+	meshes/mesh_m.c \
+	meshes/mesh_i.c \
+	meshes/mesh_c.c \
+	meshes/mesh_cube.c \
+\
+	graphics.c \
+	graphics_mika.c \
+	graphics_tails.c \
+	graphics_baku.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -Os -I.
+SH_CFLAGS+= -O2 -I. -I$(THIS_ROOT)/mic3d -DDEBUG
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
