@@ -252,27 +252,14 @@ _cmdt_list_init(void)
 static uint32_t
 _frame_time_calculate(void)
 {
-        uint16_t frt;
-        frt = cpu_frt_count_get();
+        const uint16_t frt = cpu_frt_count_get();
 
         cpu_frt_count_set(0);
 
-        uint32_t delta_fix;
-        delta_fix = frt << 4;
+        const uint32_t delta_fix = frt << 8;
+        const uint32_t divisor_fix = CPU_FRT_NTSC_320_32_COUNT_1MS << 4;
 
-        uint32_t divisor_fix;
-        divisor_fix = CPU_FRT_NTSC_320_32_COUNT_1MS << 4;
-
-        cpu_divu_32_32_set(delta_fix << 4, divisor_fix);
-
-        /* Remember to wait ~40 cycles */
-        for (uint32_t i = 0; i < 8; i++) {
-                cpu_instr_nop();
-                cpu_instr_nop();
-                cpu_instr_nop();
-                cpu_instr_nop();
-                cpu_instr_nop();
-        }
+        cpu_divu_32_32_set(delta_fix, divisor_fix);
 
         uint32_t result;
         result = cpu_divu_quotient_get();
