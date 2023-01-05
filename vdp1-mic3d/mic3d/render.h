@@ -18,6 +18,7 @@ typedef enum {
 
 typedef struct {
         uint16_t index;
+        attribute_t attribute;
 } __aligned(4) polygon_meta_t;
 
 typedef struct {

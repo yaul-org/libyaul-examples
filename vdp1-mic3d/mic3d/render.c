@@ -141,10 +141,9 @@ render_mesh_transform(void)
         polygon_index = 0;
 
         for (uint32_t i = 0; i < render_mesh->mesh->polygons_count; i++) {
-                const attribute_t * const attribute =
-                    &render_mesh->mesh->attributes[i];
+                attribute_t attribute = render_mesh->mesh->attributes[i];
 
-                if (attribute->control.plane_type != PLANE_TYPE_DOUBLE) {
+                if (attribute.control.plane_type != PLANE_TYPE_DOUBLE) {
                         const int16_vec2_t * const screen_p0 = &screen_points[in_polygons[i].p0];
                         const int16_vec2_t * const screen_p1 = &screen_points[in_polygons[i].p1];
                         const int16_vec2_t * const screen_p2 = &screen_points[in_polygons[i].p2];
@@ -170,7 +169,14 @@ render_mesh_transform(void)
                         continue;
                 }
 
+                /* Since no clip flags are set, disable pre-clipping. This
+                 * should help with performance */
+                if ((clip_flags[0] | clip_flags[1] | clip_flags[2] | clip_flags[3]) == CLIP_FLAGS_NONE) {
+                        attribute.draw_mode.pre_clipping_disable = true;
+                }
+
                 out_polygons[polygon_index].index = i;
+                out_polygons[polygon_index].attribute = attribute;
 
                 polygon_index++;
         }
@@ -260,8 +266,6 @@ _sort(void)
 
                 const polygon_t * const polygon =
                     &render_mesh->in_polygons[meta_polygon->index];
-                const attribute_t * const attribute =
-                    &render_mesh->mesh->attributes[meta_polygon->index];
 
                 const fix16_t p0 = depth_values[polygon->p0];
                 const fix16_t p1 = depth_values[polygon->p1];
@@ -270,7 +274,7 @@ _sort(void)
 
                 int32_t z;
 
-                switch (attribute->control.sort_type) {
+                switch (meta_polygon->attribute.control.sort_type) {
                 default:
                 case SORT_TYPE_CENTER:
                         z = _depth_center_calculate(p0, p1, p2, p3);
@@ -396,23 +400,22 @@ _render_single(const sort_single_t *single)
 
         const render_mesh_t * const render_mesh = single->render_mesh;
 
-        const attribute_t * const attribute =
-            &render_mesh->mesh->attributes[meta_polygon->index];
+        const attribute_t attribute = meta_polygon->attribute;
 
         cmdt->cmd_ctrl &= 0x7FF0;
-        cmdt->cmd_ctrl |= attribute->control.raw & 0x3F;
+        cmdt->cmd_ctrl |= attribute.control.raw & 0x3F;
 
-        vdp1_cmdt_draw_mode_set(cmdt, attribute->draw_mode);
+        vdp1_cmdt_draw_mode_set(cmdt, attribute.draw_mode);
 
-        if (attribute->control.use_texture) {
+        if (attribute.control.use_texture) {
                 const texture_t * const textures = tlist_get();
-                const texture_t * const texture = &textures[attribute->texture_slot];
+                const texture_t * const texture = &textures[attribute.texture_slot];
 
                 cmdt->cmd_srca = texture->vram_index;
                 cmdt->cmd_size = texture->size;
         }
 
-        cmdt->cmd_colr = attribute->palette.raw;
+        cmdt->cmd_colr = attribute.palette.raw;
 
         const polygon_t * const polygon =
             &render_mesh->in_polygons[meta_polygon->index];
