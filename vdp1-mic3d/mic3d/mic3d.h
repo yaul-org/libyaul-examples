@@ -11,8 +11,8 @@
 #define SORT_DEPTH         512
 #define MATRIX_STACK_COUNT 32
 
-#define DEPTH_NEAR    FIX16(20.0f)
-#define DEPTH_FAR     FIX16(256.0f)
+#define DEPTH_NEAR         20
+#define DEPTH_FAR          256
 
 #define TEXTURE_SIZE(w, h)       ((uint16_t)((((w) >> 3) << 8) | ((h) & 255)))
 #define TEXTURE_VRAM_INDEX(addr) ((uint16_t)((uintptr_t)(addr) >> 3))

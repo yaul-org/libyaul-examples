@@ -17,12 +17,11 @@ camera_lookat(const camera_t *camera)
         fix16_vec3_normalize(forward);
 
         fix16_vec3_t * const right = (fix16_vec3_t *)&view_matrix->row[0];
-        /* Invert for -Y up */
-        fix16_vec3_cross(&camera->up, forward, right);
+        fix16_vec3_cross(forward, &camera->up, right);
         fix16_vec3_normalize(right);
 
         fix16_vec3_t * const up = (fix16_vec3_t *)&view_matrix->row[1];
-        fix16_vec3_cross(right, forward, up);
+        fix16_vec3_cross(forward, right, up);
         fix16_vec3_normalize(up);
 
         view_matrix->frow[0][3] = camera->position.x;

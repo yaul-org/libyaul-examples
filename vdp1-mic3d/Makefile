@@ -27,6 +27,7 @@ SH_SRCS:= \
 	meshes/mesh_i.c \
 	meshes/mesh_c.c \
 	meshes/mesh_cube.c \
+	meshes/mesh_torus.c \
 \
 	graphics.c \
 	graphics_mika.c \

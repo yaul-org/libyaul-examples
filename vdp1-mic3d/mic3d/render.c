@@ -218,9 +218,9 @@ _view_transform(render_mesh_t *render_mesh)
         const fix16_mat_t * const world_matrix = matrix_top();
 
         fix16_mat_t inv_view_matrix __aligned(16);
-        __camera_view_invert(&inv_view_matrix);
-
         fix16_mat_t matrix __aligned(16);
+
+        __camera_view_invert(&inv_view_matrix);
         fix16_mat_mul(&inv_view_matrix, world_matrix, &matrix);
 
         const fix16_vec3_t * const m0 = (const fix16_vec3_t *)&matrix.row[0];
@@ -259,7 +259,7 @@ _sort(void)
         render_mesh_t * const render_mesh =
             __state.render->render_mesh;
 
-        const fix16_t * const depth_values = render_mesh->depth_values;
+        const fix16_vec3_t * const out_points = render_mesh->out_points;
 
         for (uint32_t i = 0; i < render_mesh->polygons_count; i++) {
                 const polygon_meta_t * const meta_polygon = &render_mesh->out_polygons[i];
@@ -267,12 +267,13 @@ _sort(void)
                 const polygon_t * const polygon =
                     &render_mesh->in_polygons[meta_polygon->index];
 
-                const fix16_t p0 = depth_values[polygon->p0];
-                const fix16_t p1 = depth_values[polygon->p1];
-                const fix16_t p2 = depth_values[polygon->p2];
-                const fix16_t p3 = depth_values[polygon->p3];
+                const fix16_t p0 = out_points[polygon->p0].z;
+                const fix16_t p1 = out_points[polygon->p1].z;
+                const fix16_t p2 = out_points[polygon->p2].z;
+                const fix16_t p3 = out_points[polygon->p3].z;
 
-                int32_t z;
+                fix16_t z;
+                z = FIX16_ZERO;
 
                 switch (meta_polygon->attribute.control.sort_type) {
                 default:
@@ -290,9 +291,9 @@ _sort(void)
                 }
 
                 /* Dividing by 64 was pulled by the PSXSPX documents */
-                z = fix16_int32_mul(z, FIX16(SORT_DEPTH / 0x40));
+                const int32_t shifted_z = fix16_int32_mul(z, FIX16(SORT_DEPTH / (float)DEPTH_FAR));
 
-                __sort_insert(render_mesh, meta_polygon, z);
+                __sort_insert(render_mesh, meta_polygon, shifted_z);
         }
 }
 
@@ -322,10 +323,10 @@ _depth_max_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3)
         return fix16_int32_to(z);
 }
 
-static int32_t
+static fix16_t
 _depth_center_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3)
 {
-        return fix16_int32_to(p0 + p1 + p2 + p3);
+        return ((p0 + p1 + p2 + p3) >> 2);
 }
 
 static clip_flags_t
@@ -334,9 +335,9 @@ _clip_flags_calculate(const fix16_vec3_t *point)
         clip_flags_t clip_flags;
         clip_flags = CLIP_FLAGS_NONE;
 
-        if (point->z < DEPTH_NEAR) {
+        if (point->z < FIX16(DEPTH_NEAR)) {
                 clip_flags |= CLIP_FLAGS_NEAR;
-        } else if (point->z > DEPTH_FAR) {
+        } else if (point->z > FIX16(DEPTH_FAR)) {
                 clip_flags |= CLIP_FLAGS_FAR;
         }
 
@@ -433,4 +434,6 @@ _render_single(const sort_single_t *single)
 
         cmdt->cmd_xd = screen_points[polygon->p1].x;
         cmdt->cmd_yd = screen_points[polygon->p1].y;
+
+        cmdt->cmd_grda = attribute.shading_slot;
 }

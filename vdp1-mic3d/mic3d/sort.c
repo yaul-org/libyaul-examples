@@ -45,9 +45,9 @@ __sort_insert(const render_mesh_t *render_mesh, const polygon_meta_t *meta_polyg
 
         __state.sort->max_depth = max((uint32_t)z, __state.sort->max_depth);
 
-        sort_single_t * const new_single = _singles_alloc();
-
         sort_list_t * const list_head = &__state.sort->sort_lists_pool[z];
+
+        sort_single_t * const new_single = _singles_alloc();
 
         new_single->render_mesh = render_mesh;
         new_single->polygon = meta_polygon;
