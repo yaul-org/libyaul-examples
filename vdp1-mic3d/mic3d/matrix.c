@@ -2,12 +2,12 @@
 
 #include "state.h"
 
-extern fix16_mat_t __pool_matrix_pool[];
+extern fix16_mat_t __pool_matrices[];
 
 void
 __matrix_init(void)
 {
-        mat_stack_init(__state.mat_stack, &__pool_matrix_pool[1], MATRIX_STACK_COUNT - 1);
+        mat_stack_init(__state.mat_stack, &__pool_matrices[1], MATRIX_STACK_COUNT - 1);
 
         fix16_mat_identity(__matrix_view_get());
 }
@@ -15,7 +15,7 @@ __matrix_init(void)
 fix16_mat_t *
 __matrix_view_get(void)
 {
-        return &__pool_matrix_pool[0];
+        return &__pool_matrices[0];
 }
 
 void

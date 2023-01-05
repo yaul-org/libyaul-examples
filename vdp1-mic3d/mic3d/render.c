@@ -218,9 +218,11 @@ _view_transform(render_mesh_t *render_mesh)
         const fix16_mat_t * const world_matrix = matrix_top();
 
         fix16_mat_t inv_view_matrix __aligned(16);
-        fix16_mat_t matrix __aligned(16);
 
         __camera_view_invert(&inv_view_matrix);
+
+        fix16_mat_t matrix __aligned(16);
+
         fix16_mat_mul(&inv_view_matrix, world_matrix, &matrix);
 
         const fix16_vec3_t * const m0 = (const fix16_vec3_t *)&matrix.row[0];

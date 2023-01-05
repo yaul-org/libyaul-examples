@@ -9,7 +9,8 @@
 #define POLYGON_COUNT      4096
 #define POINTS_COUNT       (POLYGON_COUNT * 4)
 #define SORT_DEPTH         512
-#define MATRIX_STACK_COUNT 32
+#define MATRIX_STACK_COUNT 16
+#define CMDT_COUNT         2048
 
 #define DEPTH_NEAR         20
 #define DEPTH_FAR          256
