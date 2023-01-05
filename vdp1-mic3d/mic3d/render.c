@@ -86,9 +86,6 @@ render_start(void)
 
         render_perspective_set(DEG2ANGLE(90.0f));
 
-        /* XXX: Actually calculate this */
-        __state.render->clip_factor = FIX16(1.0f);
-
         __sort_start();
 }
 
@@ -117,11 +114,12 @@ render_mesh_start(const mesh_t *mesh)
 void
 render_perspective_set(angle_t fov_angle)
 {
-        fov_angle = fix16_clamp(fov_angle, MIN_FOV_ANGLE, MAX_FOV_ANGLE);
+        fov_angle = clamp(fov_angle, MIN_FOV_ANGLE, MAX_FOV_ANGLE);
 
         const angle_t hfov_angle = fov_angle >> 1;
 
         __state.render->view_distance = fix16_mul(FIX16(0.5f * (SCREEN_WIDTH - 1)), fix16_tan(hfov_angle));
+        __state.render->clip_factor = fix16_div(FIX16((float)SCREEN_WIDTH * 0.5f), __state.render->view_distance);
 }
 
 void
@@ -243,10 +241,7 @@ _projection_transform(render_mesh_t *render_mesh)
         fix16_t * const depth_values = render_mesh->depth_values;
 
         for (uint32_t i = 0; i < render_mesh->mesh->points_count; i++) {
-                cpu_divu_fix16_set(__state.render->view_distance, out_points[i].z);
-
-                depth_values[i] = cpu_divu_quotient_get();
-
+                depth_values[i] = fix16_div(__state.render->view_distance, out_points[i].z);
                 screen_points[i].x = fix16_int32_mul(depth_values[i], out_points[i].x);
                 screen_points[i].y = fix16_int32_mul(depth_values[i], fix16_mul(SCREEN_RATIO, out_points[i].y));
         }
