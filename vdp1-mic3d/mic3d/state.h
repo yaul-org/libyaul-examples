@@ -6,17 +6,17 @@
 
 #include "mic3d.h"
 
-#include "render.h"
-#include "sort.h"
-#include "tlist.h"
-#include "matrix.h"
-#include "camera.h"
+typedef struct render render_t;
+typedef struct sort sort_t;
+typedef struct tlist tlist_t;
+typedef struct light light_t;
 
 typedef struct {
         render_t *render;
         sort_t *sort;
         tlist_t *tlist;
         mat_stack_t *mat_stack;
+        light_t *light;
 } state_t;
 
 extern state_t __state;

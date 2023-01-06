@@ -35,7 +35,7 @@ typedef struct {
         uint32_t polygons_count;
 } __aligned(4) render_mesh_t;
 
-typedef struct {
+typedef struct render {
         fix16_vec3_t *points_pool;
         int16_vec2_t *screen_points_pool;
         fix16_t *depth_values_pool;

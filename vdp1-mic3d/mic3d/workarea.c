@@ -1,4 +1,4 @@
-#include "state.h"
+#include "internal.h"
 
 #define POOL_POINTS_COUNT        POINTS_COUNT
 #define POOL_POLYGONS_COUNT      POLYGON_COUNT

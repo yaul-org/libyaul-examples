@@ -1,6 +1,6 @@
 #include <math.h>
 
-#include "state.h"
+#include "internal.h"
 
 static inline void __always_inline
 _singles_reset(void)

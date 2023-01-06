@@ -24,6 +24,7 @@ extern const mesh_t mesh_m;
 extern const mesh_t mesh_i;
 extern const mesh_t mesh_c;
 extern const mesh_t mesh_cube;
+extern const mesh_t mesh_torus;
 
 extern const picture_t picture_mika;
 extern const picture_t picture_tails;
@@ -38,23 +39,33 @@ static void _vdp1_init(void);
 static size_t _texture_load(texture_t *textures, uint32_t slot, const picture_t *picture, vdp1_vram_t texture_base);
 static void _palette_load(uint16_t bank_256, uint16_t bank_16, const palette_t *palette);
 
+vdp1_gouraud_table_t _pool_shading_tables[CMDT_COUNT] __aligned(16);
+
 void
 main(void)
 {
+        for (uint32_t i = 0; i < CMDT_COUNT; i++) {
+                _pool_shading_tables[i].colors[0] = RGB1555(1, i & 31,     16,     16);
+                _pool_shading_tables[i].colors[1] = RGB1555(1,     16, i & 31,     16);
+                _pool_shading_tables[i].colors[2] = RGB1555(1,     16,     16, i & 31);
+                _pool_shading_tables[i].colors[3] = RGB1555(1, i & 31, i & 31, i & 31);
+        }
+
         dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
-        angle_t theta;
-        theta = DEG2ANGLE(0.0f);
+        vdp1_vram_partitions_t vdp1_vram_partitions;
+
+        vdp1_vram_partitions_get(&vdp1_vram_partitions);
 
         mic3d_init();
 
         tlist_set(_textures, 8);
 
-        vdp1_vram_partitions_t vdp1_vram_partitions;
-
-        vdp1_vram_partitions_get(&vdp1_vram_partitions);
+        light_set(_pool_shading_tables,
+            CMDT_COUNT,
+            (vdp1_vram_t)vdp1_vram_partitions.gouraud_base);
 
         vdp1_vram_t texture_base;
         texture_base = (vdp1_vram_t)vdp1_vram_partitions.texture_base;
@@ -64,6 +75,8 @@ main(void)
         texture_base += _texture_load(_textures, 2, &picture_baku, texture_base);
 
         _palette_load(0, 0, &palette_baku);
+
+        light_direction_set(); /* XXX: Just used to trigger gouraud shading table put */
 
         camera_t camera __unused;
 
@@ -80,39 +93,29 @@ main(void)
 
         camera_lookat(&camera);
 
+        angle_t theta;
+        theta = DEG2ANGLE(0.0f);
+
         while (true) {
                 dbgio_puts("[H[2J");
                 render_start();
 
+                render_mesh_start(&mesh_torus);
                 matrix_push();
                 matrix_x_rotate(theta);
                 matrix_y_rotate(theta);
                 matrix_z_rotate(theta);
+                matrix_z_translate(FIX16(10));
+                render_mesh_transform();
+                matrix_pop();
 
                 render_mesh_start(&mesh_cube);
                 matrix_push();
                 matrix_y_translate(FIX16( 40));
+                matrix_x_rotate(theta);
+                matrix_x_translate(FIX16( 20));
                 matrix_z_translate(FIX16(100));
                 render_mesh_transform();
-                matrix_pop();
-
-                render_mesh_start(&mesh_m);
-                matrix_push();
-                matrix_x_translate(FIX16( -8));
-                render_mesh_transform();
-                matrix_pop();
-
-                render_mesh_start(&mesh_i);
-                matrix_push();
-                render_mesh_transform();
-                matrix_pop();
-
-                render_mesh_start(&mesh_c);
-                matrix_push();
-                matrix_x_translate(FIX16(  5));
-                render_mesh_transform();
-                matrix_pop();
-
                 matrix_pop();
 
                 theta += DEG2ANGLE(1.0f);

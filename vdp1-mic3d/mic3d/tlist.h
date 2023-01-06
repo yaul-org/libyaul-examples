@@ -3,7 +3,7 @@
 
 #include "list.h"
 
-typedef struct {
+typedef struct tlist {
         list_t list;
 } tlist_t;
 

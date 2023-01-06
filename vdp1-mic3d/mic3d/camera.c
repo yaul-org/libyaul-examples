@@ -1,4 +1,4 @@
-#include "state.h"
+#include "internal.h"
 
 void
 camera_lookat(const camera_t *camera)

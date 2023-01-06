@@ -14,7 +14,7 @@
 #include <cpu/registers.h>
 #include <cpu/divu.h>
 
-#include "state.h"
+#include "internal.h"
 
 #define SCREEN_RATIO FIX16(SCREEN_WIDTH / (float)SCREEN_HEIGHT)
 
@@ -175,6 +175,11 @@ render_mesh_transform(void)
                         attribute.draw_mode.pre_clipping_disable = true;
                 }
 
+                /* XXX: Place holder for lighting */
+                if (attribute.control.use_lighting) {
+                        attribute.shading_slot = __light_slot_calculate(i);
+                }
+
                 out_polygons[polygon_index].index = i;
                 out_polygons[polygon_index].attribute = attribute;
 
@@ -210,6 +215,8 @@ render(uint32_t cmdt_index)
             __state.render->cmdts - __state.render->cmdts_pool;
 
         vdp1_sync_cmdt_put(__state.render->cmdts_pool, count, cmdt_index);
+
+        __light_gst_put();
 }
 
 static void

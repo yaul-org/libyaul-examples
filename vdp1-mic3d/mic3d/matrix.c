@@ -1,6 +1,6 @@
 #include <mat_stack.h>
 
-#include "state.h"
+#include "internal.h"
 
 extern fix16_mat_t __pool_matrices[];
 
