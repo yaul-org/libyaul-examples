@@ -48,6 +48,7 @@ void matrix_y_translate(fix16_t y);
 void matrix_z_translate(fix16_t z);
 void matrix_translate(const fix16_vec3_t *t);
 void matrix_translation_set(const fix16_vec3_t *t);
+void matrix_translation_get(fix16_vec3_t *t);
 void matrix_x_rotate(angle_t angle);
 void matrix_y_rotate(angle_t angle);
 void matrix_z_rotate(angle_t angle);

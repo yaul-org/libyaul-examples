@@ -85,6 +85,12 @@ matrix_translation_set(const fix16_vec3_t *t)
 }
 
 void
+matrix_translation_get(fix16_vec3_t *t)
+{
+        mat_stack_translation_get(__state.mat_stack, t);
+}
+
+void
 matrix_x_rotate(angle_t angle)
 {
         mat_stack_x_rotate(__state.mat_stack, angle);
