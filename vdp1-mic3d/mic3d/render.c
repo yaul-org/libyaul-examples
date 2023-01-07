@@ -222,15 +222,15 @@ render(uint32_t cmdt_index)
 static void
 _view_transform(render_mesh_t *render_mesh)
 {
-        const fix16_mat_t * const world_matrix = matrix_top();
+        const fix16_mat43_t * const world_matrix = matrix_top();
 
-        fix16_mat_t inv_view_matrix __aligned(16);
+        fix16_mat43_t inv_view_matrix __aligned(16);
 
         __camera_view_invert(&inv_view_matrix);
 
-        fix16_mat_t matrix __aligned(16);
+        fix16_mat43_t matrix __aligned(16);
 
-        fix16_mat_mul(&inv_view_matrix, world_matrix, &matrix);
+        fix16_mat43_mul(&inv_view_matrix, world_matrix, &matrix);
 
         const fix16_vec3_t * const m0 = (const fix16_vec3_t *)&matrix.row[0];
         const fix16_vec3_t * const m1 = (const fix16_vec3_t *)&matrix.row[1];
