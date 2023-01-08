@@ -25,6 +25,8 @@ extern const mesh_t mesh_i;
 extern const mesh_t mesh_c;
 extern const mesh_t mesh_cube;
 extern const mesh_t mesh_torus;
+extern const mesh_t mesh_torus2;
+extern const mesh_t mesh_torus3;
 
 extern const picture_t picture_mika;
 extern const picture_t picture_tails;
@@ -76,7 +78,7 @@ main(void)
 
         _palette_load(0, 0, &palette_baku);
 
-        light_direction_set(); /* XXX: Just used to trigger gouraud shading table put */
+        /* light_direction_set(); /\* XXX: Just used to trigger gouraud shading table put *\/ */
 
         camera_t camera __unused;
 
@@ -102,23 +104,36 @@ main(void)
 
                 render_mesh_start(&mesh_torus);
                 matrix_push();
+                matrix_x_translate(FIX16(-15));
                 matrix_x_rotate(theta);
                 matrix_y_rotate(theta);
                 matrix_z_rotate(theta);
-                matrix_z_translate(FIX16(10));
+                matrix_x_translate(FIX16(-20));
+                matrix_z_translate(FIX16(30));
                 render_mesh_transform();
                 matrix_pop();
 
-                render_mesh_start(&mesh_cube);
+                render_mesh_start(&mesh_torus2);
                 matrix_push();
-                matrix_y_translate(FIX16( 40));
+                matrix_y_rotate(theta);
                 matrix_x_rotate(theta);
-                matrix_x_translate(FIX16( 20));
-                matrix_z_translate(FIX16(100));
+                matrix_z_rotate(theta);
+                matrix_z_translate(FIX16(30));
                 render_mesh_transform();
                 matrix_pop();
 
-                theta += DEG2ANGLE(1.0f);
+                render_mesh_start(&mesh_torus3);
+                matrix_push();
+                matrix_x_translate(FIX16(15));
+                matrix_z_rotate(theta);
+                matrix_y_rotate(theta);
+                matrix_x_rotate(theta);
+                matrix_x_translate(FIX16(20));
+                matrix_z_translate(FIX16(30));
+                render_mesh_transform();
+                matrix_pop();
+
+                theta += DEG2ANGLE(5.0f);
 
                 render_process();
                 render(ORDER_BUFFER_STARTING_INDEX);

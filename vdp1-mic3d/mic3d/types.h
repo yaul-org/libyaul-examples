@@ -8,10 +8,16 @@
 
 typedef struct {
         fix16_vec3_t normal;
-        uint16_t p0;
-        uint16_t p1;
-        uint16_t p2;
-        uint16_t p3;
+
+        union {
+                struct {
+                        uint16_t p0;
+                        uint16_t p1;
+                        uint16_t p2;
+                        uint16_t p3;
+                };
+                uint16_t p[4];
+        };
 } __aligned(4) polygon_t;
 
 typedef enum {
@@ -86,6 +92,7 @@ typedef struct {
 typedef struct {
         const fix16_vec3_t *points;
         uint32_t points_count;
+        const fix16_vec3_t *normals;
         const polygon_t *polygons;
         const attribute_t *attributes;
         uint32_t polygons_count;
