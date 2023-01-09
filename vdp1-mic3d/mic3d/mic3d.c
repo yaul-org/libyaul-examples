@@ -5,6 +5,7 @@ static sort_t _sort;
 static tlist_t _tlist;
 static mat_stack_t _mat_stack;
 static light_t _light;
+static perf_t _perf;
 
 void
 mic3d_init(void)
@@ -14,10 +15,12 @@ mic3d_init(void)
         __state.tlist = &_tlist;
         __state.mat_stack = &_mat_stack;
         __state.light = &_light;
+        __state.perf = &_perf;
 
         __render_init();
         __sort_init();
         __tlist_init();
         __matrix_init();
         __light_init();
+        __perf_init();
 }

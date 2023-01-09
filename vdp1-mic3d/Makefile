@@ -18,6 +18,7 @@ SH_SRCS:= \
 	mic3d/list.c \
 	mic3d/matrix.c \
 	mic3d/mic3d.c \
+	mic3d/perf.c \
 	mic3d/render.c \
 	mic3d/sort.c \
 	mic3d/state.c \
@@ -36,7 +37,7 @@ SH_SRCS:= \
 	graphics_baku.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -I$(THIS_ROOT)/mic3d -DDEBUG -g
+SH_CFLAGS+= -O2 -I. -I$(THIS_ROOT)/mic3d -DDEBUG -DPERF -g
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

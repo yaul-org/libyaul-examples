@@ -8,5 +8,6 @@
 #include "camera.h"
 #include "light.h"
 #include "state.h"
+#include "perf.h"
 
 #endif /* MIC3D_INTERNAL_H */

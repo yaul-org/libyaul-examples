@@ -36,6 +36,8 @@ static clip_flags_t _clip_flags_calculate(const fix16_vec3_t *point);
 
 static void _render_single(const sort_single_t *single);
 
+static perf_counter_t _transform_pc;
+
 static inline void __always_inline
 _render_meshes_reset(void)
 {
@@ -89,6 +91,8 @@ render_start(void)
         render_perspective_set(DEG2ANGLE(90.0f));
 
         __sort_start();
+
+        __perf_counter_init(&_transform_pc);
 }
 
 void
@@ -139,6 +143,8 @@ render_perspective_set(angle_t fov_angle)
 void
 render_mesh_transform(void)
 {
+        __perf_counter_start(&_transform_pc);
+
         render_mesh_t * const render_mesh =
             __state.render->render_mesh;
 
@@ -202,6 +208,8 @@ render_mesh_transform(void)
         _sort();
 
         __state.render->total_polygons_count += render_mesh->polygons_count;
+
+        __perf_counter_end(&_transform_pc);
 }
 
 void
