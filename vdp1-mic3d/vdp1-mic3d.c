@@ -191,6 +191,8 @@ _vdp1_init(void)
         vdp1_cmdt_local_coord_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX]);
         vdp1_cmdt_vtx_local_coord_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX],
             local_coord_center);
+
+        vdp1_sync_interval_set(-1);
 }
 
 static size_t
