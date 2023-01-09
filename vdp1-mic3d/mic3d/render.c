@@ -71,6 +71,8 @@ __render_init(void)
         __state.render->cmdts_pool = __pool_cmdts;
         __state.render->render_meshes_pool = _pool_render_meshes;
 
+        __state.render->render_flags = RENDER_FLAGS_NONE;
+
         render_start();
 }
 
@@ -87,6 +89,18 @@ render_start(void)
         render_perspective_set(DEG2ANGLE(90.0f));
 
         __sort_start();
+}
+
+void
+render_enable(render_flags_t flags)
+{
+        __state.render->render_flags |= flags;
+}
+
+void
+render_disable(render_flags_t flags)
+{
+        __state.render->render_flags &= ~flags;
 }
 
 void

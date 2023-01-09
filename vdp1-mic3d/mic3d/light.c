@@ -6,16 +6,12 @@ void
 __light_init(void)
 {
         light_set(NULL, 0, VDP1_VRAM(0x00000000));
-}
 
-void
-__light_mesh_transform(void)
-{
-        /* XXX: Check if any lights are enabled */
+        fix16_mat33_zero(&__state.light->color_matrix);
+        fix16_mat33_zero(&__state.light->light_matrix);
 
-        /* XXX: Check if the model needs lighting. Right now, each face is
-         *      checked if the "use_lighting" flag is set */
-
+        __state.light->light_count = 0;
+
         // XXX: Testing
         __state.light->color_matrix.frow[0][0] = FIX16(31);
         __state.light->color_matrix.frow[1][0] = FIX16(31);
@@ -32,54 +28,70 @@ __light_mesh_transform(void)
         __state.light->light_matrix.row[0].x = FIX16_ZERO;
         __state.light->light_matrix.row[0].y = FIX16_ZERO;
         __state.light->light_matrix.row[0].z = FIX16_ONE;
-        __state.light->light_enabled[0] = true;
+        __state.light->light_count = 1;
+}
 
-        __state.light->light_matrix.row[1].x = FIX16_ZERO;
-        __state.light->light_matrix.row[1].y = FIX16_ZERO;
-        __state.light->light_matrix.row[1].z = FIX16_ZERO;
-        __state.light->light_enabled[1] = false;
-
-        __state.light->light_matrix.row[2].x = FIX16_ZERO;
-        __state.light->light_matrix.row[2].y = FIX16_ZERO;
-        __state.light->light_matrix.row[2].z = FIX16_ZERO;
-        __state.light->light_enabled[2] = false;
-
-        render_mesh_t * const render_mesh =
-            __state.render->render_mesh;
-
+static void
+_world_matrix_invert(fix16_mat33_t *inv_matrix)
+{
         const fix16_mat43_t * const world_matrix = matrix_top();
-
-        fix16_mat33_t inv_world_matrix __aligned(16);
 
         /* Invert here directly to a 3x3 matrix. If we use fix16_mat43_invert,
          * the translation vector is also inverted.
          *
          * The transpose also bakes the negation of the directional light
          * vector: f=dot(vn,-dir) */
-        inv_world_matrix.frow[0][0] = -world_matrix->frow[0][0];
-        inv_world_matrix.frow[0][1] = -world_matrix->frow[1][0];
-        inv_world_matrix.frow[0][2] = -world_matrix->frow[2][0];
+        inv_matrix->frow[0][0] = -world_matrix->frow[0][0];
+        inv_matrix->frow[0][1] = -world_matrix->frow[1][0];
+        inv_matrix->frow[0][2] = -world_matrix->frow[2][0];
 
-        inv_world_matrix.frow[1][0] = -world_matrix->frow[0][1];
-        inv_world_matrix.frow[1][1] = -world_matrix->frow[1][1];
-        inv_world_matrix.frow[1][2] = -world_matrix->frow[2][1];
+        inv_matrix->frow[1][0] = -world_matrix->frow[0][1];
+        inv_matrix->frow[1][1] = -world_matrix->frow[1][1];
+        inv_matrix->frow[1][2] = -world_matrix->frow[2][1];
 
-        inv_world_matrix.frow[2][0] = -world_matrix->frow[0][2];
-        inv_world_matrix.frow[2][1] = -world_matrix->frow[1][2];
-        inv_world_matrix.frow[2][2] = -world_matrix->frow[2][2];
+        inv_matrix->frow[2][0] = -world_matrix->frow[0][2];
+        inv_matrix->frow[2][1] = -world_matrix->frow[1][2];
+        inv_matrix->frow[2][2] = -world_matrix->frow[2][2];
+}
 
-        fix16_mat33_t light_matrix __aligned(16);
+// void light_color_set(light_id_t id, rgb1555_t color)
+// void light_color_comp_set(light_id_t id, uint8_t r, uint8_t g, uint8_t b)
+//
+// void light_dir_set(light_id_t id, const fix16_vec3_t *dir)
+//
+// void light_toggle(light_id_t id, bool toggle)
 
-        fix16_mat33_mul(&__state.light->light_matrix, &inv_world_matrix, &light_matrix);
+void
+__light_mesh_transform(void)
+{
+        if (!RENDER_FLAG_TEST(LIGHTING)) {
+                return;
+        }
+
+        if (__state.light->light_count == 0) {
+                return;
+        }
+
+        render_mesh_t * const render_mesh =
+            __state.render->render_mesh;
+
+        fix16_mat33_t inv_world_matrix __aligned(16);
+
+        _world_matrix_invert(&inv_world_matrix);
+
+        fix16_mat33_t world_light_matrix __aligned(16);
+
+        fix16_mat33_mul(&__state.light->light_matrix, &inv_world_matrix, &world_light_matrix);
+
+        fix16_mat33_t intensity_matrix __aligned(16);
+
+        fix16_mat33_mul(&__state.light->color_matrix, &world_light_matrix, &intensity_matrix);
 
         for (uint32_t i = 0; i < render_mesh->polygons_count; i++) {
-                polygon_meta_t * const meta_polygon = &render_mesh->out_polygons[i];
+                polygon_meta_t * const meta_polygon =
+                    &render_mesh->out_polygons[i];
 
                 attribute_t * const attribute = &meta_polygon->attribute;
-
-                if (!attribute->control.use_lighting) {
-                        continue;
-                }
 
                 const gst_slot_t gst_slot = __light_gst_alloc();
                 vdp1_gouraud_table_t * const gst = __light_gst_get(gst_slot);
@@ -94,33 +106,14 @@ __light_mesh_transform(void)
                         const fix16_vec3_t * const vertex_normal =
                             &render_mesh->mesh->normals[polygon->p[v]];
 
-                        fix16_t f[LIGHT_COUNT] = {
-                                FIX16_ZERO,
-                                FIX16_ZERO,
-                                FIX16_ZERO
-                        };
+                        fix16_vec3_t intensity;
+                        fix16_mat33_vec3_mul(&intensity_matrix, vertex_normal, &intensity);
 
-                        for (uint32_t i = 0; i < LIGHT_COUNT; i++) {
-                                if (!__state.light->light_enabled[i]) {
-                                        continue;
-                                }
-
-                                const fix16_vec3_t * const light_dir =
-                                    &light_matrix.row[i];
-
-                                f[i] = fix16_vec3_dot(vertex_normal, light_dir);
-                        }
-
-                        const fix16_vec3_t * const intensity =
-                            (const fix16_vec3_t *)f;
-
-                        fix16_vec3_t result;
-
-                        fix16_mat33_vec3_mul(&__state.light->color_matrix, intensity, &result);
-
-                        const uint16_t r = ((result.x >> 16) & 0x001F) + 16;
-                        const uint16_t g = ((result.y >> 11) & 0x03E0) + 16;
-                        const uint16_t b = ((result.z >>  6) & 0x7C00) + 16;
+                        /* Avoid shifting to the right by 16, then back up by 5
+                         * (green) and 10 (blue) */
+                        const uint16_t r = (intensity.x >> 16) & 0x001F;
+                        const uint16_t g = (intensity.y >> 11) & 0x03E0;
+                        const uint16_t b = (intensity.z >>  6) & 0x7C00;
 
                         gst->colors[v].raw = 0x8000 | b | g | r;
                 }

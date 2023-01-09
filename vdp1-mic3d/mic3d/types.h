@@ -6,6 +6,12 @@
 #include <fix16.h>
 #include <vdp1.h>
 
+typedef enum render_flags {
+        RENDER_FLAGS_NONE     = 0,
+        RENDER_FLAGS_LIGHTING = 1 << 0,
+        RENDER_FLAGS_ALL      = RENDER_FLAGS_LIGHTING
+} render_flags_t;
+
 typedef struct {
         fix16_vec3_t normal;
 

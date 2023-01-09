@@ -18,7 +18,10 @@ typedef struct light {
         fix16_mat33_t light_matrix;
         /* Color matrix represents each light color (column vectors) */
         fix16_mat33_t color_matrix;
-        bool light_enabled[LIGHT_COUNT];
+        /* Count of enabled lights */
+        uint32_t light_count;
+
+        /* Count of used GSTs */
         uint32_t gst_count;
 } __aligned(4) light_t;
 

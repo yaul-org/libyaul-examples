@@ -103,6 +103,7 @@ main(void)
                 render_start();
 
                 render_mesh_start(&mesh_torus);
+                render_enable(RENDER_FLAGS_LIGHTING);
                 matrix_push();
                 matrix_x_translate(FIX16(-15));
                 matrix_x_rotate(theta);
@@ -114,6 +115,7 @@ main(void)
                 matrix_pop();
 
                 render_mesh_start(&mesh_torus2);
+                render_disable(RENDER_FLAGS_LIGHTING);
                 matrix_push();
                 matrix_y_rotate(theta);
                 matrix_x_rotate(theta);
@@ -123,6 +125,7 @@ main(void)
                 matrix_pop();
 
                 render_mesh_start(&mesh_torus3);
+                render_enable(RENDER_FLAGS_LIGHTING);
                 matrix_push();
                 matrix_x_translate(FIX16(15));
                 matrix_z_rotate(theta);
