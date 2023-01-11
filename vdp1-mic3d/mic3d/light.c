@@ -88,8 +88,7 @@ __light_mesh_transform(void)
         fix16_mat33_mul(&__state.light->color_matrix, &world_light_matrix, &intensity_matrix);
 
         for (uint32_t i = 0; i < render_mesh->polygons_count; i++) {
-                polygon_meta_t * const meta_polygon =
-                    &render_mesh->out_polygons[i];
+                polygon_meta_t * const meta_polygon = &render_mesh->meta_polygons[i];
 
                 attribute_t * const attribute = &meta_polygon->attribute;
 
@@ -100,7 +99,7 @@ __light_mesh_transform(void)
                     __light_shading_slot_calculate(gst_slot);
 
                 const polygon_t * const polygon =
-                    &render_mesh->in_polygons[meta_polygon->index];
+                    &render_mesh->mesh->polygons[meta_polygon->index];
 
                 for (uint32_t v = 0; v < 4; v++) {
                         const fix16_vec3_t * const vertex_normal =

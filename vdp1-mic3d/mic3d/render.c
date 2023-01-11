@@ -28,18 +28,17 @@
 #define MIN_FOV_ANGLE DEG2ANGLE( 20.0f)
 #define MAX_FOV_ANGLE DEG2ANGLE(120.0f)
 
-static void _view_transform(render_mesh_t *render_mesh);
-static void _projection_transform(render_mesh_t *render_mesh);
+static void _transform(render_mesh_t *render_mesh);
 
-static int32_t _depth_calculate(const polygon_meta_t *meta_polygon, const fix16_vec3_t *view_points[]);
-static fix16_t _depth_min_calculate(const fix16_vec3_t *view_points[]);
-static fix16_t _depth_max_calculate(const fix16_vec3_t *view_points[]);
-static fix16_t _depth_center_calculate(const fix16_vec3_t *view_points[]);
+static int32_t _depth_calculate(const polygon_meta_t *meta_polygon, const fix16_t *view_points);
+static fix16_t _depth_min_calculate(const fix16_t *view_points);
+static fix16_t _depth_max_calculate(const fix16_t *view_points);
+static fix16_t _depth_center_calculate(const fix16_t *view_points);
 
 static bool _backface_cull_test(const int16_vec2_t *screen_points[]);
 
-static void _clip_flags_calculate(const fix16_vec3_t *view_points[], const int16_vec2_t *screen_points[], clip_flags_t *or_flags, clip_flags_t *and_flags);
-static void _clip_flags_nf_calculate(const fix16_vec3_t *view_point, clip_flags_t *or_flags, clip_flags_t *and_flags);
+static void _clip_flags_calculate(const fix16_t *z_value, const int16_vec2_t *screen_points[], clip_flags_t *or_flags, clip_flags_t *and_flags);
+static void _clip_flags_nf_calculate(fix16_t z, clip_flags_t *or_flags, clip_flags_t *and_flags);
 static void _clip_flags_lrtb_calculate(const int16_vec2_t *screen_point, clip_flags_t *or_flags, clip_flags_t *and_flags);
 
 static void _render_single(const sort_single_t *single);
@@ -65,19 +64,19 @@ _render_meshes_alloc(void)
 void
 __render_init(void)
 {
-        extern fix16_vec3_t __pool_points[];
+        extern fix16_t __pool_z_values[];
         extern int16_vec2_t __pool_screen_points[];
         extern fix16_t __pool_depth_values[];
-        extern polygon_meta_t __pool_polygons[];
+        extern polygon_meta_t __pool_meta_polygons[];
 
         extern vdp1_cmdt_t __pool_cmdts[];
 
         static render_mesh_t _pool_render_meshes[16];
 
-        __state.render->points_pool = __pool_points;
+        __state.render->z_values_pool = __pool_z_values;
         __state.render->screen_points_pool = __pool_screen_points;
         __state.render->depth_values_pool = __pool_depth_values;
-        __state.render->polygons_pool = __pool_polygons;
+        __state.render->meta_polygons_pool = __pool_meta_polygons;
         __state.render->cmdts_pool = __pool_cmdts;
         __state.render->render_meshes_pool = _pool_render_meshes;
 
@@ -122,13 +121,11 @@ render_mesh_start(const mesh_t *mesh)
 
         render_mesh->mesh = mesh;
 
-        render_mesh->in_points = mesh->points;
-        render_mesh->out_points = &__state.render->points_pool[__state.render->total_points_count];
+        render_mesh->z_values = &__state.render->z_values_pool[__state.render->total_points_count];
         render_mesh->screen_points = &__state.render->screen_points_pool[__state.render->total_points_count];
         render_mesh->depth_values = &__state.render->depth_values_pool[__state.render->total_points_count];
 
-        render_mesh->in_polygons = mesh->polygons;
-        render_mesh->out_polygons = &__state.render->polygons_pool[__state.render->total_polygons_count];
+        render_mesh->meta_polygons = &__state.render->meta_polygons_pool[__state.render->total_polygons_count];
 
         render_mesh->polygons_count = 0;
 
@@ -157,22 +154,21 @@ render_mesh_transform(void)
         render_mesh_t * const render_mesh =
             __state.render->render_mesh;
 
-        fix16_vec3_t * const out_points = render_mesh->out_points;
+        fix16_t * const z_values = render_mesh->z_values;
         int16_vec2_t * const screen_points = render_mesh->screen_points;
 
-        _view_transform(render_mesh);
-        _projection_transform(render_mesh);
+        _transform(render_mesh);
 
-        const polygon_t * const in_polygons = render_mesh->in_polygons;
-        polygon_meta_t * const out_polygons = render_mesh->out_polygons;
+        const polygon_t * const polygons = render_mesh->mesh->polygons;
+        polygon_meta_t * const meta_polygons = render_mesh->meta_polygons;
 
-        polygon_meta_t *out_polygon;
-        out_polygon = out_polygons;
+        polygon_meta_t *meta_polygon;
+        meta_polygon = meta_polygons;
 
         for (uint32_t i = 0; i < render_mesh->mesh->polygons_count; i++) {
                 attribute_t attribute = render_mesh->mesh->attributes[i];
 
-                const polygon_t * const polygon = &in_polygons[i];
+                const polygon_t * const polygon = &polygons[i];
 
                 const int16_vec2_t * polygon_screen_points[] = {
                         &screen_points[polygon->p0],
@@ -187,17 +183,17 @@ render_mesh_transform(void)
                         }
                 }
 
-                const fix16_vec3_t * polygon_view_points[] = {
-                        &out_points[polygon->p0],
-                        &out_points[polygon->p1],
-                        &out_points[polygon->p2],
-                        &out_points[polygon->p3]
+                const fix16_t polygon_z_values[] = {
+                        z_values[polygon->p0],
+                        z_values[polygon->p1],
+                        z_values[polygon->p2],
+                        z_values[polygon->p3]
                 };
 
                 clip_flags_t or_flags;
                 clip_flags_t and_flags;
 
-                _clip_flags_calculate(polygon_view_points, polygon_screen_points, &or_flags, &and_flags);
+                _clip_flags_calculate(polygon_z_values, polygon_screen_points, &or_flags, &and_flags);
 
                 if (and_flags != CLIP_FLAGS_NONE) {
                         continue;
@@ -207,17 +203,17 @@ render_mesh_transform(void)
                  * should help with performance */
                 attribute.draw_mode.pre_clipping_disable = (or_flags == CLIP_FLAGS_NONE);
 
-                out_polygon->index = i;
-                out_polygon->attribute = attribute;
+                meta_polygon->index = i;
+                meta_polygon->attribute = attribute;
 
-                const int32_t shifted_z = _depth_calculate(out_polygon, polygon_view_points);
+                const int32_t shifted_z = _depth_calculate(meta_polygon, polygon_z_values);
 
-                __sort_insert(render_mesh, out_polygon, shifted_z);
+                __sort_insert(render_mesh, meta_polygon, shifted_z);
 
-                out_polygon++;
+                meta_polygon++;
         }
 
-        render_mesh->polygons_count = out_polygon - out_polygons;
+        render_mesh->polygons_count = meta_polygon - meta_polygons;
 
         __light_mesh_transform();
 
@@ -258,7 +254,7 @@ render(uint32_t cmdt_index)
 }
 
 static void
-_view_transform(render_mesh_t *render_mesh)
+_transform(render_mesh_t *render_mesh)
 {
         const fix16_mat43_t * const world_matrix = matrix_top();
 
@@ -274,34 +270,22 @@ _view_transform(render_mesh_t *render_mesh)
         const fix16_vec3_t * const m1 = (const fix16_vec3_t *)&matrix.row[1];
         const fix16_vec3_t * const m2 = (const fix16_vec3_t *)&matrix.row[2];
 
-        const fix16_vec3_t * const in_points = render_mesh->in_points;
-        fix16_vec3_t * const out_points = render_mesh->out_points;
-
-        for (uint32_t i = 0; i < render_mesh->mesh->points_count; i++) {
-                out_points[i].x = fix16_vec3_dot(m0, &in_points[i]) + matrix.frow[0][3];
-                out_points[i].y = fix16_vec3_dot(m1, &in_points[i]) + matrix.frow[1][3];
-                out_points[i].z = fix16_vec3_dot(m2, &in_points[i]) + matrix.frow[2][3];
-        }
-
-        render_mesh->in_points = out_points;
-}
-
-static void
-_projection_transform(render_mesh_t *render_mesh)
-{
-        fix16_vec3_t * const out_points = render_mesh->out_points;
+        const fix16_vec3_t * const points = render_mesh->mesh->points;
         int16_vec2_t * const screen_points = render_mesh->screen_points;
+        fix16_t * const z_values = render_mesh->z_values;
         fix16_t * const depth_values = render_mesh->depth_values;
 
         for (uint32_t i = 0; i < render_mesh->mesh->points_count; i++) {
-                depth_values[i] = fix16_div(__state.render->view_distance, out_points[i].z);
-                screen_points[i].x = fix16_int32_mul(depth_values[i], out_points[i].x);
-                screen_points[i].y = fix16_int32_mul(depth_values[i], fix16_mul(SCREEN_RATIO, out_points[i].y));
+                z_values[i] = fix16_vec3_dot(m2, &points[i]) + matrix.frow[2][3];
+                depth_values[i] = fix16_div(__state.render->view_distance, z_values[i]);
+
+                screen_points[i].x = fix16_int32_mul(depth_values[i], fix16_vec3_dot(m0, &points[i]) + matrix.frow[0][3]);
+                screen_points[i].y = fix16_int32_mul(depth_values[i], fix16_vec3_dot(m1, &points[i]) + matrix.frow[1][3]);
         }
 }
 
 static int32_t
-_depth_calculate(const polygon_meta_t *meta_polygon, const fix16_vec3_t *view_points[])
+_depth_calculate(const polygon_meta_t *meta_polygon, const fix16_t *view_points)
 {
         fix16_t z;
         z = FIX16_ZERO;
@@ -323,47 +307,47 @@ _depth_calculate(const polygon_meta_t *meta_polygon, const fix16_vec3_t *view_po
 }
 
 static fix16_t
-_depth_min_calculate(const fix16_vec3_t *view_points[])
+_depth_min_calculate(const fix16_t *view_points)
 {
         fix16_t z;
-        z = view_points[0]->z;
+        z = view_points[0];
 
-        z = (view_points[1]->z < z) ? view_points[1]->z : z;
-        z = (view_points[2]->z < z) ? view_points[2]->z : z;
-        z = (view_points[3]->z < z) ? view_points[3]->z : z;
+        z = (view_points[1] < z) ? view_points[1] : z;
+        z = (view_points[2] < z) ? view_points[2] : z;
+        z = (view_points[3] < z) ? view_points[3] : z;
 
         return z;
 }
 
 static fix16_t
-_depth_max_calculate(const fix16_vec3_t *view_points[])
+_depth_max_calculate(const fix16_t *view_points)
 {
         fix16_t z;
-        z = view_points[0]->z;
+        z = view_points[0];
 
-        z = (view_points[1]->z > z) ? view_points[1]->z : z;
-        z = (view_points[2]->z > z) ? view_points[2]->z : z;
-        z = (view_points[3]->z > z) ? view_points[3]->z : z;
+        z = (view_points[1] > z) ? view_points[1] : z;
+        z = (view_points[2] > z) ? view_points[2] : z;
+        z = (view_points[3] > z) ? view_points[3] : z;
 
         return z;
 }
 
 static fix16_t
-_depth_center_calculate(const fix16_vec3_t *view_points[])
+_depth_center_calculate(const fix16_t *view_points)
 {
-        return ((view_points[0]->z + view_points[1]->z + view_points[2]->z + view_points[3]->z) >> 2);
+        return ((view_points[0] + view_points[1] + view_points[2] + view_points[3]) >> 2);
 }
 
 static void
-_clip_flags_nf_calculate(const fix16_vec3_t *view_point, clip_flags_t *or_flags, clip_flags_t *and_flags)
+_clip_flags_nf_calculate(fix16_t z, clip_flags_t *or_flags, clip_flags_t *and_flags)
 {
         clip_flags_t clip_flag;
 
-        clip_flag = (view_point->z < FIX16(DEPTH_NEAR)) << CLIP_BIT_NEAR;
+        clip_flag = (z < FIX16(DEPTH_NEAR)) << CLIP_BIT_NEAR;
         *or_flags |= clip_flag;
         *and_flags &= clip_flag;
 
-        clip_flag = (view_point->z > FIX16(DEPTH_FAR)) << CLIP_BIT_FAR;
+        clip_flag = (z > FIX16(DEPTH_FAR)) << CLIP_BIT_FAR;
         *or_flags |= clip_flag;
         *and_flags &= clip_flag;
 }
@@ -411,15 +395,15 @@ _backface_cull_test(const int16_vec2_t *screen_points[])
 }
 
 static void
-_clip_flags_calculate(const fix16_vec3_t *view_points[], const int16_vec2_t *screen_points[], clip_flags_t *or_flags, clip_flags_t *and_flags)
+_clip_flags_calculate(const fix16_t *z_values, const int16_vec2_t *screen_points[], clip_flags_t *or_flags, clip_flags_t *and_flags)
 {
         *or_flags = CLIP_FLAGS_NONE;
         *and_flags = CLIP_FLAGS_NONE;
 
-        _clip_flags_nf_calculate(view_points[0], or_flags, and_flags);
-        _clip_flags_nf_calculate(view_points[1], or_flags, and_flags);
-        _clip_flags_nf_calculate(view_points[2], or_flags, and_flags);
-        _clip_flags_nf_calculate(view_points[3], or_flags, and_flags);
+        _clip_flags_nf_calculate(z_values[0], or_flags, and_flags);
+        _clip_flags_nf_calculate(z_values[1], or_flags, and_flags);
+        _clip_flags_nf_calculate(z_values[2], or_flags, and_flags);
+        _clip_flags_nf_calculate(z_values[3], or_flags, and_flags);
 
         if (and_flags == CLIP_FLAGS_NONE) {
                 _clip_flags_lrtb_calculate(screen_points[0], or_flags, and_flags);
@@ -456,7 +440,7 @@ _render_single(const sort_single_t *single)
         cmdt->cmd_colr = attribute.palette.raw;
 
         const polygon_t * const polygon =
-            &render_mesh->in_polygons[meta_polygon->index];
+            &render_mesh->mesh->polygons[meta_polygon->index];
 
         const int16_vec2_t * const screen_points = render_mesh->screen_points;
 
