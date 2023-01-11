@@ -30,11 +30,11 @@
 
 static void _view_transform(render_mesh_t *render_mesh);
 static void _projection_transform(render_mesh_t *render_mesh);
-static void _sort(void);
 
-static fix16_t _depth_min_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3);
-static fix16_t _depth_max_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3);
-static fix16_t _depth_center_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3);
+static int32_t _depth_calculate(const polygon_meta_t *meta_polygon, const fix16_vec3_t *view_points[]);
+static fix16_t _depth_min_calculate(const fix16_vec3_t *view_points[]);
+static fix16_t _depth_max_calculate(const fix16_vec3_t *view_points[]);
+static fix16_t _depth_center_calculate(const fix16_vec3_t *view_points[]);
 
 static bool _backface_cull_test(const int16_vec2_t *screen_points[]);
 
@@ -147,7 +147,6 @@ render_perspective_set(angle_t fov_angle)
         const fix16_t tan = fix16_tan(hfov_angle);
 
         __state.render->view_distance = fix16_mul(screen_scale, tan);
-
 }
 
 void
@@ -211,14 +210,16 @@ render_mesh_transform(void)
                 out_polygon->index = i;
                 out_polygon->attribute = attribute;
 
+                const int32_t shifted_z = _depth_calculate(out_polygon, polygon_view_points);
+
+                __sort_insert(render_mesh, out_polygon, shifted_z);
+
                 out_polygon++;
         }
 
         render_mesh->polygons_count = out_polygon - out_polygons;
 
         __light_mesh_transform();
-
-        _sort();
 
         __state.render->total_polygons_count += render_mesh->polygons_count;
 
@@ -299,80 +300,58 @@ _projection_transform(render_mesh_t *render_mesh)
         }
 }
 
-static void
-_sort(void)
-{
-        render_mesh_t * const render_mesh =
-            __state.render->render_mesh;
-
-        const fix16_vec3_t * const out_points = render_mesh->out_points;
-
-        for (uint32_t i = 0; i < render_mesh->polygons_count; i++) {
-                const polygon_meta_t * const meta_polygon = &render_mesh->out_polygons[i];
-
-                const polygon_t * const polygon =
-                    &render_mesh->in_polygons[meta_polygon->index];
-
-                const fix16_t p0 = out_points[polygon->p0].z;
-                const fix16_t p1 = out_points[polygon->p1].z;
-                const fix16_t p2 = out_points[polygon->p2].z;
-                const fix16_t p3 = out_points[polygon->p3].z;
-
-                fix16_t z;
-                z = FIX16_ZERO;
-
-                switch (meta_polygon->attribute.control.sort_type) {
-                default:
-                case SORT_TYPE_CENTER:
-                        z = _depth_center_calculate(p0, p1, p2, p3);
-                        break;
-                case SORT_TYPE_MIN:
-                        z = _depth_min_calculate(p0, p1, p2, p3);
-                        break;
-                case SORT_TYPE_MAX:
-                        z = _depth_max_calculate(p0, p1, p2, p3);
-                        break;
-                case SORT_TYPE_BFR:
-                        continue;
-                }
-
-                /* Dividing by 64 was pulled by the PSXSPX documents */
-                const int32_t shifted_z = fix16_int32_mul(z, FIX16(SORT_DEPTH / (float)DEPTH_FAR));
-
-                __sort_insert(render_mesh, meta_polygon, shifted_z);
-        }
-}
-
 static int32_t
-_depth_min_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3)
+_depth_calculate(const polygon_meta_t *meta_polygon, const fix16_vec3_t *view_points[])
 {
         fix16_t z;
-        z = p0;
+        z = FIX16_ZERO;
 
-        z = (p1 < z) ? p1 : z;
-        z = (p2 < z) ? p2 : z;
-        z = (p3 < z) ? p3 : z;
+        switch (meta_polygon->attribute.control.sort_type) {
+        default:
+        case SORT_TYPE_CENTER:
+                z = _depth_center_calculate(view_points);
+                break;
+        case SORT_TYPE_MIN:
+                z = _depth_min_calculate(view_points);
+                break;
+        case SORT_TYPE_MAX:
+                z = _depth_max_calculate(view_points);
+                break;
+        }
+
+        return fix16_int32_mul(z, FIX16(SORT_DEPTH / (float)DEPTH_FAR));
+}
+
+static fix16_t
+_depth_min_calculate(const fix16_vec3_t *view_points[])
+{
+        fix16_t z;
+        z = view_points[0]->z;
+
+        z = (view_points[1]->z < z) ? view_points[1]->z : z;
+        z = (view_points[2]->z < z) ? view_points[2]->z : z;
+        z = (view_points[3]->z < z) ? view_points[3]->z : z;
 
         return z;
 }
 
 static fix16_t
-_depth_max_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3)
+_depth_max_calculate(const fix16_vec3_t *view_points[])
 {
         fix16_t z;
-        z = p0;
+        z = view_points[0]->z;
 
-        z = (p1 > z) ? p1 : z;
-        z = (p2 > z) ? p2 : z;
-        z = (p3 > z) ? p3 : z;
+        z = (view_points[1]->z > z) ? view_points[1]->z : z;
+        z = (view_points[2]->z > z) ? view_points[2]->z : z;
+        z = (view_points[3]->z > z) ? view_points[3]->z : z;
 
-        return fix16_int32_to(z);
+        return z;
 }
 
 static fix16_t
-_depth_center_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3)
+_depth_center_calculate(const fix16_vec3_t *view_points[])
 {
-        return ((p0 + p1 + p2 + p3) >> 2);
+        return ((view_points[0]->z + view_points[1]->z + view_points[2]->z + view_points[3]->z) >> 2);
 }
 
 static void
