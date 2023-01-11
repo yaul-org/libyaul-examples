@@ -78,8 +78,6 @@ main(void)
 
         _palette_load(0, 0, &palette_baku);
 
-        /* light_direction_set(); /\* XXX: Just used to trigger gouraud shading table put *\/ */
-
         camera_t camera __unused;
 
         camera.position.x = FIX16(  0.0f);
