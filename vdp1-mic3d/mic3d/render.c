@@ -11,12 +11,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <dbgio.h>
+
 #include <cpu/registers.h>
 #include <cpu/divu.h>
 
 #include "internal.h"
 
-#define SCREEN_RATIO FIX16(SCREEN_WIDTH / (float)SCREEN_HEIGHT)
+#define SCREEN_RATIO       FIX16(SCREEN_WIDTH / (float)SCREEN_HEIGHT)
+
+#define SCREEN_CLIP_LEFT   (-SCREEN_WIDTH / 2)
+#define SCREEN_CLIP_RIGHT  (-SCREEN_CLIP_LEFT)
+#define SCREEN_CLIP_TOP    (-SCREEN_HEIGHT / 2)
+#define SCREEN_CLIP_BOTTOM (-SCREEN_CLIP_TOP)
 
 #define MIN_FOV_ANGLE DEG2ANGLE( 20.0f)
 #define MAX_FOV_ANGLE DEG2ANGLE(120.0f)
@@ -29,10 +36,11 @@ static fix16_t _depth_min_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t 
 static fix16_t _depth_max_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3);
 static fix16_t _depth_center_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3);
 
-static bool _backface_cull_test(const int16_vec2_t *p0, const int16_vec2_t *p1, const int16_vec2_t *p2);
-static bool _frustrum_cull_test(const clip_flags_t *clip_flags);
+static bool _backface_cull_test(const int16_vec2_t *screen_points[]);
 
-static clip_flags_t _clip_flags_calculate(const fix16_vec3_t *point);
+static void _clip_flags_calculate(const fix16_vec3_t *view_points[], const int16_vec2_t *screen_points[], clip_flags_t *or_flags, clip_flags_t *and_flags);
+static void _clip_flags_nf_calculate(const fix16_vec3_t *view_point, clip_flags_t *or_flags, clip_flags_t *and_flags);
+static void _clip_flags_lrtb_calculate(const int16_vec2_t *screen_point, clip_flags_t *or_flags, clip_flags_t *and_flags);
 
 static void _render_single(const sort_single_t *single);
 
@@ -76,6 +84,8 @@ __render_init(void)
         __state.render->render_flags = RENDER_FLAGS_NONE;
 
         render_start();
+
+        __perf_counter_init(&_transform_pc);
 }
 
 void
@@ -91,8 +101,6 @@ render_start(void)
         render_perspective_set(DEG2ANGLE(90.0f));
 
         __sort_start();
-
-        __perf_counter_init(&_transform_pc);
 }
 
 void
@@ -135,9 +143,11 @@ render_perspective_set(angle_t fov_angle)
         fov_angle = clamp(fov_angle, MIN_FOV_ANGLE, MAX_FOV_ANGLE);
 
         const angle_t hfov_angle = fov_angle >> 1;
+        const fix16_t screen_scale = FIX16(0.5f * (SCREEN_WIDTH - 1));
+        const fix16_t tan = fix16_tan(hfov_angle);
 
-        __state.render->view_distance = fix16_mul(FIX16(0.5f * (SCREEN_WIDTH - 1)), fix16_tan(hfov_angle));
-        __state.render->clip_factor = fix16_div(FIX16((float)SCREEN_WIDTH * 0.5f), __state.render->view_distance);
+        __state.render->view_distance = fix16_mul(screen_scale, tan);
+
 }
 
 void
@@ -163,37 +173,40 @@ render_mesh_transform(void)
         for (uint32_t i = 0; i < render_mesh->mesh->polygons_count; i++) {
                 attribute_t attribute = render_mesh->mesh->attributes[i];
 
-                if (attribute.control.plane_type != PLANE_TYPE_DOUBLE) {
-                        const int16_vec2_t * const screen_p0 = &screen_points[in_polygons[i].p0];
-                        const int16_vec2_t * const screen_p1 = &screen_points[in_polygons[i].p1];
-                        const int16_vec2_t * const screen_p2 = &screen_points[in_polygons[i].p2];
+                const polygon_t * const polygon = &in_polygons[i];
 
-                        if ((_backface_cull_test(screen_p0, screen_p1, screen_p2))) {
+                const int16_vec2_t * polygon_screen_points[] = {
+                        &screen_points[polygon->p0],
+                        &screen_points[polygon->p1],
+                        &screen_points[polygon->p2],
+                        &screen_points[polygon->p3]
+                };
+
+                if (attribute.control.plane_type != PLANE_TYPE_DOUBLE) {
+                        if ((_backface_cull_test(polygon_screen_points))) {
                                 continue;
                         }
                 }
 
-                const fix16_vec3_t * const view_p0 = &out_points[in_polygons[i].p0];
-                const fix16_vec3_t * const view_p1 = &out_points[in_polygons[i].p1];
-                const fix16_vec3_t * const view_p2 = &out_points[in_polygons[i].p2];
-                const fix16_vec3_t * const view_p3 = &out_points[in_polygons[i].p3];
+                const fix16_vec3_t * polygon_view_points[] = {
+                        &out_points[polygon->p0],
+                        &out_points[polygon->p1],
+                        &out_points[polygon->p2],
+                        &out_points[polygon->p3]
+                };
 
-                clip_flags_t clip_flags[4];
+                clip_flags_t or_flags;
+                clip_flags_t and_flags;
 
-                clip_flags[0] = _clip_flags_calculate(view_p0);
-                clip_flags[1] = _clip_flags_calculate(view_p1);
-                clip_flags[2] = _clip_flags_calculate(view_p2);
-                clip_flags[3] = _clip_flags_calculate(view_p3);
+                _clip_flags_calculate(polygon_view_points, polygon_screen_points, &or_flags, &and_flags);
 
-                if ((_frustrum_cull_test(clip_flags))) {
+                if (and_flags != CLIP_FLAGS_NONE) {
                         continue;
                 }
 
                 /* Since no clip flags are set, disable pre-clipping. This
                  * should help with performance */
-                if ((clip_flags[0] | clip_flags[1] | clip_flags[2] | clip_flags[3]) == CLIP_FLAGS_NONE) {
-                        attribute.draw_mode.pre_clipping_disable = true;
-                }
+                attribute.draw_mode.pre_clipping_disable = (or_flags == CLIP_FLAGS_NONE);
 
                 out_polygon->index = i;
                 out_polygon->attribute = attribute;
@@ -210,6 +223,11 @@ render_mesh_transform(void)
         __state.render->total_polygons_count += render_mesh->polygons_count;
 
         __perf_counter_end(&_transform_pc);
+
+        char buffer[32];
+        __perf_str(_transform_pc.ticks, buffer);
+
+        dbgio_printf("ticks: %5lu, %5lu, %sms\n", _transform_pc.ticks, _transform_pc.max_ticks, buffer);
 }
 
 void
@@ -357,54 +375,55 @@ _depth_center_calculate(fix16_t p0, fix16_t p1, fix16_t p2, fix16_t p3)
         return ((p0 + p1 + p2 + p3) >> 2);
 }
 
-static clip_flags_t
-_clip_flags_calculate(const fix16_vec3_t *point)
+static void
+_clip_flags_nf_calculate(const fix16_vec3_t *view_point, clip_flags_t *or_flags, clip_flags_t *and_flags)
 {
-        clip_flags_t clip_flags;
-        clip_flags = CLIP_FLAGS_NONE;
+        clip_flags_t clip_flag;
 
-        if (point->z < FIX16(DEPTH_NEAR)) {
-                clip_flags |= CLIP_FLAGS_NEAR;
-        } else if (point->z > FIX16(DEPTH_FAR)) {
-                clip_flags |= CLIP_FLAGS_FAR;
-        }
+        clip_flag = (view_point->z < FIX16(DEPTH_NEAR)) << CLIP_BIT_NEAR;
+        *or_flags |= clip_flag;
+        *and_flags &= clip_flag;
 
-        /* One multiplication and a comparison is faster than a dot product */
+        clip_flag = (view_point->z > FIX16(DEPTH_FAR)) << CLIP_BIT_FAR;
+        *or_flags |= clip_flag;
+        *and_flags &= clip_flag;
+}
 
-        /* This is still confusing to me. If FOV=90, then the slope of the right
-         * plane (on XZ-axis) is 1. Taking into account a FOV less than 90, we
-         * must take tan(theta/2) into account (half-FOV). So:
-         * X=tan(theta/2)*Z */
-        const fix16_t factor = fix16_mul(__state.render->clip_factor, point->z);
-        const fix16_t neg_factor = -factor;
+static void
+_clip_flags_lrtb_calculate(const int16_vec2_t *screen_point, clip_flags_t *or_flags, clip_flags_t *and_flags)
+{
+        clip_flags_t clip_flag;
 
-        if (point->x > factor) {
-                clip_flags |= CLIP_FLAGS_RIGHT;
-        } else if (point->x < neg_factor) {
-                clip_flags |= CLIP_FLAGS_LEFT;
-        }
+        clip_flag = (screen_point->x < SCREEN_CLIP_LEFT) << CLIP_BIT_LEFT;
+        *or_flags |= clip_flag;
+        *and_flags &= clip_flag;
 
-        /* Remember, -Y up so this is why clip flags are reversed */
-        if (point->y > factor) {
-                clip_flags |= CLIP_FLAGS_BOTTOM;
-        } else if (point->y < neg_factor) {
-                clip_flags |= CLIP_FLAGS_TOP;
-        }
+        clip_flag = (screen_point->x > SCREEN_CLIP_RIGHT) << CLIP_BIT_RIGHT;
+        *or_flags |= clip_flag;
+        *and_flags &= clip_flag;
 
-        return clip_flags;
+        /* Remember, -Y up so this is why the top and bottom clip flags are
+         * reversed */
+        clip_flag = (screen_point->y < SCREEN_CLIP_TOP) << CLIP_BIT_TOP;
+        *or_flags |= clip_flag;
+        *and_flags &= clip_flag;
+
+        clip_flag = (screen_point->y > SCREEN_CLIP_BOTTOM) << CLIP_BIT_BOTTOM;
+        *or_flags |= clip_flag;
+        *and_flags &= clip_flag;
 }
 
 static bool
-_backface_cull_test(const int16_vec2_t *p0, const int16_vec2_t *p1, const int16_vec2_t *p2)
+_backface_cull_test(const int16_vec2_t *screen_points[])
 {
         const int32_vec2_t a = {
-                .x = p2->x - p0->x,
-                .y = p2->y - p0->y
+                .x = screen_points[2]->x - screen_points[0]->x,
+                .y = screen_points[2]->y - screen_points[0]->y
         };
 
         const int32_vec2_t b = {
-                .x = p1->x - p0->x,
-                .y = p1->y - p0->y
+                .x = screen_points[1]->x - screen_points[0]->x,
+                .y = screen_points[1]->y - screen_points[0]->y
         };
 
         const int32_t z = (a.x * b.y) - (a.y * b.x);
@@ -412,10 +431,23 @@ _backface_cull_test(const int16_vec2_t *p0, const int16_vec2_t *p1, const int16_
         return (z < 0);
 }
 
-static bool
-_frustrum_cull_test(const clip_flags_t *clip_flags)
+static void
+_clip_flags_calculate(const fix16_vec3_t *view_points[], const int16_vec2_t *screen_points[], clip_flags_t *or_flags, clip_flags_t *and_flags)
 {
-        return ((clip_flags[0] & clip_flags[1] & clip_flags[2] & clip_flags[3]) != CLIP_FLAGS_NONE);
+        *or_flags = CLIP_FLAGS_NONE;
+        *and_flags = CLIP_FLAGS_NONE;
+
+        _clip_flags_nf_calculate(view_points[0], or_flags, and_flags);
+        _clip_flags_nf_calculate(view_points[1], or_flags, and_flags);
+        _clip_flags_nf_calculate(view_points[2], or_flags, and_flags);
+        _clip_flags_nf_calculate(view_points[3], or_flags, and_flags);
+
+        if (and_flags == CLIP_FLAGS_NONE) {
+                _clip_flags_lrtb_calculate(screen_points[0], or_flags, and_flags);
+                _clip_flags_lrtb_calculate(screen_points[1], or_flags, and_flags);
+                _clip_flags_lrtb_calculate(screen_points[2], or_flags, and_flags);
+                _clip_flags_lrtb_calculate(screen_points[3], or_flags, and_flags);
+        }
 }
 
 static void

@@ -10,14 +10,22 @@
 #define RENDER_FLAG_TEST(x) ((__state.render->render_flags & __CONCAT(RENDER_FLAGS_, x)) == __CONCAT(RENDER_FLAGS_, x))
 
 typedef enum {
+        CLIP_BIT_NEAR   = 0,
+        CLIP_BIT_FAR    = 1,
+        CLIP_BIT_LEFT   = 2,
+        CLIP_BIT_RIGHT  = 3,
+        CLIP_BIT_TOP    = 4,
+        CLIP_BIT_BOTTOM = 5
+} clip_bitmap_t;
+
+typedef enum {
         CLIP_FLAGS_NONE   = 0,
-        CLIP_FLAGS_NEAR   = 1 << 0,
-        CLIP_FLAGS_FAR    = 1 << 1,
-        CLIP_FLAGS_LEFT   = 1 << 2,
-        CLIP_FLAGS_RIGHT  = 1 << 3,
-        CLIP_FLAGS_TOP    = 1 << 4,
-        CLIP_FLAGS_BOTTOM = 1 << 5,
-        CLIP_FLAGS_SIDE   = 1 << 6
+        CLIP_FLAGS_NEAR   = 1 << CLIP_BIT_NEAR,
+        CLIP_FLAGS_FAR    = 1 << CLIP_BIT_FAR,
+        CLIP_FLAGS_LEFT   = 1 << CLIP_BIT_LEFT,
+        CLIP_FLAGS_RIGHT  = 1 << CLIP_BIT_RIGHT,
+        CLIP_FLAGS_TOP    = 1 << CLIP_BIT_TOP,
+        CLIP_FLAGS_BOTTOM = 1 << CLIP_BIT_BOTTOM
 } clip_flags_t;
 
 typedef struct {
@@ -48,7 +56,6 @@ typedef struct render {
         render_mesh_t *render_meshes_pool;
 
         fix16_t view_distance;
-        fix16_t clip_factor;
 
         render_mesh_t *render_mesh_top;
         render_mesh_t *render_mesh;
