@@ -15,6 +15,7 @@
 
 #include <cpu/registers.h>
 #include <cpu/divu.h>
+#include <cpu/intc.h>
 
 #include "internal.h"
 
@@ -149,6 +150,9 @@ render_perspective_set(angle_t fov_angle)
 void
 render_mesh_transform(void)
 {
+        const uint32_t sr_mask = cpu_intc_mask_get();
+        cpu_intc_mask_set(15);
+
         __perf_counter_start(&_transform_pc);
 
         render_mesh_t * const render_mesh =
@@ -225,6 +229,8 @@ render_mesh_transform(void)
         __perf_str(_transform_pc.ticks, buffer);
 
         dbgio_printf("ticks: %5lu, %5lu, %sms\n", _transform_pc.ticks, _transform_pc.max_ticks, buffer);
+
+        cpu_intc_mask_set(sr_mask);
 }
 
 void

@@ -17,7 +17,7 @@ __perf_init(void)
         cpu_frt_init(CPU_FRT_CLOCK_DIV_8);
         cpu_frt_ovi_set(_frt_ovi_handler);
 
-        cpu_frt_interrupt_priority_set(14);
+        cpu_frt_interrupt_priority_set(15);
 
         cpu_frt_count_set(0);
 
