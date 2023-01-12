@@ -8,7 +8,7 @@
 
 typedef struct sort_single {
         const render_mesh_t *render_mesh;
-        const  polygon_meta_t *polygon;
+        const polygon_meta_t *polygon;
         struct sort_single *next_single;
         unsigned int :32;
 } __aligned(4) sort_single_t;
