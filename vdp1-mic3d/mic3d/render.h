@@ -1,9 +1,13 @@
 #ifndef MIC3D_RENDER_H
 #define MIC3D_RENDER_H
 
+#include <sys/cdefs.h>
+
 #include <fix16.h>
 
 #include "types.h"
+
+#define RENDER_FLAG_TEST(x) ((__state.render->render_flags & __CONCAT(RENDER_FLAGS_, x)) == __CONCAT(RENDER_FLAGS_, x))
 
 typedef enum {
         CLIP_FLAGS_NONE   = 0,
@@ -35,7 +39,7 @@ typedef struct {
         uint32_t polygons_count;
 } __aligned(4) render_mesh_t;
 
-typedef struct {
+typedef struct render {
         fix16_vec3_t *points_pool;
         int16_vec2_t *screen_points_pool;
         fix16_t *depth_values_pool;
@@ -48,6 +52,8 @@ typedef struct {
 
         render_mesh_t *render_mesh_top;
         render_mesh_t *render_mesh;
+
+        render_flags_t render_flags;
 
         vdp1_cmdt_t *cmdts;
         uint32_t total_points_count;

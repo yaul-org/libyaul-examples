@@ -21,7 +21,7 @@ typedef struct {
 
 static_assert(sizeof(sort_list_t) == 4);
 
-typedef struct {
+typedef struct sort {
         sort_single_t *singles_pool;
         sort_list_t *sort_lists_pool;
 

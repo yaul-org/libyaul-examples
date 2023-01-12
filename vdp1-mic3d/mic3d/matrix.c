@@ -1,18 +1,18 @@
 #include <mat_stack.h>
 
-#include "state.h"
+#include "internal.h"
 
-extern fix16_mat_t __pool_matrices[];
+extern fix16_mat43_t __pool_matrices[];
 
 void
 __matrix_init(void)
 {
         mat_stack_init(__state.mat_stack, &__pool_matrices[1], MATRIX_STACK_COUNT - 1);
 
-        fix16_mat_identity(__matrix_view_get());
+        fix16_mat43_identity(__matrix_view_get());
 }
 
-fix16_mat_t *
+fix16_mat43_t *
 __matrix_view_get(void)
 {
         return &__pool_matrices[0];
@@ -36,22 +36,22 @@ matrix_pop(void)
         mat_stack_pop(__state.mat_stack);
 }
 
-fix16_mat_t *
+fix16_mat43_t *
 matrix_top(void)
 {
         return mat_stack_top(__state.mat_stack);
 }
 
 void
-matrix_copy(fix16_mat_t *m0)
+matrix_copy(fix16_mat43_t *m0)
 {
-        fix16_mat_dup(matrix_top(), m0);
+        fix16_mat43_dup(matrix_top(), m0);
 }
 
 void
-matrix_set(const fix16_mat_t *m0)
+matrix_set(const fix16_mat43_t *m0)
 {
-        fix16_mat_dup(m0, matrix_top());
+        fix16_mat43_dup(m0, matrix_top());
 }
 
 void

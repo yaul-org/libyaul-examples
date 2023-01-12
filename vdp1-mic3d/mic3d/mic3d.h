@@ -23,26 +23,25 @@ void mic3d_init(void);
 void camera_lookat(const camera_t *camera);
 
 void render_start(void);
-
+void render_enable(render_flags_t flags);
+void render_disable(render_flags_t flags);
 void render_perspective_set(angle_t fov_angle);
-
 void render_mesh_start(const mesh_t *mesh);
 void render_mesh_transform(void);
-
 void render_process(void);
 void render(uint32_t cmdt_index);
 
-texture_t *tlist_acquire(uint32_t texture_count);
+texture_t *tlist_acquire(uint32_t count);
 void tlist_release(void);
-void tlist_set(texture_t *textures, uint16_t texture_count);
+void tlist_set(texture_t *textures, uint16_t count);
 texture_t *tlist_get(void);
 
 void matrix_push(void);
 void matrix_ptr_push(void);
 void matrix_pop(void);
-fix16_mat_t *matrix_top(void);
-void matrix_copy(fix16_mat_t *m0);
-void matrix_set(const fix16_mat_t *m0);
+fix16_mat43_t *matrix_top(void);
+void matrix_copy(fix16_mat43_t *m0);
+void matrix_set(const fix16_mat43_t *m0);
 void matrix_x_translate(fix16_t x);
 void matrix_y_translate(fix16_t y);
 void matrix_z_translate(fix16_t z);
@@ -52,5 +51,8 @@ void matrix_translation_get(fix16_vec3_t *t);
 void matrix_x_rotate(angle_t angle);
 void matrix_y_rotate(angle_t angle);
 void matrix_z_rotate(angle_t angle);
+
+void light_set(vdp1_gouraud_table_t *gouraud_tables, uint32_t count, vdp1_vram_t vram_base);
+void light_direction_set(void); /* XXX: Remove, change signature */
 
 #endif /* MIC3D_H */

@@ -1,4 +1,4 @@
-#include "state.h"
+#include "internal.h"
 
 static texture_t _default_texture[] = {
         {
@@ -20,11 +20,11 @@ __tlist_init(void)
 }
 
 texture_t *
-tlist_acquire(uint32_t texture_count)
+tlist_acquire(uint32_t count)
 {
         list_t * const list = &__state.tlist->list;
 
-        __list_alloc(list, texture_count);
+        __list_alloc(list, count);
 
         return list->buffer;
 }
@@ -44,9 +44,9 @@ tlist_get(void)
 }
 
 void
-tlist_set(texture_t *textures, uint16_t texture_count)
+tlist_set(texture_t *textures, uint16_t count)
 {
         list_t * const list = &__state.tlist->list;
 
-        __list_set(list, textures, texture_count);
+        __list_set(list, textures, count);
 }

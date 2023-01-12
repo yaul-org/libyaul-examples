@@ -1,4 +1,4 @@
-#include "state.h"
+#include "internal.h"
 
 void
 camera_lookat(const camera_t *camera)
@@ -9,7 +9,7 @@ camera_lookat(const camera_t *camera)
          * right = normalize(cross(forward, up))
          * up = cross(forward, right) */
 
-        fix16_mat_t * const view_matrix = __matrix_view_get();
+        fix16_mat43_t * const view_matrix = __matrix_view_get();
 
         fix16_vec3_t * const forward = (fix16_vec3_t *)&view_matrix->row[2];
 
@@ -30,9 +30,9 @@ camera_lookat(const camera_t *camera)
 }
 
 void
-__camera_view_invert(fix16_mat_t *m0)
+__camera_view_invert(fix16_mat43_t *m0)
 {
-        fix16_mat_t * const view_matrix = __matrix_view_get();
+        fix16_mat43_t * const view_matrix = __matrix_view_get();
 
-        fix16_mat_invert(view_matrix, m0);
+        fix16_mat43_invert(view_matrix, m0);
 }

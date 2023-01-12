@@ -1,4 +1,4 @@
-#include "state.h"
+#include "internal.h"
 
 #define POOL_POINTS_COUNT        POINTS_COUNT
 #define POOL_POLYGONS_COUNT      POLYGON_COUNT
@@ -18,4 +18,4 @@ sort_single_t __pool_sort_singles[POOL_SORT_SINGLES_COUNT] __aligned(16);
 
 vdp1_cmdt_t __pool_cmdts[POOL_CMDTS_COUNT] __aligned(16);
 
-fix16_mat_t __pool_matrices[POOL_MATRIX_STACK_COUNT] __aligned(16);
+fix16_mat43_t __pool_matrices[POOL_MATRIX_STACK_COUNT] __aligned(16);

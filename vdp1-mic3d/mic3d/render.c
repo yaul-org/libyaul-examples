@@ -14,7 +14,7 @@
 #include <cpu/registers.h>
 #include <cpu/divu.h>
 
-#include "state.h"
+#include "internal.h"
 
 #define SCREEN_RATIO FIX16(SCREEN_WIDTH / (float)SCREEN_HEIGHT)
 
@@ -71,6 +71,8 @@ __render_init(void)
         __state.render->cmdts_pool = __pool_cmdts;
         __state.render->render_meshes_pool = _pool_render_meshes;
 
+        __state.render->render_flags = RENDER_FLAGS_NONE;
+
         render_start();
 }
 
@@ -87,6 +89,18 @@ render_start(void)
         render_perspective_set(DEG2ANGLE(90.0f));
 
         __sort_start();
+}
+
+void
+render_enable(render_flags_t flags)
+{
+        __state.render->render_flags |= flags;
+}
+
+void
+render_disable(render_flags_t flags)
+{
+        __state.render->render_flags &= ~flags;
 }
 
 void
@@ -137,8 +151,8 @@ render_mesh_transform(void)
         const polygon_t * const in_polygons = render_mesh->in_polygons;
         polygon_meta_t * const out_polygons = render_mesh->out_polygons;
 
-        uint32_t polygon_index;
-        polygon_index = 0;
+        polygon_meta_t *out_polygon;
+        out_polygon = out_polygons;
 
         for (uint32_t i = 0; i < render_mesh->mesh->polygons_count; i++) {
                 attribute_t attribute = render_mesh->mesh->attributes[i];
@@ -175,13 +189,15 @@ render_mesh_transform(void)
                         attribute.draw_mode.pre_clipping_disable = true;
                 }
 
-                out_polygons[polygon_index].index = i;
-                out_polygons[polygon_index].attribute = attribute;
+                out_polygon->index = i;
+                out_polygon->attribute = attribute;
 
-                polygon_index++;
+                out_polygon++;
         }
 
-        render_mesh->polygons_count = polygon_index;
+        render_mesh->polygons_count = out_polygon - out_polygons;
+
+        __light_mesh_transform();
 
         _sort();
 
@@ -210,20 +226,22 @@ render(uint32_t cmdt_index)
             __state.render->cmdts - __state.render->cmdts_pool;
 
         vdp1_sync_cmdt_put(__state.render->cmdts_pool, count, cmdt_index);
+
+        __light_gst_put();
 }
 
 static void
 _view_transform(render_mesh_t *render_mesh)
 {
-        const fix16_mat_t * const world_matrix = matrix_top();
+        const fix16_mat43_t * const world_matrix = matrix_top();
 
-        fix16_mat_t inv_view_matrix __aligned(16);
+        fix16_mat43_t inv_view_matrix __aligned(16);
 
         __camera_view_invert(&inv_view_matrix);
 
-        fix16_mat_t matrix __aligned(16);
+        fix16_mat43_t matrix __aligned(16);
 
-        fix16_mat_mul(&inv_view_matrix, world_matrix, &matrix);
+        fix16_mat43_mul(&inv_view_matrix, world_matrix, &matrix);
 
         const fix16_vec3_t * const m0 = (const fix16_vec3_t *)&matrix.row[0];
         const fix16_vec3_t * const m1 = (const fix16_vec3_t *)&matrix.row[1];
@@ -405,10 +423,8 @@ _render_single(const sort_single_t *single)
 
         const attribute_t attribute = meta_polygon->attribute;
 
-        cmdt->cmd_ctrl &= 0x7FF0;
-        cmdt->cmd_ctrl |= attribute.control.raw & 0x3F;
-
-        vdp1_cmdt_draw_mode_set(cmdt, attribute.draw_mode);
+        cmdt->cmd_ctrl = attribute.control.raw & 0x3F;
+        cmdt->cmd_pmod = attribute.draw_mode.raw;
 
         if (attribute.control.use_texture) {
                 const texture_t * const textures = tlist_get();
@@ -428,14 +444,14 @@ _render_single(const sort_single_t *single)
         cmdt->cmd_xa = screen_points[polygon->p0].x;
         cmdt->cmd_ya = screen_points[polygon->p0].y;
 
-        cmdt->cmd_xb = screen_points[polygon->p3].x;
-        cmdt->cmd_yb = screen_points[polygon->p3].y;
+        cmdt->cmd_xb = screen_points[polygon->p1].x;
+        cmdt->cmd_yb = screen_points[polygon->p1].y;
 
         cmdt->cmd_xc = screen_points[polygon->p2].x;
         cmdt->cmd_yc = screen_points[polygon->p2].y;
 
-        cmdt->cmd_xd = screen_points[polygon->p1].x;
-        cmdt->cmd_yd = screen_points[polygon->p1].y;
+        cmdt->cmd_xd = screen_points[polygon->p3].x;
+        cmdt->cmd_yd = screen_points[polygon->p3].y;
 
         cmdt->cmd_grda = attribute.shading_slot;
 }
