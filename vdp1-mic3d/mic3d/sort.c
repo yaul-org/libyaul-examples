@@ -5,7 +5,8 @@
 static inline void __always_inline
 _singles_reset(void)
 {
-        __state.sort->singles_top = __state.sort->singles_pool;
+        __state.sort->singles_top = __state.sort->singles_pool + 1;
+        __state.sort->singles_index = 0;
 }
 
 static inline sort_single_t * __always_inline
@@ -14,6 +15,7 @@ _singles_alloc(void)
         sort_single_t * const single = __state.sort->singles_top;
 
         __state.sort->singles_top++;
+        __state.sort->singles_index++;
 
         return single;
 }
@@ -39,7 +41,7 @@ __sort_start(void)
 }
 
 void
-__sort_insert(const render_mesh_t *render_mesh, const polygon_meta_t *meta_polygon, int32_t z)
+__sort_insert(vdp1_link_t cmdt_link, int32_t z)
 {
         z = clamp(z, 0, SORT_DEPTH - 1);
 
@@ -48,30 +50,38 @@ __sort_insert(const render_mesh_t *render_mesh, const polygon_meta_t *meta_polyg
         sort_list_t * const list_head = &__state.sort->sort_lists_pool[z];
 
         sort_single_t * const new_single = _singles_alloc();
+        const uint32_t new_index = __state.sort->singles_index;
 
-        new_single->render_mesh = render_mesh;
-        new_single->polygon = meta_polygon;
+        new_single->link = cmdt_link;
         new_single->next_single = list_head->head;
 
-        list_head->head = new_single;
+        list_head->head = new_index;
 }
 
 void
-__sort_iterate(sort_fn_t fn)
+__sort_iterate(sort_iterate_t iterate)
 {
         sort_list_t *list_head;
         list_head = &__state.sort->sort_lists_pool[__state.sort->max_depth];
 
         for (uint32_t i = 0; i <= __state.sort->max_depth; i++, list_head--) {
-                const sort_single_t *single;
-                single = list_head->head;
-
-                while (single != NULL) {
-                        fn(single);
-
-                        single = single->next_single;
+                if (list_head->head == 0) {
+                        continue;
                 }
 
-                list_head->head = NULL;
+                const sort_single_t *single;
+                single = &__state.sort->singles_pool[list_head->head];
+
+                while (true) {
+                        iterate(single);
+
+                        if (single->next_single == 0) {
+                                break;
+                        }
+
+                        single = &__state.sort->singles_pool[single->next_single];
+                }
+
+                list_head->head = 0;
         }
 }

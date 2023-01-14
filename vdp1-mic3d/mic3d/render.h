@@ -29,38 +29,29 @@ typedef enum {
 } clip_flags_t;
 
 typedef struct {
-        uint16_t index;
-        attribute_t attribute;
-} __aligned(4) polygon_meta_t;
-
-typedef struct {
         const mesh_t *mesh;
-
         fix16_t *z_values;
         int16_vec2_t *screen_points;
         fix16_t *depth_values;
-
-        polygon_meta_t *meta_polygons;
-
-        uint32_t polygons_count;
 } __aligned(4) render_mesh_t;
 
 typedef struct render {
         fix16_t *z_values_pool;
         int16_vec2_t *screen_points_pool;
         fix16_t *depth_values_pool;
-        polygon_meta_t *meta_polygons_pool;
         vdp1_cmdt_t *cmdts_pool;
         render_mesh_t *render_meshes_pool;
 
         fix16_t view_distance;
 
         render_mesh_t *render_mesh_top;
-        render_mesh_t *render_mesh;
+        render_mesh_t *render_mesh; /* Current render mesh */
 
         render_flags_t render_flags;
 
         vdp1_cmdt_t *cmdts;
+        vdp1_cmdt_t *sort_cmdt;
+        vdp1_link_t base_link;
         uint32_t total_points_count;
         uint32_t total_polygons_count;
 } __aligned(4) render_t;

@@ -11,8 +11,6 @@ fix16_t __pool_z_values[POOL_POINTS_COUNT] __aligned(16);
 int16_vec2_t __pool_screen_points[POOL_POINTS_COUNT] __aligned(16);
 fix16_t __pool_depth_values[POOL_POINTS_COUNT] __aligned(16);
 
-polygon_meta_t __pool_meta_polygons[POOL_POLYGONS_COUNT] __aligned(16);
-
 sort_list_t __pool_sort_lists[POOL_SORT_LIST_COUNT] __aligned(16);
 sort_single_t __pool_sort_singles[POOL_SORT_SINGLES_COUNT] __aligned(16);
 

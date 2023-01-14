@@ -28,8 +28,7 @@ void render_disable(render_flags_t flags);
 void render_perspective_set(angle_t fov_angle);
 void render_mesh_start(const mesh_t *mesh);
 void render_mesh_transform(void);
-void render_process(void);
-void render(uint32_t cmdt_index);
+void render(uint32_t subr_index, uint32_t cmdt_index);
 
 texture_t *tlist_acquire(uint32_t count);
 void tlist_release(void);
@@ -53,6 +52,5 @@ void matrix_y_rotate(angle_t angle);
 void matrix_z_rotate(angle_t angle);
 
 void light_set(vdp1_gouraud_table_t *gouraud_tables, uint32_t count, vdp1_vram_t vram_base);
-void light_direction_set(void); /* XXX: Remove, change signature */
 
 #endif /* MIC3D_H */

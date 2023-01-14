@@ -8,6 +8,8 @@
 
 #define LIGHT_COUNT (3)
 
+typedef void (*polygon_process_t)(const polygon_t *polygon, attribute_t *attribute);
+
 typedef struct light {
         vdp1_gouraud_table_t *gsts;
         uint32_t count;
@@ -21,6 +23,9 @@ typedef struct light {
         /* Count of enabled lights */
         uint32_t light_count;
 
+        polygon_process_t polygon_process;
+
+        fix16_mat33_t intensity_matrix;
         /* Count of used GSTs */
         uint32_t gst_count;
 } __aligned(4) light_t;
@@ -36,8 +41,7 @@ __light_shading_slot_calculate(gst_slot_t gst_slot)
 static inline gst_slot_t __always_inline
 __light_gst_alloc(void)
 {
-        const gst_slot_t gst_slot =
-            __state.light->gst_count++;
+        const gst_slot_t gst_slot = __state.light->gst_count++;
 
         return gst_slot;
 }
@@ -49,7 +53,8 @@ __light_gst_get(gst_slot_t gst_slot)
 }
 
 void __light_init(void);
-void __light_mesh_transform(void);
+void __light_transform(void);
+void __light_polygon_process(const polygon_t *polygon, attribute_t *attribute);
 void __light_gst_put(void);
 
 #endif /* MIC3D_LIGHT_H */

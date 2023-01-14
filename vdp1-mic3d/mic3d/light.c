@@ -2,6 +2,9 @@
 
 #include <fix16.h>
 
+static void _polygon_process(const polygon_t *polygon, attribute_t *attribute);
+static void _polygon_passthrough_process(const polygon_t *polygon __unused, attribute_t *attribute __unused);
+
 void
 __light_init(void)
 {
@@ -62,18 +65,15 @@ _world_matrix_invert(fix16_mat33_t *inv_matrix)
 // void light_toggle(light_id_t id, bool toggle)
 
 void
-__light_mesh_transform(void)
+__light_transform(void)
 {
-        if (!RENDER_FLAG_TEST(LIGHTING)) {
+        if (!RENDER_FLAG_TEST(LIGHTING) || (__state.light->light_count == 0)) {
+                __state.light->polygon_process = _polygon_passthrough_process;
+
                 return;
         }
 
-        if (__state.light->light_count == 0) {
-                return;
-        }
-
-        render_mesh_t * const render_mesh =
-            __state.render->render_mesh;
+        __state.light->polygon_process = _polygon_process;
 
         fix16_mat33_t inv_world_matrix __aligned(16);
 
@@ -82,41 +82,45 @@ __light_mesh_transform(void)
         fix16_mat33_t world_light_matrix __aligned(16);
 
         fix16_mat33_mul(&__state.light->light_matrix, &inv_world_matrix, &world_light_matrix);
+        fix16_mat33_mul(&__state.light->color_matrix, &world_light_matrix, &__state.light->intensity_matrix);
+}
 
-        fix16_mat33_t intensity_matrix __aligned(16);
+void
+__light_polygon_process(const polygon_t *polygon, attribute_t *attribute)
+{
+        __state.light->polygon_process(polygon, attribute);
+}
 
-        fix16_mat33_mul(&__state.light->color_matrix, &world_light_matrix, &intensity_matrix);
+static void
+_polygon_process(const polygon_t *polygon, attribute_t *attribute)
+{
+        render_mesh_t * const render_mesh = __state.render->render_mesh;
 
-        for (uint32_t i = 0; i < render_mesh->polygons_count; i++) {
-                polygon_meta_t * const meta_polygon = &render_mesh->meta_polygons[i];
+        const gst_slot_t gst_slot = __light_gst_alloc();
+        vdp1_gouraud_table_t * const gst = __light_gst_get(gst_slot);
 
-                attribute_t * const attribute = &meta_polygon->attribute;
+        attribute->shading_slot = __light_shading_slot_calculate(gst_slot);
 
-                const gst_slot_t gst_slot = __light_gst_alloc();
-                vdp1_gouraud_table_t * const gst = __light_gst_get(gst_slot);
+        for (uint32_t v = 0; v < 4; v++) {
+                const fix16_vec3_t * const vertex_normal =
+                    &render_mesh->mesh->normals[polygon->p[v]];
 
-                attribute->shading_slot =
-                    __light_shading_slot_calculate(gst_slot);
+                fix16_vec3_t intensity;
+                fix16_mat33_vec3_mul(&__state.light->intensity_matrix, vertex_normal, &intensity);
 
-                const polygon_t * const polygon =
-                    &render_mesh->mesh->polygons[meta_polygon->index];
+                /* Avoid shifting to the right by 16, then back up by 5
+                 * (green) and 10 (blue) */
+                const uint16_t r = (intensity.x >> 16) & 0x001F;
+                const uint16_t g = (intensity.y >> 11) & 0x03E0;
+                const uint16_t b = (intensity.z >>  6) & 0x7C00;
 
-                for (uint32_t v = 0; v < 4; v++) {
-                        const fix16_vec3_t * const vertex_normal =
-                            &render_mesh->mesh->normals[polygon->p[v]];
-
-                        fix16_vec3_t intensity;
-                        fix16_mat33_vec3_mul(&intensity_matrix, vertex_normal, &intensity);
-
-                        /* Avoid shifting to the right by 16, then back up by 5
-                         * (green) and 10 (blue) */
-                        const uint16_t r = (intensity.x >> 16) & 0x001F;
-                        const uint16_t g = (intensity.y >> 11) & 0x03E0;
-                        const uint16_t b = (intensity.z >>  6) & 0x7C00;
-
-                        gst->colors[v].raw = 0x8000 | b | g | r;
-                }
+                gst->colors[v].raw = 0x8000 | b | g | r;
         }
+}
+
+static void
+_polygon_passthrough_process(const polygon_t *polygon __unused, attribute_t *attribute __unused)
+{
 }
 
 void
@@ -150,12 +154,4 @@ light_set(vdp1_gouraud_table_t *gouraud_tables, uint32_t count, vdp1_vram_t vram
         __state.light->slot_base = vram_base >> 3;
 
         __state.light->gst_count = 0;
-}
-
-/* XXX: Rename */
-void
-light_direction_set(void)
-{
-        /* XXX: Testing */
-        __state.light->gst_count = __state.light->count;
 }

@@ -15,10 +15,10 @@
 #include "mic3d.h"
 
 #define ORDER_SYSTEM_CLIP_COORDS_INDEX  0
-#define ORDER_CLEAR_LOCAL_COORDS_INDEX  1
-#define ORDER_BUFFER_STARTING_INDEX     2
-#define ORDER_DRAW_END_INDEX            (ORDER_BUFFER_STARTING_INDEX + POLYGON_COUNT)
-#define ORDER_COUNT                     (ORDER_DRAW_END_INDEX + 1)
+#define ORDER_LOCAL_COORDS_INDEX        1
+#define ORDER_SUBR_INDEX                1
+#define ORDER_DRAW_END_INDEX            2
+#define ORDER_INDEX                     3
 
 extern const mesh_t mesh_m;
 extern const mesh_t mesh_i;
@@ -100,6 +100,16 @@ main(void)
                 dbgio_puts("[H[2J");
                 render_start();
 
+                /* render_mesh_start(&mesh_cube); */
+                /* render_disable(RENDER_FLAGS_LIGHTING); */
+                /* matrix_push(); */
+                /* /\* matrix_x_rotate(theta); *\/ */
+                /* matrix_y_rotate(theta); */
+                /* /\* matrix_z_rotate(theta); *\/ */
+                /* matrix_z_translate(FIX16(30)); */
+                /* render_mesh_transform(); */
+                /* matrix_pop(); */
+
                 render_mesh_start(&mesh_torus);
                 render_enable(RENDER_FLAGS_LIGHTING);
                 matrix_push();
@@ -136,8 +146,7 @@ main(void)
 
                 theta += DEG2ANGLE(5.0f);
 
-                render_process();
-                render(ORDER_BUFFER_STARTING_INDEX);
+                render(ORDER_SUBR_INDEX, ORDER_INDEX);
 
                 vdp1_sync_render();
 
@@ -186,9 +195,11 @@ _vdp1_init(void)
         vdp1_cmdt_vtx_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX],
             system_clip_coord);
 
-        vdp1_cmdt_local_coord_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_vtx_local_coord_set(&cmdts[ORDER_CLEAR_LOCAL_COORDS_INDEX],
+        vdp1_cmdt_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX]);
+        vdp1_cmdt_vtx_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX],
             local_coord_center);
+
+        vdp1_cmdt_end_set(&cmdts[ORDER_DRAW_END_INDEX]);
 
         vdp1_sync_interval_set(-1);
 }
