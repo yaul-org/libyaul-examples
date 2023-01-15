@@ -12,18 +12,20 @@ typedef enum render_flags {
         RENDER_FLAGS_ALL      = RENDER_FLAGS_LIGHTING
 } render_flags_t;
 
+typedef union indices {
+        struct {
+                uint16_t p0;
+                uint16_t p1;
+                uint16_t p2;
+                uint16_t p3;
+        };
+
+        uint16_t p[4];
+} __aligned(4) indices_t;
+
 typedef struct {
         fix16_vec3_t normal;
-
-        union {
-                struct {
-                        uint16_t p0;
-                        uint16_t p1;
-                        uint16_t p2;
-                        uint16_t p3;
-                };
-                uint16_t p[4];
-        };
+        indices_t indices;
 } __aligned(4) polygon_t;
 
 typedef enum {
@@ -72,9 +74,9 @@ typedef union {
 static_assert(sizeof(attribute_control_t) == 2);
 
 typedef struct {
-        vdp1_cmdt_draw_mode_t draw_mode;
-
         attribute_control_t control;
+
+        vdp1_cmdt_draw_mode_t draw_mode;
 
         union {
                 uint16_t vram_index;

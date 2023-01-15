@@ -4,7 +4,7 @@
 #define COLOR2 RGB1555(1,  0, 16,  0)
 #define COLOR3 RGB1555(1,  0,  0, 16)
 
-#define INDICES(a, b, c, d) { .p0 = a, .p1 = b, .p2 = c, .p3 = d }
+#define INDICES(a, b, c, d) { .indices.p0 = a, .indices.p1 = b, .indices.p2 = c, .indices.p3 = d }
 #define VERTICES(a,b,c,d)   INDICES(a, c, d, b)
 
 static const fix16_vec3_t _points_torus[] = {

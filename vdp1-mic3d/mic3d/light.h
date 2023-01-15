@@ -8,7 +8,7 @@
 
 #define LIGHT_COUNT (3)
 
-typedef void (*polygon_process_t)(const polygon_t *polygon, attribute_t *attribute);
+typedef void (*polygon_process_t)(void);
 
 typedef struct light {
         vdp1_gouraud_table_t *gsts;
@@ -54,7 +54,7 @@ __light_gst_get(gst_slot_t gst_slot)
 
 void __light_init(void);
 void __light_transform(void);
-void __light_polygon_process(const polygon_t *polygon, attribute_t *attribute);
+void __light_polygon_process(void);
 void __light_gst_put(void);
 
 #endif /* MIC3D_LIGHT_H */

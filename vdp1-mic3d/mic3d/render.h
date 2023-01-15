@@ -10,23 +10,36 @@
 #define RENDER_FLAG_TEST(x) ((__state.render->render_flags & __CONCAT(RENDER_FLAGS_, x)) == __CONCAT(RENDER_FLAGS_, x))
 
 typedef enum clip_bitmap {
-        CLIP_BIT_NEAR   = 0,
-        CLIP_BIT_FAR    = 1,
-        CLIP_BIT_LEFT   = 2,
-        CLIP_BIT_RIGHT  = 3,
-        CLIP_BIT_TOP    = 4,
-        CLIP_BIT_BOTTOM = 5
+        CLIP_BIT_LEFT   = 0,
+        CLIP_BIT_RIGHT  = 1,
+        CLIP_BIT_TOP    = 2,
+        CLIP_BIT_BOTTOM = 3
 } clip_bitmap_t;
 
 typedef enum clip_flags {
         CLIP_FLAGS_NONE   = 0,
-        CLIP_FLAGS_NEAR   = 1 << CLIP_BIT_NEAR,
-        CLIP_FLAGS_FAR    = 1 << CLIP_BIT_FAR,
         CLIP_FLAGS_LEFT   = 1 << CLIP_BIT_LEFT,
         CLIP_FLAGS_RIGHT  = 1 << CLIP_BIT_RIGHT,
         CLIP_FLAGS_TOP    = 1 << CLIP_BIT_TOP,
-        CLIP_FLAGS_BOTTOM = 1 << CLIP_BIT_BOTTOM
+        CLIP_FLAGS_BOTTOM = 1 << CLIP_BIT_BOTTOM,
+
+        CLIP_FLAGS_LR     = CLIP_FLAGS_LEFT | CLIP_FLAGS_RIGHT,
+        CLIP_FLAGS_TB     = CLIP_FLAGS_TOP | CLIP_FLAGS_BOTTOM
 } clip_flags_t;
+
+typedef struct {
+        const attribute_t *ro_attribute;
+
+        attribute_t rw_attribute;
+        indices_t indices;
+        int16_vec2_t screen_points[4];
+        fix16_t z_values[4];
+        clip_flags_t clip_flags[4];
+        clip_flags_t and_flags;
+        clip_flags_t or_flags;
+} __aligned(16) render_transform_t;
+
+static_assert(sizeof(render_transform_t) == 80);
 
 typedef struct render {
         /* Pools */
@@ -43,6 +56,7 @@ typedef struct render {
         render_flags_t render_flags;
 
         const mesh_t *mesh;
+        render_transform_t *render_transform;
 
         /* Sorting */
         vdp1_cmdt_t *sort_cmdt;

@@ -1,6 +1,6 @@
 #include "mic3d.h"
 
-#define INDICES(a, b, c, d) { .p0 = a, .p1 = b, .p2 = c, .p3 = d }
+#define INDICES(a, b, c, d) { .indices.p0 = a, .indices.p1 = b, .indices.p2 = c, .indices.p3 = d }
 
 static const fix16_vec3_t _points_c[27] = {
         FIX16_VEC3_INITIALIZER( 0,  0,  0),

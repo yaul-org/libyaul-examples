@@ -32,33 +32,26 @@
 #define NEAR_LEVEL_MIN 1U
 #define NEAR_LEVEL_MAX 8U
 
-typedef struct {
-        attribute_t attribute;
-        int16_vec2_t screen_points[4];
-        fix16_t z_values[4];
-        clip_flags_t clip_flags[4];
-        clip_flags_t and_flags;
-        clip_flags_t or_flags;
-} __aligned(4) transform_t;
-
 static void _transform(void);
 
-static fix16_t _depth_calculate(const transform_t *transform);
+static fix16_t _depth_calculate(void);
 static fix16_t _depth_min_calculate(const fix16_t *z_values);
 static fix16_t _depth_max_calculate(const fix16_t *z_values);
 static fix16_t _depth_center_calculate(const fix16_t *z_values);
 
-static bool _backface_cull_test(const transform_t *transform);
+static bool _backface_cull_test(void);
 
-static void _clip_flags_calculate(transform_t *transform);
+static void _clip_flags_calculate(void);
 static void _clip_flags_lrtb_calculate(const int16_vec2_t screen_point, clip_flags_t *clip_flag);
+
+static void _polygon_orient(void);
 
 static void _render_single(const sort_single_t *single);
 
 static vdp1_cmdt_t *_cmdts_alloc(void);
 static void _cmdts_reset(void);
 static vdp1_link_t _cmdt_link_calculate(const vdp1_cmdt_t *cmdt);
-static void _cmdt_process(vdp1_cmdt_t *cmdt, const transform_t *transform);
+static void _cmdt_process(vdp1_cmdt_t *cmdt);
 
 static perf_counter_t _transform_pc;
 
@@ -71,10 +64,14 @@ __render_init(void)
 
         extern vdp1_cmdt_t __pool_cmdts[];
 
+        extern render_transform_t __render_transform;
+
         __state.render->z_values_pool = __pool_z_values;
         __state.render->screen_points_pool = __pool_screen_points;
         __state.render->depth_values_pool = __pool_depth_values;
         __state.render->cmdts_pool = __pool_cmdts;
+
+        __state.render->render_transform = &__render_transform;
 
         __state.render->render_flags = RENDER_FLAGS_NONE;
 
@@ -147,69 +144,73 @@ render_mesh_transform(const mesh_t *mesh)
         const uint32_t sr_mask = cpu_intc_mask_get();
         cpu_intc_mask_set(15);
 
+        __perf_counter_start(&_transform_pc);
+
         __state.render->mesh = mesh;
 
-        __perf_counter_start(&_transform_pc);
+        _transform();
+
+        __light_transform();
+
+        render_transform_t * const render_transform =
+            __state.render->render_transform;
 
         fix16_t * const z_values = __state.render->z_values_pool;
         int16_vec2_t * const screen_points = __state.render->screen_points_pool;
-
-        _transform();
-        __light_transform();
-
         const polygon_t * const polygons = __state.render->mesh->polygons;
 
-        transform_t transform __aligned(16);
-
         for (uint32_t i = 0; i < __state.render->mesh->polygons_count; i++) {
-                transform.attribute = __state.render->mesh->attributes[i];
+                render_transform->screen_points[0] = screen_points[polygons[i].indices.p0];
+                render_transform->screen_points[1] = screen_points[polygons[i].indices.p1];
+                render_transform->screen_points[2] = screen_points[polygons[i].indices.p2];
+                render_transform->screen_points[3] = screen_points[polygons[i].indices.p3];
 
-                const polygon_t * const polygon = &polygons[i];
+                render_transform->ro_attribute = &__state.render->mesh->attributes[i];
+                render_transform->rw_attribute.control = render_transform->ro_attribute->control;
 
-                transform.screen_points[0] = screen_points[polygon->p0];
-                transform.screen_points[1] = screen_points[polygon->p1];
-                transform.screen_points[2] = screen_points[polygon->p2];
-                transform.screen_points[3] = screen_points[polygon->p3];
-
-                if (transform.attribute.control.plane_type != PLANE_TYPE_DOUBLE) {
-                        if ((_backface_cull_test(&transform))) {
+                if (render_transform->rw_attribute.control.plane_type != PLANE_TYPE_DOUBLE) {
+                        if ((_backface_cull_test())) {
                                 continue;
                         }
                 }
 
-                transform.z_values[0] = z_values[polygon->p0];
-                transform.z_values[1] = z_values[polygon->p1];
-                transform.z_values[2] = z_values[polygon->p2];
-                transform.z_values[3] = z_values[polygon->p3];
+                render_transform->rw_attribute.draw_mode = render_transform->ro_attribute->draw_mode;
 
-                const fix16_t depth_z = _depth_calculate(&transform);
+                render_transform->z_values[0] = z_values[polygons[i].indices.p0];
+                render_transform->z_values[1] = z_values[polygons[i].indices.p1];
+                render_transform->z_values[2] = z_values[polygons[i].indices.p2];
+                render_transform->z_values[3] = z_values[polygons[i].indices.p3];
+
+                const fix16_t depth_z = _depth_calculate();
 
                 /* Cull polygons intersecting with the near plane */
                 if ((depth_z < __state.render->near)) {
                         continue;
                 }
 
-                _clip_flags_calculate(&transform);
+                _clip_flags_calculate();
 
                 /* Cull if the polygon is entirely off screen */
-                if (transform.and_flags != CLIP_FLAGS_NONE) {
+                if (render_transform->and_flags != CLIP_FLAGS_NONE) {
                         continue;
                 }
 
-                if (transform.or_flags == CLIP_FLAGS_NONE) {
+                render_transform->indices = polygons[i].indices;
+
+                if (render_transform->or_flags == CLIP_FLAGS_NONE) {
                         /* If no clip flags are set, disable pre-clipping. This
                          * should help with performance */
-                        transform.attribute.draw_mode.pre_clipping_disable = true;
+                        render_transform->rw_attribute.draw_mode.pre_clipping_disable = true;
                 } else {
-                        /* XXX: Orient vertices here */
+                        _polygon_orient();
                 }
 
-                __light_polygon_process(polygon, &transform.attribute);
+                __light_polygon_process();
 
                 vdp1_cmdt_t * const cmdt = _cmdts_alloc();
                 const vdp1_link_t cmdt_link = _cmdt_link_calculate(cmdt);
 
-                _cmdt_process(cmdt, &transform);
+                _cmdt_process(cmdt);
 
                 const int32_t scaled_z = fix16_int32_mul(depth_z, __state.render->sort_scale);
 
@@ -281,25 +282,30 @@ _transform(void)
         fix16_t * const depth_values = __state.render->depth_values_pool;
 
         for (uint32_t i = 0; i < __state.render->mesh->points_count; i++) {
-                z_values[i] = fix16_vec3_dot(m2, &points[i]) + matrix.frow[2][3];
-                depth_values[i] = fix16_div(__state.render->view_distance, fix16_max(z_values[i], __state.render->near));
+                const fix16_t z = fix16_vec3_dot(m2, &points[i]) + matrix.frow[2][3];
+                const fix16_t depth_value = fix16_div(__state.render->view_distance, fix16_max(z, __state.render->near));
 
-                screen_points[i].x = fix16_int32_mul(depth_values[i], fix16_vec3_dot(m0, &points[i]) + matrix.frow[0][3]);
-                screen_points[i].y = fix16_int32_mul(depth_values[i], fix16_vec3_dot(m1, &points[i]) + matrix.frow[1][3]);
+                screen_points[i].x = fix16_int32_mul(depth_value, fix16_vec3_dot(m0, &points[i]) + matrix.frow[0][3]);
+                screen_points[i].y = fix16_int32_mul(depth_value, fix16_vec3_dot(m1, &points[i]) + matrix.frow[1][3]);
+                z_values[i] = z;
+                depth_values[i] = depth_value;
         }
 }
 
 static fix16_t
-_depth_calculate(const transform_t *transform)
+_depth_calculate(void)
 {
-        switch (transform->attribute.control.sort_type) {
+        render_transform_t * const render_transform =
+            __state.render->render_transform;
+
+        switch (render_transform->rw_attribute.control.sort_type) {
         default:
         case SORT_TYPE_CENTER:
-                return _depth_center_calculate(transform->z_values);
+                return _depth_center_calculate(render_transform->z_values);
         case SORT_TYPE_MIN:
-                return _depth_min_calculate(transform->z_values);
+                return _depth_min_calculate(render_transform->z_values);
         case SORT_TYPE_MAX:
-                return _depth_max_calculate(transform->z_values);
+                return _depth_max_calculate(render_transform->z_values);
         }
 }
 
@@ -335,16 +341,19 @@ _clip_flags_lrtb_calculate(const int16_vec2_t screen_point, clip_flags_t *clip_f
 }
 
 static bool
-_backface_cull_test(const transform_t *transform)
+_backface_cull_test(void)
 {
+        render_transform_t * const render_transform =
+            __state.render->render_transform;
+
         const int32_vec2_t a = {
-                .x = transform->screen_points[2].x - transform->screen_points[0].x,
-                .y = transform->screen_points[2].y - transform->screen_points[0].y
+                .x = render_transform->screen_points[2].x - render_transform->screen_points[0].x,
+                .y = render_transform->screen_points[2].y - render_transform->screen_points[0].y
         };
 
         const int32_vec2_t b = {
-                .x = transform->screen_points[1].x - transform->screen_points[0].x,
-                .y = transform->screen_points[1].y - transform->screen_points[0].y
+                .x = render_transform->screen_points[1].x - render_transform->screen_points[0].x,
+                .y = render_transform->screen_points[1].y - render_transform->screen_points[0].y
         };
 
         const int32_t z = (a.x * b.y) - (a.y * b.x);
@@ -353,22 +362,91 @@ _backface_cull_test(const transform_t *transform)
 }
 
 static void
-_clip_flags_calculate(transform_t *transform)
+_clip_flags_calculate(void)
 {
-        _clip_flags_lrtb_calculate(transform->screen_points[0], &transform->clip_flags[0]);
-        _clip_flags_lrtb_calculate(transform->screen_points[1], &transform->clip_flags[1]);
-        _clip_flags_lrtb_calculate(transform->screen_points[2], &transform->clip_flags[2]);
-        _clip_flags_lrtb_calculate(transform->screen_points[3], &transform->clip_flags[3]);
+        render_transform_t * const render_transform =
+            __state.render->render_transform;
 
-        transform->and_flags = transform->clip_flags[0] &
-                               transform->clip_flags[1] &
-                               transform->clip_flags[2] &
-                               transform->clip_flags[3];
+        _clip_flags_lrtb_calculate(render_transform->screen_points[0], &render_transform->clip_flags[0]);
+        _clip_flags_lrtb_calculate(render_transform->screen_points[1], &render_transform->clip_flags[1]);
+        _clip_flags_lrtb_calculate(render_transform->screen_points[2], &render_transform->clip_flags[2]);
+        _clip_flags_lrtb_calculate(render_transform->screen_points[3], &render_transform->clip_flags[3]);
 
-        transform->or_flags = transform->clip_flags[0] |
-                              transform->clip_flags[1] |
-                              transform->clip_flags[2] |
-                              transform->clip_flags[3];
+        render_transform->and_flags = render_transform->clip_flags[0] &
+                               render_transform->clip_flags[1] &
+                               render_transform->clip_flags[2] &
+                               render_transform->clip_flags[3];
+
+        render_transform->or_flags = render_transform->clip_flags[0] |
+                              render_transform->clip_flags[1] |
+                              render_transform->clip_flags[2] |
+                              render_transform->clip_flags[3];
+}
+
+static void
+_indices_swap(uint32_t i, uint32_t j)
+{
+        render_transform_t * const render_transform =
+            __state.render->render_transform;
+
+        const uint16_t tmp = render_transform->indices.p[i];
+
+        render_transform->indices.p[i] = render_transform->indices.p[j];
+        render_transform->indices.p[j] = tmp;
+}
+
+static void
+_screen_points_swap(uint32_t i, uint32_t j)
+{
+        render_transform_t * const render_transform =
+            __state.render->render_transform;
+
+        const int16_vec2_t tmp = render_transform->screen_points[i];
+
+        render_transform->screen_points[i] = render_transform->screen_points[j];
+        render_transform->screen_points[j] = tmp;
+}
+
+static void
+_polygon_orient(void)
+{
+        render_transform_t * const render_transform =
+            __state.render->render_transform;
+
+        /* Orient the vertices such that vertex A is always on-screen. Doing
+         * this is for performance purposes */
+
+        if ((render_transform->clip_flags[0] & CLIP_FLAGS_LR) != CLIP_FLAGS_NONE) {
+                /* B-|-A
+                 * | | |
+                 * C-|-D
+                 *   |
+                 *   | Outside
+                 *
+                 * Swap A & B
+                 * Swap D & C */
+
+                _indices_swap(0, 1);
+                _indices_swap(3, 2);
+
+                _screen_points_swap(0, 1);
+                _screen_points_swap(2, 3);
+        }
+
+        if ((render_transform->clip_flags[0] & CLIP_FLAGS_TB) != CLIP_FLAGS_NONE) {
+                /*   B---A Outside
+                 * --|---|--
+                 *   C---D
+                 *
+                 *   Swap A & D
+                 *   Swap B & C */
+
+                _indices_swap(0, 3);
+                _indices_swap(1, 2);
+
+                _screen_points_swap(0, 3);
+                _screen_points_swap(1, 2);
+        }
 }
 
 static void
@@ -403,25 +481,28 @@ _cmdt_link_calculate(const vdp1_cmdt_t *cmdt)
 }
 
 static void
-_cmdt_process(vdp1_cmdt_t *cmdt, const transform_t *transform)
+_cmdt_process(vdp1_cmdt_t *cmdt)
 {
-        cmdt->cmd_ctrl = VDP1_CMDT_LINK_TYPE_JUMP_ASSIGN | (transform->attribute.control.raw & 0x3F);
-        cmdt->cmd_pmod = transform->attribute.draw_mode.raw;
+        render_transform_t * const render_transform =
+            __state.render->render_transform;
 
-        if (transform->attribute.control.use_texture) {
+        cmdt->cmd_ctrl = VDP1_CMDT_LINK_TYPE_JUMP_ASSIGN | (render_transform->rw_attribute.control.raw & 0x3F);
+        cmdt->cmd_pmod = render_transform->rw_attribute.draw_mode.raw;
+
+        if (render_transform->rw_attribute.control.use_texture) {
                 const texture_t * const textures = tlist_get();
-                const texture_t * const texture = &textures[transform->attribute.texture_slot];
+                const texture_t * const texture = &textures[render_transform->ro_attribute->texture_slot];
 
                 cmdt->cmd_srca = texture->vram_index;
                 cmdt->cmd_size = texture->size;
         }
 
-        cmdt->cmd_colr = transform->attribute.palette.raw;
+        cmdt->cmd_colr = render_transform->ro_attribute->palette.raw;
 
-        cmdt->cmd_vertices[0] = transform->screen_points[0];
-        cmdt->cmd_vertices[1] = transform->screen_points[1];
-        cmdt->cmd_vertices[2] = transform->screen_points[2];
-        cmdt->cmd_vertices[3] = transform->screen_points[3];
+        cmdt->cmd_vertices[0] = render_transform->screen_points[0];
+        cmdt->cmd_vertices[1] = render_transform->screen_points[1];
+        cmdt->cmd_vertices[2] = render_transform->screen_points[2];
+        cmdt->cmd_vertices[3] = render_transform->screen_points[3];
 
-        cmdt->cmd_grda = transform->attribute.shading_slot;
+        cmdt->cmd_grda = render_transform->rw_attribute.shading_slot;
 }

@@ -2,8 +2,8 @@
 
 #include <fix16.h>
 
-static void _polygon_process(const polygon_t *polygon, attribute_t *attribute);
-static void _polygon_passthrough_process(const polygon_t *polygon __unused, attribute_t *attribute __unused);
+static void _polygon_process(void);
+static void _polygon_passthrough_process(void);
 
 void
 __light_init(void)
@@ -86,22 +86,25 @@ __light_transform(void)
 }
 
 void
-__light_polygon_process(const polygon_t *polygon, attribute_t *attribute)
+__light_polygon_process(void)
 {
-        __state.light->polygon_process(polygon, attribute);
+        __state.light->polygon_process();
 }
 
 static void
-_polygon_process(const polygon_t *polygon, attribute_t *attribute)
+_polygon_process(void)
 {
+        render_transform_t * const render_transform =
+            __state.render->render_transform;
+
         const gst_slot_t gst_slot = __light_gst_alloc();
         vdp1_gouraud_table_t * const gst = __light_gst_get(gst_slot);
 
-        attribute->shading_slot = __light_shading_slot_calculate(gst_slot);
+        render_transform->rw_attribute.shading_slot = __light_shading_slot_calculate(gst_slot);
 
         for (uint32_t v = 0; v < 4; v++) {
                 const fix16_vec3_t * const vertex_normal =
-                    &__state.render->mesh->normals[polygon->p[v]];
+                    &__state.render->mesh->normals[render_transform->indices.p[v]];
 
                 fix16_vec3_t intensity;
                 fix16_mat33_vec3_mul(&__state.light->intensity_matrix, vertex_normal, &intensity);
@@ -117,8 +120,12 @@ _polygon_process(const polygon_t *polygon, attribute_t *attribute)
 }
 
 static void
-_polygon_passthrough_process(const polygon_t *polygon __unused, attribute_t *attribute __unused)
+_polygon_passthrough_process(void)
 {
+        render_transform_t * const render_transform =
+            __state.render->render_transform;
+
+        render_transform->rw_attribute.shading_slot = render_transform->ro_attribute->shading_slot;
 }
 
 void

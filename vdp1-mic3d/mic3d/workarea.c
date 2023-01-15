@@ -20,3 +20,5 @@ sort_single_t __pool_sort_singles[POOL_SORT_SINGLES_COUNT] __aligned(16);
 vdp1_cmdt_t __pool_cmdts[POOL_CMDTS_COUNT] __aligned(16);
 
 fix16_mat43_t __pool_matrices[POOL_MATRIX_STACK_COUNT] __aligned(16);
+
+render_transform_t __render_transform __aligned(16);
