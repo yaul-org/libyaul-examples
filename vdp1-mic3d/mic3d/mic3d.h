@@ -12,9 +12,6 @@
 #define MATRIX_STACK_COUNT 16
 #define CMDT_COUNT         2048
 
-#define DEPTH_NEAR         20
-#define DEPTH_FAR          256
-
 #define TEXTURE_SIZE(w, h)       ((uint16_t)((((w) >> 3) << 8) | ((h) & 255)))
 #define TEXTURE_VRAM_INDEX(addr) ((uint16_t)((uintptr_t)(addr) >> 3))
 
@@ -26,6 +23,8 @@ void render_start(void);
 void render_enable(render_flags_t flags);
 void render_disable(render_flags_t flags);
 void render_perspective_set(angle_t fov_angle);
+void render_near_level_set(uint32_t level);
+void render_far_set(fix16_t far);
 void render_mesh_start(const mesh_t *mesh);
 void render_mesh_transform(void);
 void render(uint32_t subr_index, uint32_t cmdt_index);

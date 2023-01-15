@@ -43,9 +43,9 @@ __sort_start(void)
 void
 __sort_insert(vdp1_link_t cmdt_link, int32_t z)
 {
-        z = clamp(z, 0, SORT_DEPTH - 1);
+        const uint32_t index = clamp(z, 0, SORT_DEPTH - 1);
 
-        __state.sort->max_depth = max((uint32_t)z, __state.sort->max_depth);
+        __state.sort->max_depth = max(index, __state.sort->max_depth);
 
         sort_list_t * const list_head = &__state.sort->sort_lists_pool[z];
 

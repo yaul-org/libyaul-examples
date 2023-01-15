@@ -36,13 +36,18 @@ typedef struct {
 } __aligned(4) render_mesh_t;
 
 typedef struct render {
+        /* Pools */
         fix16_t *z_values_pool;
         int16_vec2_t *screen_points_pool;
         fix16_t *depth_values_pool;
         vdp1_cmdt_t *cmdts_pool;
         render_mesh_t *render_meshes_pool;
 
+        /* Settings */
         fix16_t view_distance;
+        fix16_t near;
+        fix16_t far;
+        fix16_t sort_scale;
 
         render_mesh_t *render_mesh_top;
         render_mesh_t *render_mesh; /* Current render mesh */
