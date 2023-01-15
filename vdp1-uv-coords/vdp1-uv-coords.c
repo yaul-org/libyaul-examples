@@ -217,7 +217,7 @@ _cmdt_list_init(void)
         };
 
         static const int16_vec2_t polygon_points[] = {
-                INT16_VEC2_INITIALIZER(0, SCREEN_HEIGHT - 1),
+                INT16_VEC2_INITIALIZER(               0, SCREEN_HEIGHT - 1),
                 INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1),
                 INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,                 0),
                 INT16_VEC2_INITIALIZER(               0,                 0)
