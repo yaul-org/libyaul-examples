@@ -87,10 +87,7 @@ __render_init(void)
 void
 render_start(void)
 {
-        __state.render->cmdt_count = 0;
-
         _cmdts_reset();
-
         __sort_start();
 }
 
@@ -476,6 +473,7 @@ static void
 _cmdts_reset(void)
 {
         __state.render->cmdts = __state.render->cmdts_pool;
+        __state.render->cmdt_count = 0;
 }
 
 static vdp1_link_t
