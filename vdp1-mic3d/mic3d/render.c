@@ -431,6 +431,8 @@ _polygon_orient(void)
 
                 _screen_points_swap(0, 1);
                 _screen_points_swap(2, 3);
+
+                render_transform->rw_attribute.control.raw ^= VDP1_CMDT_CHAR_FLIP_H;
         }
 
         if ((render_transform->clip_flags[0] & CLIP_FLAGS_TB) != CLIP_FLAGS_NONE) {
@@ -446,6 +448,8 @@ _polygon_orient(void)
 
                 _screen_points_swap(0, 3);
                 _screen_points_swap(1, 2);
+
+                render_transform->rw_attribute.control.raw ^= VDP1_CMDT_CHAR_FLIP_V;
         }
 }
 
