@@ -9,7 +9,7 @@
 
 #define RENDER_FLAG_TEST(x) ((__state.render->render_flags & __CONCAT(RENDER_FLAGS_, x)) == __CONCAT(RENDER_FLAGS_, x))
 
-typedef enum {
+typedef enum clip_bitmap {
         CLIP_BIT_NEAR   = 0,
         CLIP_BIT_FAR    = 1,
         CLIP_BIT_LEFT   = 2,
@@ -18,7 +18,7 @@ typedef enum {
         CLIP_BIT_BOTTOM = 5
 } clip_bitmap_t;
 
-typedef enum {
+typedef enum clip_flags {
         CLIP_FLAGS_NONE   = 0,
         CLIP_FLAGS_NEAR   = 1 << CLIP_BIT_NEAR,
         CLIP_FLAGS_FAR    = 1 << CLIP_BIT_FAR,
