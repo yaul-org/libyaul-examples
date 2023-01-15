@@ -110,7 +110,6 @@ main(void)
                 /* render_mesh_transform(); */
                 /* matrix_pop(); */
 
-                render_mesh_start(&mesh_torus);
                 render_enable(RENDER_FLAGS_LIGHTING);
                 matrix_push();
                 matrix_x_translate(FIX16(-15));
@@ -119,20 +118,18 @@ main(void)
                 matrix_z_rotate(theta);
                 matrix_x_translate(FIX16(-20));
                 matrix_z_translate(FIX16(30));
-                render_mesh_transform();
+                render_mesh_transform(&mesh_torus);
                 matrix_pop();
 
-                render_mesh_start(&mesh_torus2);
                 render_disable(RENDER_FLAGS_LIGHTING);
                 matrix_push();
                 matrix_y_rotate(theta);
                 matrix_x_rotate(theta);
                 matrix_z_rotate(theta);
                 matrix_z_translate(FIX16(30));
-                render_mesh_transform();
+                render_mesh_transform(&mesh_torus2);
                 matrix_pop();
 
-                render_mesh_start(&mesh_torus3);
                 render_enable(RENDER_FLAGS_LIGHTING);
                 matrix_push();
                 matrix_x_translate(FIX16(15));
@@ -141,7 +138,7 @@ main(void)
                 matrix_x_rotate(theta);
                 matrix_x_translate(FIX16(20));
                 matrix_z_translate(FIX16(30));
-                render_mesh_transform();
+                render_mesh_transform(&mesh_torus3);
                 matrix_pop();
 
                 theta += DEG2ANGLE(5.0f);

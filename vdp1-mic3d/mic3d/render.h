@@ -28,37 +28,28 @@ typedef enum {
         CLIP_FLAGS_BOTTOM = 1 << CLIP_BIT_BOTTOM
 } clip_flags_t;
 
-typedef struct {
-        const mesh_t *mesh;
-        fix16_t *z_values;
-        int16_vec2_t *screen_points;
-        fix16_t *depth_values;
-} __aligned(4) render_mesh_t;
-
 typedef struct render {
         /* Pools */
         fix16_t *z_values_pool;
         int16_vec2_t *screen_points_pool;
         fix16_t *depth_values_pool;
         vdp1_cmdt_t *cmdts_pool;
-        render_mesh_t *render_meshes_pool;
 
         /* Settings */
         fix16_t view_distance;
         fix16_t near;
         fix16_t far;
         fix16_t sort_scale;
-
-        render_mesh_t *render_mesh_top;
-        render_mesh_t *render_mesh; /* Current render mesh */
-
         render_flags_t render_flags;
 
-        vdp1_cmdt_t *cmdts;
+        const mesh_t *mesh;
+
+        /* Sorting */
         vdp1_cmdt_t *sort_cmdt;
-        vdp1_link_t base_link;
-        uint32_t total_points_count;
-        uint32_t total_polygons_count;
+        vdp1_link_t sort_link;
+
+        vdp1_cmdt_t *cmdts;
+        uint32_t cmdt_count;
 } __aligned(4) render_t;
 
 void __render_init(void);

@@ -94,8 +94,6 @@ __light_polygon_process(const polygon_t *polygon, attribute_t *attribute)
 static void
 _polygon_process(const polygon_t *polygon, attribute_t *attribute)
 {
-        render_mesh_t * const render_mesh = __state.render->render_mesh;
-
         const gst_slot_t gst_slot = __light_gst_alloc();
         vdp1_gouraud_table_t * const gst = __light_gst_get(gst_slot);
 
@@ -103,7 +101,7 @@ _polygon_process(const polygon_t *polygon, attribute_t *attribute)
 
         for (uint32_t v = 0; v < 4; v++) {
                 const fix16_vec3_t * const vertex_normal =
-                    &render_mesh->mesh->normals[polygon->p[v]];
+                    &__state.render->mesh->normals[polygon->p[v]];
 
                 fix16_vec3_t intensity;
                 fix16_mat33_vec3_mul(&__state.light->intensity_matrix, vertex_normal, &intensity);

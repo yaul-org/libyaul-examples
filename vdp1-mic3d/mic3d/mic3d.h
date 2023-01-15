@@ -6,7 +6,7 @@
 #define SCREEN_WIDTH  320
 #define SCREEN_HEIGHT 224
 
-#define POLYGON_COUNT      4096
+#define POLYGON_COUNT      512
 #define POINTS_COUNT       (POLYGON_COUNT * 4)
 #define SORT_DEPTH         512
 #define MATRIX_STACK_COUNT 16
@@ -25,8 +25,7 @@ void render_disable(render_flags_t flags);
 void render_perspective_set(angle_t fov_angle);
 void render_near_level_set(uint32_t level);
 void render_far_set(fix16_t far);
-void render_mesh_start(const mesh_t *mesh);
-void render_mesh_transform(void);
+void render_mesh_transform(const mesh_t *mesh);
 void render(uint32_t subr_index, uint32_t cmdt_index);
 
 texture_t *tlist_acquire(uint32_t count);
