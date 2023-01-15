@@ -26,7 +26,7 @@ void render_perspective_set(angle_t fov_angle);
 void render_near_level_set(uint32_t level);
 void render_far_set(fix16_t far);
 void render_mesh_transform(const mesh_t *mesh);
-void render(uint32_t subr_index, uint32_t cmdt_index);
+void render(void);
 
 texture_t *tlist_acquire(uint32_t count);
 void tlist_release(void);

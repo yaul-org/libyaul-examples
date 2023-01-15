@@ -9,7 +9,9 @@
 typedef enum render_flags {
         RENDER_FLAGS_NONE     = 0,
         RENDER_FLAGS_LIGHTING = 1 << 0,
-        RENDER_FLAGS_ALL      = RENDER_FLAGS_LIGHTING
+        RENDER_FLAGS_NO_CLEAR = 1 << 1,
+        RENDER_FLAGS_ALL      = RENDER_FLAGS_LIGHTING |
+                                RENDER_FLAGS_NO_CLEAR
 } render_flags_t;
 
 typedef union indices {

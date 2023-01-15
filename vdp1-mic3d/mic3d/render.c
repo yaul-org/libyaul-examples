@@ -32,6 +32,15 @@
 #define NEAR_LEVEL_MIN 1U
 #define NEAR_LEVEL_MAX 8U
 
+#define ORDER_SYSTEM_CLIP_COORDS_INDEX  0
+#define ORDER_SUBR_INDEX                1
+#define ORDER_CLEAR_POLYGON_INDEX       1
+#define ORDER_LOCAL_COORDS_INDEX        2
+#define ORDER_DRAW_END_INDEX            3
+#define ORDER_INDEX                     4
+
+static void _vdp1_init(void);
+
 static void _transform(void);
 
 static fix16_t _depth_calculate(void);
@@ -82,6 +91,8 @@ __render_init(void)
         render_start();
 
         __perf_counter_init(&_transform_pc);
+
+        _vdp1_init();
 }
 
 void
@@ -228,9 +239,9 @@ render_mesh_transform(const mesh_t *mesh)
 }
 
 void
-render(uint32_t subr_index, uint32_t cmdt_index)
+render(void)
 {
-        vdp1_cmdt_t * const subr_cmdt = (vdp1_cmdt_t *)VDP1_CMD_TABLE(subr_index, 0);
+        vdp1_cmdt_t * const subr_cmdt = (vdp1_cmdt_t *)VDP1_CMD_TABLE(ORDER_SUBR_INDEX, 0);
 
         if (__state.render->cmdt_count == 0) {
                 vdp1_cmdt_link_type_set(subr_cmdt, VDP1_CMDT_LINK_TYPE_JUMP_NEXT);
@@ -239,10 +250,19 @@ render(uint32_t subr_index, uint32_t cmdt_index)
         }
 
         __state.render->sort_cmdt = subr_cmdt;
-        __state.render->sort_link = cmdt_index;
+        __state.render->sort_link = ORDER_INDEX;
 
-        /* Set as a subroutine call */
-        vdp1_cmdt_link_type_set(subr_cmdt, VDP1_CMDT_LINK_TYPE_JUMP_CALL);
+        /* Set as a subroutine call. If RENDER_FLAGS_NO_CLEAR is set, skip the
+         * clear polygon (ORDER_SUBR_INDEX), but start the call */
+        if (RENDER_FLAG_TEST(NO_CLEAR)) {
+                vdp1_cmdt_link_type_set(subr_cmdt, VDP1_CMDT_LINK_TYPE_SKIP_CALL);
+
+                vdp1_sync_mode_set(VDP1_SYNC_MODE_CHANGE_ONLY);
+        } else {
+                vdp1_cmdt_link_type_set(subr_cmdt, VDP1_CMDT_LINK_TYPE_JUMP_CALL);
+
+                vdp1_sync_mode_set(VDP1_SYNC_MODE_ERASE_CHANGE);
+        }
 
         __sort_iterate(_render_single);
 
@@ -254,6 +274,67 @@ render(uint32_t subr_index, uint32_t cmdt_index)
         vdp1_sync_cmdt_put(__state.render->cmdts_pool, __state.render->cmdt_count, __state.render->sort_link);
 
         __light_gst_put();
+}
+
+static void
+_vdp1_init(void)
+{
+        static const int16_vec2_t system_clip_coord =
+            INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,
+                                   SCREEN_HEIGHT - 1);
+
+        static const int16_vec2_t local_coord_center =
+            INT16_VEC2_INITIALIZER(SCREEN_WIDTH / 2,
+                                   SCREEN_HEIGHT / 2);
+
+        static const vdp1_cmdt_draw_mode_t polygon_draw_mode = {
+                .pre_clipping_disable = true
+        };
+
+        static int16_vec2_t polygon_points[] = {
+                INT16_VEC2_INITIALIZER(-SCREEN_WIDTH / 2     ,                        0),
+                INT16_VEC2_INITIALIZER((SCREEN_WIDTH / 2) - 1,                        0),
+                INT16_VEC2_INITIALIZER((SCREEN_WIDTH / 2) - 1, (SCREEN_HEIGHT / 2) -  1),
+                INT16_VEC2_INITIALIZER(-SCREEN_WIDTH / 2     , (SCREEN_HEIGHT / 2) -  1)
+        };
+        /*
+         * +------+------+-------------+--------------+
+         * |      | Horz | # pixels in | # rasters in |
+         * |      |      | 1 raster    | 1 field      |
+         * +------+------+-------------+--------------+
+         * | NTSC | 320  | 1708        | 263          |
+         * | PAL  | 352  | 1820        | 313          |
+         * +------+------+-------------+--------------+
+         *
+         * w=352
+         * h=224
+         * Pr1=1820
+         * Pf1=263
+         * T=w*h
+         * R=(Pr1-200)*(Pf1-h)
+         * H=round((T-R)/h)
+         *
+         * Calculate this via a look up. Skip the clear polygon if there is no
+         * need for it */
+
+        /* XXX: This is hardcoded for 352x224 */
+        polygon_points[0].y = 70;
+        polygon_points[1].y = 70;
+
+        vdp1_cmdt_t * const cmdts = (vdp1_cmdt_t *)VDP1_CMD_TABLE(0, 0);
+
+        vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
+        vdp1_cmdt_vtx_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX], system_clip_coord);
+
+        vdp1_cmdt_polygon_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX]);
+        vdp1_cmdt_draw_mode_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], polygon_draw_mode);
+        vdp1_cmdt_color_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], RGB1555(0, 0, 0, 0));
+        vdp1_cmdt_vtx_set(&cmdts[ORDER_CLEAR_POLYGON_INDEX], polygon_points);
+
+        vdp1_cmdt_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX]);
+        vdp1_cmdt_vtx_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX], local_coord_center);
+
+        vdp1_cmdt_end_set(&cmdts[ORDER_DRAW_END_INDEX]);
 }
 
 static void

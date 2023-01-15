@@ -14,12 +14,6 @@
 
 #include "mic3d.h"
 
-#define ORDER_SYSTEM_CLIP_COORDS_INDEX  0
-#define ORDER_LOCAL_COORDS_INDEX        1
-#define ORDER_SUBR_INDEX                1
-#define ORDER_DRAW_END_INDEX            2
-#define ORDER_INDEX                     3
-
 extern const mesh_t mesh_m;
 extern const mesh_t mesh_i;
 extern const mesh_t mesh_c;
@@ -117,6 +111,7 @@ main(void)
                 matrix_y_rotate(theta);
                 matrix_z_rotate(theta);
                 matrix_x_translate(FIX16(-20));
+                matrix_y_translate(FIX16(25));
                 matrix_z_translate(FIX16(30));
                 render_mesh_transform(&mesh_torus);
                 matrix_pop();
@@ -143,7 +138,7 @@ main(void)
 
                 theta += DEG2ANGLE(5.0f);
 
-                render(ORDER_SUBR_INDEX, ORDER_INDEX);
+                render();
 
                 vdp1_sync_render();
 
@@ -178,27 +173,7 @@ user_init(void)
 static void
 _vdp1_init(void)
 {
-        const int16_vec2_t system_clip_coord =
-            INT16_VEC2_INITIALIZER(SCREEN_WIDTH - 1,
-                                   SCREEN_HEIGHT - 1);
-
-        const int16_vec2_t local_coord_center =
-            INT16_VEC2_INITIALIZER(SCREEN_WIDTH / 2,
-                                   SCREEN_HEIGHT / 2);
-
-        vdp1_cmdt_t * const cmdts = (vdp1_cmdt_t *)VDP1_CMD_TABLE(0, 0);
-
-        vdp1_cmdt_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX]);
-        vdp1_cmdt_vtx_system_clip_coord_set(&cmdts[ORDER_SYSTEM_CLIP_COORDS_INDEX],
-            system_clip_coord);
-
-        vdp1_cmdt_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX]);
-        vdp1_cmdt_vtx_local_coord_set(&cmdts[ORDER_LOCAL_COORDS_INDEX],
-            local_coord_center);
-
-        vdp1_cmdt_end_set(&cmdts[ORDER_DRAW_END_INDEX]);
-
-        vdp1_sync_interval_set(2);
+        vdp1_sync_interval_set(-1);
 
         vdp1_env_default_set();
 }
