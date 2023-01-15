@@ -3,7 +3,7 @@
 
 #include "types.h"
 
-#define SCREEN_WIDTH  320
+#define SCREEN_WIDTH  352
 #define SCREEN_HEIGHT 224
 
 #define POLYGON_COUNT      512
