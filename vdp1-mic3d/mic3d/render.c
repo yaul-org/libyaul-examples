@@ -259,33 +259,41 @@ render(uint32_t subr_index, uint32_t cmdt_index)
 static void
 _transform(void)
 {
+        render_transform_t * const render_transform =
+            __state.render->render_transform;
+
         const fix16_mat43_t * const world_matrix = matrix_top();
 
         fix16_mat43_t inv_view_matrix __aligned(16);
 
         __camera_view_invert(&inv_view_matrix);
 
-        fix16_mat43_t matrix __aligned(16);
+        fix16_mat43_mul(&inv_view_matrix, world_matrix, &render_transform->view_matrix);
 
-        fix16_mat43_mul(&inv_view_matrix, world_matrix, &matrix);
-
-        const fix16_vec3_t * const m0 = (const fix16_vec3_t *)&matrix.row[0];
-        const fix16_vec3_t * const m1 = (const fix16_vec3_t *)&matrix.row[1];
-        const fix16_vec3_t * const m2 = (const fix16_vec3_t *)&matrix.row[2];
+        const fix16_vec3_t * const m0 = (const fix16_vec3_t *)&render_transform->view_matrix.row[0];
+        const fix16_vec3_t * const m1 = (const fix16_vec3_t *)&render_transform->view_matrix.row[1];
+        const fix16_vec3_t * const m2 = (const fix16_vec3_t *)&render_transform->view_matrix.row[2];
 
         const fix16_vec3_t * const points = __state.render->mesh->points;
         int16_vec2_t * const screen_points = __state.render->screen_points_pool;
         fix16_t * const z_values = __state.render->z_values_pool;
-        fix16_t * const depth_values = __state.render->depth_values_pool;
+        /* fix16_t * const depth_values = __state.render->depth_values_pool; */
 
         for (uint32_t i = 0; i < __state.render->mesh->points_count; i++) {
-                const fix16_t z = fix16_vec3_dot(m2, &points[i]) + matrix.frow[2][3];
-                const fix16_t depth_value = fix16_div(__state.render->view_distance, fix16_max(z, __state.render->near));
+                const fix16_t z = fix16_vec3_dot(m2, &points[i]) + render_transform->view_matrix.frow[2][3];
+                const fix16_t clamped_z = fix16_max(z, __state.render->near);
 
-                screen_points[i].x = fix16_int32_mul(depth_value, fix16_vec3_dot(m0, &points[i]) + matrix.frow[0][3]);
-                screen_points[i].y = fix16_int32_mul(depth_value, fix16_vec3_dot(m1, &points[i]) + matrix.frow[1][3]);
+                cpu_divu_fix16_set(__state.render->view_distance, clamped_z);
+
+                const fix16_t x = fix16_vec3_dot(m0, &points[i]) + render_transform->view_matrix.frow[0][3];
+                const fix16_t y = fix16_vec3_dot(m1, &points[i]) + render_transform->view_matrix.frow[1][3];
+
+                const fix16_t depth_value = cpu_divu_quotient_get();
+
+                screen_points[i].x = fix16_int32_mul(depth_value, x);
+                screen_points[i].y = fix16_int32_mul(depth_value, y);
                 z_values[i] = z;
-                depth_values[i] = depth_value;
+                /* depth_values[i] = depth_value; */
         }
 }
 
@@ -323,7 +331,7 @@ _depth_max_calculate(const fix16_t *z_values)
 static fix16_t
 _depth_center_calculate(const fix16_t *z_values)
 {
-        return ((z_values[0] + z_values[1] + z_values[2] + z_values[3]) >> 2);
+        return ((z_values[0] + z_values[2]) >> 1);
 }
 
 static void
@@ -370,14 +378,14 @@ _clip_flags_calculate(void)
         _clip_flags_lrtb_calculate(render_transform->screen_points[3], &render_transform->clip_flags[3]);
 
         render_transform->and_flags = render_transform->clip_flags[0] &
-                               render_transform->clip_flags[1] &
-                               render_transform->clip_flags[2] &
-                               render_transform->clip_flags[3];
+                                      render_transform->clip_flags[1] &
+                                      render_transform->clip_flags[2] &
+                                      render_transform->clip_flags[3];
 
         render_transform->or_flags = render_transform->clip_flags[0] |
-                              render_transform->clip_flags[1] |
-                              render_transform->clip_flags[2] |
-                              render_transform->clip_flags[3];
+                                     render_transform->clip_flags[1] |
+                                     render_transform->clip_flags[2] |
+                                     render_transform->clip_flags[3];
 }
 
 static void

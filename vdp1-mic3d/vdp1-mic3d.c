@@ -198,7 +198,7 @@ _vdp1_init(void)
 
         vdp1_cmdt_end_set(&cmdts[ORDER_DRAW_END_INDEX]);
 
-        vdp1_sync_interval_set(-1);
+        vdp1_sync_interval_set(2);
 
         vdp1_env_default_set();
 }
