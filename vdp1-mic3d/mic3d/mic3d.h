@@ -19,7 +19,6 @@ void mic3d_init(void);
 
 void camera_lookat(const camera_t *camera);
 
-void render_start(void);
 void render_enable(render_flags_t flags);
 void render_disable(render_flags_t flags);
 void render_perspective_set(angle_t fov_angle);

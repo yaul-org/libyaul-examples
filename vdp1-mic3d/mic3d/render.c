@@ -39,6 +39,8 @@
 #define ORDER_DRAW_END_INDEX            3
 #define ORDER_INDEX                     4
 
+static void _reset(void);
+
 static void _vdp1_init(void);
 
 static void _transform(void);
@@ -88,18 +90,11 @@ __render_init(void)
         render_near_level_set(7);
         render_far_set(FIX16(1024));
 
-        render_start();
+        _reset();
 
         __perf_counter_init(&_transform_pc);
 
         _vdp1_init();
-}
-
-void
-render_start(void)
-{
-        _cmdts_reset();
-        __sort_start();
 }
 
 void
@@ -276,6 +271,15 @@ render(void)
         vdp1_sync_cmdt_put(render->cmdts_pool, render->cmdt_count, render->sort_link);
 
         __light_gst_put();
+
+        _reset();
+}
+
+static void
+_reset(void)
+{
+        _cmdts_reset();
+        __sort_start();
 }
 
 static void

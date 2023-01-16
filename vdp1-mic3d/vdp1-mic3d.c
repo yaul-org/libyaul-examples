@@ -92,7 +92,6 @@ main(void)
 
         while (true) {
                 dbgio_puts("[H[2J");
-                render_start();
 
                 /* render_mesh_start(&mesh_cube); */
                 /* render_disable(RENDER_FLAGS_LIGHTING); */
