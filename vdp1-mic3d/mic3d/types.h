@@ -14,6 +14,8 @@ typedef enum render_flags {
                                 RENDER_FLAGS_NO_CLEAR
 } render_flags_t;
 
+typedef uint16_t gst_slot_t;
+
 typedef union indices {
         struct {
                 uint16_t p0;
@@ -88,7 +90,7 @@ typedef struct {
         } palette;
 
         uint16_t texture_slot;
-        uint16_t shading_slot;
+        gst_slot_t shading_slot;
 } __aligned(4) attribute_t;
 
 static_assert(sizeof(attribute_t) == 12);

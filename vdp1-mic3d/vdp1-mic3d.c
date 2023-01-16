@@ -30,23 +30,15 @@ extern const palette_t palette_baku;
 
 static texture_t _textures[8];
 
-static void _vdp1_init(void);
-
 static size_t _texture_load(texture_t *textures, uint32_t slot, const picture_t *picture, vdp1_vram_t texture_base);
 static void _palette_load(uint16_t bank_256, uint16_t bank_16, const palette_t *palette);
 
 vdp1_gouraud_table_t _pool_shading_tables[CMDT_COUNT] __aligned(16);
+vdp1_gouraud_table_t _pool_shading_tables2[512] __aligned(16);
 
 void
 main(void)
 {
-        for (uint32_t i = 0; i < CMDT_COUNT; i++) {
-                _pool_shading_tables[i].colors[0] = RGB1555(1, i & 31,     16,     16);
-                _pool_shading_tables[i].colors[1] = RGB1555(1,     16, i & 31,     16);
-                _pool_shading_tables[i].colors[2] = RGB1555(1,     16,     16, i & 31);
-                _pool_shading_tables[i].colors[3] = RGB1555(1, i & 31, i & 31, i & 31);
-        }
-
         dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
@@ -59,9 +51,9 @@ main(void)
 
         tlist_set(_textures, 8);
 
-        light_set(_pool_shading_tables,
+        light_gst_set(_pool_shading_tables,
             CMDT_COUNT,
-            (vdp1_vram_t)vdp1_vram_partitions.gouraud_base);
+            (vdp1_vram_t)(vdp1_vram_partitions.gouraud_base + 512));
 
         vdp1_vram_t texture_base;
         texture_base = (vdp1_vram_t)vdp1_vram_partitions.texture_base;
@@ -90,18 +82,24 @@ main(void)
         angle_t theta;
         theta = DEG2ANGLE(0.0f);
 
+        for (uint32_t i = 0; i < 512; i++) {
+                const rgb1555_t color = RGB1555(1,
+                                                fix16_int32_to(fix16_int32_from(i * 31) / 512),
+                                                fix16_int32_to(fix16_int32_from(i * 31) / 512),
+                                                fix16_int32_to(fix16_int32_from(i * 31) / 512));
+
+                _pool_shading_tables2[i].colors[0] = color;
+                _pool_shading_tables2[i].colors[1] = color;
+                _pool_shading_tables2[i].colors[2] = color;
+                _pool_shading_tables2[i].colors[3] = color;
+        }
+
+        gst_set((vdp1_vram_t)vdp1_vram_partitions.gouraud_base);
+        gst_put(_pool_shading_tables2, 512);
+        gst_unset();
+
         while (true) {
                 dbgio_puts("[H[2J");
-
-                /* render_mesh_start(&mesh_cube); */
-                /* render_disable(RENDER_FLAGS_LIGHTING); */
-                /* matrix_push(); */
-                /* /\* matrix_x_rotate(theta); *\/ */
-                /* matrix_y_rotate(theta); */
-                /* /\* matrix_z_rotate(theta); *\/ */
-                /* matrix_z_translate(FIX16(30)); */
-                /* render_mesh_transform(); */
-                /* matrix_pop(); */
 
                 render_enable(RENDER_FLAGS_LIGHTING);
                 matrix_push();
@@ -116,9 +114,10 @@ main(void)
                 matrix_pop();
 
                 render_disable(RENDER_FLAGS_LIGHTING);
+                gst_set((vdp1_vram_t)vdp1_vram_partitions.gouraud_base);
                 matrix_push();
-                matrix_y_rotate(theta);
                 matrix_x_rotate(theta);
+                matrix_x_rotate(DEG2ANGLE(60));
                 matrix_z_rotate(theta);
                 matrix_z_translate(FIX16(30));
                 render_mesh_transform(&mesh_torus2);
@@ -159,7 +158,9 @@ user_init(void)
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
             RGB1555(1, 0, 3, 15));
 
-        _vdp1_init();
+        vdp1_sync_interval_set(-1);
+
+        vdp1_env_default_set();
 
         vdp2_sprite_priority_set(0, 6);
 
@@ -167,14 +168,6 @@ user_init(void)
 
         vdp2_sync();
         vdp2_sync_wait();
-}
-
-static void
-_vdp1_init(void)
-{
-        vdp1_sync_interval_set(-1);
-
-        vdp1_env_default_set();
 }
 
 static size_t

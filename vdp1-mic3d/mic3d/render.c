@@ -77,14 +77,17 @@ __render_init(void)
 
         extern render_transform_t __render_transform;
 
-        __state.render->z_values_pool = __pool_z_values;
-        __state.render->screen_points_pool = __pool_screen_points;
-        __state.render->depth_values_pool = __pool_depth_values;
-        __state.render->cmdts_pool = __pool_cmdts;
+        render_t * const render = __state.render;
 
-        __state.render->render_transform = &__render_transform;
+        render->z_values_pool = __pool_z_values;
+        render->screen_points_pool = __pool_screen_points;
+        render->depth_values_pool = __pool_depth_values;
+        render->cmdts_pool = __pool_cmdts;
 
-        __state.render->render_flags = RENDER_FLAGS_NONE;
+        render->mesh = NULL;
+        render->render_transform = &__render_transform;
+
+        render->render_flags = RENDER_FLAGS_NONE;
 
         render_perspective_set(DEG2ANGLE(90.0f));
         render_near_level_set(7);
@@ -100,45 +103,55 @@ __render_init(void)
 void
 render_enable(render_flags_t flags)
 {
-        __state.render->render_flags |= flags;
+        render_t * const render = __state.render;
+
+        render->render_flags |= flags;
 }
 
 void
 render_disable(render_flags_t flags)
 {
-        __state.render->render_flags &= ~flags;
+        render_t * const render = __state.render;
+
+        render->render_flags &= ~flags;
 }
 
 void
 render_perspective_set(angle_t fov_angle)
 {
+        render_t * const render = __state.render;
+
         fov_angle = clamp(fov_angle, MIN_FOV_ANGLE, MAX_FOV_ANGLE);
 
         const angle_t hfov_angle = fov_angle >> 1;
         const fix16_t screen_scale = FIX16(0.5f * (SCREEN_WIDTH - 1));
         const fix16_t tan = fix16_tan(hfov_angle);
 
-        __state.render->view_distance = fix16_mul(screen_scale, tan);
+        render->view_distance = fix16_mul(screen_scale, tan);
 }
 
 void
 render_near_level_set(uint32_t level)
 {
-        __state.render->near = __state.render->view_distance;
+        render_t * const render = __state.render;
+
+        render->near = render->view_distance;
 
         const uint32_t clamped_level =
             clamp(level + 1, NEAR_LEVEL_MIN, NEAR_LEVEL_MAX);
 
         for (int32_t i = clamped_level; i > 0; i--) {
-                __state.render->near >>= 1;
+                render->near >>= 1;
         }
 }
 
 void
 render_far_set(fix16_t far)
 {
-        __state.render->far = fix16_clamp(far, __state.render->near, FIX16(2048.0f));
-        __state.render->sort_scale = fix16_div(FIX16(SORT_DEPTH - 1), __state.render->far);
+        render_t * const render = __state.render;
+
+        render->far = fix16_clamp(far, render->near, FIX16(2048.0f));
+        render->sort_scale = fix16_div(FIX16(SORT_DEPTH - 1), render->far);
 }
 
 void

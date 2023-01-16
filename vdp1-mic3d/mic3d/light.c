@@ -8,7 +8,7 @@ static void _polygon_passthrough_process(void);
 void
 __light_init(void)
 {
-        light_set(NULL, 0, VDP1_VRAM(0x00000000));
+        light_gst_set(NULL, 0, VDP1_VRAM(0x00000000));
 
         fix16_mat33_zero(&__state.light->color_matrix);
         fix16_mat33_zero(&__state.light->light_matrix);
@@ -125,7 +125,8 @@ _polygon_passthrough_process(void)
         render_transform_t * const render_transform =
             __state.render->render_transform;
 
-        render_transform->rw_attribute.shading_slot = render_transform->ro_attribute->shading_slot;
+        render_transform->rw_attribute.shading_slot =
+            __gst_slot_calculate(render_transform->ro_attribute->shading_slot);
 }
 
 void
@@ -135,25 +136,16 @@ __light_gst_put(void)
                 return;
         }
 
-        scu_dma_level_t level;
-        level = scu_dma_level_unused_get();
-
-        if (level < 0) {
-                level = 0;
-        }
-
-        scu_dma_transfer(level, (void *)__state.light->vram_base,
-            __state.light->gsts,
-            __state.light->gst_count * sizeof(vdp1_gouraud_table_t));
-        scu_dma_transfer_wait(level);
+        scu_dma_transfer(0, (void *)__state.light->vram_base, __state.light->gouraud_tables, __state.light->gst_count * sizeof(vdp1_gouraud_table_t));
+        scu_dma_transfer_wait(0);
 
         __state.light->gst_count = 0;
 }
 
 void
-light_set(vdp1_gouraud_table_t *gouraud_tables, uint32_t count, vdp1_vram_t vram_base)
+light_gst_set(vdp1_gouraud_table_t *gouraud_tables, uint32_t count, vdp1_vram_t vram_base)
 {
-        __state.light->gsts = gouraud_tables;
+        __state.light->gouraud_tables = gouraud_tables;
         __state.light->count = count;
         __state.light->vram_base = vram_base;
         __state.light->slot_base = vram_base >> 3;

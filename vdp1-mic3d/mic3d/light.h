@@ -11,7 +11,7 @@
 typedef void (*polygon_process_t)(void);
 
 typedef struct light {
-        vdp1_gouraud_table_t *gsts;
+        vdp1_gouraud_table_t *gouraud_tables;
         uint32_t count;
         vdp1_vram_t vram_base;
         uint16_t slot_base;
@@ -49,7 +49,7 @@ __light_gst_alloc(void)
 static inline vdp1_gouraud_table_t * __always_inline
 __light_gst_get(gst_slot_t gst_slot)
 {
-        return &__state.light->gsts[gst_slot];
+        return &__state.light->gouraud_tables[gst_slot];
 }
 
 void __light_init(void);

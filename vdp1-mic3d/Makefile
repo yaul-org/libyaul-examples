@@ -14,6 +14,7 @@ SH_SRCS:= \
 	vdp1-mic3d.c \
 \
 	mic3d/camera.c \
+	mic3d/gst.c \
 	mic3d/light.c \
 	mic3d/list.c \
 	mic3d/matrix.c \

@@ -9,5 +9,6 @@
 #include "light.h"
 #include "state.h"
 #include "perf.h"
+#include "gst.h"
 
 #endif /* MIC3D_INTERNAL_H */

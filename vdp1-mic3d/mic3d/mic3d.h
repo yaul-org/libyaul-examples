@@ -48,6 +48,11 @@ void matrix_x_rotate(angle_t angle);
 void matrix_y_rotate(angle_t angle);
 void matrix_z_rotate(angle_t angle);
 
-void light_set(vdp1_gouraud_table_t *gouraud_tables, uint32_t count, vdp1_vram_t vram_base);
+void light_gst_set(vdp1_gouraud_table_t *gouraud_tables, uint32_t count, vdp1_vram_t vram_base);
+
+void gst_set(vdp1_vram_t vram_base);
+void gst_unset(void);
+void gst_put(const vdp1_gouraud_table_t *gouraud_tables, uint32_t put_count);
+void gst_put_wait(void); /* XXX: Not yet implemented */
 
 #endif /* MIC3D_H */

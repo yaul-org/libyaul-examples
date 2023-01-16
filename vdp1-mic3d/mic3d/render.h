@@ -6,6 +6,7 @@
 #include <fix16.h>
 
 #include "types.h"
+#include "gst.h"
 
 #define RENDER_FLAG_TEST(x) ((__state.render->render_flags & __CONCAT(RENDER_FLAGS_, x)) == __CONCAT(RENDER_FLAGS_, x))
 
@@ -48,6 +49,7 @@ typedef struct render {
         int16_vec2_t *screen_points_pool;
         fix16_t *depth_values_pool;
         vdp1_cmdt_t *cmdts_pool;
+        gst_t *gst;
 
         /* Settings */
         fix16_t view_distance;

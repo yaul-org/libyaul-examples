@@ -10,6 +10,7 @@ typedef struct render render_t;
 typedef struct sort sort_t;
 typedef struct tlist tlist_t;
 typedef struct light light_t;
+typedef struct gst gst_t;
 
 typedef struct perf perf_t;
 
@@ -19,6 +20,7 @@ typedef struct {
         tlist_t *tlist;
         mat_stack_t *mat_stack;
         light_t *light;
+        gst_t *gst;
         perf_t *perf;
 } state_t;
 
