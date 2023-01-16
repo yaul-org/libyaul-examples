@@ -1,4 +1,4 @@
-#include "mic3d.h"
+#include <mic3d.h>
 
 #define INDICES(a, b, c, d) { .indices.p0 = a, .indices.p1 = b, .indices.p2 = c, .indices.p3 = d }
 

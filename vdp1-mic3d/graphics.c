@@ -1,4 +1,4 @@
-#include "mic3d.h"
+#include <mic3d.h>
 
 extern const picture_t picture_mika;
 extern const picture_t picture_tails;

@@ -1,4 +1,4 @@
-#include "mic3d.h"
+#include <mic3d.h>
 
 #define COLOR1 RGB1555(1, 16,  0,  0)
 #define COLOR2 RGB1555(1,  0, 16,  0)
@@ -2067,15 +2067,6 @@ static const attribute_t _attributes_torus[] = {
         { .draw_mode.raw = 0x00C4, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .control.plane_type = PLANE_TYPE_SINGLE, .control.use_lighting = true, .palette.base_color = COLOR1, .shading_slot =  511 }
 };
 
-const mesh_t mesh_torus = {
-        .points         = _points_torus,
-        .points_count   = sizeof(_points_torus) / sizeof(*_points_torus),
-        .normals        = _normals_torus,
-        .attributes     = _attributes_torus,
-        .polygons       = _polygons_torus,
-        .polygons_count = sizeof(_polygons_torus) / sizeof(*_polygons_torus)
-};
-
 static const attribute_t _attributes_torus2[] = {
         { .draw_mode.raw = 0x00C4, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .control.plane_type = PLANE_TYPE_SINGLE, .control.use_lighting = true, .palette.base_color = COLOR2, .shading_slot =    0 },
         { .draw_mode.raw = 0x00C4, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .control.plane_type = PLANE_TYPE_SINGLE, .control.use_lighting = true, .palette.base_color = COLOR2, .shading_slot =    1 },
@@ -2591,7 +2582,6 @@ static const attribute_t _attributes_torus2[] = {
         { .draw_mode.raw = 0x00C4, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .control.plane_type = PLANE_TYPE_SINGLE, .control.use_lighting = true, .palette.base_color = COLOR2, .shading_slot =  511 }
 };
 
-
 static const attribute_t _attributes_torus3[] = {
         { .draw_mode.raw = 0x00C4, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .control.plane_type = PLANE_TYPE_SINGLE, .control.use_lighting = true, .palette.base_color = COLOR3, .shading_slot =    0 },
         { .draw_mode.raw = 0x00C4, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .control.plane_type = PLANE_TYPE_SINGLE, .control.use_lighting = true, .palette.base_color = COLOR3, .shading_slot =    1 },
@@ -3105,6 +3095,15 @@ static const attribute_t _attributes_torus3[] = {
         { .draw_mode.raw = 0x00C4, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .control.plane_type = PLANE_TYPE_SINGLE, .control.use_lighting = true, .palette.base_color = COLOR3, .shading_slot =  509 },
         { .draw_mode.raw = 0x00C4, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .control.plane_type = PLANE_TYPE_SINGLE, .control.use_lighting = true, .palette.base_color = COLOR3, .shading_slot =  510 },
         { .draw_mode.raw = 0x00C4, .control.command = COMMAND_TYPE_POLYGON, .control.sort_type = SORT_TYPE_CENTER, .control.plane_type = PLANE_TYPE_SINGLE, .control.use_lighting = true, .palette.base_color = COLOR3, .shading_slot =  511 }
+};
+
+const mesh_t mesh_torus = {
+        .points         = _points_torus,
+        .points_count   = sizeof(_points_torus) / sizeof(*_points_torus),
+        .normals        = _normals_torus,
+        .attributes     = _attributes_torus,
+        .polygons       = _polygons_torus,
+        .polygons_count = sizeof(_polygons_torus) / sizeof(*_polygons_torus)
 };
 
 const mesh_t mesh_torus2 = {

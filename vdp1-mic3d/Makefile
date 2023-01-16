@@ -13,19 +13,6 @@ SH_PROGRAM:= vdp1-mic3d
 SH_SRCS:= \
 	vdp1-mic3d.c \
 \
-	mic3d/camera.c \
-	mic3d/gst.c \
-	mic3d/light.c \
-	mic3d/list.c \
-	mic3d/matrix.c \
-	mic3d/mic3d.c \
-	mic3d/perf.c \
-	mic3d/render.c \
-	mic3d/sort.c \
-	mic3d/state.c \
-	mic3d/tlist.c \
-	mic3d/workarea.c \
-\
 	meshes/mesh_m.c \
 	meshes/mesh_i.c \
 	meshes/mesh_c.c \
@@ -37,8 +24,8 @@ SH_SRCS:= \
 	graphics_tails.c \
 	graphics_baku.c
 
-SH_LIBRARIES:=
-SH_CFLAGS+= -O2 -I. -I$(THIS_ROOT)/mic3d -DDEBUG -DPERF -g
+SH_LIBRARIES:= mic3d
+SH_CFLAGS+= -O2 -I. -DDEBUG -g
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

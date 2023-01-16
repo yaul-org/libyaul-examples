@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "mic3d.h"
+#include <mic3d.h>
 
 extern const mesh_t mesh_m;
 extern const mesh_t mesh_i;

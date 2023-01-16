@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "mic3d.h"
+#include <mic3d.h>
 
 #define PATCH_ADDRESS(s3d, x) ((void *)((uintptr_t)(s3d) + (uintptr_t)(x)))
 

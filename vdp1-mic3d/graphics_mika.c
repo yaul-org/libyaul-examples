@@ -1,4 +1,4 @@
-#include "mic3d.h"
+#include <mic3d.h>
 
 static const uint16_t _data[] = {
         0x8400, 0x8400, 0x8400, 0x8400, 0x8400, 0x8400, 0x8400, 0x8c00,
