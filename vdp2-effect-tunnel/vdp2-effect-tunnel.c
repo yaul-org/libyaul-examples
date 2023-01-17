@@ -222,11 +222,11 @@ _lncl_init(void)
         vdp2_scrn_lncl_set(VDP2_SCRN_NBG0);
         vdp2_scrn_lncl_sync();
 
-        vdp2_registers_t * const vdp2_regs = vdp2_regs_get();
+        vdp2_ioregs_t * const vdp2_regs = vdp2_regs_get();
 
-        vdp2_regs->ccctl = (1 << 0) | (1 << 5);
-        vdp2_regs->ccrna = 16;
-        vdp2_regs->ccrlb = 8;
+        vdp2_regs->ccctl  = (1 << 0) | (1 << 5);
+        vdp2_regs->ccrna  = 16;
+        vdp2_regs->ccrlb  = 8;
         vdp2_regs->lnclen = 1 << 0;
 }
 
