@@ -71,7 +71,7 @@ main(void)
                         const uint8_t g = y;
                         const uint8_t b = 0;
 
-                        vram[x + (y * 512)] = RGB888(r, g, b);
+                        vram[x + (y * 512)] = RGB888(0, r, g, b);
                 }
         }
 
