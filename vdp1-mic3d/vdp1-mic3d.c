@@ -84,9 +84,9 @@ main(void)
 
         for (uint32_t i = 0; i < 512; i++) {
                 const rgb1555_t color = RGB1555(1,
-                                                fix16_int32_to(fix16_int32_from(i * 31) / 512),
-                                                fix16_int32_to(fix16_int32_from(i * 31) / 512),
-                                                fix16_int32_to(fix16_int32_from(i * 31) / 512));
+                                                fix16_int32_to(fix16_int32_from(i * 31) / 512U),
+                                                fix16_int32_to(fix16_int32_from(i * 31) / 512U),
+                                                fix16_int32_to(fix16_int32_from(i * 31) / 512U));
 
                 _pool_shading_tables2[i].colors[0] = color;
                 _pool_shading_tables2[i].colors[1] = color;
@@ -111,6 +111,31 @@ main(void)
                 matrix_y_translate(FIX16(25));
                 matrix_z_translate(FIX16(30));
                 render_mesh_transform(&mesh_torus);
+                /* dbgio_printf("ticks: %5lu\n", ticks_get("RDNR")); */
+                matrix_pop();
+
+                render_enable(RENDER_FLAGS_LIGHTING);
+                matrix_push();
+                matrix_x_translate(FIX16(-15));
+                matrix_x_rotate(theta);
+                matrix_y_rotate(theta);
+                matrix_z_rotate(theta);
+                matrix_x_translate(FIX16(20));
+                matrix_y_translate(FIX16(25));
+                matrix_z_translate(FIX16(30));
+                render_mesh_transform(&mesh_torus);
+                matrix_pop();
+
+                render_enable(RENDER_FLAGS_LIGHTING);
+                matrix_push();
+                matrix_x_translate(FIX16(-15));
+                matrix_x_rotate(theta);
+                matrix_y_rotate(theta);
+                matrix_z_rotate(theta);
+                matrix_x_translate(FIX16(50));
+                matrix_y_translate(FIX16(25));
+                matrix_z_translate(FIX16(30));
+                render_mesh_transform(&mesh_torus);
                 matrix_pop();
 
                 render_disable(RENDER_FLAGS_LIGHTING);
@@ -120,7 +145,7 @@ main(void)
                 matrix_x_rotate(DEG2ANGLE(60));
                 matrix_z_rotate(theta);
                 matrix_z_translate(FIX16(30));
-                render_mesh_transform(&mesh_torus2);
+                render_mesh_transform(&mesh_torus);
                 matrix_pop();
 
                 render_enable(RENDER_FLAGS_LIGHTING);
@@ -131,7 +156,29 @@ main(void)
                 matrix_x_rotate(theta);
                 matrix_x_translate(FIX16(20));
                 matrix_z_translate(FIX16(30));
-                render_mesh_transform(&mesh_torus3);
+                render_mesh_transform(&mesh_torus);
+                matrix_pop();
+
+                render_enable(RENDER_FLAGS_LIGHTING);
+                matrix_push();
+                matrix_x_translate(FIX16(15));
+                matrix_z_rotate(theta);
+                matrix_y_rotate(theta);
+                matrix_x_rotate(theta);
+                matrix_x_translate(FIX16(-20));
+                matrix_z_translate(FIX16(50));
+                render_mesh_transform(&mesh_torus);
+                matrix_pop();
+
+                render_disable(RENDER_FLAGS_LIGHTING);
+                matrix_push();
+                matrix_x_translate(FIX16(15));
+                matrix_z_rotate(theta);
+                matrix_y_rotate(theta);
+                matrix_x_rotate(theta);
+                matrix_x_translate(FIX16(-55));
+                matrix_z_translate(FIX16(50));
+                render_mesh_transform(&mesh_torus);
                 matrix_pop();
 
                 theta += DEG2ANGLE(5.0f);

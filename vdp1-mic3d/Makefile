@@ -13,10 +13,6 @@ SH_PROGRAM:= vdp1-mic3d
 SH_SRCS:= \
 	vdp1-mic3d.c \
 \
-	meshes/mesh_m.c \
-	meshes/mesh_i.c \
-	meshes/mesh_c.c \
-	meshes/mesh_cube.c \
 	meshes/mesh_torus.c \
 \
 	graphics.c \
