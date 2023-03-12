@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "menu.h"
+#include <menu.h>
 
 static void _vblank_out_handler(void *);
 

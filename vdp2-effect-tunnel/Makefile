@@ -12,11 +12,10 @@ BUILTIN_ASSETS+= \
 
 SH_PROGRAM:= vdp2-effect-tunnel
 SH_SRCS:= \
-	vdp2-effect-tunnel.c \
-	../shared/menu/menu.c
+	vdp2-effect-tunnel.c
 
-SH_LIBRARIES:=
-SH_CFLAGS+= -Os -I. -I../shared/menu
+SH_LIBRARIES:= menu
+SH_CFLAGS+= -Os -I.
 
 IP_VERSION:= V0.001
 IP_RELEASE_DATE:= 20180214

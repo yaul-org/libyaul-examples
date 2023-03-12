@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "scroll_menu.h"
+#include <scroll_menu.h>
 
 #define MENU_ENTRY_COUNT (16)
 

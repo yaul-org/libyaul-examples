@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "menu.h"
+#include <menu.h>
 
 #define NBG0_CPD         VDP2_VRAM_ADDR(0, 0x00000)
 #define NBG0_PND         VDP2_VRAM_ADDR(0, 0x13000)

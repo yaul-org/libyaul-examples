@@ -5,12 +5,10 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
 SH_PROGRAM:= cd-block
-SH_SRCS:= cd-block.c \
-	../shared/menu/scroll_menu.c \
-	../shared/menu/menu.c
+SH_SRCS:= cd-block.c
 
-SH_LIBRARIES:=
-SH_CFLAGS+= -Os -I. -I../shared/menu
+SH_LIBRARIES:= menu
+SH_CFLAGS+= -Os -I.
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

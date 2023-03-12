@@ -6,11 +6,10 @@ include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
 SH_PROGRAM:= dbgio-menu
 SH_SRCS:= \
-	dbgio-menu.c \
-	../shared/menu/menu.c
+	dbgio-menu.c
 
-SH_LIBRARIES:=
-SH_CFLAGS+= -Os -I. -I../shared/menu
+SH_LIBRARIES:= menu
+SH_CFLAGS+= -Os -I.
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
