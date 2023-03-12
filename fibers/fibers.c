@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "fiber.h"
+#include <fiber.h>
 
 static fiber_t _fiber1;
 static fiber_t _fiber2;

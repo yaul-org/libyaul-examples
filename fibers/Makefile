@@ -9,13 +9,10 @@ BUILTIN_ASSETS+= \
 
 SH_PROGRAM:= fibers
 SH_SRCS:= \
-	fibers.c \
-\
-	libfiber/fiber.c \
-	libfiber/context_switch.sx
+	fibers.c
 
-SH_LIBRARIES:=
-SH_CFLAGS+= -I. -I./libfiber -Os
+SH_LIBRARIES:= fiber
+SH_CFLAGS+= -I. -Os
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
