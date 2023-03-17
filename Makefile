@@ -66,5 +66,7 @@ all clean:
 		($(MAKE) -C $$example $@) || exit $$?; \
 	done
 
+# Exclude directories: shared
+#                      _template
 list-examples:
 	$(ECHO)/usr/bin/find . -maxdepth 1 -type d | tail -n +2 | sed -E 's/^\.\///g;/^\./d;/^_/d;/^shared$$/d' | sort -n
