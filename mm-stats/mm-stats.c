@@ -11,8 +11,8 @@
 #include <stdlib.h>
 
 typedef struct {
-        const char *tag;
-        size_t total;
+        size_t user_total;
+        size_t yaul_total;
 } data_t;
 
 static void
@@ -20,15 +20,22 @@ _walker(const mm_stats_walk_entry_t *walk_entry)
 {
         data_t * const data = walk_entry->work;
 
+        const char * const tag =
+          (walk_entry->pool_type == MM_STATS_TYPE_USER) ? "user" : "yaul";
+
         if (walk_entry->used) {
                 dbgio_printf("%*s: 0x%08X:0x%04X (%iB)\n",
-                    7,
-                    data->tag,
+                    4,
+                    tag,
                     walk_entry->address,
                     walk_entry->size,
                     walk_entry->size);
 
-                data->total += walk_entry->size;
+                if (walk_entry->pool_type == MM_STATS_TYPE_USER) {
+                    data->user_total += walk_entry->size;
+                } else {
+                    data->yaul_total += walk_entry->size;
+                }
         }
 }
 
@@ -43,21 +50,16 @@ main(void)
         malloc(256);
         malloc(512);
 
-        data_t private_data = {
-                .tag   = "Private",
-                .total = 0
+        data_t data = {
+                .user_total = 0,
+                .yaul_total = 0
         };
 
-        data_t user_data = {
-                .tag   = "User",
-                .total = 0
-        };
+        mm_stats_walk(_walker, &data);
 
-        mm_stats_yaul_walk(_walker, &private_data);
-        mm_stats_walk(_walker, &user_data);
-
-        dbgio_printf("Total private: %iB\n", private_data.total);
-        dbgio_printf("Total user:    %iB\n", user_data.total);
+        dbgio_puts("\n");
+        dbgio_printf("Total yaul: %10iB\n", data.yaul_total);
+        dbgio_printf("Total user: %10iB\n", data.user_total);
 
         dbgio_flush();
         vdp2_sync();
