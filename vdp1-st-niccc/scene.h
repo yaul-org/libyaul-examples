@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include <math.h>
+#include <gamemath/uint8.h>
 
 namespace scene {
     union rgb444 {
