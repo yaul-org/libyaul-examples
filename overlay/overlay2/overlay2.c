@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 #include <cpu.h>
-#include <dbgio/dbgio.h>
+#include <dbgio.h>
 #include <vdp2.h>
 
 extern void overlay2_foo(void);

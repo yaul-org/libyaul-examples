@@ -23,7 +23,7 @@ main(void)
             cdfs_entries_alloc(FILELIST_ENTRY_COUNT);
         assert(filelist_entries != NULL);
 
-        cdfs_filelist_default_init(&_filelist, filelist_entries, FILELIST_ENTRY_COUNT);
+        cdfs_filelist_init(&_filelist, filelist_entries, FILELIST_ENTRY_COUNT);
         cdfs_filelist_root_read(&_filelist);
 
         int32_t overlay_ret;
