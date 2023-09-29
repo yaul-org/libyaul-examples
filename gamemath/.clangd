@@ -1,0 +1,8 @@
+CompileFlags:
+	Add: [-D__INTELLISENSE__, --include=intellisense.h, -nostdinc++, -nostdlibinc, -fno-exceptions, -fno-rtti, -fno-unwind-tables, -fno-threadsafe-statics, -fno-use-cxa-atexit, -Wno-unknown-attributes]
+
+Diagnostics:
+	UnusedIncludes: Strict
+
+Index:
+	StandardLibrary: No
