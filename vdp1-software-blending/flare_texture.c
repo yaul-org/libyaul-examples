@@ -1,5 +1,6 @@
 #include <stdint.h>
-#include <math.h>
+
+#include <gamemath/int16.h>
 
 const int16_vec2_t flare_texture_dim = INT16_VEC2_INITIALIZER(64, 64);
 
