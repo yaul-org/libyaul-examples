@@ -38,7 +38,7 @@ main(void)
             cdfs_entries_alloc(-1);
         assert(filelist_entries != NULL);
 
-        cdfs_filelist_default_init(&_filelist, filelist_entries, -1);
+        cdfs_filelist_init(&_filelist, filelist_entries, -1);
         cdfs_filelist_root_read(&_filelist);
 
         scroll_menu_t menu;
