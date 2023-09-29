@@ -232,8 +232,8 @@ main(void)
                                 pos.x += FIX16( 0.5f);
                         }
 
-                        pos.x = fix16_clamp(pos.x, FIX16(-4.0f), FIX16(4.0f));
-                        pos.y = fix16_clamp(pos.y, FIX16(-4.0f), FIX16(4.0f));
+                        pos.x = clamp(pos.x, FIX16(-4.0f), FIX16(4.0f));
+                        pos.y = clamp(pos.y, FIX16(-4.0f), FIX16(4.0f));
                 }
 
                 const fix16_vec2_t clamped_pos = {
