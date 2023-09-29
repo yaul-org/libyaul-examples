@@ -22,13 +22,15 @@ static cdfs_filelist_t _filelist;
 int
 main(void)
 {
+        cdfs_config_default_set();
+
         /* Load the maximum number. We have to free the allocated filelist
          * entries, but since we never exit, we don't have to */
         cdfs_filelist_entry_t * const filelist_entries =
             cdfs_entries_alloc(-1);
         assert(filelist_entries != NULL);
 
-        cdfs_filelist_default_init(&_filelist, filelist_entries, -1);
+        cdfs_filelist_init(&_filelist, filelist_entries, -1);
         cdfs_filelist_root_read(&_filelist);
 
         uint32_t file_index;
