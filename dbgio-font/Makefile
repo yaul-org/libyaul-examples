@@ -4,6 +4,8 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
+SATCONV:= $(YAUL_INSTALL_ROOT)/bin/satconv$(EXE_EXT)
+
 # Each asset follows the format: <path>;<symbol>. Duplicates are removed
 BUILTIN_ASSETS+= \
 	assets/mrc_square_16x16.cpd;asset_font_cpd \
@@ -14,7 +16,7 @@ SH_SRCS:= \
 	dbgio-font.c
 
 SH_LIBRARIES:=
-SH_CFLAGS+= -I. -Os
+SH_CFLAGS+= -I. -Os -g -DDEBUG
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
@@ -29,7 +31,7 @@ IP_1ST_READ_SIZE:= 0
 include $(YAUL_INSTALL_ROOT)/share/build.post.iso-cue.mk
 
 work/mrc_squa.cpd work/mrc_squa.pal: work/mrc_square_16x16.bmp
-	$(ECHO)cd work; satconv assets.txt
+	$(ECHO)cd work; $(SATCONV) assets.txt
 	$(ECHO)python work/strip_tle.py work/mrc_squa.tle work/mrc_squa.cpd work/mrc_squa.pal
 	$(ECHO)rm -f work/mrc_squa.tle
 
@@ -43,7 +45,8 @@ assets/mrc_square_16x16.pal: assets/mrc_square_16x16.cpd
 
 .PHONY: .clean-assets
 .clean-assets:
-	$(ECHO)rm -f work/mrc_squa.cpd \
+	$(ECHO)rm -f \
+	    work/mrc_squa.cpd \
 	    work/mrc_squa.pal
 
 clean: .clean-assets

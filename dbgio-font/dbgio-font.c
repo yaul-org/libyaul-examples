@@ -19,8 +19,8 @@ static const dbgio_font_t _font = {
         .cg_size  = 8192, /* Size in bytes (1-BPP) */
         .pal      = asset_font_pal,
         .pal_size = 32,
-        .fg       = 9,
-        .bg       = 0
+        .fg_pal   = 9,
+        .bg_pal   = 0
 };
 
 /* As you can guess, this is a character to PND data lookup table. This gives
@@ -329,8 +329,7 @@ main(void)
         vdp2_sync();
         vdp2_sync_wait();
 
-        while (true) {
-        }
+        abort();
 }
 
 void
