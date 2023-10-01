@@ -74,6 +74,7 @@ TEST_GROUP("C++ GameMath") {
 #include "fix16_t/unary.h"
 #include "fix16_t/multiply.h"
 #include "fix16_t/multiply_negate.h"
+#include "fix16_t/abs.h"
   // clang-format: on
 
 #undef INSIDE_TEST_GROUP
