@@ -615,7 +615,7 @@ static uint32_t _on_draw_polygon7(vdp1_cmdt* cmdt, const uint8_vec2_t* vertex_bu
 }
 
 static void _on_draw(const uint8_vec2_t* vertex_buffer, uint32_t count, uint32_t palette_index) {
-  const draw_handler draw_handler = _draw_handlers[count];
+  const draw_handler draw = _draw_handlers[count];
 
   vdp1_cmdt* cmdt = &_scene.cmdt_list->cmdts[_scene.cmdt_list->count];
 
@@ -623,7 +623,7 @@ static void _on_draw(const uint8_vec2_t* vertex_buffer, uint32_t count, uint32_t
   color_bank.raw       = 0x0000;
   color_bank.type_0.dc = palette_index + 16;
 
-  _scene.cmdt_list->count += draw_handler(cmdt, vertex_buffer, color_bank);
+  _scene.cmdt_list->count += draw(cmdt, vertex_buffer, color_bank);
 }
 
 // #pragma GCC pop_options
