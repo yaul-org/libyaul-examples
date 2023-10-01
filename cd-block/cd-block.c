@@ -32,6 +32,8 @@ static uint16_t _frt_overflow_count = 0;
 int
 main(void)
 {
+        cdfs_config_default_set();
+
         /* Load the maximum number. We have to free the allocated filelist
          * entries, but since we never exit, we don't have to */
         cdfs_filelist_entry_t * const filelist_entries =
