@@ -19,6 +19,8 @@ static cdfs_filelist_t _filelist;
 int
 main(void)
 {
+        cdfs_config_default_set();
+
         cdfs_filelist_entry_t * const filelist_entries =
             cdfs_entries_alloc(FILELIST_ENTRY_COUNT);
         assert(filelist_entries != NULL);
