@@ -1158,6 +1158,6 @@ static const uint16_t _data[] = {
 const picture_t picture_tails = {
         .data      = _data,
         .data_size = sizeof(_data),
-        .dim.x     = 96,
-        .dim.y     = 96
+        .width     = 96,
+        .height    = 96
 };

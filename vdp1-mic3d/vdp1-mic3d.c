@@ -33,26 +33,44 @@ static texture_t _textures[8];
 static size_t _texture_load(texture_t *textures, uint32_t slot, const picture_t *picture, vdp1_vram_t texture_base);
 static void _palette_load(uint16_t bank_256, uint16_t bank_16, const palette_t *palette);
 
-vdp1_gouraud_table_t _pool_shading_tables[CMDT_COUNT] __aligned(16);
-vdp1_gouraud_table_t _pool_shading_tables2[512] __aligned(16);
+static vdp1_gouraud_table_t _pool_shading_tables[CONFIG_MIC3D_CMDT_COUNT] __aligned(16);
+static vdp1_gouraud_table_t _pool_shading_tables2[512] __aligned(16);
 
-void
+static workarea_mic3d_depth_values_t _pool_depth_values;
+static workarea_mic3d_z_values_t _pool_z_values;
+static workarea_mic3d_screen_points_t _pool_screen_points;
+static workarea_mic3d_sort_singles_t _pool_sort_singles;
+static workarea_mic3d_cmdts_t _pool_cmdts;
+static workarea_mic3d_render_matrices_t _pool_render_matrices;
+static workarea_mic3d_light_matrices_t _pool_light_matrices;
+static workarea_mic3d_colors_t _pool_colors;
+static workarea_mic3d_work_t _pool_work;
+
+static workarea_mic3d_t _workarea = {
+    &_pool_depth_values,   &_pool_z_values, &_pool_screen_points,
+    &_pool_sort_singles,   &_pool_cmdts,    &_pool_render_matrices,
+    &_pool_light_matrices, &_pool_colors,   &_pool_work
+};
+
+static sort_list_t _sort_list[512] __aligned(4);
+
+int
 main(void)
 {
         dbgio_init();
-        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
-        dbgio_dev_font_load();
+        dbgio_dev_default_init(DBGIO_DEV_MEDNAFEN_DEBUG);
 
         vdp1_vram_partitions_t vdp1_vram_partitions;
 
         vdp1_vram_partitions_get(&vdp1_vram_partitions);
 
-        mic3d_init();
+        mic3d_init(&_workarea);
+        render_sort_depth_set(_sort_list, 512);
 
         tlist_set(_textures, 8);
 
         light_gst_set(_pool_shading_tables,
-            CMDT_COUNT,
+            CONFIG_MIC3D_CMDT_COUNT,
             (vdp1_vram_t)(vdp1_vram_partitions.gouraud_base + 512));
 
         vdp1_vram_t texture_base;
@@ -64,23 +82,24 @@ main(void)
 
         _palette_load(0, 0, &palette_baku);
 
-        camera_t camera __unused;
+        camera_t camera;
 
-        camera.position.x = FIX16(  0.0f);
-        camera.position.y = FIX16(  0.0f);
-        camera.position.z = FIX16(-30.0f);
+        camera.position.x = FIX16( 0.0);
+        camera.position.y = FIX16( 0.0);
+        camera.position.z = FIX16(10.0);
 
-        camera.target.x = FIX16_ZERO;
-        camera.target.y = FIX16_ZERO;
-        camera.target.z = FIX16_ZERO;
+        camera.target.x = FIX16(0.0);
+        camera.target.y = FIX16(0.0);
+        camera.target.z = FIX16(0.0);
 
-        camera.up.x =  FIX16_ZERO;
-        camera.up.y = -FIX16_ONE;
+        camera.up.x = FIX16(0.0);
+        camera.up.y = FIX16(1.0);
+        camera.up.z = FIX16(0.0);
 
         camera_lookat(&camera);
 
-        angle_t theta;
-        theta = DEG2ANGLE(0.0f);
+        angle_t theta __unused;
+        theta = DEG2ANGLE(0.0);
 
         for (uint32_t i = 0; i < 512; i++) {
                 const rgb1555_t color = RGB1555(1,
@@ -98,101 +117,38 @@ main(void)
         gst_put(_pool_shading_tables2, 512);
         gst_unset();
 
+        fix16_mat43_t world[1];
+
+        fix16_mat33_identity(&world[0].rotation);
+
+        world[0].translation.x = FIX16(  0.0);
+        world[0].translation.y = FIX16(  0.0);
+        world[0].translation.z = FIX16(-40.0);
+
         while (true) {
                 dbgio_puts("[H[2J");
 
-                render_enable(RENDER_FLAGS_LIGHTING);
-                matrix_push();
-                matrix_x_translate(FIX16(-15));
-                matrix_x_rotate(theta);
-                matrix_y_rotate(theta);
-                matrix_z_rotate(theta);
-                matrix_x_translate(FIX16(-20));
-                matrix_y_translate(FIX16(25));
-                matrix_z_translate(FIX16(30));
-                render_mesh_transform(&mesh_torus);
-                /* dbgio_printf("ticks: %5lu\n", ticks_get("RDNR")); */
-                matrix_pop();
+                render_start();
+
+                fix16_mat43_t result;
+                fix16_mat43_zero(&result);
+                fix16_vec3_dup(&world[0].translation, &result.translation);
 
                 render_enable(RENDER_FLAGS_LIGHTING);
-                matrix_push();
-                matrix_x_translate(FIX16(-15));
-                matrix_x_rotate(theta);
-                matrix_y_rotate(theta);
-                matrix_z_rotate(theta);
-                matrix_x_translate(FIX16(20));
-                matrix_y_translate(FIX16(25));
-                matrix_z_translate(FIX16(30));
-                render_mesh_transform(&mesh_torus);
-                matrix_pop();
+                fix16_mat43_z_rotate(&world[0], theta, &result);
+                fix16_mat43_y_rotate(&result, theta, &result);
+                fix16_mat43_x_rotate(&result, theta, &result);
+                render_mesh_xform(&mesh_torus, &result);
 
-                render_enable(RENDER_FLAGS_LIGHTING);
-                matrix_push();
-                matrix_x_translate(FIX16(-15));
-                matrix_x_rotate(theta);
-                matrix_y_rotate(theta);
-                matrix_z_rotate(theta);
-                matrix_x_translate(FIX16(50));
-                matrix_y_translate(FIX16(25));
-                matrix_z_translate(FIX16(30));
-                render_mesh_transform(&mesh_torus);
-                matrix_pop();
+                theta += DEG2ANGLE(2.5);
 
-                render_disable(RENDER_FLAGS_LIGHTING);
-                gst_set((vdp1_vram_t)vdp1_vram_partitions.gouraud_base);
-                matrix_push();
-                matrix_x_rotate(theta);
-                matrix_x_rotate(DEG2ANGLE(60));
-                matrix_z_rotate(theta);
-                matrix_z_translate(FIX16(30));
-                render_mesh_transform(&mesh_torus);
-                matrix_pop();
-
-                render_enable(RENDER_FLAGS_LIGHTING);
-                matrix_push();
-                matrix_x_translate(FIX16(15));
-                matrix_z_rotate(theta);
-                matrix_y_rotate(theta);
-                matrix_x_rotate(theta);
-                matrix_x_translate(FIX16(20));
-                matrix_z_translate(FIX16(30));
-                render_mesh_transform(&mesh_torus);
-                matrix_pop();
-
-                render_enable(RENDER_FLAGS_LIGHTING);
-                matrix_push();
-                matrix_x_translate(FIX16(15));
-                matrix_z_rotate(theta);
-                matrix_y_rotate(theta);
-                matrix_x_rotate(theta);
-                matrix_x_translate(FIX16(-20));
-                matrix_z_translate(FIX16(50));
-                render_mesh_transform(&mesh_torus);
-                matrix_pop();
-
-                render_disable(RENDER_FLAGS_LIGHTING);
-                matrix_push();
-                matrix_x_translate(FIX16(15));
-                matrix_z_rotate(theta);
-                matrix_y_rotate(theta);
-                matrix_x_rotate(theta);
-                matrix_x_translate(FIX16(-55));
-                matrix_z_translate(FIX16(50));
-                render_mesh_transform(&mesh_torus);
-                matrix_pop();
-
-                theta += DEG2ANGLE(5.0f);
-
-                render();
+                render_end();
 
                 vdp1_sync_render();
-
                 vdp1_sync();
                 vdp1_sync_wait();
 
                 dbgio_flush();
-                vdp2_sync();
-                vdp2_sync_wait();
         }
 }
 
@@ -222,7 +178,7 @@ _texture_load(texture_t *textures, uint32_t slot, const picture_t *picture, vdp1
 {
         texture_t * const texture = &textures[slot];
 
-        texture->size       = TEXTURE_SIZE(picture->dim.x, picture->dim.y);
+        texture->size       = TEXTURE_SIZE(picture->width, picture->height);
         texture->vram_index = TEXTURE_VRAM_INDEX(texture_base);
 
         scu_dma_transfer(0, (void *)texture_base, picture->data, picture->data_size);

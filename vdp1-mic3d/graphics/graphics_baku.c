@@ -1,6 +1,6 @@
 #include <mic3d.h>
 
-const uint16_t _data[] = {
+static const uint16_t _data[] = {
         0x0101, 0x0101, 0x0101, 0x0101, 0x0101, 0x0101, 0x0101, 0x0101,
         0x0101, 0x0101, 0x0101, 0x0101, 0x0101, 0x0101, 0x0101, 0x0101,
         0x0101, 0x0101, 0x0101, 0x0101, 0x0101, 0x0101, 0x0101, 0x0101,
@@ -449,8 +449,8 @@ static const uint16_t _palette_data[] = {
 const picture_t picture_baku = {
         .data      = _data,
         .data_size = sizeof(_data),
-        .dim.x     = 64,
-        .dim.y     = 102
+        .width     = 64,
+        .height    = 102
 };
 
 const palette_t palette_baku = {

@@ -6,6 +6,9 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
+# Required for library usage
+include $(YAUL_INSTALL_ROOT)/share/build.mic3d.mk
+
 # Each asset follows the format: <path>;<symbol>. Duplicates are removed
 BUILTIN_ASSETS=
 
@@ -15,13 +18,13 @@ SH_SRCS:= \
 \
 	meshes/mesh_torus.c \
 \
-	graphics.c \
-	graphics_mika.c \
-	graphics_tails.c \
-	graphics_baku.c
+	graphics/graphics.c \
+	graphics/graphics_mika.c \
+	graphics/graphics_tails.c \
+	graphics/graphics_baku.c
 
-SH_LIBRARIES:= mic3d
-SH_CFLAGS+= -O2 -I. -DDEBUG -g
+SH_CFLAGS+= -O2 -I. -DDEBUG -g $(MIC3D_CFLAGS)
+SH_LDFLAGS+= $(MIC3D_LDFLAGS)
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

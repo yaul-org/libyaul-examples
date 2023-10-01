@@ -1094,6 +1094,6 @@ static const uint16_t _data[] = {
 const picture_t picture_mika = {
         .data      = _data,
         .data_size = sizeof(_data),
-        .dim.x     = 128,
-        .dim.y     = 68
+        .width     = 128,
+        .height    = 68
 };
