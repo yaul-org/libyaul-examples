@@ -15,8 +15,8 @@ SH_PROGRAM:= dbgio-font
 SH_SRCS:= \
 	dbgio-font.c
 
-SH_LIBRARIES:=
 SH_CFLAGS+= -I. -Os -g -DDEBUG
+SH_LDFLAGS+=
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

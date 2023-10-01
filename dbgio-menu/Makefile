@@ -4,12 +4,18 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
+# Required for library usage
+include $(YAUL_INSTALL_ROOT)/share/build.menu.mk
+
+# Each asset follows the format: <path>;<symbol>. Duplicates are removed
+BUILTIN_ASSETS=
+
 SH_PROGRAM:= dbgio-menu
 SH_SRCS:= \
 	dbgio-menu.c
 
-SH_LIBRARIES:= menu
-SH_CFLAGS+= -Os -I.
+SH_CFLAGS+= -Os -I. $(MENU_CFLAGS)
+SH_LDFLAGS+= $(MENU_LDFLAGS)
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

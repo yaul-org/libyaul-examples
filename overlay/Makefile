@@ -7,7 +7,7 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
 # Each asset follows the format: <path>;<symbol>. Duplicates are removed
-BUILTIN_ASSETS+= \
+BUILTIN_ASSETS=
 
 SH_PROGRAM:= overlay
 
@@ -24,14 +24,14 @@ SH_SRCS:= \
 
 SH_SPECS:= $(THIS_ROOT)/overlay.specs
 
-SH_LIBRARIES:=
-SH_CFLAGS+= -g -Os -I.
+SH_CFLAGS+= -g -Os -I. -DDEBUG
+SH_LDFLAGS+=
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
 IP_AREAS:= JTUBKAEL
 IP_PERIPHERALS:= JAMKST
-IP_TITLE:= SCU DSP test
+IP_TITLE:= Overlay example
 IP_MASTER_STACK_ADDR:= 0x06004000
 IP_SLAVE_STACK_ADDR:= 0x06001E00
 IP_1ST_READ_ADDR:= 0x06004000
@@ -73,7 +73,8 @@ post-build-iso:
 
 .PHONY: .clean-overlays.elfs
 .clean-overlays.elfs:
-	@$(RM) -f $(SH_BUILD_PATH)/ovl1.elf \
+	@$(RM) -f \
+	    $(SH_BUILD_PATH)/ovl1.elf \
 	    $(SH_BUILD_PATH)/ovl2.elf \
 	    $(SH_BUILD_PATH)/ovl3.elf
 

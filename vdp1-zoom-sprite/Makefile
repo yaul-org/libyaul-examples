@@ -13,8 +13,8 @@ SH_PROGRAM:= vdp1-zoom-sprite
 SH_SRCS:= \
 	vdp1-zoom-sprite.c
 
-SH_LIBRARIES:=
 SH_CFLAGS+= -Os -I.
+SH_LDFLAGS+=
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

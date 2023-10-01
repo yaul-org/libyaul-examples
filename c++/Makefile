@@ -4,6 +4,9 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
+# Each asset follows the format: <path>;<symbol>. Duplicates are removed
+BUILTIN_ASSETS=
+
 SH_PROGRAM:= c++
 SH_SRCS:= \
 	file-ext-1.cc \
@@ -11,8 +14,8 @@ SH_SRCS:= \
 	file-ext-3.C \
 	c++.cxx
 
-SH_LIBRARIES:=
 SH_CFLAGS+= -O0 -I. -DDEBUG
+SH_LDFLAGS+=
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

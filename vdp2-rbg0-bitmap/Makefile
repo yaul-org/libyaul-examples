@@ -4,6 +4,9 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
+# Required for library usage
+include $(YAUL_INSTALL_ROOT)/share/build.tga.mk
+
 # Each asset follows the format: <path>;<symbol>. Duplicates are removed
 BUILTIN_ASSETS+= \
 	assets/BITMAP.TGA;asset_bitmap_tga
@@ -12,8 +15,8 @@ SH_PROGRAM:= vdp2-rbg0-bitmap
 SH_SRCS:= \
 	vdp2-rbg0-bitmap.c
 
-SH_LIBRARIES:= tga
-SH_CFLAGS+= -Os -I.
+SH_CFLAGS+= -Os -I. $(TGA_CFLAGS)
+SH_LDFLAGS+= $(TGA_LDFLAGS)
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

@@ -1,3 +1,5 @@
+THIS_ROOT:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
 ifeq ($(strip $(YAUL_INSTALL_ROOT)),)
   $(error Undefined YAUL_INSTALL_ROOT (install root directory))
 endif
@@ -11,8 +13,8 @@ SH_PROGRAM:= template
 SH_SRCS:= \
 	main.c
 
-SH_LIBRARIES:=
-SH_CFLAGS+= -Os -I.
+SH_CFLAGS+= -O2 -I. -DDEBUG -g
+SH_LDFLAGS+=
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 19940101

@@ -14,6 +14,7 @@ EXAMPLES:= \
 	dma-queue \
 	dram-cart \
 	fibers \
+	gamemath \
 	gdb \
 	mm-stats \
 	netlink-template \

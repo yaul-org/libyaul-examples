@@ -13,8 +13,8 @@ SH_SRCS:= \
 	vdp1-st-niccc.cxx \
 	scene.cxx
 
-SH_LIBRARIES:=
 SH_CFLAGS+= -Os -I.
+SH_LDFLAGS+=
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

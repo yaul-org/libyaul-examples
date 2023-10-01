@@ -15,8 +15,8 @@ SH_SRCS:= \
 	balls.c \
 	../shared/perf/perf.c
 
-SH_LIBRARIES:=
 SH_CFLAGS+= -I. -I../shared/perf -Os
+SH_LDFLAGS+=
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

@@ -8,7 +8,9 @@
 #include <yaul.h>
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #define CPU_FRT_INTERRUPT_PRIORITY_LEVEL 8
 
@@ -67,7 +69,7 @@ static volatile uint32_t _counter_4 = 0;
 
 static volatile uint32_t _slave_ovi_counter __section(".uncached") = 0;
 
-void
+int
 main(void)
 {
         dbgio_init();
@@ -140,7 +142,7 @@ user_init(void)
             VDP2_TVMD_VERT_224);
 
         vdp2_scrn_back_color_set(VDP2_VRAM_ADDR(3, 0x01FFFE),
-            RGB1555(1, 0, 3, 3));
+            RGB1555(1, 0, 3, 15));
 
         cpu_dual_comm_mode_set(CPU_DUAL_ENTRY_POLLING);
         cpu_dual_slave_set(_slave_entry);
@@ -254,16 +256,16 @@ _timer_add(const struct timer *timer)
 
         if (timer_state->valid) {
                 /* Look for a free timer */
-                uint32_t timer;
-                for (timer = 0; timer < TIMER_MAX_TIMERS_COUNT; timer++) {
-                        timer_state = &_timer_states[timer];
+                uint32_t timer_index;
+                for (timer_index = 0; timer_index < TIMER_MAX_TIMERS_COUNT; timer_index++) {
+                        timer_state = &_timer_states[timer_index];
 
                         if (!timer_state->valid) {
                                 break;
                         }
                 }
 
-                _next_timer = timer;
+                _next_timer = timer_index;
         } else {
                 _next_timer++;
         }

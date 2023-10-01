@@ -7,7 +7,7 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
 # Each asset follows the format: <path>;<symbol>. Duplicates are removed
-BUILTIN_ASSETS+=
+BUILTIN_ASSETS=
 
 SH_PROGRAM:= vdp1-mic3d
 SH_SRCS:= \

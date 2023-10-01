@@ -19,8 +19,8 @@ SH_PROGRAM:= vdp2-all-nbgs
 SH_SRCS:= \
 	vdp2-all-nbgs.c
 
-SH_LIBRARIES:=
 SH_CFLAGS+= -Os -I.
+SH_LDFLAGS+=
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

@@ -5,14 +5,14 @@ endif
 include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
 # Each asset follows the format: <path>;<symbol>. Duplicates are removed
-BUILTIN_ASSETS+=
+BUILTIN_ASSETS=
 
 SH_PROGRAM:= smpc-rtc
 SH_SRCS:= \
 	smpc-rtc.c
 
-SH_LIBRARIES:=
 SH_CFLAGS+= -O2
+SH_LDFLAGS+=
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

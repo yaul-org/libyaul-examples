@@ -4,12 +4,18 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
+# Required for library usage
+include $(YAUL_INSTALL_ROOT)/share/build.bcl.mk
+
+# Each asset follows the format: <path>;<symbol>. Duplicates are removed
+BUILTIN_ASSETS=
+
 SH_PROGRAM:= bcl
 SH_SRCS:= \
 	bcl.c
 
-SH_LIBRARIES:= bcl
-SH_CFLAGS+= -Os -I.
+SH_CFLAGS+= -Os $(BCL_CFLAGS)
+SH_LDFLAGS+= $(BCL_LDFLAGS)
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

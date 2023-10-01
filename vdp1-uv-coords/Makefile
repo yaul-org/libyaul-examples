@@ -13,8 +13,8 @@ SH_PROGRAM:= vdp1-uv-coords
 SH_SRCS:= \
 	vdp1-uv-coords.c
 
-SH_LIBRARIES:=
 SH_CFLAGS+= -Os -I.
+SH_LDFLAGS+=
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101

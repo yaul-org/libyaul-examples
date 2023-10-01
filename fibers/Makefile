@@ -4,15 +4,18 @@ endif
 
 include $(YAUL_INSTALL_ROOT)/share/build.pre.mk
 
+# Required for library usage
+include $(YAUL_INSTALL_ROOT)/share/build.fiber.mk
+
 # Each asset follows the format: <path>;<symbol>. Duplicates are removed
-BUILTIN_ASSETS+= \
+BUILTIN_ASSETS=
 
 SH_PROGRAM:= fibers
 SH_SRCS:= \
 	fibers.c
 
-SH_LIBRARIES:= fiber
-SH_CFLAGS+= -I. -Os
+SH_CFLAGS+= -I. -Os $(FIBER_CFLAGS)
+SH_LDFLAGS+= $(FIBER_LDFLAGS)
 
 IP_VERSION:= V1.000
 IP_RELEASE_DATE:= 20160101
