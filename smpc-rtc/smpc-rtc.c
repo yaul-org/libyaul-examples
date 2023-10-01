@@ -124,7 +124,7 @@ user_init(void)
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
             VDP2_TVMD_VERT_240);
 
-        vdp2_scrn_back_color_set(BACK_SCREEN, RGB1555(1, 0, 7, 7));
+        vdp2_scrn_back_color_set(BACK_SCREEN, RGB1555(1, 0, 3, 15));
 
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
