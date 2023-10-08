@@ -9,9 +9,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <yaul.h>
+#include <dbgio.h>
+#include <vdp2.h>
 
-#include "et/et.h"
+#include <gamemath/color/rgb1555.h>
 
 static size_t _file_write(FILE*, const uint8_t* s, size_t l) {
   for (uint32_t i = 0; i < l; i++) {
@@ -21,7 +22,7 @@ static size_t _file_write(FILE*, const uint8_t* s, size_t l) {
   return l;
 }
 
-void ET_OnInit(int, char*[]) {
+extern "C" void ET_OnInit(int, char*[]) {
   /* Nothing else is needed */
   __stdout_FILE.write = _file_write;
 
@@ -42,9 +43,9 @@ void ET_OnInit(int, char*[]) {
   vdp2_sync_wait();
 }
 
-void ET_OnPrintChar(char const ch) { fputc(ch, stdout); }
+extern "C" void ET_OnPrintChar(char const ch) { fputc(ch, stdout); }
 
-void ET_OnExit(int code) {
+extern "C" void ET_OnExit(int code) {
   rgb1555_t color;
 
   if (code < 0) {
@@ -60,22 +61,6 @@ void ET_OnExit(int code) {
   exit(code);
 }
 
-void ET_Setup(void) {}
+extern "C" void ET_Setup(void) {}
 
-void ET_Teardown(void) {}
-
-TEST_GROUP("C++ GameMath") {
-#define INSIDE_TEST_GROUP
-
-  // clang-format: off
-#include "fix16_t/add.h"
-#include "fix16_t/add_negate.h"
-#include "fix16_t/sub.h"
-#include "fix16_t/unary.h"
-#include "fix16_t/multiply.h"
-#include "fix16_t/multiply_negate.h"
-#include "fix16_t/abs.h"
-  // clang-format: on
-
-#undef INSIDE_TEST_GROUP
-}
+extern "C" void ET_Teardown(void) {}

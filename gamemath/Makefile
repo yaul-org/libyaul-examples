@@ -10,6 +10,7 @@ BUILTIN_ASSETS=
 SH_PROGRAM:= gamemath++
 SH_SRCS:= \
 	gamemath++.cpp \
+	test_group.cpp \
 \
 	et/et.cpp
 
