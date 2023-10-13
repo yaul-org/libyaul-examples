@@ -56,7 +56,10 @@ TEST_GROUP("C++ GameMath") {
 #include "fix16_quat_t/euler_conv22.h"
 #include "fix16_quat_t/euler_conv23.h"
 #include "fix16_quat_t/euler_conv24.h"
-#include "fix16_quat_t/vec3_mult.h"
+#include "fix16_quat_t/vec3_mult_heading_45.h"
+#include "fix16_quat_t/vec3_mult_heading_90.h"
+#include "fix16_quat_t/vec3_mult_heading_180.h"
+#include "fix16_quat_t/vec3_mult_heading_-90.h"
   // clang-format: on
 
 #undef INSIDE_TEST_GROUP
