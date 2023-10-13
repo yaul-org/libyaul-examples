@@ -60,6 +60,7 @@ TEST_GROUP("C++ GameMath") {
 #include "fix16_quat_t/vec3_mult_heading_90.h"
 #include "fix16_quat_t/vec3_mult_heading_180.h"
 #include "fix16_quat_t/vec3_mult_heading_-90.h"
+#include "fix16_quat_t/quat_mult1.h"
   // clang-format: on
 
 #undef INSIDE_TEST_GROUP

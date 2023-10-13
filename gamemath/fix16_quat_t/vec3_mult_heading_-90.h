@@ -5,8 +5,7 @@ TEST("fix16_quat_t::vec3_mult_heading_-90") {
   constexpr angle_t attitude = 0.0_deg;
   constexpr angle_t bank     = 0.0_deg;
 
-  fix16_quat_t q;
-  fix16_quat_t::from_euler({bank, heading, attitude}, q);
+  const fix16_quat_t q = fix16_quat_t::from_euler({bank, heading, attitude});
 
   const fix16_vec3_t v{1.0_fp, 0.0_fp, 0.0_fp};
   const fix16_vec3_t a1{v * q};
