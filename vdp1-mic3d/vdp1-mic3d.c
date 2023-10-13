@@ -117,31 +117,78 @@ main(void)
         gst_put(_pool_shading_tables2, 512);
         gst_unset();
 
-        fix16_mat43_t world[1];
+        fix16_mat43_t world[2];
 
         fix16_mat33_identity(&world[0].rotation);
+        fix16_mat33_identity(&world[1].rotation);
 
-        world[0].translation.x = FIX16(  0.0);
-        world[0].translation.y = FIX16(  0.0);
-        world[0].translation.z = FIX16(-40.0);
+        world[0].translation.x = FIX16(   0.0);
+        world[0].translation.y = FIX16(   0.0);
+        world[0].translation.z = FIX16(-100.0);
+
+        world[1].translation.x = FIX16(  50.0);
+        world[1].translation.y = FIX16(   0.0);
+        world[1].translation.z = FIX16(-100.0);
+
+        /* Set up a command table for insertion */
+        vdp1_cmdt_t cmdt_polygon;
+        vdp1_cmdt_polygon_set(&cmdt_polygon);
+        vdp1_cmdt_draw_mode_t polygon_draw_mode;
+        polygon_draw_mode.raw = 0x0000;
+        vdp1_cmdt_draw_mode_set(&cmdt_polygon, polygon_draw_mode);
 
         while (true) {
                 dbgio_puts("[H[2J");
 
+                /* Call this before rendering */
                 render_start();
 
                 fix16_mat43_t result;
-                fix16_mat43_zero(&result);
-                fix16_vec3_dup(&world[0].translation, &result.translation);
+                /* Must zero out since each XYZ rotation functions do not write
+                 * to all the elements in the 3x3 matrix */
+                fix16_mat33_zero(&result.rotation);
 
                 render_enable(RENDER_FLAGS_LIGHTING);
-                fix16_mat43_z_rotate(&world[0], theta, &result);
-                fix16_mat43_y_rotate(&result, theta, &result);
-                fix16_mat43_x_rotate(&result, theta, &result);
+                /* Rotate around the origin first by Z, then Y, then X, ignoring translation */
+                fix16_mat33_z_rotate(&world[0].rotation, theta, &result.rotation);
+                fix16_mat33_y_rotate(&result.rotation, theta, &result.rotation);
+                fix16_mat33_x_rotate(&result.rotation, theta, &result.rotation);
+                /* Translate */
+                fix16_vec3_dup(&world[0].translation, &result.translation);
                 render_mesh_xform(&mesh_torus, &result);
+
+                render_disable(RENDER_FLAGS_LIGHTING);
+                /* Take the previous matrix and just modify the translation */
+                fix16_vec3_dup(&world[1].translation, &result.translation);
+                render_mesh_xform(&mesh_cube, &result);
+
+                cmdt_polygon.cmd_vertices[0].x = -10 + 20;
+                cmdt_polygon.cmd_vertices[0].y = -10 + 20;
+                cmdt_polygon.cmd_vertices[1].x =  10 + 20;
+                cmdt_polygon.cmd_vertices[1].y = -10 + 20;
+                cmdt_polygon.cmd_vertices[2].x =  10 + 20;
+                cmdt_polygon.cmd_vertices[2].y =  10 + 20;
+                cmdt_polygon.cmd_vertices[3].x = -10 + 20;
+                cmdt_polygon.cmd_vertices[3].y =  10 + 20;
+                cmdt_polygon.cmd_colr          = 0x801F;
+                /* Call this before render_end() */
+                render_cmdt_insert(&cmdt_polygon, FIX16( -20.0));
+
+                cmdt_polygon.cmd_vertices[0].x = -50;
+                cmdt_polygon.cmd_vertices[0].y = -50;
+                cmdt_polygon.cmd_vertices[1].x =  50;
+                cmdt_polygon.cmd_vertices[1].y = -50;
+                cmdt_polygon.cmd_vertices[2].x =  50;
+                cmdt_polygon.cmd_vertices[2].y =  50;
+                cmdt_polygon.cmd_vertices[3].x = -50;
+                cmdt_polygon.cmd_vertices[3].y =  50;
+                cmdt_polygon.cmd_colr          = 0x83C0;
+                /* Call this before render_end() */
+                render_cmdt_insert(&cmdt_polygon, FIX16(-150.0));
 
                 theta += DEG2ANGLE(2.5);
 
+                /* End of rendering */
                 render_end();
 
                 vdp1_sync_render();

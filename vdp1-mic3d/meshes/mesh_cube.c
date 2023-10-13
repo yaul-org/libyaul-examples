@@ -1,6 +1,15 @@
 #include <mic3d.h>
 
-#define INDICES(a, b, c, d) {.indices.p0 = a, .indices.p1 = b, .indices.p2 = c, .indices.p3 = d}
+#define FLAGS(_sort_type, _plane_type, _use_texture)                           \
+    .flags.sort_type = _sort_type,                                             \
+    .flags.plane_type = _plane_type,                                           \
+    .flags.use_texture = _use_texture
+
+#define INDICES(a, b, c, d)                                                    \
+    .indices.p0 = a,                                                           \
+    .indices.p1 = b,                                                           \
+    .indices.p2 = c,                                                           \
+    .indices.p3 = d
 
 static const fix16_vec3_t _points[] = {
         FIX16_VEC3_INITIALIZER(-10.0, -10.0,  10.0), /* 0 */
@@ -25,21 +34,21 @@ static const fix16_vec3_t _normals[] = {
 };
 
 static const attribute_t _attributes[] = {
-        { .draw_mode.color_mode = VDP1_CMDT_CM_RGB_32768, .draw_mode.cc_mode = VDP1_CMDT_CC_REPLACE, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .control.use_lighting = false, .texture_slot = 0, .palette.base_color = RGB1555(1, 31,  0,  0) },
-        { .draw_mode.color_mode = VDP1_CMDT_CM_RGB_32768, .draw_mode.cc_mode = VDP1_CMDT_CC_REPLACE, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .control.use_lighting = false, .texture_slot = 1, .palette.base_color = RGB1555(1,  0, 31,  0) },
-        { .draw_mode.color_mode = VDP1_CMDT_CM_CB_256,    .draw_mode.cc_mode = VDP1_CMDT_CC_REPLACE, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .control.use_lighting = false, .texture_slot = 2, .palette.color_bank.type_0.dc = 0x0000 },
-        { .draw_mode.color_mode = VDP1_CMDT_CM_RGB_32768, .draw_mode.cc_mode = VDP1_CMDT_CC_REPLACE, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .control.use_lighting = false, .texture_slot = 0, .palette.base_color = RGB1555(1, 31, 31,  0) },
-        { .draw_mode.color_mode = VDP1_CMDT_CM_RGB_32768, .draw_mode.cc_mode = VDP1_CMDT_CC_REPLACE, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .control.use_lighting = false, .texture_slot = 1, .palette.base_color = RGB1555(1,  0, 31, 31) },
-        { .draw_mode.color_mode = VDP1_CMDT_CM_CB_256,    .draw_mode.cc_mode = VDP1_CMDT_CC_REPLACE, .control.use_texture = true, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .control.sort_type = SORT_TYPE_CENTER, .control.use_lighting = false, .texture_slot = 2, .palette.color_bank.type_0.dc = 0x0000 }
+        { .draw_mode.color_mode = VDP1_CMDT_CM_RGB_32768, .control.link_type = LINK_TYPE_JUMP_ASSIGN, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .texture_slot = 0 },
+        { .draw_mode.color_mode = VDP1_CMDT_CM_RGB_32768, .control.link_type = LINK_TYPE_JUMP_ASSIGN, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .texture_slot = 0 },
+        { .draw_mode.color_mode = VDP1_CMDT_CM_RGB_32768, .control.link_type = LINK_TYPE_JUMP_ASSIGN, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .texture_slot = 0 },
+        { .draw_mode.color_mode = VDP1_CMDT_CM_RGB_32768, .control.link_type = LINK_TYPE_JUMP_ASSIGN, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .texture_slot = 0 },
+        { .draw_mode.color_mode = VDP1_CMDT_CM_RGB_32768, .control.link_type = LINK_TYPE_JUMP_ASSIGN, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .texture_slot = 0 },
+        { .draw_mode.color_mode = VDP1_CMDT_CM_RGB_32768, .control.link_type = LINK_TYPE_JUMP_ASSIGN, .control.command = COMMAND_TYPE_DISTORTED_SPRITE, .texture_slot = 0 }
 };
 
 static const polygon_t _polygons[] = {
-        INDICES(0, 1, 2, 3), /* Back */
-        INDICES(4, 0, 3, 7), /* Left */
-        INDICES(5, 4, 7, 6), /* Front */
-        INDICES(1, 5, 6, 2), /* Right */
-        INDICES(4, 5, 1, 0), /* Top */
-        INDICES(3, 2, 6, 7)  /* Bottom */
+        { FLAGS(SORT_TYPE_CENTER, PLANE_TYPE_DOUBLE, true), INDICES(0, 1, 2, 3) }, /* Back */
+        { FLAGS(SORT_TYPE_CENTER, PLANE_TYPE_DOUBLE, true), INDICES(4, 0, 3, 7) }, /* Left */
+        { FLAGS(SORT_TYPE_CENTER, PLANE_TYPE_DOUBLE, true), INDICES(5, 4, 7, 6) }, /* Front */
+        { FLAGS(SORT_TYPE_CENTER, PLANE_TYPE_DOUBLE, true), INDICES(1, 5, 6, 2) }, /* Right */
+        { FLAGS(SORT_TYPE_CENTER, PLANE_TYPE_DOUBLE, true), INDICES(4, 5, 1, 0) }, /* Top */
+        { FLAGS(SORT_TYPE_CENTER, PLANE_TYPE_DOUBLE, true), INDICES(3, 2, 6, 7) }  /* Bottom */
 };
 
 const mesh_t mesh_cube = {

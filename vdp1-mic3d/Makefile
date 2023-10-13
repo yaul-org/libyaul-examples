@@ -17,6 +17,7 @@ SH_SRCS:= \
 	vdp1-mic3d.c \
 \
 	meshes/mesh_torus.c \
+	meshes/mesh_cube.c \
 \
 	graphics/graphics.c \
 	graphics/graphics_mika.c \
