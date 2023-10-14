@@ -32,16 +32,19 @@ static uint16_t _frt_overflow_count = 0;
 int
 main(void)
 {
-        cdfs_config_default_set();
-
         /* Load the maximum number. We have to free the allocated filelist
          * entries, but since we never exit, we don't have to */
         cdfs_filelist_entry_t * const filelist_entries =
             cdfs_entries_alloc(-1);
         assert(filelist_entries != NULL);
 
+        cdfs_config_default_set();
         cdfs_filelist_init(&_filelist, filelist_entries, -1);
         cdfs_filelist_root_read(&_filelist);
+
+        dbgio_dev_deinit();
+        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
+        dbgio_dev_font_load();
 
         scroll_menu_t menu;
 
@@ -50,9 +53,9 @@ main(void)
         scroll_menu_update_set(&menu, _menu_update);
         scroll_menu_entries_set(&menu, _menu_entries, MENU_ENTRY_COUNT);
 
-        menu.view_height = MENU_ENTRY_COUNT - 1;
+        menu.view_height = MENU_ENTRY_COUNT;
         menu.top_index = 0;
-        menu.bottom_index = _filelist.entries_count;
+        menu.bottom_index = _filelist.entries_count - 1;
 
         menu.flags = SCROLL_MENU_ENABLED | SCROLL_MENU_INPUT_ENABLED;
 
@@ -83,15 +86,11 @@ user_init(void)
 
         cpu_frt_init(CPU_FRT_CLOCK_DIV_128);
 
-        dbgio_init();
-        dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
-        dbgio_dev_font_load();
-
-        vdp2_tvmd_display_set();
-
         cd_block_init();
 
         smpc_peripheral_init();
+
+        vdp2_tvmd_display_set();
 }
 
 static void
@@ -121,14 +120,14 @@ _menu_input(scroll_menu_t *menu)
 static void
 _menu_update(scroll_menu_t *menu)
 {
-        for (int8_t i = 0; i <= menu->view_height; i++) {
+        for (uint8_t i = 0; i < menu->view_height; i++) {
                 menu_entry_t * const menu_entry = &_menu_entries[i];
 
                 const uint32_t y = scroll_menu_local_cursor(menu) + i;
 
                 char * const name = _filelist.entries[y].name;
 
-                if ((name == NULL) || (*name == '\0')) {
+                if ((y >= _filelist.entries_count) || (name == NULL) || (*name == '\0')) {
                         *menu_entry->label = '\0';
                         menu_entry->action_fn = NULL;
 
