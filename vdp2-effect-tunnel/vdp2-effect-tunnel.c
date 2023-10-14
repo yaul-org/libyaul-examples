@@ -251,7 +251,7 @@ _menu_zoom_update(void *work __unused, menu_entry_t *menu_entry)
 static void
 _menu_zoom_cycle(void *work __unused, menu_entry_t *menu_entry __unused, int32_t direction)
 {
-        _values.zoom += fix16_int16_mul(INCR_VALUE, direction);
+        _values.zoom += fix16_low_mul(INCR_VALUE, direction);
 }
 
 static void
@@ -263,7 +263,7 @@ _menu_zoom_scale_update(void *work __unused, menu_entry_t *menu_entry)
 static void
 _menu_zoom_scale_cycle(void *work __unused, menu_entry_t *menu_entry __unused, int32_t direction)
 {
-        _values.zoom_scale += fix16_int16_mul(INCR_VALUE, direction);
+        _values.zoom_scale += fix16_low_mul(INCR_VALUE, direction);
 }
 
 static void
@@ -275,7 +275,7 @@ _menu_scroll_x_update(void *work __unused, menu_entry_t *menu_entry)
 static void
 _menu_scroll_x_cycle(void *work __unused, menu_entry_t *menu_entry __unused, int32_t direction)
 {
-        _values.scroll_amount.x += fix16_int16_mul(INCR_VALUE, direction);
+        _values.scroll_amount.x += fix16_low_mul(INCR_VALUE, direction);
 }
 
 static void
@@ -287,7 +287,7 @@ _menu_scroll_y_update(void *work __unused, menu_entry_t *menu_entry)
 static void
 _menu_scroll_y_cycle(void *work __unused, menu_entry_t *menu_entry __unused, int32_t direction)
 {
-        _values.scroll_amount.y += fix16_int16_mul(INCR_VALUE, direction);
+        _values.scroll_amount.y += fix16_low_mul(INCR_VALUE, direction);
 }
 
 static void
