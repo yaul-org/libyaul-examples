@@ -7,10 +7,6 @@
  * Israel Jacquez <mrkotfw@gmail.com> Wrote libmic3d and this example
  */
 
-#include "gamemath/angle.h"
-#include "gamemath/fix16.h"
-#include "gamemath/fix16/fix16_mat33.h"
-#include "gamemath/fix16/fix16_vec3.h"
 #include <yaul.h>
 
 #include <stdio.h>
