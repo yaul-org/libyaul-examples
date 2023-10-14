@@ -13,38 +13,38 @@
 #define SCREEN_WIDTH  320
 #define SCREEN_HEIGHT 224
 
-#define STATE_IDLE              (-1)
-#define STATE_TYPE_SET          (0)
-#define STATE_DRAW_MODE_SET     (1)
-#define STATE_VERTEX_SELECT     (2)
-#define STATE_VERTEX_RESET      (3)
+#define STATE_IDLE          (-1)
+#define STATE_TYPE_SET      ( 0)
+#define STATE_DRAW_MODE_SET ( 1)
+#define STATE_VERTEX_SELECT ( 2)
+#define STATE_VERTEX_RESET  ( 3)
 
 #define PRIMITIVE_TYPE_POLYLINE (0)
 #define PRIMITIVE_TYPE_POLYGON  (1)
 #define PRIMITIVE_TYPE_COUNT    (2)
 
-#define PRIMITIVE_DRAW_MODE_NORMAL                (0)
-#define PRIMITIVE_DRAW_MODE_MESH                  (1)
-#define PRIMITIVE_DRAW_MODE_SHADOW                (2)
-#define PRIMITIVE_DRAW_MODE_HALF_LUMINANCE        (3)
-#define PRIMITIVE_DRAW_MODE_HALF_TRANSPARENT      (4)
-#define PRIMITIVE_DRAW_MODE_GOURAUD_SHADING       (5)
-#define PRIMITIVE_DRAW_MODE_GOURAUD_HALF_LUM      (6)
-#define PRIMITIVE_DRAW_MODE_GOURAUD_HALF_TRANS    (7)
-#define PRIMITIVE_DRAW_MODE_COUNT                 (8)
+#define PRIMITIVE_DRAW_MODE_NORMAL             (0)
+#define PRIMITIVE_DRAW_MODE_MESH               (1)
+#define PRIMITIVE_DRAW_MODE_SHADOW             (2)
+#define PRIMITIVE_DRAW_MODE_HALF_LUMINANCE     (3)
+#define PRIMITIVE_DRAW_MODE_HALF_TRANSPARENT   (4)
+#define PRIMITIVE_DRAW_MODE_GOURAUD_SHADING    (5)
+#define PRIMITIVE_DRAW_MODE_GOURAUD_HALF_LUM   (6)
+#define PRIMITIVE_DRAW_MODE_GOURAUD_HALF_TRANS (7)
+#define PRIMITIVE_DRAW_MODE_COUNT              (8)
 
-#define PRIMITIVE_WIDTH           32
-#define PRIMITIVE_HEIGHT          32
-#define PRIMITIVE_HALF_WIDTH      (PRIMITIVE_WIDTH / 2)
-#define PRIMITIVE_HALF_HEIGHT     (PRIMITIVE_HEIGHT / 2)
+#define PRIMITIVE_WIDTH       32
+#define PRIMITIVE_HEIGHT      32
+#define PRIMITIVE_HALF_WIDTH  (PRIMITIVE_WIDTH / 2)
+#define PRIMITIVE_HALF_HEIGHT (PRIMITIVE_HEIGHT / 2)
 
-#define PRIMITIVE_COLOR           RGB1555(1, 31, 0, 31)
+#define PRIMITIVE_COLOR       RGB1555(1, 31, 0, 31)
 
-#define ORDER_SYSTEM_CLIP_COORDS_INDEX  0
-#define ORDER_LOCAL_COORDS_INDEX        1
-#define ORDER_POLYGON_INDEX             2
-#define ORDER_DRAW_END_INDEX            3
-#define ORDER_COUNT                     4
+#define ORDER_SYSTEM_CLIP_COORDS_INDEX 0
+#define ORDER_LOCAL_COORDS_INDEX       1
+#define ORDER_POLYGON_INDEX            2
+#define ORDER_DRAW_END_INDEX           3
+#define ORDER_COUNT                    4
 
 #define CMDT_VTX_POLYGON_A 0
 #define CMDT_VTX_POLYGON_B 1
