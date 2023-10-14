@@ -194,19 +194,19 @@ static void _vdp2_init(void) {
       .zst = 0,
 
       // Screen vertical coordinate increments (per each line)
-      .delta_xst = fix16_t::from_double(0.0),
-      .delta_yst = _scale_height,
+      .delta_xst = static_cast<uint32_t>(0.0_fp),
+      .delta_yst = static_cast<uint32_t>(_scale_height),
 
       // Screen horizontal coordinate increments (per each dot)
-      .delta_x = _scale_width,
-      .delta_y = fix16_t::from_double(0.0),
+      .delta_x = static_cast<uint32_t>(_scale_width),
+      .delta_y = static_cast<uint32_t>(0.0_fp),
 
-      .matrix = {.param = {.a = fix16_t::from_double(1.0),
-                           .b = fix16_t::from_double(0.0),
-                           .c = fix16_t::from_double(0.0),
-                           .d = fix16_t::from_double(0.0),
-                           .e = fix16_t::from_double(1.0),
-                           .f = fix16_t::from_double(0.0)}},
+      .matrix = {.param = {.a = static_cast<uint32_t>(1.0_fp),
+                           .b = static_cast<uint32_t>(0.0_fp),
+                           .c = static_cast<uint32_t>(0.0_fp),
+                           .d = static_cast<uint32_t>(0.0_fp),
+                           .e = static_cast<uint32_t>(1.0_fp),
+                           .f = static_cast<uint32_t>(0.0_fp)}},
 
       // View point coordinates
       .px = 0,
@@ -223,8 +223,8 @@ static void _vdp2_init(void) {
       .my = 0,
 
       // Scaling coefficients
-      .kx = fix16_t::from_double(1.0),
-      .ky = fix16_t::from_double(1.0),
+      .kx = static_cast<uint32_t>(1.0_fp),
+      .ky = static_cast<uint32_t>(1.0_fp),
 
       // Coefficient table start address
       .kast       = RBG0_COEFF_TABLE,
