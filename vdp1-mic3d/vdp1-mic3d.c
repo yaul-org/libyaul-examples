@@ -2,11 +2,15 @@
  * Copyright (c) 2006-2018
  * See LICENSE for details.
  *
- * Mic
- * Shazz
- * Israel Jacquez <mrkotfw@gmail.com>
+ * Mic                                Original author of demo
+ * Shazz                              Ported demo to Yaul
+ * Israel Jacquez <mrkotfw@gmail.com> Wrote libmic3d and this example
  */
 
+#include "gamemath/angle.h"
+#include "gamemath/fix16.h"
+#include "gamemath/fix16/fix16_mat33.h"
+#include "gamemath/fix16/fix16_vec3.h"
 #include <yaul.h>
 
 #include <stdio.h>
@@ -80,6 +84,9 @@ main(void)
         texture_base += _texture_load(_textures, 1, &picture_tails, texture_base);
         texture_base += _texture_load(_textures, 2, &picture_baku, texture_base);
 
+        /* This only works because by default, the CMD_COLR value is 0x0000,
+         * which means it selects the first 256-color palette bank in VDP2
+         * CRAM */
         _palette_load(0, 0, &palette_baku);
 
         camera_t camera;
@@ -98,7 +105,7 @@ main(void)
 
         camera_lookat(&camera);
 
-        angle_t theta __unused;
+        angle_t theta;
         theta = DEG2ANGLE(0.0);
 
         for (uint32_t i = 0; i < 512; i++) {
@@ -117,10 +124,13 @@ main(void)
         gst_put(_pool_shading_tables2, 512);
         gst_unset();
 
-        fix16_mat43_t world[2];
+        static fix16_mat43_t world[5];
 
         fix16_mat33_identity(&world[0].rotation);
         fix16_mat33_identity(&world[1].rotation);
+        fix16_mat33_identity(&world[2].rotation);
+        fix16_mat33_identity(&world[3].rotation);
+        fix16_mat33_identity(&world[4].rotation);
 
         world[0].translation.x = FIX16(   0.0);
         world[0].translation.y = FIX16(   0.0);
@@ -130,6 +140,18 @@ main(void)
         world[1].translation.y = FIX16(   0.0);
         world[1].translation.z = FIX16(-100.0);
 
+        world[2].translation.x = FIX16(  10.0);
+        world[2].translation.y = FIX16(  10.0);
+        world[2].translation.z = FIX16( -40.0);
+
+        world[3].translation.x = FIX16(   0.0);
+        world[3].translation.y = FIX16(  10.0);
+        world[3].translation.z = FIX16( -40.0);
+
+        world[4].translation.x = FIX16( -10.0);
+        world[4].translation.y = FIX16(  10.0);
+        world[4].translation.z = FIX16( -40.0);
+
         /* Set up a command table for insertion */
         vdp1_cmdt_t cmdt_polygon;
         vdp1_cmdt_polygon_set(&cmdt_polygon);
@@ -138,15 +160,14 @@ main(void)
         vdp1_cmdt_draw_mode_set(&cmdt_polygon, polygon_draw_mode);
 
         while (true) {
-                dbgio_puts("[H[2J");
-
                 /* Call this before rendering */
                 render_start();
 
                 fix16_mat43_t result;
-                /* Must zero out since each XYZ rotation functions do not write
-                 * to all the elements in the 3x3 matrix */
-                fix16_mat33_zero(&result.rotation);
+                /* Must reset to identity matrix out since each XYZ rotation
+                 * functions do not write to all the elements in the 3x3
+                 * matrix */
+                fix16_mat33_identity(&result.rotation);
 
                 render_enable(RENDER_FLAGS_LIGHTING);
                 /* Rotate around the origin first by Z, then Y, then X, ignoring translation */
@@ -158,21 +179,48 @@ main(void)
                 render_mesh_xform(&mesh_torus, &result);
 
                 render_disable(RENDER_FLAGS_LIGHTING);
+
                 /* Take the previous matrix and just modify the translation */
                 fix16_vec3_dup(&world[1].translation, &result.translation);
                 render_mesh_xform(&mesh_cube, &result);
 
-                cmdt_polygon.cmd_vertices[0].x = -10 + 20;
-                cmdt_polygon.cmd_vertices[0].y = -10 + 20;
-                cmdt_polygon.cmd_vertices[1].x =  10 + 20;
-                cmdt_polygon.cmd_vertices[1].y = -10 + 20;
-                cmdt_polygon.cmd_vertices[2].x =  10 + 20;
-                cmdt_polygon.cmd_vertices[2].y =  10 + 20;
-                cmdt_polygon.cmd_vertices[3].x = -10 + 20;
-                cmdt_polygon.cmd_vertices[3].y =  10 + 20;
-                cmdt_polygon.cmd_colr          = 0x801F;
+                /* Take the previous matrix and just modify the translation */
+                fix16_vec3_dup(&world[2].translation, &result.translation);
+                render_mesh_xform(&mesh_m, &result);
+                /* Take the previous matrix and just modify the translation */
+                fix16_vec3_dup(&world[3].translation, &result.translation);
+                render_mesh_xform(&mesh_i, &result);
+                /* Take the previous matrix and just modify the translation */
+                fix16_vec3_dup(&world[4].translation, &result.translation);
+                render_mesh_xform(&mesh_c, &result);
+
+                /* Rotate a 2D quad */
+                const fix16_vec3_t points[] = {
+                        FIX16_VEC3_INITIALIZER(-10.0, -10.0, 0),
+                        FIX16_VEC3_INITIALIZER( 10.0, -10.0, 0),
+                        FIX16_VEC3_INITIALIZER( 10.0,  10.0, 0),
+                        FIX16_VEC3_INITIALIZER(-10.0,  10.0, 0)
+                };
+
+                /* Multiplying or dividing an angle requires a conditional sign
+                 * extend, hence the need for angle_int32_to() */
+
+                /* Rotate the other way, and multiply the angle by 4 (shift by 2) */
+                const angle_t theta_mul_2 = angle_int32_to(-theta) << 2;
+
+                fix16_mat33_t rot_2d;
+                fix16_mat33_z_rotation_create(theta_mul_2, &rot_2d);
+
+                for (uint32_t i = 0; i < 4; i++) {
+                        fix16_vec3_t rot_p;
+                        fix16_mat33_vec3_mul(&rot_2d, &points[i], &rot_p);
+
+                        cmdt_polygon.cmd_vertices[i].x = fix16_int32_to(rot_p.x);
+                        cmdt_polygon.cmd_vertices[i].y = fix16_int32_to(rot_p.y) + 20;
+                }
+                cmdt_polygon.cmd_colr = 0x8010;
                 /* Call this before render_end() */
-                render_cmdt_insert(&cmdt_polygon, FIX16( -20.0));
+                render_cmdt_insert(&cmdt_polygon, FIX16(-20.0));
 
                 cmdt_polygon.cmd_vertices[0].x = -50;
                 cmdt_polygon.cmd_vertices[0].y = -50;
@@ -182,7 +230,7 @@ main(void)
                 cmdt_polygon.cmd_vertices[2].y =  50;
                 cmdt_polygon.cmd_vertices[3].x = -50;
                 cmdt_polygon.cmd_vertices[3].y =  50;
-                cmdt_polygon.cmd_colr          = 0x83C0;
+                cmdt_polygon.cmd_colr          = 0xBDEF;
                 /* Call this before render_end() */
                 render_cmdt_insert(&cmdt_polygon, FIX16(-150.0));
 

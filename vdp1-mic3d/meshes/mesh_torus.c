@@ -1,11 +1,16 @@
-#include <mic3d.h>
+#include "mesh.h"
 
 #define COLOR1 RGB1555(1, 16,  0,  0)
 #define COLOR2 RGB1555(1,  0, 16,  0)
 #define COLOR3 RGB1555(1,  0,  0, 16)
 
-#define INDICES(a, b, c, d) .indices.p0 = a, .indices.p1 = c, .indices.p2 = d, .indices.p3 = b
-#define FLAGS(_sort_type, _plane_type, _use_texture) .flags.sort_type = _sort_type, .flags.plane_type = _plane_type, .flags.use_texture = _use_texture
+/* Notice the order of the indices */
+#undef INDICES
+#define INDICES(a, b, c, d)                                                    \
+    .indices.p0 = a,                                                           \
+    .indices.p1 = c,                                                           \
+    .indices.p2 = d,                                                           \
+    .indices.p3 = b
 
 static const fix16_vec3_t _points_torus[512] = {
         FIX16_VEC3_INITIALIZER(15.330, 0.000, 0.000),
