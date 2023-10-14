@@ -7,19 +7,21 @@
 
 #include <yaul.h>
 
+#include <gamemath/defs.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#define SCREEN_WIDTH    320
-#define SCREEN_HEIGHT   240
+#define SCREEN_WIDTH  320
+#define SCREEN_HEIGHT 240
 
-#define VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX        (0)
-#define VDP1_CMDT_ORDER_USER_CLIP_INDEX                 (1)
-#define VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX              (2)
-#define VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX             (3)
-#define VDP1_CMDT_ORDER_SPRITE_INDEX                    (4)
-#define VDP1_CMDT_ORDER_DRAW_END_INDEX                  (5)
-#define VDP1_CMDT_ORDER_COUNT                           (VDP1_CMDT_ORDER_DRAW_END_INDEX + 1)
+#define VDP1_CMDT_ORDER_SYSTEM_CLIP_COORDS_INDEX (0)
+#define VDP1_CMDT_ORDER_USER_CLIP_INDEX          (1)
+#define VDP1_CMDT_ORDER_LOCAL_COORDS_INDEX       (2)
+#define VDP1_CMDT_ORDER_CLEAR_POLYGON_INDEX      (3)
+#define VDP1_CMDT_ORDER_SPRITE_INDEX             (4)
+#define VDP1_CMDT_ORDER_DRAW_END_INDEX           (5)
+#define VDP1_CMDT_ORDER_COUNT                    (VDP1_CMDT_ORDER_DRAW_END_INDEX + 1)
 
 extern const int16_vec2_t flare_texture_dim;
 extern const uint16_t flare_texture[];
@@ -49,6 +51,9 @@ main(void)
 {
         render_state_t render_state;
 
+        render_state.coords.x = 0;
+        render_state.coords.y = 0;
+
         _cmdt_list_init();
 
         /* Copy flare texture to VDP1 */
@@ -76,6 +81,9 @@ main(void)
                         render_state.coords.y += 5;
                 }
 
+                render_state.coords.x = clamp(render_state.coords.x, 0, 512 - flare_texture_dim.x);
+                render_state.coords.y = clamp(render_state.coords.y, 0, 512 - flare_texture_dim.y);
+
                 vdp1_sync_cmdt_list_put(_cmdt_list, 0);
                 vdp1_sync_render();
 
@@ -97,7 +105,7 @@ user_init(void)
         smpc_peripheral_init();
 
         dbgio_init();
-        dbgio_dev_default_init(DBGIO_DEV_USB_CART);
+        dbgio_dev_default_init(DBGIO_DEV_MEDNAFEN_DEBUG);
         dbgio_dev_font_load();
 
         vdp2_tvmd_display_res_set(VDP2_TVMD_INTERLACE_NONE, VDP2_TVMD_HORZ_NORMAL_A,
@@ -110,9 +118,10 @@ user_init(void)
 
         vdp1_env_default_set();
         vdp1_vram_partitions_get(&_vdp1_vram_partitions);
+
         /* Must be variable rate with no frame rate cap (<= -2). There seems to
          * be issues */
-        vdp1_sync_interval_set(-1);
+        vdp1_sync_interval_set(-2);
 
         vdp_sync_vblank_out_set(_vblank_out_handler, NULL);
 
@@ -193,6 +202,15 @@ _fb_offset_calc(uint32_t x, uint32_t y)
 static void
 _flare_blend(int16_t flare_x, int16_t flare_y)
 {
+        /* Draw grey box */
+        for (int32_t y = 0; y < flare_texture_dim.y; y++) {
+                volatile rgb1555_t *fb = (volatile rgb1555_t *)_fb_offset_calc(0, y);
+
+                for (int32_t x = 0; x < flare_texture_dim.x; x++, fb++) {
+                        fb->raw = 0xBDEF;
+                }
+        }
+
         for (int32_t y = 0; y < flare_texture_dim.y; y++) {
                 volatile rgb1555_t *fb =
                     (volatile rgb1555_t *)_fb_offset_calc(flare_x, flare_y + y);
