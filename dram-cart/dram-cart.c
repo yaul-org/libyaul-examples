@@ -29,6 +29,7 @@ main(void)
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
+        dram_cart_init();
         uint32_t id;
         id = dram_cart_id_get();
 
