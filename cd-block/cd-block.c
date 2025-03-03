@@ -42,7 +42,7 @@ main(void)
         cdfs_filelist_init(&_filelist, filelist_entries, -1);
         cdfs_filelist_root_read(&_filelist);
 
-        dbgio_dev_deinit();
+        dbgio_init();
         dbgio_dev_default_init(DBGIO_DEV_VDP2_ASYNC);
         dbgio_dev_font_load();
 
