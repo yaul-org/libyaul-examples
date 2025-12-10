@@ -1,0 +1,1 @@
+The .adp files in this directory are segments of a single track. The ADP encoder from https://github.com/celeriyacon/scspadpcm currently supports only short input tracks. To work around this limitation, the input .wav file is split into segments, and each segment is encoded independently. The streaming demo loads these files sequentially.

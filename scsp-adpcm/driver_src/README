@@ -1,0 +1,31 @@
+This is a proof of concept Sega Saturn 8-channel ADPCM decoder, with the
+decoding being done on the SCSP, utilizing all 32 SCSP slots and the majority
+of the SCSP DSP's resources.  It runs at a fixed rate of 44.1KHz, and supports
+(custom) 1.5-bit, 2.5-bit and 4.5-bit(average) encodings, similar in concept
+to other ADPCM formats like BRR and CD-XA ADPCM.
+
+Two DSP-generated PSG-like channels are also provided, one 50/50 square and 
+a 4-operator saw wave channel.  The square wave channel isn't suited to music,
+as it only supports frequencies of 44100 / (2 * n), where 'n' is an integer,
+but should be adequate for sound effects.  The saw wave channel can be
+programmed to generate noise, and its output has a programmable simple IIR
+filter, which can be used to color white noise.  The relative phases of the
+saw wave channel's operators cannot be guaranteed nor reset currently.
+
+Each ADPCM block encodes 16 samples, and playback startup on a channel
+currently has a delay of 16 samples(1 block) plus sound driver overhead.
+
+To enable looping, set the comment tag/field in the WAV file to "adp_loop=n",
+where 'n' is the loop target, aligned to a 16 sample boundary.
+
+Streaming playback is not currently supported by the included demo sound
+driver and tools, but could be supported in theory.
+
+The tools require "libsndfile" to compile and run, and building the ISO
+image requires the "genisoimage" utility.  The 68K sound driver and
+SH-2 test program were developed with and tested with gcc 4.7.4.  Later
+versions of gcc may work, but were not tested.
+
+The contents of "saturnboot.bin" between offsets 0x100 and 0xEFF, inclusive,
+should not be used outside of the limited purpose of allowing disc
+recognition and booting by the Sega Saturn's BIOS.
